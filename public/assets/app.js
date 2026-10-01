@@ -1,0 +1,1 @@
+document.addEventListener('DOMContentLoaded',()=>{document.querySelectorAll('[data-confirm]').forEach(el=>el.addEventListener('click',e=>{if(!confirm(el.dataset.confirm))e.preventDefault()}));document.querySelectorAll('[data-number]').forEach(el=>el.addEventListener('input',()=>{if(parseFloat(el.value)<0)el.value=0;}));});
