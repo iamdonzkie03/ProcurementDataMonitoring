@@ -22,10 +22,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             $up=$pdo->prepare('UPDATE purchase_requests SET fiscal_year=?,area_id=?,purpose=?,requested_by=?,status=? WHERE id=? AND status="Draft"');
             $up->execute([$year,$area,trim($_POST['purpose']),trim($_POST['requested_by']),$_POST['status']??'Draft',$prId]);
 
-            $old=$pdo->prepare('SELECT ppmp_item_id,quantity FROM purchase_request_items WHERE pr_id=?');
-            $old->execute([$prId]); $oldItems=[];
-            foreach($old as $oi){$oldItems[(int)$oi['ppmp_item_id']=(float)$oi['quantity'];}
-
+            
             $pdo->prepare('DELETE FROM purchase_request_items WHERE pr_id=?')->execute([$prId]);
 
             $ins=$pdo->prepare('INSERT INTO purchase_request_items(pr_id,ppmp_item_id,quantity,unit_price) VALUES(?,?,?,?)');
