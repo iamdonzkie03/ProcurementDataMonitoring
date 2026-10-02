@@ -9,7 +9,7 @@ The system now covers the planning-to-purchasing workflow:
 - Role-based access: Administrator, Editor, Viewer, Guest.
 - Dashboard with PPMP, APP, Purchase Request and Purchase Order metrics.
 - Area/Unit PPMP creation.
-- Automatic Consolidated APP: equivalent items are grouped by normalized item name + unit + category.
+- Automatic Consolidated APP: equivalent items are grouped by normalized item name + unit + category + unit price.
 - Consolidated quantities and ABC are recalculated automatically.
 - Purchase Request creation directly from available PPMP quantities.
 - PR quantities automatically reduce the remaining PPMP quantity.
@@ -19,6 +19,7 @@ The system now covers the planning-to-purchasing workflow:
 - PO statuses: Draft, Issued, Cancelled.
 - Procurement reports by Area/Unit plus PR/PO workflow status.
 - Administrator user management.
+- Units of Measurement master list for Purchase Request unit dropdowns.
 - CSRF protection, password hashing and PDO prepared statements.
 
 ## Database upgrade
