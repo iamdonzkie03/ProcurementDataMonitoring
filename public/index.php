@@ -1,4 +1,6 @@
-<?php requireRole(['Administrator','Editor','Viewer','Guest']); require_once __DIR__.'/../app/layout.php';
+require_once __DIR__.'/../config/config.php';
+<?php
+requireRole(['Administrator','Editor','Viewer','Guest']); require_once __DIR__.'/../app/layout.php';
 $year=(int)($_GET['year']??date('Y'));$pdo=db();
 $ppmp=(int)$pdo->query("SELECT COUNT(*) FROM ppmp_items WHERE fiscal_year=$year")->fetchColumn();$areas=(int)$pdo->query("SELECT COUNT(DISTINCT area_id) FROM ppmp_items WHERE fiscal_year=$year")->fetchColumn();$qty=(float)$pdo->query("SELECT COALESCE(SUM(quantity),0) FROM ppmp_items WHERE fiscal_year=$year")->fetchColumn();$abc=(float)$pdo->query("SELECT COALESCE(SUM(quantity*unit_price),0) FROM ppmp_items WHERE fiscal_year=$year")->fetchColumn();
 $prCount=(int)$pdo->query("SELECT COUNT(*) FROM purchase_requests WHERE fiscal_year=$year AND status<>'Cancelled'")->fetchColumn();$poCount=(int)$pdo->query("SELECT COUNT(*) FROM purchase_orders o JOIN purchase_requests r ON r.id=o.pr_id WHERE r.fiscal_year=$year AND o.status<>'Cancelled'")->fetchColumn();
