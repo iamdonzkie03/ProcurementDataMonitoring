@@ -8,7 +8,7 @@ The system now covers the planning-to-purchasing workflow:
 
 - Role-based access: Administrator, Editor, Viewer, Guest.
 - Dashboard with PPMP, APP, Purchase Request and Purchase Order metrics.
-- Area/Unit PPMP creation.
+- Area/Unit master list with addable offices/departments/units; new entries appear in the PPMP Area/Unit dropdown.\n- Area/Unit PPMP creation.
 - Automatic Consolidated APP: equivalent items are grouped by normalized item name + unit + category + unit price.
 - Consolidated quantities and ABC are recalculated automatically.
 - Purchase Request creation directly from available PPMP quantities.
