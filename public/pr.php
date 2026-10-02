@@ -69,7 +69,7 @@ if($editId>0){
     $st=$pdo->prepare('SELECT * FROM purchase_requests WHERE id=? AND status="Draft"'); $st->execute([$editId]); $editPr=$st->fetch();
     if(!$editPr){flash('error','Only Draft Purchase Requests can be edited.');header('Location:pr.php');exit;}
     $st=$pdo->prepare('SELECT ppmp_item_id,quantity FROM purchase_request_items WHERE pr_id=?');$st->execute([$editId]);
-    foreach($st as $i)$editItems[(int)$i['ppmp_item_id']=(float)$i['quantity'];
+    foreach($st as $i)$editItems[(int)$i['ppmp_item_id']] = (float)$i['quantity'];
 }
 
 $year=(int)($_GET['year']??($editPr['fiscal_year']??date('Y')));$q=trim($_GET['q']??'');
