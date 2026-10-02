@@ -64,3 +64,10 @@ CREATE TABLE IF NOT EXISTS units_of_measure (id INT UNSIGNED AUTO_INCREMENT PRIM
 INSERT INTO units_of_measure(name) VALUES ('Unit'),('Piece'),('Lot'),('Vial'),('Box'),('Pack'),('Set'),('Bottle'),('Can'),('Roll'),('Ream'),('Meter'),('Kilogram'),('Liter') ON DUPLICATE KEY UPDATE name=VALUES(name);
 ALTER TABLE purchase_request_items ADD COLUMN unit_id INT UNSIGNED NULL AFTER unit_price;
 ALTER TABLE purchase_request_items ADD CONSTRAINT fk_pri_unit FOREIGN KEY(unit_id) REFERENCES units_of_measure(id);
+
+CREATE TABLE IF NOT EXISTS areas (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL UNIQUE,
+  code VARCHAR(50) NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
