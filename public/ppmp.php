@@ -1,7 +1,5 @@
 <?php
 require_once __DIR__.'/../config/config.php';
-require_once __DIR__.'/../config/config.php';
-<?php
 requireRole(['Administrator','Editor','Viewer','Guest']); require_once __DIR__.'/../app/layout.php'; $pdo=db();
 if($_SERVER['REQUEST_METHOD']==='POST'){requireRole(['Administrator','Editor']);checkCsrf();$st=$pdo->prepare('INSERT INTO ppmp_items(fiscal_year,area_id,category_id,item_name,description,quantity,unit,unit_price,requested_by,remarks,created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?)');$st->execute([(int)$_POST['fiscal_year'],(int)$_POST['area_id'],(int)$_POST['category_id'],trim($_POST['item_name']),trim($_POST['description']),max(0,(float)$_POST['quantity']),trim($_POST['unit']),max(0,(float)$_POST['unit_price']),trim($_POST['requested_by']),trim($_POST['remarks']),currentUser()['id']]);flash('success','PPMP item saved.');header('Location:ppmp.php');exit;}
 $areas=$pdo->query('SELECT * FROM areas ORDER BY name')->fetchAll();$cats=$pdo->query('SELECT * FROM categories ORDER BY name')->fetchAll();$year=(int)($_GET['year']??date('Y'));$q=trim($_GET['q']??'');$sql='SELECT p.*,a.name area,c.name category FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=?';$args=[$year];if($q!==''){$sql.=' AND (p.item_name LIKE ? OR a.name LIKE ? OR c.name LIKE ?)';$args=[...$args,"%$q%","%$q%","%$q%"];}$sql.=' ORDER BY p.created_at DESC';$st=$pdo->prepare($sql);$st->execute($args);$rows=$st->fetchAll();pageStart('Project Procurement Management Plan');
