@@ -1,3 +1,5 @@
+<?php
+require_once __DIR__.'/../config/config.php';
 require_once __DIR__.'/../config/config.php';
 <?php
 requireRole(['Administrator','Editor','Viewer','Guest']); require_once __DIR__.'/../app/layout.php';$pdo=db();$year=(int)($_GET['year']??date('Y'));$q=trim($_GET['q']??'');
