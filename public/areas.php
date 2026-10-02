@@ -9,13 +9,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $name=trim($_POST['name']??'');
   if($name===''){ flash('error','Area/Unit name is required.'); header('Location:areas.php'); exit; }
   try{
-    $st=$pdo->prepare('INSERT INTO areas(name,code) VALUES(?,?)');
-    $st->execute([$name,trim($_POST['code']??'') ?: null]);
+    $st=$pdo->prepare('INSERT INTO areas(name,code,authorized_person) VALUES(?,?,?)');
+    $st->execute([$name,trim($_POST['code']??'') ?: null,trim($_POST['authorized_person']??'') ?: null]);
     flash('success','Area/Unit added.');
   }catch(PDOException $e){ flash('error','Area/Unit name or code already exists.'); }
   header('Location:areas.php'); exit;
 }
-$rows=$pdo->query('SELECT id,name,code,created_at FROM areas ORDER BY name')->fetchAll();
+$rows=$pdo->query('SELECT id,name,code,authorized_person,created_at FROM areas ORDER BY name')->fetchAll();
 pageStart('Area/Unit Management');
 ?>
 <div class="panel">
@@ -24,15 +24,15 @@ pageStart('Area/Unit Management');
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <div class="form-grid">
       <div class="field"><label>Area/Unit Name</label><input class="input" name="name" required placeholder="e.g. Medical Service"></div>
-      <div class="field"><label>Code <small>(optional)</small></label><input class="input" name="code" placeholder="e.g. MED"></div>
+      <div class="field"><label>Code <small>(optional)</small></label><input class="input" name="code" placeholder="e.g. MED"></div><div class="field"><label>Name of Supervisor/Authorized Person</label><input class="input" name="authorized_person" required placeholder="e.g. Juan Dela Cruz"></div>
     </div>
     <div class="actions"><button class="btn" type="submit">+ Add Area/Unit</button></div>
   </form>
 </div>
 <div class="panel" style="margin-top:18px">
   <h2>Area/Unit List</h2>
-  <div class="table-wrap"><table class="table"><tr><th>Area/Unit</th><th>Code</th><th>Created</th></tr>
-  <?php foreach($rows as $r): ?><tr><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?=e($r['created_at'])?></td></tr><?php endforeach; ?>
+  <div class="table-wrap"><table class="table"><tr><th>Area/Unit</th><th>Code</th><th>Supervisor/Authorized Person</th><th>Created</th></tr>
+  <?php foreach($rows as $r): ?><tr><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?=e($r['authorized_person']??'')?></td><td><?=e($r['created_at'])?></td></tr><?php endforeach; ?>
   </table></div>
 </div>
 <?php pageEnd();
