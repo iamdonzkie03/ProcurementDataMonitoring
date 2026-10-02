@@ -34,7 +34,7 @@ Then update `config/config.php` with your MySQL credentials.
 ## Setup
 
 1. Create the MySQL database and import the appropriate SQL file.
-2. Copy the project into Apache's document root (for example `htdocs/procurement_monitoring`).
+2. Copy the project into Apache's document root (for example `htdocs/procurement`).
 3. Edit `config/config.php`.
 4. Open `/public/login.php`.
 5. Default administrator: `admin` / `Admin@123`. Change this password immediately.
