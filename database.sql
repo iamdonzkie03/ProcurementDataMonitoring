@@ -63,15 +63,21 @@ CREATE TABLE IF NOT EXISTS purchase_requests (
   INDEX idx_pr_area (area_id)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS units_of_measure (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(80) NOT NULL UNIQUE, status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB;
+
+INSERT INTO units_of_measure(name) VALUES ('Unit'),('Piece'),('Lot'),('Vial'),('Box'),('Pack'),('Set'),('Bottle'),('Can'),('Roll'),('Ream'),('Meter'),('Kilogram'),('Liter') ON DUPLICATE KEY UPDATE name=VALUES(name);
+
 CREATE TABLE IF NOT EXISTS purchase_request_items (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   pr_id BIGINT UNSIGNED NOT NULL,
   ppmp_item_id BIGINT UNSIGNED NOT NULL,
   quantity DECIMAL(18,4) NOT NULL,
   unit_price DECIMAL(18,2) NOT NULL DEFAULT 0,
+  unit_id INT UNSIGNED NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(pr_id) REFERENCES purchase_requests(id) ON DELETE CASCADE,
   FOREIGN KEY(ppmp_item_id) REFERENCES ppmp_items(id),
+  FOREIGN KEY(unit_id) REFERENCES units_of_measure(id),
   UNIQUE KEY uq_pr_ppmp (pr_id, ppmp_item_id),
   INDEX idx_pri_ppmp (ppmp_item_id)
 ) ENGINE=InnoDB;
