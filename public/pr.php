@@ -54,8 +54,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             if(!$p) throw new RuntimeException('Invalid PPMP item selected.');
             $remaining=(float)$p['quantity']-(float)$p['used'];
             if($qty>$remaining+0.000001) throw new RuntimeException('Requested quantity exceeds remaining PPMP quantity for '.$p['item_name'].'.');
-            $ins=$pdo->prepare('INSERT INTO purchase_request_items(pr_id,ppmp_item_id,quantity,unit_price) VALUES(?,?,?,?)');
-            $ins->execute([$prId,(int)$ppmpId,$qty,(float)$p['unit_price']]);
+            $unitId=(int)($_POST['units'][(int)$ppmpId]??0);if(!$unitId)throw new RuntimeException('Select a unit of measurement for '.$p['item_name'].'.');$ins=$pdo->prepare('INSERT INTO purchase_request_items(pr_id,ppmp_item_id,quantity,unit_price,unit_id) VALUES(?,?,?,?,?)');
+            $ins->execute([$prId,(int)$ppmpId,$qty,(float)$p['unit_price'],$unitId]);
         }
         if((int)$pdo->query('SELECT COUNT(*) FROM purchase_request_items WHERE pr_id='.$prId)->fetchColumn()<1) throw new RuntimeException('Enter a quantity greater than zero.');
         $pdo->commit(); flash('success','Purchase Request '.$prNo.' created.');
