@@ -356,14 +356,15 @@ body{font-size:11px!important}
   .settings-tabs .btn{transition:none !important}
 }
 
-/* Settings tab hover: lighter blue than the selected active tab */
+/* Settings tab hover: color only — no size, border, movement, or shadow */
 .settings-tabs a.btn:hover,
 .settings-tabs a.btn:focus-visible,
 .settings-tabs a.btn.secondary:hover,
 .settings-tabs a.btn.secondary:focus-visible{
   background:#5b9bd5 !important;
   color:#ffffff !important;
-  border:1px solid #5b9bd5 !important;
-  transform:translateY(-1px);
-  box-shadow:0 4px 10px rgba(0,0,0,.12);
+  border:0 !important;
+  outline:none !important;
+  box-shadow:none !important;
+  transform:none !important;
 }
