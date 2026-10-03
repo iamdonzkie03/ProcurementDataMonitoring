@@ -12,6 +12,28 @@ $pdo=db();
 if($_SERVER['REQUEST_METHOD']==='POST'){
   checkCsrf();
   $action=$_POST['action']??'';
+  if($action==='classification_toggle' || $action==='category_toggle'){
+    $id=(int)($_POST['id']??0);
+    $table=$action==='classification_toggle'?'classifications':'categories';
+    if($id>0){
+      $st=$pdo->prepare("UPDATE {$table} SET status=IF(status='Active','Inactive','Active') WHERE id=?");
+      $st->execute([$id]);
+      flash('success',($action==='classification_toggle'?'Classification':'Category').' status updated.');
+    }
+    header('Location:settings.php?tab='.($action==='classification_toggle'?'classification':'category')); exit;
+  }
+  if($action==='classification_save' || $action==='category_save'){
+    $id=(int)($_POST['id']??0); $name=trim($_POST['name']??'');
+    $table=$action==='classification_save'?'classifications':'categories'; $label=$action==='classification_save'?'Classification':'Category';
+    if($name===''){ flash('error',$label.' is required.'); }
+    else { try { if($id>0){$st=$pdo->prepare("UPDATE {$table} SET name=? WHERE id=?");$st->execute([$name,$id]);flash('success',$label.' updated.');}else{$st=$pdo->prepare("INSERT INTO {$table}(name) VALUES(?)");$st->execute([$name]);flash('success',$label.' added.');} } catch(PDOException $e){flash('error',$e->getCode()==='23000'?'That '.$label.' already exists.':'Unable to save the '.$label.'.');} }
+    header('Location:settings.php?tab='.($action==='classification_save'?'classification':'category')); exit;
+  }
+  if($action==='classification_delete' || $action==='category_delete'){
+    $id=(int)($_POST['id']??0); $table=$action==='classification_delete'?'classifications':'categories'; $label=$action==='classification_delete'?'Classification':'Category';
+    if($id>0){try{$st=$pdo->prepare("DELETE FROM {$table} WHERE id=?");$st->execute([$id]);flash('success',$label.' deleted.');}catch(PDOException $e){flash('error','Unable to delete the '.$label.'. It may already be referenced by another record.');}}
+    header('Location:settings.php?tab='.($action==='classification_delete'?'classification':'category')); exit;
+  }
   if($action==='procurement_method_toggle'){
     $id=(int)($_POST['id']??0);
     if($id>0){
@@ -59,6 +81,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   }
 }
 
+$editingClassification=null; $editingCategory=null;
+if($tab==='classification' && isset($_GET['edit'])){$st=$pdo->prepare('SELECT id,name,status FROM classifications WHERE id=?');$st->execute([(int)$_GET['edit']]);$editingClassification=$st->fetch()?:null;}
+if($tab==='category' && isset($_GET['edit'])){$st=$pdo->prepare('SELECT id,name,status FROM categories WHERE id=?');$st->execute([(int)$_GET['edit']]);$editingCategory=$st->fetch()?:null;}
+$classifications=$pdo->query('SELECT id,name,status FROM classifications ORDER BY name')->fetchAll();
+$categories=$pdo->query('SELECT id,name,status FROM categories ORDER BY name')->fetchAll();
 $editingMethod=null;
 if($tab==='procurement-method' && isset($_GET['edit'])){
   $st=$pdo->prepare('SELECT id,procurement_method,details,status FROM procurement_methods WHERE id=?');
@@ -66,7 +93,6 @@ if($tab==='procurement-method' && isset($_GET['edit'])){
   $editingMethod=$st->fetch() ?: null;
 }
 $procurementMethods=$pdo->query('SELECT id,procurement_method,details,status FROM procurement_methods ORDER BY procurement_method')->fetchAll();
-$categories=$pdo->query('SELECT id,name FROM categories ORDER BY name')->fetchAll();
 pageStart('Settings');
 ?>
 <div class="panel">
@@ -137,13 +163,36 @@ pageStart('Settings');
   </div>
 <?php elseif($tab==='classification'): ?>
   <h2>Classification</h2>
-  <p class="muted">This area is reserved for the procurement classification master list.</p>
-  <div class="empty">No classification master list has been configured yet.</div>
+  <p class="muted">Add, edit, delete, activate, or deactivate procurement classifications.</p>
+  <form method="post" class="form-grid" style="margin-top:18px">
+    <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+    <input type="hidden" name="action" value="classification_save">
+    <input type="hidden" name="id" value="<?=e((string)($editingClassification['id']??0))?>">
+    <div class="field"><label>Classification</label><input class="input" name="name" value="<?=e($editingClassification['name']??'')?>" required></div>
+    <div class="actions"><button class="btn" type="submit"><?=$editingClassification?'Save Changes':'Add Classification'?></button><?php if($editingClassification): ?><a class="btn secondary" href="settings.php?tab=classification">Cancel</a><?php endif; ?></div>
+  </form>
+  <div class="table-wrap" style="margin-top:22px"><table class="table"><thead><tr><th>Classification</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+  <?php foreach($classifications as $row): ?><tr><td><?=e($row['name'])?></td><td><span class="badge <?=$row['status']==='Active'?'success':'muted'?>"><?=e($row['status'])?></span></td><td>
+  <a class="btn secondary" href="settings.php?tab=classification&edit=<?=(int)$row['id']?>">Edit</a>
+  <form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="classification_toggle"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn secondary" type="submit"><?=$row['status']==='Active'?'Deactivate':'Activate'?></button></form>
+  <form method="post" style="display:inline" onsubmit="return confirm('Delete this Classification?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="classification_delete"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn danger" type="submit">Delete</button></form>
+  </td></tr><?php endforeach; ?><?php if(!$classifications): ?><tr><td colspan="3" class="empty">No Classifications have been added yet.</td></tr><?php endif; ?></tbody></table></div>
 <?php elseif($tab==='category'): ?>
   <h2>Category</h2>
-  <div class="table-wrap"><table class="table"><tr><th>ID</th><th>Category</th></tr>
-  <?php foreach($categories as $c): ?><tr><td><?=e($c['id'])?></td><td><?=e($c['name'])?></td></tr><?php endforeach; ?>
-  </table></div>
+  <p class="muted">Add, edit, delete, activate, or deactivate procurement categories.</p>
+  <form method="post" class="form-grid" style="margin-top:18px">
+    <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+    <input type="hidden" name="action" value="category_save">
+    <input type="hidden" name="id" value="<?=e((string)($editingCategory['id']??0))?>">
+    <div class="field"><label>Category</label><input class="input" name="name" value="<?=e($editingCategory['name']??'')?>" required></div>
+    <div class="actions"><button class="btn" type="submit"><?=$editingCategory?'Save Changes':'Add Category'?></button><?php if($editingCategory): ?><a class="btn secondary" href="settings.php?tab=category">Cancel</a><?php endif; ?></div>
+  </form>
+  <div class="table-wrap" style="margin-top:22px"><table class="table"><thead><tr><th>Category</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+  <?php foreach($categories as $row): ?><tr><td><?=e($row['name'])?></td><td><span class="badge <?=$row['status']==='Active'?'success':'muted'?>"><?=e($row['status'])?></span></td><td>
+  <a class="btn secondary" href="settings.php?tab=category&edit=<?=(int)$row['id']?>">Edit</a>
+  <form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="category_toggle"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn secondary" type="submit"><?=$row['status']==='Active'?'Deactivate':'Activate'?></button></form>
+  <form method="post" style="display:inline" onsubmit="return confirm('Delete this Category?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="category_delete"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn danger" type="submit">Delete</button></form>
+  </td></tr><?php endforeach; ?><?php if(!$categories): ?><tr><td colspan="3" class="empty">No Categories have been added yet.</td></tr><?php endif; ?></tbody></table></div>
 <?php elseif($tab==='area-unit'): ?>
   <?php $embedded=true; include __DIR__.'/areas.php'; ?>
 <?php else: ?>
