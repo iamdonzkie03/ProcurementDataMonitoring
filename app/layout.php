@@ -15,14 +15,15 @@ function pageStart(string $title): void { $u=currentUser(); ?>
 <?php endif; ?>
 <div class="sidebar-divider"></div>
 <?php if(hasRole(['Administrator','Editor'])): ?>
-<details class="sidebar-group settings-menu">
+<?php $settingsPages=['settings.php','areas.php','units.php']; $currentPage=basename(parse_url($_SERVER['REQUEST_URI']??'',PHP_URL_PATH)); $settingsOpen=in_array($currentPage,$settingsPages,true); ?>
+<details class="sidebar-group settings-menu"<?= $settingsOpen ? ' open' : '' ?>>
 <summary class="sidebar-group-title"><span class="sidebar-group-label">⚙ <span>Settings</span></span><span class="sidebar-chevron" aria-hidden="true">▾</span></summary>
 <div id="settings-submenu" class="sidebar-submenu">
-<a href="settings.php?tab=procurement-method">↳ <span>Procurement Method</span></a>
-<a href="settings.php?tab=classification">↳ <span>Classification</span></a>
-<a href="settings.php?tab=category">↳ <span>Category</span></a>
-<a href="areas.php">↳ <span>Area/Unit Management</span></a>
-<a href="units.php">↳ <span>UOM</span></a>
+<a class="<?=($currentPage==='settings.php' && ($tab??'')==='procurement-method')?'active':''?>" href="settings.php?tab=procurement-method">↳ <span>Procurement Method</span></a>
+<a class="<?=($currentPage==='settings.php' && ($tab??'')==='classification')?'active':''?>" href="settings.php?tab=classification">↳ <span>Classification</span></a>
+<a class="<?=($currentPage==='settings.php' && ($tab??'')==='category')?'active':''?>" href="settings.php?tab=category">↳ <span>Category</span></a>
+<a class="<?=($currentPage==='areas.php')?'active':''?>" href="areas.php">↳ <span>Area/Unit Management</span></a>
+<a class="<?=($currentPage==='units.php')?'active':''?>" href="units.php">↳ <span>UOM</span></a>
 </div></details>
 <?php endif; ?>
 <div class="sidebar-divider"></div>
