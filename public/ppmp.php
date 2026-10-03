@@ -84,7 +84,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   }
   $supportingDocuments=$existingDocs ? json_encode($existingDocs,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) : '';
   if($action==='add'){
-    $stSeries=$pdo->prepare("SELECT MAX(CASE WHEN ppmp_no REGEXP CONCAT('^PPMP-',?, '-[0-9]{4}
+    $stSeries=$pdo->prepare("SELECT MAX(CASE WHEN ppmp_no REGEXP CONCAT('^PPMP-',?, '-[0-9]{4}$') THEN CAST(RIGHT(ppmp_no,4) AS UNSIGNED) ELSE 0 END) FROM ppmp_items WHERE fiscal_year=?");
+    $stSeries->execute([$year,$year]);
+    $nextSeries=((int)$stSeries->fetchColumn())+1;
+    $ppmpNo='PPMP-'.$year.'-'.str_pad((string)$nextSeries,4,'0',STR_PAD_LEFT);
+  }else{
+    $ppmpNo=trim($_POST['ppmp_no']??($editing['ppmp_no']??''));
+  }
   $values=[
     $year,$ppmpNo,$areaId,(int)$_POST['category_id'],trim($_POST['item_name']),
     trim($_POST['description']??''),trim($_POST['procurement_type']??''),$qty,trim($_POST['unit']),
@@ -92,9 +98,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     trim($_POST['start_procurement']??''),trim($_POST['end_procurement']??''),trim($_POST['delivery_period']??''),
     trim($_POST['source_of_funds']??''),$unitPrice,$totalBudget,$supportingDocuments,
     $requestedBy,trim($_POST['prepared_by']??''),$preparedPosition,
-    trim($_POST['submitted_by']??''),trim($_POST['submitted_position']??''),trim($_POST['budget_approved_by']??''),
-    trim($_POST['budget_position']??''),($_POST['prepared_date']??'')?:null,($_POST['submitted_date']??'')?:null,
-    ($_POST['budget_date']??'')?:null,trim($_POST['remarks']??'')
+    '', '', '', '', null, null, null, trim($_POST['remarks']??'')
   ];
   if($action==='edit' && $id>0){
     $st=$pdo->prepare('UPDATE ppmp_items SET fiscal_year=?,ppmp_no=?,area_id=?,category_id=?,item_name=?,description=?,procurement_type=?,quantity=?,unit=?,procurement_mode=?,preprocurement_conference=?,start_procurement=?,end_procurement=?,delivery_period=?,source_of_funds=?,unit_price=?,total_budget=?,supporting_documents=?,requested_by=?,prepared_by=?,prepared_position=?,submitted_by=?,submitted_position=?,budget_approved_by=?,budget_position=?,prepared_date=?,submitted_date=?,budget_date=?,remarks=? WHERE id=?');
@@ -105,7 +109,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
        preprocurement_conference,start_procurement,end_procurement,delivery_period,source_of_funds,unit_price,total_budget,
        supporting_documents,requested_by,prepared_by,prepared_position,submitted_by,submitted_position,
        budget_approved_by,budget_position,prepared_date,submitted_date,budget_date,remarks,created_by)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
     $st->execute([...$values,currentUser()['id']]); flash('success','PPMP item saved.');
   }
   header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
