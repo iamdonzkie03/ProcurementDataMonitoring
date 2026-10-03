@@ -368,3 +368,11 @@ body{font-size:11px!important}
   box-shadow:none !important;
   transform:none !important;
 }
+
+.ppmp-section{border:1px solid var(--border);border-radius:10px;padding:16px;margin:0 0 16px;background:var(--surface,#fff)}
+.ppmp-section h3{margin:0 0 14px;font-size:15px}
+.ppmp-total-budget{font-weight:700}
+.ppmp-existing-files{margin-top:8px;font-size:12px}
+.ppmp-existing-files ul{margin:6px 0 0 18px;padding:0}
+@media(max-width:900px){.ppmp-input-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.ppmp-input-grid{grid-template-columns:1fr}}
