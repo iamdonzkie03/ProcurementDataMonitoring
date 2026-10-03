@@ -6,9 +6,11 @@ $embedded=!empty($embedded);
 $pdo=db();
 
 try{
+  $cols=$pdo->query("SHOW COLUMNS FROM divisions LIKE 'head_position_designation'")->fetch();
+  if(!$cols) $pdo->exec("ALTER TABLE divisions ADD COLUMN head_position_designation VARCHAR(150) NULL AFTER division_head");
   $cols=$pdo->query("SHOW COLUMNS FROM area_personnel LIKE 'position_designation'")->fetch();
   if(!$cols) $pdo->exec("ALTER TABLE area_personnel ADD COLUMN position_designation VARCHAR(150) NULL AFTER name");
-}catch(PDOException $e){ /* Migration can also be applied manually via database_migration_stage10.sql. */ }
+}catch(PDOException $e){ /* Migration can also be applied manually. */ }
 
 $editId=(int)($_GET['edit']??0);
 $editing=null;
@@ -44,12 +46,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   if($action==='save_division'){
     $divisionName=trim($_POST['division_name']??'');
     $head=trim($_POST['division_head']??'');
+    $headPosition=trim($_POST['head_position_designation']??'');
     if($divisionName==='' || $head===''){
       flash('error','Division/Department name and Division/Department Head are required.');
     }else{
       try{
-        $st=$pdo->prepare('INSERT INTO divisions(name,division_head) VALUES(?,?)');
-        $st->execute([$divisionName,$head]);
+        $st=$pdo->prepare('INSERT INTO divisions(name,division_head,head_position_designation) VALUES(?,?,?)');
+        $st->execute([$divisionName,$head,$headPosition]);
         flash('success','Division/Department added with one designated Head.');
       }catch(PDOException $e){
         flash('error','The Division/Department name already exists.');
@@ -62,12 +65,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $divisionId=(int)($_POST['division_id']??0);
     $divisionName=trim($_POST['division_name']??'');
     $head=trim($_POST['division_head']??'');
+    $headPosition=trim($_POST['head_position_designation']??'');
     if($divisionId<=0 || $divisionName==='' || $head===''){
       flash('error','Division/Department name and Division/Department Head are required.');
     }else{
       try{
-        $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=? WHERE id=?');
-        $st->execute([$divisionName,$head,$divisionId]);
+        $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=? WHERE id=?');
+        $st->execute([$divisionName,$head,$headPosition,$divisionId]);
         flash('success','Division/Department updated.');
       }catch(PDOException $e){
         flash('error','The Division/Department name already exists.');
@@ -164,7 +168,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
 }
 
-$divisions=$pdo->query('SELECT id,name,division_head FROM divisions ORDER BY name')->fetchAll();
+$divisions=$pdo->query('SELECT id,name,division_head,head_position_designation FROM divisions ORDER BY name')->fetchAll();
 $rows=$pdo->query('
   SELECT a.id,a.name,a.code,a.created_at,d.id division_id,d.name division_name,d.division_head
   FROM areas a
@@ -183,7 +187,7 @@ $people=$pdo->query('
 $divisionEditId=(int)($_GET['edit_division']??0);
 $divisionEditing=null;
 if($divisionEditId>0){
-  $st=$pdo->prepare('SELECT id,name,division_head FROM divisions WHERE id=?');
+  $st=$pdo->prepare('SELECT id,name,division_head,head_position_designation FROM divisions WHERE id=?');
   $st->execute([$divisionEditId]);
   $divisionEditing=$st->fetch();
 }
@@ -200,6 +204,7 @@ if(!$embedded) pageStart('Area/Unit Management');
         <div class="form-grid">
           <div class="field"><label>Division/Department Name</label><input class="input" name="division_name" required placeholder="e.g. Medical Service" value="<?=e($divisionEditing['name']??'')?>"></div>
           <div class="field"><label>Division/Department Head</label><input class="input" name="division_head" required placeholder="e.g. Juan Dela Cruz" value="<?=e($divisionEditing['division_head']??'')?>"></div>
+          <div class="field"><label>Position/Designation</label><input class="input" name="head_position_designation" placeholder="e.g. Medical Center Chief / Division Chief" value="<?=e($divisionEditing['head_position_designation']??'')?>"></div>
         </div>
         <div class="actions"><button class="btn" type="submit"><?= $divisionEditing ? 'Save Division/Department' : '+ Add Division/Department' ?></button><?php if($divisionEditing): ?><a class="btn secondary" href="areas.php">Cancel</a><?php endif; ?></div>
       </form>
@@ -210,7 +215,7 @@ if(!$embedded) pageStart('Area/Unit Management');
         <div class="table-wrap"><table class="table">
           <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit Count</th><th>Actions</th></tr>
           <?php foreach($divisions as $d): $cnt=0; foreach($rows as $r){if((int)$r['division_id']===(int)$d['id'])$cnt++;} ?>
-          <tr><td><?=e($d['name'])?></td><td><?=e($d['division_head'])?></td><td><?=e($cnt)?></td><td><a class="btn secondary" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a></td></tr>
+          <tr><td><?=e($d['name'])?></td><td><div><?=e($d['division_head'])?></div><?php if(trim((string)($d['head_position_designation']??''))!==''): ?><small class="muted"><?=e($d['head_position_designation'])?></small><?php endif; ?></td><td><?=e($cnt)?></td><td><a class="btn secondary" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a></td></tr>
           <?php endforeach; ?>
           <?php if(!$divisions): ?><tr><td colspan="4">No Division/Department records found.</td></tr><?php endif; ?>
         </table></div>
