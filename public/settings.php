@@ -187,7 +187,7 @@ pageStart('Settings');
   <div class="table-wrap" style="margin-top:22px"><table class="table"><thead><tr><th>Classification</th><th>Status</th><th>Actions</th></tr></thead><tbody>
   <?php foreach($classifications as $row): ?><tr><td><?=e($row['name'])?></td><td><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="classification_toggle"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="status-toggle <?=$row['status']==='Active'?'status-active':'status-inactive'?>" type="submit" title="Click to change status"><?=e($row['status'])?></button></form></td><td>
   <a class="btn secondary master-action" href="settings.php?tab=classification&edit=<?=(int)$row['id']?>">Edit</a>
-  <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Classification?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="classification_delete"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn danger" type="submit">Delete</button></form>
+  <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Classification?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="classification_delete"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn danger master-action" type="submit">Delete</button></form>
   </td></tr><?php endforeach; ?><?php if(!$classifications): ?><tr><td colspan="3" class="empty">No Classifications have been added yet.</td></tr><?php endif; ?></tbody></table></div>
 <?php elseif($tab==='category'): ?>
   <h2>Category</h2>
@@ -202,7 +202,7 @@ pageStart('Settings');
   <div class="table-wrap" style="margin-top:22px"><table class="table"><thead><tr><th>Category</th><th>Status</th><th>Actions</th></tr></thead><tbody>
   <?php foreach($categories as $row): ?><tr><td><?=e($row['name'])?></td><td><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="category_toggle"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="status-toggle <?=$row['status']==='Active'?'status-active':'status-inactive'?>" type="submit" title="Click to change status"><?=e($row['status'])?></button></form></td><td>
   <a class="btn secondary master-action" href="settings.php?tab=category&edit=<?=(int)$row['id']?>">Edit</a>
-  <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Category?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="category_delete"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn danger" type="submit">Delete</button></form>
+  <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Category?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="category_delete"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn danger master-action" type="submit">Delete</button></form>
   </td></tr><?php endforeach; ?><?php if(!$categories): ?><tr><td colspan="3" class="empty">No Categories have been added yet.</td></tr><?php endif; ?></tbody></table></div>
 <?php elseif($tab==='area-unit'): ?>
   <?php $embedded=true; include __DIR__.'/areas.php'; ?>
