@@ -3,6 +3,12 @@ require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
 require_once __DIR__.'/../app/layout.php';
 $pdo=db();
+try{
+  $col=$pdo->query("SHOW COLUMNS FROM ppmp_items LIKE 'saved_at'")->fetch();
+  if(!$col) $pdo->exec("ALTER TABLE ppmp_items ADD COLUMN saved_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER updated_at");
+  $col=$pdo->query("SHOW COLUMNS FROM ppmp_items LIKE 'total_budget'")->fetch();
+  if(!$col) $pdo->exec("ALTER TABLE ppmp_items ADD COLUMN total_budget DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER unit_price");
+}catch(PDOException $e){}
 
 $currentFiscalYear=(int)date('Y');
 $entryFiscalYears=range($currentFiscalYear,$currentFiscalYear+3);
@@ -84,19 +90,19 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     trim($_POST['description']??''),trim($_POST['procurement_type']??''),$qty,trim($_POST['unit']),
     trim($_POST['procurement_mode']??''),trim($_POST['preprocurement_conference']??''),
     trim($_POST['start_procurement']??''),trim($_POST['end_procurement']??''),trim($_POST['delivery_period']??''),
-    trim($_POST['source_of_funds']??''),$unitPrice,$supportingDocuments,
+    trim($_POST['source_of_funds']??''),$unitPrice,$totalBudget,$supportingDocuments,
     $requestedBy,trim($_POST['prepared_by']??''),$preparedPosition,
     trim($_POST['submitted_by']??''),trim($_POST['submitted_position']??''),trim($_POST['budget_approved_by']??''),
     trim($_POST['budget_position']??''),($_POST['prepared_date']??'')?:null,($_POST['submitted_date']??'')?:null,
     ($_POST['budget_date']??'')?:null,trim($_POST['remarks']??'')
   ];
   if($action==='edit' && $id>0){
-    $st=$pdo->prepare('UPDATE ppmp_items SET fiscal_year=?,ppmp_no=?,area_id=?,category_id=?,item_name=?,description=?,procurement_type=?,quantity=?,unit=?,procurement_mode=?,preprocurement_conference=?,start_procurement=?,end_procurement=?,delivery_period=?,source_of_funds=?,unit_price=?,supporting_documents=?,requested_by=?,prepared_by=?,prepared_position=?,submitted_by=?,submitted_position=?,budget_approved_by=?,budget_position=?,prepared_date=?,submitted_date=?,budget_date=?,remarks=? WHERE id=?');
+    $st=$pdo->prepare('UPDATE ppmp_items SET fiscal_year=?,ppmp_no=?,area_id=?,category_id=?,item_name=?,description=?,procurement_type=?,quantity=?,unit=?,procurement_mode=?,preprocurement_conference=?,start_procurement=?,end_procurement=?,delivery_period=?,source_of_funds=?,unit_price=?,total_budget=?,supporting_documents=?,requested_by=?,prepared_by=?,prepared_position=?,submitted_by=?,submitted_position=?,budget_approved_by=?,budget_position=?,prepared_date=?,submitted_date=?,budget_date=?,remarks=? WHERE id=?');
     $st->execute([...$values,$id]); flash('success','PPMP item updated.');
   }else{
     $st=$pdo->prepare('INSERT INTO ppmp_items
       (fiscal_year,ppmp_no,area_id,category_id,item_name,description,procurement_type,quantity,unit,procurement_mode,
-       preprocurement_conference,start_procurement,end_procurement,delivery_period,source_of_funds,unit_price,
+       preprocurement_conference,start_procurement,end_procurement,delivery_period,source_of_funds,unit_price,total_budget,
        supporting_documents,requested_by,prepared_by,prepared_position,submitted_by,submitted_position,
        budget_approved_by,budget_position,prepared_date,submitted_date,budget_date,remarks,created_by)
       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
