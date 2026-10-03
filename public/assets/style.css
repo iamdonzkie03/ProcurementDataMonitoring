@@ -376,3 +376,8 @@ body{font-size:11px!important}
 .ppmp-existing-files ul{margin:6px 0 0 18px;padding:0}
 @media(max-width:900px){.ppmp-input-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:650px){.ppmp-input-grid{grid-template-columns:1fr}}
+
+/* PPMP monetary field formatting */
+.ppmp-money-input{font-variant-numeric:tabular-nums;text-align:right}
+.ppmp-total-budget{font-size:20px!important;font-weight:700!important;border:0!important;border-color:transparent!important;outline:0!important;box-shadow:none!important;background:transparent!important;padding-left:0!important;padding-right:0!important;text-align:right;font-variant-numeric:tabular-nums}
+.ppmp-total-budget:focus{border:0!important;outline:0!important;box-shadow:none!important}
