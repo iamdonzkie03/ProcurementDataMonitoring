@@ -46,6 +46,11 @@
 .sidebar-submenu{max-height:none!important;overflow:visible!important;padding:0 0 2px 18px!important}
 
 /* Compact sidebar typography */
+.sidebar-nav,
 .sidebar-nav > a,
+.sidebar-nav > a *,
 .sidebar-group-title,
-.sidebar-submenu a{font-size:12px!important}
+.sidebar-group-title *,
+.sidebar-submenu,
+.sidebar-submenu a,
+.sidebar-submenu a *{font-size:10.5px!important}
