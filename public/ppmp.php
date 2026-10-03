@@ -241,9 +241,9 @@ pageStart('Project Procurement Management Plan');
         </div>
         <div class="field"><label>Pre-Procurement Conference *</label><select class="select" name="preprocurement_conference" required><option value="">Select</option><option value="Yes" <?=($editing['preprocurement_conference']??'')==='Yes'?'selected':''?>>Yes</option><option value="No" <?=($editing['preprocurement_conference']??'')==='No'?'selected':''?>>No</option><option value="N/A" <?=($editing['preprocurement_conference']??'')==='N/A'?'selected':''?>>N/A</option></select></div>
         <?php $startDate=!empty($editing['start_procurement'])?date('F d, Y',strtotime($editing['start_procurement'])):''; $endDate=!empty($editing['end_procurement'])?date('F d, Y',strtotime($editing['end_procurement'])):''; $deliveryDate=!empty($editing['delivery_period'])?date('F d, Y',strtotime($editing['delivery_period'])):''; ?>
-        <div class="field"><label>Start of Procurement Activity *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="start_procurement_display" data-date-target="start_procurement" placeholder="October 03, 2026" value="<?=e($startDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="start_procurement_picker" aria-label="Select Start of Procurement Activity"><input type="hidden" name="start_procurement" id="start_procurement"></div></div>
-        <div class="field"><label>End of Procurement Activity *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="end_procurement_display" data-date-target="end_procurement" placeholder="October 03, 2026" value="<?=e($endDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="end_procurement_picker" aria-label="Select End of Procurement Activity"><input type="hidden" name="end_procurement" id="end_procurement"></div></div>
-        <div class="field"><label>Expected Delivery / Implementation Period *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="delivery_period_display" data-date-target="delivery_period" placeholder="October 03, 2026" value="<?=e($deliveryDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="delivery_period_picker" aria-label="Select Expected Delivery / Implementation Period"><input type="hidden" name="delivery_period" id="delivery_period"></div></div>
+        <div class="field"><label>Start of Procurement Activity *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="start_procurement_display" data-date-target="start_procurement" placeholder="October 03, 2026" value="<?=e($startDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="start_procurement_picker" aria-hidden="true" tabindex="-1"><input type="hidden" name="start_procurement" id="start_procurement"></div></div>
+        <div class="field"><label>End of Procurement Activity *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="end_procurement_display" data-date-target="end_procurement" placeholder="October 03, 2026" value="<?=e($endDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="end_procurement_picker" aria-hidden="true" tabindex="-1"><input type="hidden" name="end_procurement" id="end_procurement"></div></div>
+        <div class="field"><label>Expected Delivery / Implementation Period *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="delivery_period_display" data-date-target="delivery_period" placeholder="October 03, 2026" value="<?=e($deliveryDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="delivery_period_picker" aria-hidden="true" tabindex="-1"><input type="hidden" name="delivery_period" id="delivery_period"></div></div>
         <div class="field"><label>Source of Funds *</label><input class="input" name="source_of_funds" required value="<?=e($editing['source_of_funds']??'')?>"></div>
       </div>
     </div>
@@ -403,9 +403,9 @@ if(area){
 </script>
 
 <style>
-.ppmp-date-picker{position:relative;display:flex;align-items:center;gap:8px}
-.ppmp-date-picker .ppmp-date-native{width:42px;height:42px;padding:0;border:1px solid var(--border);border-radius:8px;background:transparent;cursor:pointer}
-.ppmp-long-date{font-variant-numeric:tabular-nums}
+.ppmp-date-picker{position:relative}
+.ppmp-date-picker .ppmp-date-native{position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none}
+.ppmp-long-date{font-variant-numeric:tabular-nums;cursor:pointer}
 .ppmp-entry .ppmp-quantity-field,
 .ppmp-entry .ppmp-unit-field,
 .ppmp-entry .ppmp-unit-cost-field,
@@ -453,6 +453,14 @@ if(area){
     if(!display||!picker||!hidden)return;
     const existing=isoDate(display.value);
     if(existing){picker.value=existing;hidden.value=existing;}
+    function openPicker(){
+      try{
+        if(typeof picker.showPicker==='function') picker.showPicker();
+        else {picker.style.pointerEvents='auto';picker.click();picker.style.pointerEvents='none';}
+      }catch(e){picker.style.pointerEvents='auto';picker.click();picker.style.pointerEvents='none';}
+    }
+    display.addEventListener('click',openPicker);
+    display.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openPicker();}});
     picker.addEventListener('change',function(){hidden.value=this.value;display.value=displayDate(this.value);});
     display.addEventListener('input',function(){
       const iso=isoDate(this.value);
