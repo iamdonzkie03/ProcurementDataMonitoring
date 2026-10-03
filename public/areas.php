@@ -70,6 +70,34 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location:areas.php'); exit;
   }
 
+  if($action==='save_person'){
+    $areaId=(int)($_POST['area_id']??0);
+    $personName=trim($_POST['person_name']??'');
+    if($areaId<=0 || $personName===''){
+      flash('error','Area/Unit and Name are required.');
+    }else{
+      try{
+        $st=$pdo->prepare('INSERT INTO area_personnel(area_id,name) VALUES(?,?)');
+        $st->execute([$areaId,$personName]);
+        flash('success','Name added under the Area/Unit.');
+      }catch(PDOException $e){
+        flash('error','This name is already listed under the selected Area/Unit.');
+      }
+    }
+    header('Location:areas.php'); exit;
+  }
+
+  if($action==='delete_person'){
+    $personId=(int)($_POST['person_id']??0);
+    if($personId<=0){ flash('error','Invalid name record.'); }
+    else{
+      $st=$pdo->prepare('DELETE FROM area_personnel WHERE id=?');
+      $st->execute([$personId]);
+      flash($st->rowCount() ? 'success' : 'error',$st->rowCount() ? 'Name removed from the Area/Unit.' : 'Name record not found.');
+    }
+    header('Location:areas.php'); exit;
+  }
+
   if($name==='' || $divisionId<=0){
     flash('error','Division/Department and Area/Unit name are required.');
     header('Location:areas.php'.($action==='edit'&&$id?'?edit='.$id:'')); exit;
@@ -92,7 +120,21 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 }
 
 $divisions=$pdo->query('SELECT id,name,division_head FROM divisions ORDER BY name')->fetchAll();
-$rows=$pdo->query('SELECT a.id,a.name,a.code,a.created_at,d.id division_id,d.name division_name,d.division_head FROM areas a JOIN divisions d ON d.id=a.division_id ORDER BY d.name,a.name')->fetchAll();
+$rows=$pdo->query('
+  SELECT a.id,a.name,a.code,a.created_at,d.id division_id,d.name division_name,d.division_head
+  FROM areas a
+  JOIN divisions d ON d.id=a.division_id
+  ORDER BY d.name,a.name
+')->fetchAll();
+
+$people=$pdo->query('
+  SELECT ap.id,ap.area_id,ap.name,ap.created_at,a.name area_name,d.name division_name
+  FROM area_personnel ap
+  JOIN areas a ON a.id=ap.area_id
+  JOIN divisions d ON d.id=a.division_id
+  ORDER BY d.name,a.name,ap.name
+')->fetchAll();
+
 $divisionEditId=(int)($_GET['edit_division']??0);
 $divisionEditing=null;
 if($divisionEditId>0){
@@ -121,7 +163,7 @@ pageStart('Area/Unit Management');
 
 <div class="panel" style="margin-top:18px">
   <h2><?= $editing ? 'Edit Area/Unit' : 'Add Area/Unit' ?></h2>
-  <p>Area/Units inherit the Division/Department Head from their selected Division/Department.</p>
+  <p>Area/Units inherit the Division/Department Head from their selected Division/Department and can contain multiple names.</p>
   <form method="post">
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="<?= $editing ? 'edit' : 'add' ?>">
@@ -139,6 +181,19 @@ pageStart('Area/Unit Management');
 </div>
 
 <div class="panel" style="margin-top:18px">
+  <div class="toolbar"><div><h2>Names Under Area/Unit</h2><p>You can add multiple names to each Area/Unit.</p></div></div>
+  <form method="post">
+    <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+    <input type="hidden" name="action" value="save_person">
+    <div class="form-grid">
+      <div class="field"><label>Area/Unit *</label><select class="select" name="area_id" required><option value="">Select Area/Unit</option><?php foreach($rows as $r): ?><option value="<?=e($r['id'])?>"><?=e($r['division_name'])?> — <?=e($r['name'])?></option><?php endforeach; ?></select></div>
+      <div class="field"><label>Name *</label><input class="input" name="person_name" required placeholder="e.g. Maria Santos"></div>
+    </div>
+    <div class="actions"><button class="btn" type="submit">+ Add Name</button></div>
+  </form>
+</div>
+
+<div class="panel" style="margin-top:18px">
   <h2>Division/Department List</h2>
   <div class="table-wrap"><table class="table">
     <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit Count</th><th>Actions</th></tr>
@@ -152,13 +207,15 @@ pageStart('Area/Unit Management');
 <div class="panel" style="margin-top:18px">
   <h2>Area/Unit List</h2>
   <div class="table-wrap"><table class="table">
-    <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Created</th><th>Actions</th></tr>
+    <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
     <?php foreach($rows as $r): ?>
+      <?php $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id'])); ?>
       <tr>
         <td><?=e($r['division_name'])?></td>
         <td><?=e($r['division_head'])?></td>
         <td><?=e($r['name'])?></td>
         <td><?=e($r['code']??'')?></td>
+        <td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td>
         <td><?=e($r['created_at'])?></td>
         <td><div class="actions">
           <a class="btn secondary" href="areas.php?edit=<?=e($r['id'])?>">Edit</a>
@@ -171,7 +228,26 @@ pageStart('Area/Unit Management');
         </div></td>
       </tr>
     <?php endforeach; ?>
-    <?php if(!$rows): ?><tr><td colspan="6">No Area/Unit records found.</td></tr><?php endif; ?>
+    <?php if(!$rows): ?><tr><td colspan="7">No Area/Unit records found.</td></tr><?php endif; ?>
+  </table></div>
+</div>
+
+<div class="panel" style="margin-top:18px">
+  <h2>Names List</h2>
+  <div class="table-wrap"><table class="table">
+    <tr><th>Division/Department</th><th>Area/Unit</th><th>Name</th><th>Created</th><th>Actions</th></tr>
+    <?php foreach($people as $p): ?>
+      <tr>
+        <td><?=e($p['division_name'])?></td><td><?=e($p['area_name'])?></td><td><?=e($p['name'])?></td><td><?=e($p['created_at'])?></td>
+        <td><form method="post" style="display:inline" onsubmit="return confirm('Remove this name from the Area/Unit?');">
+          <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+          <input type="hidden" name="action" value="delete_person">
+          <input type="hidden" name="person_id" value="<?=e($p['id'])?>">
+          <button class="btn danger" type="submit">Delete</button>
+        </form></td>
+      </tr>
+    <?php endforeach; ?>
+    <?php if(!$people): ?><tr><td colspan="5">No names have been added yet.</td></tr><?php endif; ?>
   </table></div>
 </div>
 <?php pageEnd();
