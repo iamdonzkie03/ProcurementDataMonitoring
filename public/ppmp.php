@@ -364,7 +364,7 @@ function ppmpPrintDate($value): string{
         <th>Source of Funds</th>
         <th>Unit Cost</th>
         <th>Estimated Budget / Authorized Budgetary Allocation (PhP)</th>
-        <th></th><th></th>
+        <th colspan="2">ATTACHED SUPPORTING DOCUMENTS / REMARKS</th>
       </tr>
       <tr class="subhead"><th>Column 1</th><th>Column 2</th><th>Quantity</th><th>Unit or Measurement/Size</th><th>Column 4</th><th>Column 5</th><th>Column 6</th><th>Column 7</th><th>Column 8</th><th>Column 9</th><th>Column 9A</th><th>Column 10</th><th>Column 11</th><th>Column 12</th></tr>
     </thead>
@@ -385,10 +385,14 @@ if(!empty($r['supporting_documents'])){
   }
 }
 echo $printDocs ? implode('<br>',array_map('e',$printDocs)) : '';
-?></td><td><?=nl2br(e($r['remarks']))?></td>
+$printRemarks=trim((string)($r['remarks']??''));
+if($printRemarks!==''){
+  echo ($printDocs ? '<br><br><b>Remarks:</b><br>' : '<b>Remarks:</b><br>').nl2br(e($printRemarks));
+}
+?></td>
       </tr>
       <?php endforeach; ?>
-      <?php for($i=count($rows);$i<3;$i++): ?><tr class="data-row blank"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><?php endfor; ?>
+      <?php for($i=count($rows);$i<3;$i++): ?><tr class="data-row blank"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td colspan="2"></td></tr><?php endfor; ?>
     </tbody>
   </table>
 
