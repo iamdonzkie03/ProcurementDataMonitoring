@@ -137,7 +137,7 @@ $budgetPos=$h['budget_position']??'Budget Section';
 
   <table class="ppmp-official-table">
     <thead>
-      <tr><th colspan="5">PROCUREMENT PROJECT DETAILS</th><th colspan="3">PROJECTED TIMELINE (MM/YYYY)</th><th colspan="3">FUNDING DETAILS</th><th>ATTACHED SUPPORTING<br>DOCUMENTS</th><th>REMARKS</th></tr>
+      <tr><th colspan="6">PROCUREMENT PROJECT DETAILS</th><th colspan="3">PROJECTED TIMELINE (MM/YYYY)</th><th colspan="3">FUNDING DETAILS</th><th>ATTACHED SUPPORTING<br>DOCUMENTS</th><th>REMARKS</th></tr>
       <tr>
         <th>General Description and Objective<br>of the Project to be Procured</th>
         <th>Type of the Project to be Procured<br>(whether Goods, Infrastructure and Consulting Services)</th>
