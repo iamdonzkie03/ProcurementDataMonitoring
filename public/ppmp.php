@@ -429,6 +429,9 @@ if(area){
 .ppmp-entry .ppmp-quantity-field input{
   text-align:left!important
 }
+.ppmp-entry .ppmp-total-budget{
+  font-size:25px!important
+}
 @media (min-width: 900px){
   .ppmp-entry .ppmp-input-grid:has(.ppmp-quantity-field){
     grid-template-columns:repeat(20,minmax(0,1fr))
