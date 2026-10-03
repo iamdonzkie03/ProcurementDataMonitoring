@@ -404,7 +404,7 @@ function ppmpPrintDate($value): string{
         <th>Unit or Measurement/Size</th>
       </tr>
       <tr class="column-head">
-        <th>Column 1</th><th>Column 2</th><th>Column 3</th><th></th><th>Column 4</th><th>Column 5</th><th>Column 6</th><th>Column 7</th><th>Column 8</th><th>Column 9</th><th>Column 9A</th><th>Column 10</th><th>Column 11</th><th>Column 12</th>
+        <th>Column 1</th><th>Column 2</th><th colspan="2">Column 3</th><th>Column 4</th><th>Column 5</th><th>Column 6</th><th>Column 7</th><th>Column 8</th><th>Column 9</th><th>Column 9A</th><th>Column 10</th><th>Column 11</th><th>Column 12</th>
       </tr>
     </thead>
     <tbody>
