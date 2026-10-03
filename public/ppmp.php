@@ -337,7 +337,7 @@ function ppmpPrintDate($value): string{
   return $timestamp ? date('F d, Y',$timestamp) : $value;
 }
 ?>
-<div class="ppmp-print-sheet">
+<div class="ppmp-print-sheet paper-long" id="ppmpPrintSheet">
   <div class="ppmp-head">
     <div class="ppmp-brand">
       <div class="ppmp-brand-mark">ZCMC</div>
@@ -457,9 +457,18 @@ function ppmpPrintDate($value): string{
     <div><b>within the budget allocation:</b><div class="signature-line"><?=e($budgetName)?></div><div>Signature over Printed Name</div><div>Supervising Administrative Officer</div><div><i><?=e($budgetPos)?></i></div><div>Date : <?=e(ppmpPrintDate($h['budget_date']??''))?></div></div>
   </div>
 </div>
-<div class="ppmp-print-actions"><button class="btn" onclick="window.print()">Print</button><a class="btn secondary" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>">Back</a></div>
+<div class="ppmp-print-actions">
+  <button class="btn" onclick="printPpmp('long')">Print 8.5 × 13</button>
+  <button class="btn secondary" onclick="printPpmp('a4')">Print A4</button>
+  <a class="btn secondary" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>">Back</a>
+</div>
 <?php endif; ?>
 <script>
+function printPpmp(paper){
+  const sheet=document.getElementById('ppmpPrintSheet');
+  if(sheet){sheet.classList.remove('paper-a4','paper-long');sheet.classList.add(paper==='a4'?'paper-a4':'paper-long');}
+  window.print();
+}
 (function(){
  const fiscalYear=document.getElementById('ppmp_fiscal_year'), ppmpNo=document.getElementById('ppmp_no');
  if(fiscalYear&&ppmpNo&&ppmpNo.dataset.locked!=='1'){
