@@ -201,7 +201,7 @@ pageStart('Project Procurement Management Plan');
         <div class="field"><label>Quantity *</label><input class="input" type="number" step="0.0001" min="0" name="quantity" id="ppmp_quantity" required value="<?=e($editing['quantity']??'')?>"></div>
         <div class="field"><label>Unit or Measurement / Size *</label><select class="select" name="unit" required><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>" <?=((string)($editing['unit']??'')===(string)$u['name'])?'selected':''?>><?=e($u['name'])?></option><?php endforeach;?></select></div>
         <div class="field"><label>Unit Cost (PhP) *</label><input class="input" type="number" step="0.01" min="0" name="unit_price" id="ppmp_unit_price" required value="<?=e($editing['unit_price']??'')?>"></div>
-        <div class="field"><label>Total Budget</label><input class="input" type="number" step="0.01" id="ppmp_total_budget" value="<?=e(((float)($editing['quantity']??0)*(float)($editing['unit_price']??0)) ?: '')?>" readonly></div>
+        <div class="field"><label>Total Budget</label><input class="input ppmp-total-budget" type="text" id="ppmp_total_budget" value="<?=e(((float)($editing['quantity']??0)*(float)($editing['unit_price']??0)) ? number_format((float)$editing['quantity']*(float)$editing['unit_price'],2,'.','') : '')?>" readonly></div>
       </div>
     </div>
 
@@ -244,8 +244,8 @@ pageStart('Project Procurement Management Plan');
 </div>
 <div class="panel ppmp-records">
   <h2>Saved PPMP Items — FY <?=$year?><?= $selectedArea?' / '.e($selectedArea['name']):'' ?></h2>
-  <div class="table-wrap"><table class="table"><tr><th>Item</th><th>Type</th><th>Qty / Unit</th><th>Mode</th><th>Unit Cost</th><th>Budget</th><th>Actions</th></tr>
-  <?php foreach($rows as $r):?><tr><td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['procurement_type'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td><div class="actions ppmp-row-actions"><a class="btn secondary" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>&edit=<?=$r['id']?>">Edit</a><form method="post" style="display:inline" onsubmit="return confirm('Delete this PPMP item? This action cannot be undone.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn danger" type="submit">Delete</button></form></div></td></tr><?php endforeach;?></table></div>
+  <div class="table-wrap"><table class="table"><tr><th>PPMP No.</th><th>Item</th><th>Type</th><th>Qty / Unit</th><th>Mode</th><th>Unit Cost</th><th>Total Budget</th><th>Saved</th><th>Actions</th></tr>
+  <?php foreach($rows as $r):?><tr><td><?=e($r['ppmp_no'])?></td><td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['procurement_type'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td><?=!empty($r['saved_at'])?e(date('F j, Y g:i A',strtotime($r['saved_at']))):e(date('F j, Y g:i A',strtotime($r['created_at'])))?></td><td><div class="actions ppmp-row-actions"><a class="btn secondary" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>&edit=<?=$r['id']?>">Edit</a><form method="post" style="display:inline" onsubmit="return confirm('Delete this PPMP item? This action cannot be undone.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn danger" type="submit">Delete</button></form></div></td></tr><?php endforeach;?></table></div>
 </div>
 <?php else: ?>
 <?php
@@ -329,6 +329,10 @@ if(area){
   if(requested)requested.addEventListener('change',syncPreparedPosition);
   syncSupervisor(); syncRequested();
 }
+ const quantity=document.getElementById('ppmp_quantity'), unitPrice=document.getElementById('ppmp_unit_price'), totalBudget=document.getElementById('ppmp_total_budget');
+ function syncTotalBudget(){if(!quantity||!unitPrice||!totalBudget)return; const q=parseFloat(quantity.value)||0, p=parseFloat(unitPrice.value)||0; totalBudget.value=(q*p).toFixed(2);}
+ if(quantity&&unitPrice){quantity.addEventListener('input',syncTotalBudget);unitPrice.addEventListener('input',syncTotalBudget);syncTotalBudget();}
+
 })();
 </script>
 <?php pageEnd();) THEN CAST(RIGHT(ppmp_no,4) AS UNSIGNED) ELSE 0 END) FROM ppmp_items WHERE fiscal_year=?");
