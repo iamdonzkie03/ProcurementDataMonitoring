@@ -10,3 +10,6 @@ CREATE TABLE IF NOT EXISTS area_personnel (
   UNIQUE KEY uq_area_personnel_name (area_id,name),
   INDEX idx_area_personnel_area (area_id)
 ) ENGINE=InnoDB;
+
+
+ALTER TABLE area_personnel ADD COLUMN position_designation VARCHAR(150) NULL AFTER name;
