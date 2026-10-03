@@ -215,10 +215,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
 
     $existingPeopleByName=[];
+    $oldSignaturePaths=[];
     $oldSt=$pdo->prepare('SELECT name,electronic_signature FROM area_personnel WHERE area_id=?');
     $oldSt->execute([$areaId]);
     foreach($oldSt->fetchAll() as $oldPerson){
-      $existingPeopleByName[mb_strtolower(trim((string)$oldPerson['name']))]=(string)($oldPerson['electronic_signature']??'');
+      $oldSignature=(string)($oldPerson['electronic_signature']??'');
+      $existingPeopleByName[mb_strtolower(trim((string)$oldPerson['name']))]=$oldSignature;
+      if($oldSignature!=='') $oldSignaturePaths[$oldSignature]=true;
     }
 
     $st=$pdo->prepare('DELETE FROM area_personnel WHERE area_id=?');
@@ -235,6 +238,17 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
 
     $pdo->commit();
+
+    // Remove obsolete signature files only after the database save succeeds.
+    // A signature is retained if the saved personnel record still references it.
+    foreach(array_keys($oldSignaturePaths) as $oldSignaturePath){
+      $stStillUsed=$pdo->prepare('SELECT COUNT(*) FROM area_personnel WHERE electronic_signature=?');
+      $stStillUsed->execute([$oldSignaturePath]);
+      if((int)$stStillUsed->fetchColumn()===0){
+        $oldFile=__DIR__.'/'.$oldSignaturePath;
+        if(is_file($oldFile)) @unlink($oldFile);
+      }
+    }
 
     flash('success',$successMessage);
   }catch(PDOException $e){
