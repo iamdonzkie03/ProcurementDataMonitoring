@@ -171,119 +171,66 @@ if($divisionEditId>0){
 pageStart('Area/Unit Management');
 ?>
 <div class="management-columns">
-  <div class="management-column">
-    <div class="panel">
-  <div class="toolbar"><div><h2><?= $divisionEditing ? 'Edit Division/Department' : 'Division/Department Management' ?></h2><p>Each Division/Department has exactly one designated Head. Multiple Area/Units may be assigned under the same Division/Department.</p></div></div>
-  <form method="post">
-    <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-    <input type="hidden" name="action" value="<?= $divisionEditing ? 'update_division' : 'save_division' ?>">
-    <?php if($divisionEditing): ?><input type="hidden" name="division_id" value="<?=e($divisionEditing['id'])?>"><?php endif; ?>
-    <div class="form-grid">
-      <div class="field"><label>Division/Department Name</label><input class="input" name="division_name" required placeholder="e.g. Medical Service" value="<?=e($divisionEditing['name']??'')?>"></div>
-      <div class="field"><label>Division/Department Head</label><input class="input" name="division_head" required placeholder="e.g. Juan Dela Cruz" value="<?=e($divisionEditing['division_head']??'')?>"></div>
-    </div>
-    <div class="actions">
-      <button class="btn" type="submit"><?= $divisionEditing ? 'Save Division/Department' : '+ Add Division/Department' ?></button>
-      <?php if($divisionEditing): ?><a class="btn secondary" href="areas.php">Cancel</a><?php endif; ?>
-    </div>
-  </form>
-</div>
-
-
-
-
-    <div class="management-inner-list">
-    <div class="panel" style="margin-top:0">
-  <h2>Division/Department List</h2>
-  <div class="table-wrap"><table class="table">
-    <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit Count</th><th>Actions</th></tr>
-    <?php foreach($divisions as $d): $cnt=0; foreach($rows as $r){if((int)$r['division_id']===(int)$d['id'])$cnt++;} ?>
-      <tr><td><?=e($d['name'])?></td><td><?=e($d['division_head'])?></td><td><?=e($cnt)?></td><td><a class="btn secondary" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a></td></tr>
-    <?php endforeach; ?>
-    <?php if(!$divisions): ?><tr><td colspan="4">No Division/Department records found.</td></tr><?php endif; ?>
-  </table></div>
-</div>
-  <div class="management-column">
-    <div class="panel area-unit-add-panel">
-  <h2><?= $editing ? 'Edit Area/Unit' : 'Add Area/Unit' ?></h2>
-  <p>Area/Units inherit the Division/Department Head from their selected Division/Department and can contain multiple names.</p>
-  <form method="post">
-    <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-    <input type="hidden" name="action" value="<?= $editing ? 'edit' : 'add' ?>">
-    <?php if($editing): ?><input type="hidden" name="id" value="<?=e($editing['id'])?>"><?php endif; ?>
-    <div class="form-grid">
-      <div class="field"><label>Division/Department *</label><select class="select" name="division_id" required><option value="">Select Division/Department</option><?php foreach($divisions as $d): ?><option value="<?=e($d['id'])?>" <?=((int)($editing['division_id']??0)===(int)$d['id'])?'selected':''?>><?=e($d['name'])?> — Head: <?=e($d['division_head'])?></option><?php endforeach; ?></select></div>
-      <div class="field"><label>Area/Unit Name *</label><input class="input" name="name" required placeholder="e.g. Operating Room" value="<?=e($editing['name']??'')?>"></div>
-      <div class="field"><label>Code <small>(optional)</small></label><input class="input" name="code" placeholder="e.g. OR" value="<?=e($editing['code']??'')?>"></div>
-      <div class="field full">
-        <label>Names Under This Area/Unit</label>
-        <div id="area-names-list">
-          <?php
-          $editingPeople=[];
-          if($editing){
-            $stPeople=$pdo->prepare('SELECT id,name FROM area_personnel WHERE area_id=? ORDER BY name');
-            $stPeople->execute([$editing['id']]);
-            $editingPeople=$stPeople->fetchAll();
-          }
-          ?>
-          <?php if($editingPeople): foreach($editingPeople as $person): ?>
-            <div class="area-name-row" style="display:flex;gap:8px;margin-bottom:8px">
-              <input class="input" name="names[]" value="<?=e($person['name'])?>" placeholder="e.g. Maria Santos">
-              <button class="btn danger remove-area-name" type="button">Remove</button>
-            </div>
-          <?php endforeach; else: ?>
-            <div class="area-name-row" style="display:flex;gap:8px;margin-bottom:8px">
-              <input class="input" name="names[]" placeholder="e.g. Maria Santos">
-              <button class="btn danger remove-area-name" type="button">Remove</button>
-            </div>
-          <?php endif; ?>
+  <div class="management-column panel">
+    <div class="management-section">
+      <div class="toolbar"><div><h2><?= $divisionEditing ? 'Edit Division/Department' : 'Division/Department Management' ?></h2><p>Each Division/Department has exactly one designated Head. Multiple Area/Units may be assigned under the same Division/Department.</p></div></div>
+      <form method="post">
+        <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+        <input type="hidden" name="action" value="<?= $divisionEditing ? 'update_division' : 'save_division' ?>">
+        <?php if($divisionEditing): ?><input type="hidden" name="division_id" value="<?=e($divisionEditing['id'])?>"><?php endif; ?>
+        <div class="form-grid">
+          <div class="field"><label>Division/Department Name</label><input class="input" name="division_name" required placeholder="e.g. Medical Service" value="<?=e($divisionEditing['name']??'')?>"></div>
+          <div class="field"><label>Division/Department Head</label><input class="input" name="division_head" required placeholder="e.g. Juan Dela Cruz" value="<?=e($divisionEditing['division_head']??'')?>"></div>
         </div>
-        <button class="btn secondary" type="button" id="add-area-name">+ Add Another Name</button>
-        <small class="muted">Add as many names as needed for this Area/Unit.</small>
+        <div class="actions"><button class="btn" type="submit"><?= $divisionEditing ? 'Save Division/Department' : '+ Add Division/Department' ?></button><?php if($divisionEditing): ?><a class="btn secondary" href="areas.php">Cancel</a><?php endif; ?></div>
+      </form>
+    </div>
+    <div class="management-inner-list">
+      <div class="management-list-content">
+        <h2>Division/Department List</h2>
+        <div class="table-wrap"><table class="table">
+          <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit Count</th><th>Actions</th></tr>
+          <?php foreach($divisions as $d): $cnt=0; foreach($rows as $r){if((int)$r['division_id']===(int)$d['id'])$cnt++;} ?>
+          <tr><td><?=e($d['name'])?></td><td><?=e($d['division_head'])?></td><td><?=e($cnt)?></td><td><a class="btn secondary" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a></td></tr>
+          <?php endforeach; ?>
+          <?php if(!$divisions): ?><tr><td colspan="4">No Division/Department records found.</td></tr><?php endif; ?>
+        </table></div>
       </div>
     </div>
-    <div class="actions">
-      <button class="btn" type="submit"><?= $editing ? 'Save Changes' : '+ Add Area/Unit' ?></button>
-      <?php if($editing): ?><a class="btn secondary" href="areas.php">Cancel</a><?php endif; ?>
+  </div>
+  <div class="management-column panel">
+    <div class="management-section area-unit-add-panel">
+      <h2><?= $editing ? 'Edit Area/Unit' : 'Add Area/Unit' ?></h2>
+      <p>Area/Units inherit the Division/Department Head from their selected Division/Department and can contain multiple names.</p>
+      <form method="post">
+        <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+        <input type="hidden" name="action" value="<?= $editing ? 'edit' : 'add' ?>">
+        <?php if($editing): ?><input type="hidden" name="id" value="<?=e($editing['id'])?>"><?php endif; ?>
+        <div class="form-grid">
+          <div class="field"><label>Division/Department *</label><select class="select" name="division_id" required><option value="">Select Division/Department</option><?php foreach($divisions as $d): ?><option value="<?=e($d['id'])?>" <?=((int)($editing['division_id']??0)===(int)$d['id'])?'selected':''?>><?=e($d['name'])?> — Head: <?=e($d['division_head'])?></option><?php endforeach; ?></select></div>
+          <div class="field"><label>Area/Unit Name *</label><input class="input" name="name" required placeholder="e.g. Operating Room" value="<?=e($editing['name']??'')?>"></div>
+          <div class="field"><label>Code <small>(optional)</small></label><input class="input" name="code" placeholder="e.g. OR" value="<?=e($editing['code']??'')?>"></div>
+          <div class="field full"><label>Names Under This Area/Unit</label><div id="area-names-list">
+          <?php $editingPeople=[]; if($editing){$stPeople=$pdo->prepare('SELECT id,name FROM area_personnel WHERE area_id=? ORDER BY name');$stPeople->execute([$editing['id']]);$editingPeople=$stPeople->fetchAll();} ?>
+          <?php if($editingPeople): foreach($editingPeople as $person): ?><div class="area-name-row" style="display:flex;gap:8px;margin-bottom:8px"><input class="input" name="names[]" value="<?=e($person['name'])?>" placeholder="e.g. Maria Santos"><button class="btn danger remove-area-name" type="button">Remove</button></div><?php endforeach; else: ?><div class="area-name-row" style="display:flex;gap:8px;margin-bottom:8px"><input class="input" name="names[]" placeholder="e.g. Maria Santos"><button class="btn danger remove-area-name" type="button">Remove</button></div><?php endif; ?>
+          </div><button class="btn secondary" type="button" id="add-area-name">+ Add Another Name</button><small class="muted">Add as many names as needed for this Area/Unit.</small></div>
+        </div>
+        <div class="actions"><button class="btn" type="submit"><?= $editing ? 'Save Changes' : '+ Add Area/Unit' ?></button><?php if($editing): ?><a class="btn secondary" href="areas.php">Cancel</a><?php endif; ?></div>
+      </form>
     </div>
-  </form>
-</div>
-
-</div>
-
-
-
     <div class="management-inner-list">
-    <div class="panel area-unit-list-panel" style="margin-top:0">
-      <h2>Area/Unit List</h2>
-      <div class="table-wrap"><table class="table">
-        <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
-        <?php foreach($rows as $r): ?>
-          <?php $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id'])); ?>
-          <tr>
-            <td><?=e($r['division_name'])?></td>
-            <td><?=e($r['division_head'])?></td>
-            <td><?=e($r['name'])?></td>
-            <td><?=e($r['code']??'')?></td>
-            <td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td>
-            <td><?=e($r['created_at'])?></td>
-            <td><div class="actions">
-              <a class="btn secondary" href="areas.php?edit=<?=e($r['id'])?>">Edit</a>
-              <form method="post" style="display:inline" onsubmit="return confirm('Delete this Area/Unit? This can only be deleted if it is not used by existing records.');">
-                <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="id" value="<?=e($r['id'])?>">
-                <button class="btn danger" type="submit">Delete</button>
-              </form>
-            </div></td>
-          </tr>
-        <?php endforeach; ?>
-        <?php if(!$rows): ?><tr><td colspan="7">No Area/Unit records found.</td></tr><?php endif; ?>
-      </table></div>
+      <div class="management-list-content area-unit-list-panel">
+        <h2>Area/Unit List</h2>
+        <div class="table-wrap"><table class="table">
+          <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
+          <?php foreach($rows as $r): ?><?php $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id'])); ?>
+          <tr><td><?=e($r['division_name'])?></td><td><?=e($r['division_head'])?></td><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td><td><?=e($r['created_at'])?></td><td><div class="actions"><a class="btn secondary" href="areas.php?edit=<?=e($r['id'])?>">Edit</a><form method="post" style="display:inline" onsubmit="return confirm('Delete this Area/Unit? This can only be deleted if it is not used by existing records.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><button class="btn danger" type="submit">Delete</button></form></div></td></tr>
+          <?php endforeach; ?><?php if(!$rows): ?><tr><td colspan="7">No Area/Unit records found.</td></tr><?php endif; ?>
+        </table></div>
+      </div>
     </div>
   </div>
 </div>
-
 
 <script>
 (function(){
