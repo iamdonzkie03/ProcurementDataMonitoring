@@ -240,9 +240,10 @@ pageStart('Project Procurement Management Plan');
           <select class="select" name="procurement_mode" required><option value="">Select</option><?php foreach($procurementMethods as $method):?><option value="<?=e($method['procurement_method'])?>" <?=((string)($editing['procurement_mode']??'')===(string)$method['procurement_method'])?'selected':''?>><?=e($method['procurement_method'])?></option><?php endforeach;?></select>
         </div>
         <div class="field"><label>Pre-Procurement Conference *</label><select class="select" name="preprocurement_conference" required><option value="">Select</option><option value="Yes" <?=($editing['preprocurement_conference']??'')==='Yes'?'selected':''?>>Yes</option><option value="No" <?=($editing['preprocurement_conference']??'')==='No'?'selected':''?>>No</option><option value="N/A" <?=($editing['preprocurement_conference']??'')==='N/A'?'selected':''?>>N/A</option></select></div>
-        <div class="field"><label>Start of Procurement Activity *</label><input class="input ppmp-long-date" type="date" name="start_procurement" required value="<?=e($editing['start_procurement']??'')?>" title="Format: October 03, 2026"></div>
-        <div class="field"><label>End of Procurement Activity *</label><input class="input ppmp-long-date" type="date" name="end_procurement" required value="<?=e($editing['end_procurement']??'')?>" title="Format: October 03, 2026"></div>
-        <div class="field"><label>Expected Delivery / Implementation Period *</label><input class="input ppmp-long-date" type="date" name="delivery_period" required value="<?=e($editing['delivery_period']??'')?>" title="Format: October 03, 2026"></div>
+        <?php $startDate=!empty($editing['start_procurement'])?date('F d, Y',strtotime($editing['start_procurement'])):''; $endDate=!empty($editing['end_procurement'])?date('F d, Y',strtotime($editing['end_procurement'])):''; $deliveryDate=!empty($editing['delivery_period'])?date('F d, Y',strtotime($editing['delivery_period'])):''; ?>
+        <div class="field"><label>Start of Procurement Activity *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="start_procurement_display" data-date-target="start_procurement" placeholder="October 03, 2026" value="<?=e($startDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="start_procurement_picker" aria-label="Select Start of Procurement Activity"><input type="hidden" name="start_procurement" id="start_procurement"></div></div>
+        <div class="field"><label>End of Procurement Activity *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="end_procurement_display" data-date-target="end_procurement" placeholder="October 03, 2026" value="<?=e($endDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="end_procurement_picker" aria-label="Select End of Procurement Activity"><input type="hidden" name="end_procurement" id="end_procurement"></div></div>
+        <div class="field"><label>Expected Delivery / Implementation Period *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="delivery_period_display" data-date-target="delivery_period" placeholder="October 03, 2026" value="<?=e($deliveryDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="delivery_period_picker" aria-label="Select Expected Delivery / Implementation Period"><input type="hidden" name="delivery_period" id="delivery_period"></div></div>
         <div class="field"><label>Source of Funds *</label><input class="input" name="source_of_funds" required value="<?=e($editing['source_of_funds']??'')?>"></div>
       </div>
     </div>
@@ -402,7 +403,9 @@ if(area){
 </script>
 
 <style>
-.ppmp-entry .ppmp-long-date{font-variant-numeric:tabular-nums}
+.ppmp-date-picker{position:relative;display:flex;align-items:center;gap:8px}
+.ppmp-date-picker .ppmp-date-native{width:42px;height:42px;padding:0;border:1px solid var(--border);border-radius:8px;background:transparent;cursor:pointer}
+.ppmp-long-date{font-variant-numeric:tabular-nums}
 .ppmp-entry .ppmp-quantity-field,
 .ppmp-entry .ppmp-unit-field,
 .ppmp-entry .ppmp-unit-cost-field,
@@ -434,14 +437,31 @@ if(area){
 </style>
 <script>
 (function(){
-  ['start_procurement','end_procurement','delivery_period'].forEach(function(name){
-    const field=document.querySelector('input[name="'+name+'"]');
-    if(!field)return;
-    field.addEventListener('change',function(){
-      if(this.value){
-        const d=new Date(this.value+'T00:00:00');
-        this.title=d.toLocaleDateString('en-US',{month:'long',day:'2-digit',year:'numeric'});
-      }
+  function displayDate(iso){
+    if(!iso)return '';
+    const d=new Date(iso+'T00:00:00');
+    return d.toLocaleDateString('en-US',{month:'long',day:'2-digit',year:'numeric'});
+  }
+  function isoDate(display){
+    const m=String(display||'').trim().match(/^(January|February|March|April|May|June|July|August|September|October|November|December)\\s+(\\d{1,2}),\\s+(\\d{4})$/i);
+    if(!m)return '';
+    const months={january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
+    return m[3]+'-'+String(months[m[1].toLowerCase()]).padStart(2,'0')+'-'+String(m[2]).padStart(2,'0');
+  }
+  document.querySelectorAll('.ppmp-date-picker').forEach(function(box){
+    const display=box.querySelector('.ppmp-long-date'), picker=box.querySelector('.ppmp-date-native'), hidden=box.querySelector('input[type="hidden"]');
+    if(!display||!picker||!hidden)return;
+    const existing=isoDate(display.value);
+    if(existing){picker.value=existing;hidden.value=existing;}
+    picker.addEventListener('change',function(){hidden.value=this.value;display.value=displayDate(this.value);});
+    display.addEventListener('input',function(){
+      const iso=isoDate(this.value);
+      hidden.value=iso;
+      if(iso)picker.value=iso;
+    });
+    display.addEventListener('blur',function(){
+      const iso=isoDate(this.value);
+      if(iso)this.value=displayDate(iso);
     });
   });
 })();
