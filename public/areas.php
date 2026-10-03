@@ -16,55 +16,22 @@ try{
   if(!$cols) $pdo->exec("ALTER TABLE area_personnel ADD COLUMN position_designation VARCHAR(150) NULL AFTER name");
 }catch(PDOException $e){ /* Migration can also be applied manually. */ }
 
-function saveElectronicSignature(array $file): string{
-  $uploadError=(int)($file['error']??UPLOAD_ERR_NO_FILE);
-  if($uploadError!==UPLOAD_ERR_OK){
-    $messages=[
-      UPLOAD_ERR_INI_SIZE=>'The electronic signature exceeds the server upload limit.',
-      UPLOAD_ERR_FORM_SIZE=>'The electronic signature exceeds the form upload limit.',
-      UPLOAD_ERR_PARTIAL=>'The electronic signature upload was incomplete. Please select the file again.',
-      UPLOAD_ERR_NO_FILE=>'No electronic signature file was selected.',
-      UPLOAD_ERR_NO_TMP_DIR=>'The server temporary upload directory is missing.',
-      UPLOAD_ERR_CANT_WRITE=>'The server could not write the uploaded file.',
-      UPLOAD_ERR_EXTENSION=>'The upload was stopped by a PHP extension.'
-    ];
-    throw new RuntimeException($messages[$uploadError]??'Unable to upload the electronic signature.');
-  }
-
-  $tmp=(string)($file['tmp_name']??'');
-  if($tmp==='' || !is_file($tmp) || !is_readable($tmp)){
-    $uploadDir=(string)ini_get('upload_tmp_dir');
-    $uploadDir=$uploadDir!=='' ? $uploadDir : sys_get_temp_dir();
-    throw new RuntimeException('PHP received the upload but the temporary file cannot be read. Please verify that the PHP upload temporary folder exists and is writable: '.$uploadDir);
-  }
-
-  $size=(int)($file['size']??0);
-  if($size<=0) throw new RuntimeException('The electronic signature file is empty.');
-  if($size>2*1024*1024) throw new RuntimeException('Electronic signature must not exceed 2 MB.');
-
-  $mime=false;
-  if(function_exists('mime_content_type')) $mime=@mime_content_type($tmp);
-  if($mime===false || $mime==='') {
-    $finfo=new finfo(FILEINFO_MIME_TYPE);
-    $mime=@$finfo->file($tmp);
-  }
-
+function saveElectronicSignatureData(string $data): string{
+  if($data==='') throw new RuntimeException('No electronic signature was selected.');
+  if(!preg_match('/^data:(image\\/(?:png|jpeg));base64,(.+)$/s',$data,$m)) throw new RuntimeException('Electronic signature must be a PNG or JPG image.');
+  $binary=base64_decode($m[2],true);
+  if($binary===false || $binary==='') throw new RuntimeException('The electronic signature data could not be decoded.');
+  if(strlen($binary)>2*1024*1024) throw new RuntimeException('Electronic signature must not exceed 2 MB.');
+  $imageInfo=@getimagesizefromstring($binary);
+  if($imageInfo===false) throw new RuntimeException('Electronic signature must be a valid PNG or JPG image.');
+  $actualMime=(string)($imageInfo['mime']??'');
   $allowed=['image/png'=>'png','image/jpeg'=>'jpg'];
-  if($mime===false || !isset($allowed[$mime])){
-    throw new RuntimeException('Electronic signature must be a valid PNG or JPG image.');
-  }
-
+  if(!isset($allowed[$actualMime]) || $actualMime!==$m[1]) throw new RuntimeException('Electronic signature must be a valid PNG or JPG image.');
   $dir=__DIR__.'/uploads/signatures';
-  if(!is_dir($dir) && !mkdir($dir,0755,true) && !is_dir($dir)){
-    throw new RuntimeException('Unable to create signature upload folder.');
-  }
-
-  $filename='signature_'.date('YmdHis').'_' . bin2hex(random_bytes(5)).'.'.$allowed[$mime];
+  if(!is_dir($dir) && !mkdir($dir,0755,true) && !is_dir($dir)) throw new RuntimeException('Unable to create signature upload folder.');
+  $filename='signature_'.date('YmdHis').'_' . bin2hex(random_bytes(5)).'.'.$allowed[$actualMime];
   $destination=$dir.'/'.$filename;
-  if(!move_uploaded_file($tmp,$destination)){
-    throw new RuntimeException('Unable to save the electronic signature. Check that C:\\xampp\\tmp and the signature upload folder are writable.');
-  }
-
+  if(file_put_contents($destination,$binary,LOCK_EX)===false) throw new RuntimeException('Unable to save the electronic signature. Check that the signature upload folder is writable.');
   return 'uploads/signatures/'.$filename;
 }
 
@@ -85,9 +52,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $name=trim($_POST['name']??'');
   $code=trim($_POST['code']??'') ?: null;
   $areaSignaturePath=null;
-  if(isset($_FILES['electronic_signature']) && ((int)($_FILES['electronic_signature']['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE || !empty($_FILES['electronic_signature']['name']))){
+  $signatureData=trim((string)($_POST['electronic_signature_data']??''));
+  if($signatureData!==''){
     try{
-      $areaSignaturePath=saveElectronicSignature($_FILES['electronic_signature']);
+      $areaSignaturePath=saveElectronicSignatureData($signatureData);
     }catch(RuntimeException $e){
       flash('error',$e->getMessage());
       header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:'')));
@@ -114,38 +82,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $head=trim($_POST['division_head']??'');
     $headPosition=trim($_POST['head_position_designation']??'');
     $signaturePath=null;
-    if(isset($_FILES['electronic_signature']) && ((int)($_FILES['electronic_signature']['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE || !empty($_FILES['electronic_signature']['name']))){
+    $signatureData=trim((string)($_POST['electronic_signature_data']??''));
+    if($signatureData!==''){
       try{
-        $signaturePath=saveElectronicSignature($_FILES['electronic_signature']);
-      }catch(RuntimeException $e){
-        flash('error',$e->getMessage());
-        header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php'));
-        exit;
-      }
-    }
-    if($divisionName==='' || $head===''){
-      flash('error','Division/Department name and Division/Department Head are required.');
-    }else{
-      try{
-        $st=$pdo->prepare('INSERT INTO divisions(name,division_head,head_position_designation,electronic_signature) VALUES(?,?,?,?)');
-        $st->execute([$divisionName,$head,$headPosition,$signaturePath]);
-        flash('success','Division/Department added with one designated Head.');
-      }catch(PDOException $e){
-        flash('error','The Division/Department name already exists.');
-      }
-    }
-    header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
-  }
-
-  if($action==='update_division'){
-    $divisionId=(int)($_POST['division_id']??0);
-    $divisionName=trim($_POST['division_name']??'');
-    $head=trim($_POST['division_head']??'');
-    $headPosition=trim($_POST['head_position_designation']??'');
-    $signaturePath=null;
-    if(isset($_FILES['electronic_signature']) && ((int)($_FILES['electronic_signature']['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE || !empty($_FILES['electronic_signature']['name']))){
-      try{
-        $signaturePath=saveElectronicSignature($_FILES['electronic_signature']);
+        $signaturePath=saveElectronicSignatureData($signatureData);
       }catch(RuntimeException $e){
         flash('error',$e->getMessage());
         header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php'));
@@ -296,6 +236,7 @@ if(!$embedded) pageStart('Area/Unit Management');
       <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="action" value="<?= $divisionEditing ? 'update_division' : 'save_division' ?>">
+        <input type="hidden" name="electronic_signature_data" value="">
         <?php if($divisionEditing): ?><input type="hidden" name="division_id" value="<?=e($divisionEditing['id'])?>"><?php endif; ?>
         <div class="form-grid">
           <div class="field"><label>Division/Department Name</label><input class="input" name="division_name" required placeholder="e.g. Medical Service" value="<?=e($divisionEditing['name']??'')?>"></div>
@@ -326,6 +267,7 @@ if(!$embedded) pageStart('Area/Unit Management');
       <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="action" value="<?= $editing ? 'edit' : 'add' ?>">
+        <input type="hidden" name="electronic_signature_data" value="">
         <?php if($editing): ?><input type="hidden" name="id" value="<?=e($editing['id'])?>"><?php endif; ?>
         <div class="form-grid">
           <div class="field"><label>Division/Department *</label><select class="select" name="division_id" required><option value="">Select Division/Department</option><?php foreach($divisions as $d): ?><option value="<?=e($d['id'])?>" <?=((int)($editing['division_id']??0)===(int)$d['id'])?'selected':''?>><?=e($d['name'])?> — Head: <?=e($d['division_head'])?></option><?php endforeach; ?></select></div>
@@ -356,7 +298,27 @@ if(!$embedded) pageStart('Area/Unit Management');
 
 <script>
 (function(){
-  const list=document.getElementById('area-names-list');
+  <script>
+(function(){
+  document.querySelectorAll('form[enctype="multipart/form-data"]').forEach(function(form){
+    const fileInput=form.querySelector('input[type="file"][name="electronic_signature"]');
+    const dataInput=form.querySelector('input[name="electronic_signature_data"]');
+    if(!fileInput||!dataInput) return;
+    form.addEventListener('submit',function(event){
+      const file=fileInput.files && fileInput.files[0];
+      if(!file) return;
+      event.preventDefault();
+      if(file.size>2*1024*1024){ alert('Electronic signature must not exceed 2 MB.'); return; }
+      if(file.type!=='image/png' && file.type!=='image/jpeg'){ alert('Electronic signature must be a PNG or JPG image.'); return; }
+      const reader=new FileReader();
+      reader.onload=function(){ dataInput.value=String(reader.result||''); fileInput.value=''; form.submit(); };
+      reader.onerror=function(){ alert('Unable to read the selected electronic signature file.'); };
+      reader.readAsDataURL(file);
+    });
+  });
+})();
+</script>
+const list=document.getElementById('area-names-list');
   const add=document.getElementById('add-area-name');
   if(!list||!add) return;
   add.addEventListener('click',function(){
