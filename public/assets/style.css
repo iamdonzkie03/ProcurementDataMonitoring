@@ -444,3 +444,9 @@ body{font-size:11px!important}
 .ppmp-records .table td{vertical-align:middle!important;}
 .ppmp-records .table td:last-child{vertical-align:middle!important;text-align:center!important;}
 .ppmp-row-actions{height:100%;align-items:center;justify-content:center;}
+
+/* Exact alignment for Saved PPMP Items Edit/Delete controls */
+.ppmp-records .ppmp-actions-cell{padding:11px 9px!important;vertical-align:middle!important;text-align:center!important;}
+.ppmp-records .ppmp-row-actions{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:8px!important;width:max-content!important;margin:0 auto!important;height:36px!important;}
+.ppmp-records .ppmp-row-actions .ppmp-action-btn{display:flex!important;align-items:center!important;justify-content:center!important;width:82px!important;min-width:82px!important;max-width:82px!important;height:36px!important;min-height:36px!important;max-height:36px!important;box-sizing:border-box!important;padding:0!important;margin:0!important;border:0!important;line-height:36px!important;font-size:11px!important;text-align:center!important;vertical-align:middle!important;}
+.ppmp-records .ppmp-delete-form{display:block!important;width:82px!important;height:36px!important;margin:0!important;padding:0!important;line-height:0!important;}
