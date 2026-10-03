@@ -97,3 +97,57 @@ body{font-size:11px!important}
 .content .table th,.content .card .label,.content .card .hint{font-size:11px!important}.content .metric{font-size:20px!important}
 .login-page,.login-card{font-family:'Inconsolata',monospace!important}
 .ppmp-print-sheet{font-family:Arial,Helvetica,sans-serif!important}
+
+
+/* Navigation hover and transition effects */
+.sidebar-nav > a,
+.sidebar-group-title,
+.sidebar-submenu a{
+  transition:background-color .2s ease,color .2s ease,box-shadow .2s ease,transform .2s ease,opacity .2s ease!important;
+}
+.sidebar-nav > a:hover,
+.sidebar-group-title:hover{
+  background:rgba(255,255,255,.12)!important;
+  color:#fff!important;
+}
+.sidebar-nav > a:hover{transform:translateY(-1px)}
+.sidebar-nav > a:focus-visible,
+.sidebar-group-title:focus-visible,
+.sidebar-submenu a:focus-visible{
+  outline:2px solid rgba(255,255,255,.65);
+  outline-offset:2px;
+}
+/* Settings opens on hover; click/focus remains supported for keyboard and touch */
+.sidebar-group.settings-menu:hover > .sidebar-submenu,
+.sidebar-group.settings-menu:focus-within > .sidebar-submenu,
+.sidebar-group.settings-menu[open] > .sidebar-submenu{
+  display:block!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transform:translateY(0)!important;
+  pointer-events:auto!important;
+}
+.sidebar-group.settings-menu > .sidebar-submenu{
+  display:block!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  transform:translateY(-7px)!important;
+  pointer-events:none!important;
+  transition:opacity .2s ease,transform .2s ease,visibility .2s ease!important;
+}
+.sidebar-group.settings-menu:hover .sidebar-chevron,
+.sidebar-group.settings-menu:focus-within .sidebar-chevron,
+.sidebar-group.settings-menu[open] .sidebar-chevron{
+  transform:rotate(180deg);
+}
+.sidebar-submenu a:hover{
+  background:rgba(255,255,255,.12)!important;
+  color:#fff!important;
+  transform:translateX(3px);
+}
+.sidebar-submenu a:active,
+.sidebar-nav > a:active,
+.sidebar-group-title:active{transform:scale(.98)}
+@media(prefers-reduced-motion:reduce){
+  .sidebar-nav > a,.sidebar-group-title,.sidebar-submenu a,.sidebar-group.settings-menu > .sidebar-submenu{transition:none!important}
+}
