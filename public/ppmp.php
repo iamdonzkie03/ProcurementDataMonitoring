@@ -324,10 +324,23 @@ pageStart('Project Procurement Management Plan');
 <?php
 $h=$rows[0]??[];
 $ppmpNo=$h['ppmp_no']??'';
-$person=$h['prepared_by']??($selectedArea['authorized_person']??'');
+$person=$h['requested_by']??'';
 $preparedPos=$h['prepared_position']??'End-User or Implementing Unit';
-$submitted=$h['submitted_by']??'';
-$submittedPos=$h['submitted_position']??'Division/Department/Section Unit';
+$submitted=$selectedArea['authorized_person']??($h['authorized_person']??'');
+$submittedPos='Supervisor / Authorized Person';
+$printSupportingDocuments=[];
+foreach($rows as $printRow){
+  if(empty($printRow['supporting_documents'])) continue;
+  $docs=json_decode((string)$printRow['supporting_documents'],true);
+  if(is_array($docs)){
+    foreach($docs as $doc){
+      if(!is_array($doc)) continue;
+      $docName=trim((string)($doc['name']??$doc['original_name']??'PDF document'));
+      if($docName!=='') $printSupportingDocuments[$docName]=true;
+    }
+  }
+}
+$printSupportingLabels=array_keys($printSupportingDocuments);
 $budgetName=$h['budget_approved_by']??'';
 $budgetPos=$h['budget_position']??'Budget Section';
 ?>
@@ -365,7 +378,21 @@ $budgetPos=$h['budget_position']??'Budget Section';
     <tbody>
       <?php foreach($rows as $r): ?>
       <tr class="data-row">
-        <td><?=nl2br(e($r['description']))?></td><td><?=e($r['procurement_type'])?></td><td><?=rtrim(rtrim(number_format($r['quantity'],4,'.',''), '0'),'.')?></td><td><?=e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td><?=e($r['preprocurement_conference'])?></td><td><?=e($r['start_procurement'])?></td><td><?=e($r['end_procurement'])?></td><td><?=e($r['delivery_period'])?></td><td><?=e($r['source_of_funds'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td><?=nl2br(e($r['supporting_documents']))?></td><td><?=nl2br(e($r['remarks']))?></td>
+        <td><?=nl2br(e($r['description']))?></td><td><?=e($r['procurement_type'])?></td><td><?=rtrim(rtrim(number_format($r['quantity'],4,'.',''), '0'),'.')?></td><td><?=e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td><?=e($r['preprocurement_conference'])?></td><td><?=e($r['start_procurement'])?></td><td><?=e($r['end_procurement'])?></td><td><?=e($r['delivery_period'])?></td><td><?=e($r['source_of_funds'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td><?php
+$printDocs=[];
+if(!empty($r['supporting_documents'])){
+  $decodedDocs=json_decode((string)$r['supporting_documents'],true);
+  if(is_array($decodedDocs)){
+    foreach($decodedDocs as $doc){
+      if(is_array($doc)){
+        $docName=trim((string)($doc['name']??$doc['original_name']??'PDF document'));
+        if($docName!=='') $printDocs[]=$docName;
+      }
+    }
+  }
+}
+echo $printDocs ? implode('<br>',array_map('e',$printDocs)) : '';
+?></td><td><?=nl2br(e($r['remarks']))?></td>
       </tr>
       <?php endforeach; ?>
       <?php for($i=count($rows);$i<3;$i++): ?><tr class="data-row blank"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><?php endfor; ?>
