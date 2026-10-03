@@ -118,7 +118,16 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:''))); exit;
   }
 
-  $names=array_values(array_unique(array_filter(array_map('trim',$_POST['names']??[]),fn($v)=>$v!=='')));
+  $names=array_map('trim',$_POST['names']??[]);
+  $positions=array_map('trim',$_POST['positions']??[]);
+  $personnel=[];
+  foreach($names as $i=>$personName){
+    if($personName!=='') $personnel[]=[$personName,$positions[$i]??''];
+  }
+  $personnel=array_values(array_reduce($personnel,function($carry,$row){
+    foreach($carry as $existing){ if(strcasecmp($existing[0],$row[0])===0) return $carry; }
+    $carry[]=$row; return $carry;
+  },[]));
 
   try{
     $pdo->beginTransaction();
@@ -139,10 +148,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $st=$pdo->prepare('DELETE FROM area_personnel WHERE area_id=?');
     $st->execute([$areaId]);
 
-    if($names){
-      $ins=$pdo->prepare('INSERT INTO area_personnel(area_id,name) VALUES(?,?)');
-      foreach($names as $personName){
-        $ins->execute([$areaId,$personName]);
+    if($personnel){
+      $ins=$pdo->prepare('INSERT INTO area_personnel(area_id,name,position_designation) VALUES(?,?,?)');
+      foreach($personnel as [$personName,$position]){
+        $ins->execute([$areaId,$personName,$position]);
       }
     }
 
