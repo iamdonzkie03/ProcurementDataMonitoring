@@ -101,6 +101,14 @@ CREATE TABLE IF NOT EXISTS purchase_requests (
   INDEX idx_pr_area (area_id)
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS procurement_methods (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  procurement_method VARCHAR(150) NOT NULL UNIQUE,
+  details TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS units_of_measure (id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY, name VARCHAR(80) NOT NULL UNIQUE, status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB;
 
 INSERT INTO units_of_measure(name) VALUES ('Unit'),('Piece'),('Lot'),('Vial'),('Box'),('Pack'),('Set'),('Bottle'),('Can'),('Roll'),('Ream'),('Meter'),('Kilogram'),('Liter') ON DUPLICATE KEY UPDATE name=VALUES(name);
