@@ -1,7 +1,7 @@
 <?php require_once __DIR__.'/../config/config.php';
 function pageStart(string $title): void { $u=currentUser(); ?>
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=e($title)?> | Procurement Data Monitoring</title><link rel="stylesheet" href="assets/style.css"></head><body>
-<div class="app"><aside class="sidebar"><div class="brand"><span class="brand-mark">P</span><div><b>Procurement</b><small>Data Monitoring</small></div></div><nav aria-label="Primary navigation">
+<div class="app"><aside class="sidebar"><div class="brand"><span class="brand-mark">P</span><div><b>Procurement</b><small>Data Monitoring</small></div></div><nav class="sidebar-nav" aria-label="Primary navigation">
 <a href="index.php">▦ <span>Dashboard</span></a>
 <div class="sidebar-divider"></div>
 <?php if(hasRole(['Administrator','Editor','Viewer'])): ?>
@@ -14,10 +14,16 @@ function pageStart(string $title): void { $u=currentUser(); ?>
 <a href="app.php">▥ <span>Annual Procurement Plan</span></a>
 <?php endif; ?>
 <div class="sidebar-divider"></div>
-<?php if(hasRole(['Administrator','Editor'])): ?>
-<div class="sidebar-group">
-  <a href="settings.php" class="sidebar-group-title">⚙ <span>Settings</span><span class="sidebar-chevron">▾</span></a>
-  <div class="sidebar-submenu">
+<?php
+$settingsOpen = in_array(basename($_SERVER['PHP_SELF'] ?? ''), ['settings.php','areas.php','units.php'], true);
+if(hasRole(['Administrator','Editor'])):
+?>
+<div class="sidebar-group <?= $settingsOpen ? 'is-open' : '' ?>">
+  <button type="button" class="sidebar-group-title" data-sidebar-accordion aria-expanded="<?= $settingsOpen ? 'true' : 'false' ?>" aria-controls="settings-submenu">
+    <span class="sidebar-group-label">⚙ <span>Settings</span></span>
+    <span class="sidebar-chevron" aria-hidden="true">▾</span>
+  </button>
+  <div id="settings-submenu" class="sidebar-submenu" <?= $settingsOpen ? '' : 'hidden' ?>>
     <a href="settings.php?tab=procurement-method">↳ <span>Procurement Method</span></a>
     <a href="settings.php?tab=classification">↳ <span>Classification</span></a>
     <a href="settings.php?tab=category">↳ <span>Category</span></a>
