@@ -217,7 +217,7 @@ pageStart('Project Procurement Management Plan');
 
     <div class="ppmp-section">
       <h3>2. Procurement Project Details</h3>
-      <div class="ppmp-input-grid">
+      <div class="ppmp-project-fields">
         <div class="field"><label>Category *</label>
           <select class="select" name="category_id" required><option value="">Select</option><?php foreach($cats as $c):?><option value="<?=$c['id']?>" <?=((int)($editing['category_id']??0)===(int)$c['id'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select>
         </div>
@@ -225,6 +225,9 @@ pageStart('Project Procurement Management Plan');
           <select class="select" name="procurement_type" required><option value="">Select</option><?php foreach($classifications as $c):?><option value="<?=e($c['name'])?>" <?=((string)($editing['procurement_type']??'')===(string)$c['name'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select>
         </div>
         <div class="field"><label>Item Name *</label><input class="input" name="item_name" required value="<?=e($editing['item_name']??'')?>"></div>
+      </div>
+
+      <div class="ppmp-input-grid">
         <div class="field full"><label>General Description / Technical Specifications *</label><textarea class="input" name="description" rows="4" required><?=e($editing['description']??'')?></textarea></div>
         <div class="field ppmp-quantity-field"><label>Quantity *</label><input class="input ppmp-money-input" type="text" inputmode="decimal" name="quantity" id="ppmp_quantity" required value="<?=e(!empty($editing['quantity']) ? number_format((float)$editing['quantity'],2,'.','') : '')?>"></div>
         <div class="field ppmp-unit-field"><label>Unit or Measurement / Size *</label><select class="select" name="unit" required><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>" <?=((string)($editing['unit']??'')===(string)$u['name'])?'selected':''?>><?=e($u['name'])?></option><?php endforeach;?></select></div>
@@ -412,6 +415,13 @@ if(area){
 .ppmp-entry .ppmp-total-field{
   min-width:0
 }
+.ppmp-entry .ppmp-project-fields{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.4fr);
+  gap:16px;
+  align-items:end
+}
+.ppmp-entry .ppmp-project-fields .field{min-width:0}
 .ppmp-entry .ppmp-quantity-field{grid-column:span 3}
 .ppmp-entry .ppmp-unit-field{grid-column:span 6}
 .ppmp-entry .ppmp-unit-cost-field{grid-column:span 4}
@@ -429,6 +439,7 @@ if(area){
   .ppmp-entry .ppmp-total-field{grid-column:span 7}
 }
 @media (max-width: 899px){
+  .ppmp-entry .ppmp-project-fields{grid-template-columns:1fr}
   .ppmp-entry .ppmp-quantity-field,
   .ppmp-entry .ppmp-unit-field,
   .ppmp-entry .ppmp-unit-cost-field,
