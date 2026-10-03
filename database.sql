@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS ppmp_items (
   delivery_period VARCHAR(80) NULL,
   source_of_funds VARCHAR(150) NULL,
   unit_price DECIMAL(18,2) NOT NULL DEFAULT 0,
+  total_budget DECIMAL(18,2) NOT NULL DEFAULT 0,
   supporting_documents TEXT NULL,
   requested_by VARCHAR(150) NULL,
   prepared_by VARCHAR(150) NULL,
