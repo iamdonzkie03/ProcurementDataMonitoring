@@ -125,47 +125,96 @@ pageStart('Project Procurement Management Plan');
 
 <div class="ppmp-entry panel" id="ppmpForm">
   <h2><?= $editing ? 'Edit PPMP Item' : 'Project Procurement Management Plan — Data Entry' ?></h2>
-  <p class="muted">The fields below correspond to the official PPMP Form. Saved entries are rendered in the print layout below.</p>
-  <form method="post">
+  <p class="muted">Complete the four sections below. Requested By personnel are based on the selected End-User / Implementing Unit.</p>
+  <form method="post" enctype="multipart/form-data">
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="<?= $editing ? 'edit' : 'add' ?>">
     <?php if($editing): ?><input type="hidden" name="id" value="<?=e($editing['id'])?>"><?php endif; ?>
-    <div class="ppmp-input-grid">
-      <div class="field"><label>Fiscal Year *</label>
-        <select class="select" name="fiscal_year" required>
-          <?php foreach($entryFiscalYears as $entryYear): ?>
-            <option value="<?=$entryYear?>" <?=((int)($editing['fiscal_year']??$year)===$entryYear)?'selected':''?>><?=$entryYear?></option>
-          <?php endforeach; ?>
-        </select>
+
+    <div class="ppmp-section">
+      <h3>1. PPMP Identification and Requesting Personnel</h3>
+      <div class="ppmp-input-grid">
+        <div class="field"><label>Fiscal Year *</label>
+          <select class="select" name="fiscal_year" required>
+            <?php foreach($entryFiscalYears as $entryYear): ?>
+              <option value="<?=$entryYear?>" <?=((int)($editing['fiscal_year']??$year)===$entryYear)?'selected':''?>><?=$entryYear?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="field"><label>PPMP No.</label><input class="input" name="ppmp_no" id="ppmp_no" readonly value="<?=e($editing['ppmp_no']??'')?>" placeholder="Auto-generated"></div>
+        <div class="field"><label>End-User / Implementing Unit *</label>
+          <select class="select" name="area_id" id="ppmp_area" required>
+            <option value="">Select</option>
+            <?php foreach($areas as $a):?>
+              <option value="<?=$a['id']?>" data-person="<?=e($a['authorized_person']??'')?>" <?=((int)($editing['area_id']??0)===(int)$a['id'])?'selected':''?>><?=e($a['name'])?></option>
+            <?php endforeach;?>
+          </select>
+        </div>
+        <div class="field"><label>Supervisor / Authorized Person *</label><input class="input" id="ppmp_person" name="prepared_by" value="<?=e($editing['prepared_by']??'')?>" readonly required></div>
+        <div class="field"><label>Requested By</label>
+          <select class="select" name="requested_by" id="ppmp_requested_by" data-current="<?=e($editing['requested_by']??'')?>">
+            <option value="">Select</option>
+            <?php foreach($personnelByArea as $personAreaId=>$people): foreach($people as $person): ?>
+              <option value="<?=e($person['name'])?>" data-area-id="<?=$personAreaId?>" data-position="<?=e($person['position_designation']??'')?>"><?=e($person['name'])?></option>
+            <?php endforeach; endforeach; ?>
+          </select>
+        </div>
+        <div class="field"><label>Prepared Position / Designation</label><input class="input" id="ppmp_prepared_position" name="prepared_position" value="<?=e($editing['prepared_position']??'')?>" readonly></div>
       </div>
-      <div class="field"><label>PPMP No. *</label><input class="input" name="ppmp_no" required placeholder="e.g. PPMP-2027-001" value="<?=e($editing['ppmp_no']??'')?>"></div>
-      <div class="field"><label>End-User / Implementing Unit *</label><select class="select" name="area_id" id="ppmp_area" required><option value="">Select</option><?php foreach($areas as $a):?><option value="<?=$a['id']?>" data-person="<?=e($a['authorized_person']??'')?>" <?=((int)($editing['area_id']??0)===(int)$a['id'])? 'selected' : '' ?>><?=e($a['name'])?></option><?php endforeach;?></select></div>
-      <div class="field"><label>Supervisor / Authorized Person *</label><input class="input" id="ppmp_person" name="prepared_by" value="<?=e($editing['prepared_by']??'')?>" readonly required></div>
-      <div class="field"><label>Category *</label><select class="select" name="category_id" required><option value="">Select</option><?php foreach($cats as $c):?><option value="<?=$c['id']?>" <?=((int)($editing['category_id']??0)===(int)$c['id'])? 'selected' : '' ?>><?=e($c['name'])?></option><?php endforeach;?></select></div>
-      <div class="field"><label>Type of Project *</label><select class="select" name="procurement_type" required><option value="">Select</option><option <?=($editing['procurement_type']??'')==='Goods' ? 'selected' : '' ?>>Goods</option><option <?=($editing['procurement_type']??'')==='Infrastructure' ? 'selected' : '' ?>>Infrastructure</option><option <?=($editing['procurement_type']??'')==='Consulting Services' ? 'selected' : '' ?>>Consulting Services</option><option <?=($editing['procurement_type']??'')==='General Support Services' ? 'selected' : '' ?>>General Support Services</option></select></div>
-      <div class="field full"><label>General Description and Objective of the Project to be Procured *</label><textarea class="input" name="description" rows="3" required><?=e($editing['description']??'')?></textarea></div>
-      <div class="field"><label>Item / Project Name *</label><input class="input" name="item_name" required value="<?=e($editing['item_name']??'')?>"></div>
-      <div class="field"><label>Quantity *</label><input class="input" type="number" step="0.0001" min="0" name="quantity" required value="<?=e($editing['quantity']??'')?>"></div>
-      <div class="field"><label>Unit or Measurement / Size *</label><select class="select" name="unit" required><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>" <?=((string)($editing['unit']??'')===(string)$u['name'])? 'selected' : '' ?>><?=e($u['name'])?></option><?php endforeach;?></select></div>
-      <div class="field"><label>Recommended Mode of Procurement *</label><input class="input" name="procurement_mode" required placeholder="e.g. Competitive Bidding, SVP" value="<?=e($editing['procurement_mode']??'')?>"></div>
-      <div class="field"><label>Pre-Procurement Conference *</label><select class="select" name="preprocurement_conference" required><option value="">Select</option><option <?=($editing['preprocurement_conference']??'')==='Yes' ? 'selected' : '' ?>>Yes</option><option <?=($editing['preprocurement_conference']??'')==='No' ? 'selected' : '' ?>>No</option><option <?=($editing['preprocurement_conference']??'')==='N/A' ? 'selected' : '' ?>>N/A</option></select></div>
-      <div class="field"><label>Start of Procurement Activity (MM/YYYY) *</label><input class="input" name="start_procurement" required placeholder="MM/YYYY" value="<?=e($editing['start_procurement']??'')?>"></div>
-      <div class="field"><label>End of Procurement Activity (MM/YYYY) *</label><input class="input" name="end_procurement" required placeholder="MM/YYYY" value="<?=e($editing['end_procurement']??'')?>"></div>
-      <div class="field"><label>Expected Delivery / Implementation Period *</label><input class="input" name="delivery_period" required placeholder="MM/YYYY or As Needed" value="<?=e($editing['delivery_period']??'')?>"></div>
-      <div class="field"><label>Source of Funds *</label><input class="input" name="source_of_funds" required placeholder="GAA, Trust Fund, etc." value="<?=e($editing['source_of_funds']??'')?>"></div>
-      <div class="field"><label>Unit Cost (PhP) *</label><input class="input" type="number" step="0.01" min="0" name="unit_price" required value="<?=e($editing['unit_price']??'')?>"></div>
-      <div class="field"><label>Attached Supporting Documents *</label><input class="input" name="supporting_documents" required placeholder="Technical Specifications / SOW / TOR / Market Scoping" value="<?=e($editing['supporting_documents']??'')?>"></div>
-      <div class="field"><label>Requested By</label><select class="select" name="requested_by" id="ppmp_requested_by" data-current="<?=e($editing['requested_by']??'')?>"><option value="">Select</option><?php foreach($personnelByArea as $personAreaId=>$people): foreach($people as $person): ?><option value="<?=e($person['name'])?>" data-area-id="<?=$personAreaId?>" data-position="<?=e($person['position_designation']??'')?>"><?=e($person['name'])?></option><?php endforeach; endforeach; ?></select></div>
-      <div class="field"><label>Prepared Position / Designation</label><input class="input" id="ppmp_prepared_position" name="prepared_position" value="<?=e($editing['prepared_position']??'')?>" readonly></div>
-      <div class="field"><label>Submitted By</label><input class="input" name="submitted_by" value="<?=e($editing['submitted_by']??'')?>"></div>
-      <div class="field"><label>Submitted Position / Designation</label><input class="input" name="submitted_position" value="<?=e($editing['submitted_position']??'Division/Department/Section Unit')?>"></div>
-      <div class="field"><label>Within the Budget Allocation — Name</label><input class="input" name="budget_approved_by" value="<?=e($editing['budget_approved_by']??'')?>"></div>
-      <div class="field"><label>Budget Position</label><input class="input" name="budget_position" value="<?=e($editing['budget_position']??'Budget Section')?>"></div>
-      <div class="field"><label>Prepared Date</label><input class="input" type="date" name="prepared_date" value="<?=e($editing['prepared_date']??'')?>"></div>
-      <div class="field"><label>Submitted Date</label><input class="input" type="date" name="submitted_date" value="<?=e($editing['submitted_date']??'')?>"></div>
-      <div class="field"><label>Budget Date</label><input class="input" type="date" name="budget_date" value="<?=e($editing['budget_date']??'')?>"></div>
-      <div class="field full"><label>Remarks</label><textarea class="input" name="remarks" rows="2"><?=e($editing['remarks']??'')?></textarea></div>
     </div>
+
+    <div class="ppmp-section">
+      <h3>2. Procurement Project Details</h3>
+      <div class="ppmp-input-grid">
+        <div class="field"><label>Category *</label>
+          <select class="select" name="category_id" required><option value="">Select</option><?php foreach($cats as $c):?><option value="<?=$c['id']?>" <?=((int)($editing['category_id']??0)===(int)$c['id'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select>
+        </div>
+        <div class="field"><label>Type of Project / Classification *</label>
+          <select class="select" name="procurement_type" required><option value="">Select</option><?php foreach($classifications as $c):?><option value="<?=e($c['name'])?>" <?=((string)($editing['procurement_type']??'')===(string)$c['name'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select>
+        </div>
+        <div class="field"><label>Item Name *</label><input class="input" name="item_name" required value="<?=e($editing['item_name']??'')?>"></div>
+        <div class="field full"><label>General Description / Technical Specifications *</label><textarea class="input" name="description" rows="4" required><?=e($editing['description']??'')?></textarea></div>
+        <div class="field"><label>Quantity *</label><input class="input" type="number" step="0.0001" min="0" name="quantity" id="ppmp_quantity" required value="<?=e($editing['quantity']??'')?>"></div>
+        <div class="field"><label>Unit or Measurement / Size *</label><select class="select" name="unit" required><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>" <?=((string)($editing['unit']??'')===(string)$u['name'])?'selected':''?>><?=e($u['name'])?></option><?php endforeach;?></select></div>
+        <div class="field"><label>Unit Cost (PhP) *</label><input class="input" type="number" step="0.01" min="0" name="unit_price" id="ppmp_unit_price" required value="<?=e($editing['unit_price']??'')?>"></div>
+        <div class="field"><label>Total Budget</label><input class="input" type="number" step="0.01" id="ppmp_total_budget" value="<?=e(((float)($editing['quantity']??0)*(float)($editing['unit_price']??0)) ?: '')?>" readonly></div>
+      </div>
+    </div>
+
+    <div class="ppmp-section">
+      <h3>3. Procurement Method and Timeline</h3>
+      <div class="ppmp-input-grid">
+        <div class="field"><label>Recommended Mode of Procurement *</label>
+          <select class="select" name="procurement_mode" required><option value="">Select</option><?php foreach($procurementMethods as $method):?><option value="<?=e($method['procurement_method'])?>" <?=((string)($editing['procurement_mode']??'')===(string)$method['procurement_method'])?'selected':''?>><?=e($method['procurement_method'])?></option><?php endforeach;?></select>
+        </div>
+        <div class="field"><label>Pre-Procurement Conference *</label><select class="select" name="preprocurement_conference" required><option value="">Select</option><option value="Yes" <?=($editing['preprocurement_conference']??'')==='Yes'?'selected':''?>>Yes</option><option value="No" <?=($editing['preprocurement_conference']??'')==='No'?'selected':''?>>No</option><option value="N/A" <?=($editing['preprocurement_conference']??'')==='N/A'?'selected':''?>>N/A</option></select></div>
+        <div class="field"><label>Start of Procurement Activity *</label><input class="input" type="date" name="start_procurement" required value="<?=e($editing['start_procurement']??'')?>"></div>
+        <div class="field"><label>End of Procurement Activity *</label><input class="input" type="date" name="end_procurement" required value="<?=e($editing['end_procurement']??'')?>"></div>
+        <div class="field"><label>Expected Delivery / Implementation Period *</label><input class="input" type="date" name="delivery_period" required value="<?=e($editing['delivery_period']??'')?>"></div>
+        <div class="field"><label>Source of Funds *</label><input class="input" name="source_of_funds" required value="<?=e($editing['source_of_funds']??'')?>"></div>
+      </div>
+    </div>
+
+    <div class="ppmp-section">
+      <h3>4. Supporting Documents and Remarks</h3>
+      <div class="ppmp-input-grid">
+        <div class="field full">
+          <label>Attached Supporting Documents (PDF only)</label>
+          <input class="input" type="file" name="supporting_documents[]" accept="application/pdf,.pdf" multiple>
+          <small class="muted">You may select multiple PDF files. Maximum 10 MB per file.</small>
+          <?php
+          $existingDocs=[];
+          if(!empty($editing['supporting_documents'])){
+            $decoded=json_decode($editing['supporting_documents'],true);
+            if(is_array($decoded)) $existingDocs=$decoded;
+          }
+          ?>
+          <?php if($existingDocs): ?><div class="ppmp-existing-files"><strong>Existing files:</strong><ul><?php foreach($existingDocs as $doc): ?><li><a href="<?=e($doc['path']??'#')?>" target="_blank"><?=e($doc['name']??'PDF document')?></a></li><?php endforeach; ?></ul></div><?php endif; ?>
+        </div>
+        <div class="field full"><label>Remarks</label><textarea class="input" name="remarks" rows="3"><?=e($editing['remarks']??'')?></textarea></div>
+      </div>
+    </div>
+
     <div class="actions"><button class="btn" type="submit"><?= $editing ? 'Save Changes' : 'Save PPMP Item' ?></button><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>">Cancel</a><?php endif; ?></div>
   </form>
 </div>
