@@ -179,7 +179,7 @@ pageStart('Project Procurement Management Plan');
             <?php endforeach; ?>
           </select>
         </div>
-        <div class="field"><label>PPMP No.</label><input class="input" name="ppmp_no" id="ppmp_no" readonly value="<?=e($editing['ppmp_no']??$nextPpmpNo)?>" placeholder="Auto-generated"></div>
+        <div class="field"><label>PPMP No.</label><input class="input" name="ppmp_no" id="ppmp_no" readonly data-locked="<?=$editing ? '1' : '0'?>" value="<?=e($editing['ppmp_no']??$nextPpmpNo)?>" placeholder="Auto-generated"></div>
         <div class="field"><label>End-User / Implementing Unit *</label>
           <select class="select" name="area_id" id="ppmp_area" required>
             <option value="">Select</option>
