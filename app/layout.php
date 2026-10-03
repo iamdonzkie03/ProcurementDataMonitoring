@@ -14,23 +14,16 @@ function pageStart(string $title): void { $u=currentUser(); ?>
 <a href="app.php">▥ <span>Annual Procurement Plan</span></a>
 <?php endif; ?>
 <div class="sidebar-divider"></div>
-<?php
-$settingsOpen = in_array(basename($_SERVER['PHP_SELF'] ?? ''), ['settings.php','areas.php','units.php'], true);
-if(hasRole(['Administrator','Editor'])):
-?>
+<?php $settingsOpen = in_array(basename($_SERVER['PHP_SELF'] ?? ''), ['settings.php','areas.php','units.php'], true); if(hasRole(['Administrator','Editor'])): ?>
 <details class="sidebar-group" <?= $settingsOpen ? 'open' : '' ?>>
-  <summary class="sidebar-group-title">
-    <span class="sidebar-group-label">⚙ <span>Settings</span></span>
-    <span class="sidebar-chevron" aria-hidden="true">▾</span>
-  </summary>
-  <div id="settings-submenu" class="sidebar-submenu">
-    <a href="settings.php?tab=procurement-method">↳ <span>Procurement Method</span></a>
-    <a href="settings.php?tab=classification">↳ <span>Classification</span></a>
-    <a href="settings.php?tab=category">↳ <span>Category</span></a>
-    <a href="areas.php">↳ <span>Area/Unit Management</span></a>
-    <a href="units.php">↳ <span>UOM</span></a>
-  </div>
-</details>
+<summary class="sidebar-group-title"><span class="sidebar-group-label">⚙ <span>Settings</span></span><span class="sidebar-chevron" aria-hidden="true">▾</span></summary>
+<div id="settings-submenu" class="sidebar-submenu">
+<a href="settings.php?tab=procurement-method">↳ <span>Procurement Method</span></a>
+<a href="settings.php?tab=classification">↳ <span>Classification</span></a>
+<a href="settings.php?tab=category">↳ <span>Category</span></a>
+<a href="areas.php">↳ <span>Area/Unit Management</span></a>
+<a href="units.php">↳ <span>UOM</span></a>
+</div></details>
 <?php endif; ?>
 <div class="sidebar-divider"></div>
 <?php if(hasRole(['Administrator'])): ?><a href="users.php">♙ <span>User Management</span></a><?php endif; ?>
