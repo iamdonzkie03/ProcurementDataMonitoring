@@ -308,7 +308,7 @@ body{font-size:11px!important}
 
 
 /* Unified Area/Unit management panels */
-.management-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:stretch}
+.management-columns{display:grid;grid-template-columns:minmax(0,40%) minmax(0,60%);gap:18px;align-items:stretch}
 .management-column.panel{margin:0!important;padding:20px!important;display:flex;flex-direction:column;min-width:0;height:100%;box-sizing:border-box}
 .management-column.panel>.management-section{margin:0;padding:0}
 .management-column.panel>.management-inner-list{margin-top:20px!important;padding-top:20px!important;border-top:1px solid var(--border);flex:1}
