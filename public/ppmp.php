@@ -240,9 +240,9 @@ pageStart('Project Procurement Management Plan');
           <select class="select" name="procurement_mode" required><option value="">Select</option><?php foreach($procurementMethods as $method):?><option value="<?=e($method['procurement_method'])?>" <?=((string)($editing['procurement_mode']??'')===(string)$method['procurement_method'])?'selected':''?>><?=e($method['procurement_method'])?></option><?php endforeach;?></select>
         </div>
         <div class="field"><label>Pre-Procurement Conference *</label><select class="select" name="preprocurement_conference" required><option value="">Select</option><option value="Yes" <?=($editing['preprocurement_conference']??'')==='Yes'?'selected':''?>>Yes</option><option value="No" <?=($editing['preprocurement_conference']??'')==='No'?'selected':''?>>No</option><option value="N/A" <?=($editing['preprocurement_conference']??'')==='N/A'?'selected':''?>>N/A</option></select></div>
-        <div class="field"><label>Start of Procurement Activity *</label><input class="input" type="date" name="start_procurement" required value="<?=e($editing['start_procurement']??'')?>"></div>
-        <div class="field"><label>End of Procurement Activity *</label><input class="input" type="date" name="end_procurement" required value="<?=e($editing['end_procurement']??'')?>"></div>
-        <div class="field"><label>Expected Delivery / Implementation Period *</label><input class="input" type="date" name="delivery_period" required value="<?=e($editing['delivery_period']??'')?>"></div>
+        <div class="field"><label>Start of Procurement Activity *</label><input class="input ppmp-long-date" type="date" name="start_procurement" required value="<?=e($editing['start_procurement']??'')?>" title="Format: October 03, 2026"></div>
+        <div class="field"><label>End of Procurement Activity *</label><input class="input ppmp-long-date" type="date" name="end_procurement" required value="<?=e($editing['end_procurement']??'')?>" title="Format: October 03, 2026"></div>
+        <div class="field"><label>Expected Delivery / Implementation Period *</label><input class="input ppmp-long-date" type="date" name="delivery_period" required value="<?=e($editing['delivery_period']??'')?>" title="Format: October 03, 2026"></div>
         <div class="field"><label>Source of Funds *</label><input class="input" name="source_of_funds" required value="<?=e($editing['source_of_funds']??'')?>"></div>
       </div>
     </div>
@@ -402,6 +402,7 @@ if(area){
 </script>
 
 <style>
+.ppmp-entry .ppmp-long-date{font-variant-numeric:tabular-nums}
 .ppmp-entry .ppmp-quantity-field,
 .ppmp-entry .ppmp-unit-field,
 .ppmp-entry .ppmp-unit-cost-field,
@@ -431,3 +432,17 @@ if(area){
   .ppmp-entry .ppmp-total-field{grid-column:1/-1}
 }
 </style>
+<script>
+(function(){
+  ['start_procurement','end_procurement','delivery_period'].forEach(function(name){
+    const field=document.querySelector('input[name="'+name+'"]');
+    if(!field)return;
+    field.addEventListener('change',function(){
+      if(this.value){
+        const d=new Date(this.value+'T00:00:00');
+        this.title=d.toLocaleDateString('en-US',{month:'long',day:'2-digit',year:'numeric'});
+      }
+    });
+  });
+})();
+</script>
