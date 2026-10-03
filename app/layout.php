@@ -14,7 +14,6 @@ function pageStart(string $title): void { $u=currentUser(); ?>
 <a href="app.php">▥ <span>Annual Procurement Plan</span></a>
 <?php endif; ?>
 <div class="sidebar-divider"></div>
-<div class="sidebar-divider"></div>
 <?php if(hasRole(['Administrator','Editor'])): ?>
 <div class="sidebar-group">
   <a href="settings.php" class="sidebar-group-title">⚙ <span>Settings</span><span class="sidebar-chevron">▾</span></a>
