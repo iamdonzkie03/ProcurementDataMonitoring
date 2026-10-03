@@ -187,9 +187,9 @@ pageStart('Project Procurement Management Plan');
       <h3>1. PPMP Identification and Requesting Personnel</h3>
       <div class="ppmp-input-grid">
         <div class="field"><label>Fiscal Year *</label>
-          <select class="select" name="fiscal_year" required>
+          <select class="select" name="fiscal_year" id="ppmp_fiscal_year" required>
             <?php foreach($entryFiscalYears as $entryYear): ?>
-              <option value="<?=$entryYear?>" <?=((int)($editing['fiscal_year']??$year)===$entryYear)?'selected':''?>><?=$entryYear?></option>
+              <option value="<?=$entryYear?>" data-ppmp-no="<?=e($ppmpNextByYear[$entryYear]??('PPMP-'.$entryYear.'-0001'))?>" <?=((int)($editing['fiscal_year']??$year)===$entryYear)?'selected':''?>><?=$entryYear?></option>
             <?php endforeach; ?>
           </select>
         </div>
@@ -339,6 +339,12 @@ $budgetPos=$h['budget_position']??'Budget Section';
 <?php endif; ?>
 <script>
 (function(){
+ const fiscalYear=document.getElementById('ppmp_fiscal_year'), ppmpNo=document.getElementById('ppmp_no');
+ if(fiscalYear&&ppmpNo&&ppmpNo.dataset.locked!=='1'){
+   function syncPpmpNumber(){const o=fiscalYear.options[fiscalYear.selectedIndex]; ppmpNo.value=o?(o.getAttribute('data-ppmp-no')||''):'';}
+   fiscalYear.addEventListener('change',syncPpmpNumber);
+   syncPpmpNumber();
+ }
  const area=document.getElementById('ppmp_area'), person=document.getElementById('ppmp_person');
 const requested=document.getElementById('ppmp_requested_by'), preparedPosition=document.getElementById('ppmp_prepared_position');
 if(area){
