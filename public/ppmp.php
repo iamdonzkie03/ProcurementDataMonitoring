@@ -73,6 +73,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 $areas=$pdo->query('SELECT a.*,d.name division_name,d.division_head authorized_person FROM areas a JOIN divisions d ON d.id=a.division_id ORDER BY d.name,a.name')->fetchAll();
 $cats=$pdo->query('SELECT * FROM categories ORDER BY name')->fetchAll();
 $units=$pdo->query("SELECT id,name FROM units_of_measure WHERE status='Active' ORDER BY name")->fetchAll();
+$personnelByArea=[];
+$stPersonnel=$pdo->query('SELECT id,area_id,name,position_designation FROM area_personnel ORDER BY area_id,name');
+foreach($stPersonnel->fetchAll() as $person){ $personnelByArea[(int)$person['area_id']][]=$person; }
 
 $where=' WHERE p.fiscal_year=?'; $args=[$year];
 if($areaId>0){$where.=' AND p.area_id=?';$args[]=$areaId;}
@@ -140,8 +143,8 @@ pageStart('Project Procurement Management Plan');
       <div class="field"><label>Source of Funds *</label><input class="input" name="source_of_funds" required placeholder="GAA, Trust Fund, etc." value="<?=e($editing['source_of_funds']??'')?>"></div>
       <div class="field"><label>Unit Cost (PhP) *</label><input class="input" type="number" step="0.01" min="0" name="unit_price" required value="<?=e($editing['unit_price']??'')?>"></div>
       <div class="field"><label>Attached Supporting Documents *</label><input class="input" name="supporting_documents" required placeholder="Technical Specifications / SOW / TOR / Market Scoping" value="<?=e($editing['supporting_documents']??'')?>"></div>
-      <div class="field"><label>Requested By</label><input class="input" name="requested_by" value="<?=e($editing['requested_by']??'')?>"></div>
-      <div class="field"><label>Prepared Position / Designation</label><input class="input" name="prepared_position" value="<?=e($editing['prepared_position']??'End-User or Implementing Unit')?>"></div>
+      <div class="field"><label>Requested By</label><select class="select" name="requested_by" id="ppmp_requested_by" data-current="<?=e($editing['requested_by']??'')?>"><option value="">Select</option><?php foreach($personnelByArea as $personAreaId=>$people): foreach($people as $person): ?><option value="<?=e($person['name'])?>" data-area-id="<?=$personAreaId?>" data-position="<?=e($person['position_designation']??'')?>"><?=e($person['name'])?></option><?php endforeach; endforeach; ?></select></div>
+      <div class="field"><label>Prepared Position / Designation</label><input class="input" id="ppmp_prepared_position" name="prepared_position" value="<?=e($editing['prepared_position']??'')?>" readonly></div>
       <div class="field"><label>Submitted By</label><input class="input" name="submitted_by" value="<?=e($editing['submitted_by']??'')?>"></div>
       <div class="field"><label>Submitted Position / Designation</label><input class="input" name="submitted_position" value="<?=e($editing['submitted_position']??'Division/Department/Section Unit')?>"></div>
       <div class="field"><label>Within the Budget Allocation — Name</label><input class="input" name="budget_approved_by" value="<?=e($editing['budget_approved_by']??'')?>"></div>
@@ -224,10 +227,23 @@ $budgetPos=$h['budget_position']??'Budget Section';
 <script>
 (function(){
  const area=document.getElementById('ppmp_area'), person=document.getElementById('ppmp_person');
- if(area&&person){
-   function sync(){const o=area.options[area.selectedIndex];person.value=o?(o.dataset.person||''):'';}
-   area.addEventListener('change',sync); sync();
- }
+const requested=document.getElementById('ppmp_requested_by'), preparedPosition=document.getElementById('ppmp_prepared_position');
+if(area){
+  function syncSupervisor(){const o=area.options[area.selectedIndex]; if(person) person.value=o?(o.dataset.person||''):'';}
+  function syncPreparedPosition(){if(!requested||!preparedPosition)return; const o=requested.options[requested.selectedIndex]; preparedPosition.value=(o&&!o.disabled)?(o.dataset.position||''):'';}
+  function syncRequested(){
+    if(!requested)return;
+    const areaId=area.value; let current=requested.dataset.current||'';
+    Array.from(requested.options).forEach(function(o,index){
+      if(index===0){o.hidden=false;o.disabled=false;return;}
+      const show=o.dataset.areaId===areaId; o.hidden=!show; o.disabled=!show;
+    });
+    requested.value=current; if(!requested.value) requested.value=''; syncPreparedPosition();
+  }
+  area.addEventListener('change',function(){requested.dataset.current='';syncSupervisor();syncRequested();});
+  if(requested)requested.addEventListener('change',syncPreparedPosition);
+  syncSupervisor(); syncRequested();
+}
 })();
 </script>
 <?php pageEnd();
