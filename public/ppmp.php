@@ -116,7 +116,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
        preprocurement_conference,start_procurement,end_procurement,delivery_period,source_of_funds,unit_price,total_budget,
        supporting_documents,requested_by,prepared_by,prepared_position,submitted_by,submitted_position,
        budget_approved_by,budget_position,prepared_date,submitted_date,budget_date,remarks,created_by)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
     $st->execute([...$values,currentUser()['id']]); flash('success','PPMP item saved.');
   }
   header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
