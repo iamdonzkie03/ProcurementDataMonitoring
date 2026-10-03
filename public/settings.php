@@ -200,9 +200,8 @@ pageStart('Settings');
     <div class="actions"><button class="btn" type="submit"><?=$editingCategory?'Save Changes':'Add Category'?></button><?php if($editingCategory): ?><a class="btn secondary" href="settings.php?tab=category">Cancel</a><?php endif; ?></div>
   </form>
   <div class="table-wrap" style="margin-top:22px"><table class="table"><thead><tr><th>Category</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-  <?php foreach($categories as $row): ?><tr><td><?=e($row['name'])?></td><td><span class="badge <?=$row['status']==='Active'?'success':'muted'?>"><?=e($row['status'])?></span></td><td>
+  <?php foreach($categories as $row): ?><tr><td><?=e($row['name'])?></td><td><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="category_toggle"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="status-toggle <?=$row['status']==='Active'?'status-active':'status-inactive'?>" type="submit" title="Click to change status"><?=e($row['status'])?></button></form></td><td>
   <a class="btn secondary" href="settings.php?tab=category&edit=<?=(int)$row['id']?>">Edit</a>
-  <form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="category_toggle"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn secondary" type="submit"><?=$row['status']==='Active'?'Deactivate':'Activate'?></button></form>
   <form method="post" style="display:inline" onsubmit="return confirm('Delete this Category?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="category_delete"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn danger" type="submit">Delete</button></form>
   </td></tr><?php endforeach; ?><?php if(!$categories): ?><tr><td colspan="3" class="empty">No Categories have been added yet.</td></tr><?php endif; ?></tbody></table></div>
 <?php elseif($tab==='area-unit'): ?>
