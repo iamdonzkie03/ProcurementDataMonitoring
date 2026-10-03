@@ -151,3 +151,43 @@ body{font-size:11px!important}
 @media(prefers-reduced-motion:reduce){
   .sidebar-nav > a,.sidebar-group-title,.sidebar-submenu a,.sidebar-group.settings-menu > .sidebar-submenu{transition:none!important}
 }
+
+
+/* JavaScript-controlled navigation hover state */
+.sidebar-nav > a,
+.sidebar-group-title,
+.sidebar-submenu a {
+  transition: background-color .22s ease, color .22s ease, transform .22s ease, box-shadow .22s ease, opacity .22s ease !important;
+}
+.sidebar-nav > a.menu-hover,
+.sidebar-nav > a:hover,
+.sidebar-group-title:hover,
+.sidebar-group.js-hover-open > .sidebar-group-title {
+  background: rgba(255,255,255,.14) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+.sidebar-group.js-hover-open > .sidebar-submenu {
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) !important;
+}
+.sidebar-group > .sidebar-submenu {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-7px);
+  transition: opacity .22s ease, transform .22s ease, visibility .22s ease !important;
+}
+.sidebar-group.js-hover-open .sidebar-chevron {
+  transform: rotate(180deg);
+  transition: transform .22s ease;
+}
+.sidebar-submenu a.submenu-hover,
+.sidebar-submenu a:hover {
+  background: rgba(255,255,255,.14) !important;
+  color: #fff !important;
+  transform: translateX(3px);
+}
