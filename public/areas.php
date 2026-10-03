@@ -170,8 +170,9 @@ if($divisionEditId>0){
 }
 pageStart('Area/Unit Management');
 ?>
-<div class="management-split">
-<div class="panel">
+<div class="management-columns">
+  <div class="management-column">
+    <div class="panel">
   <div class="toolbar"><div><h2><?= $divisionEditing ? 'Edit Division/Department' : 'Division/Department Management' ?></h2><p>Each Division/Department has exactly one designated Head. Multiple Area/Units may be assigned under the same Division/Department.</p></div></div>
   <form method="post">
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
@@ -188,7 +189,20 @@ pageStart('Area/Unit Management');
   </form>
 </div>
 
-<div class="panel area-unit-add-panel">
+
+    <div class="panel" style="margin-top:18px">
+  <h2>Division/Department List</h2>
+  <div class="table-wrap"><table class="table">
+    <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit Count</th><th>Actions</th></tr>
+    <?php foreach($divisions as $d): $cnt=0; foreach($rows as $r){if((int)$r['division_id']===(int)$d['id'])$cnt++;} ?>
+      <tr><td><?=e($d['name'])?></td><td><?=e($d['division_head'])?></td><td><?=e($cnt)?></td><td><a class="btn secondary" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a></td></tr>
+    <?php endforeach; ?>
+    <?php if(!$divisions): ?><tr><td colspan="4">No Division/Department records found.</td></tr><?php endif; ?>
+  </table></div>
+</div>
+  </div>
+  <div class="management-column">
+    <div class="panel area-unit-add-panel">
   <h2><?= $editing ? 'Edit Area/Unit' : 'Add Area/Unit' ?></h2>
   <p>Area/Units inherit the Division/Department Head from their selected Division/Department and can contain multiple names.</p>
   <form method="post">
@@ -234,15 +248,35 @@ pageStart('Area/Unit Management');
 </div>
 
 </div>
-<div class="panel" style="margin-top:18px">
-  <h2>Division/Department List</h2>
-  <div class="table-wrap"><table class="table">
-    <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit Count</th><th>Actions</th></tr>
-    <?php foreach($divisions as $d): $cnt=0; foreach($rows as $r){if((int)$r['division_id']===(int)$d['id'])$cnt++;} ?>
-      <tr><td><?=e($d['name'])?></td><td><?=e($d['division_head'])?></td><td><?=e($cnt)?></td><td><a class="btn secondary" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a></td></tr>
-    <?php endforeach; ?>
-    <?php if(!$divisions): ?><tr><td colspan="4">No Division/Department records found.</td></tr><?php endif; ?>
-  </table></div>
+
+    <div class="panel area-unit-list-panel">
+      <h2>Area/Unit List</h2>
+      <div class="table-wrap"><table class="table">
+        <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
+        <?php foreach($rows as $r): ?>
+          <?php $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id'])); ?>
+          <tr>
+            <td><?=e($r['division_name'])?></td>
+            <td><?=e($r['division_head'])?></td>
+            <td><?=e($r['name'])?></td>
+            <td><?=e($r['code']??'')?></td>
+            <td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td>
+            <td><?=e($r['created_at'])?></td>
+            <td><div class="actions">
+              <a class="btn secondary" href="areas.php?edit=<?=e($r['id'])?>">Edit</a>
+              <form method="post" style="display:inline" onsubmit="return confirm('Delete this Area/Unit? This can only be deleted if it is not used by existing records.');">
+                <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="id" value="<?=e($r['id'])?>">
+                <button class="btn danger" type="submit">Delete</button>
+              </form>
+            </div></td>
+          </tr>
+        <?php endforeach; ?>
+        <?php if(!$rows): ?><tr><td colspan="7">No Area/Unit records found.</td></tr><?php endif; ?>
+      </table></div>
+    </div>
+  </div>
 </div>
 
 <div class="panel" style="margin-top:18px">
