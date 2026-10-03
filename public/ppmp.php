@@ -8,6 +8,11 @@ try{
   if(!$col) $pdo->exec("ALTER TABLE ppmp_items ADD COLUMN saved_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER updated_at");
   $col=$pdo->query("SHOW COLUMNS FROM ppmp_items LIKE 'total_budget'")->fetch();
   if(!$col) $pdo->exec("ALTER TABLE ppmp_items ADD COLUMN total_budget DECIMAL(18,2) NOT NULL DEFAULT 0 AFTER unit_price");
+  // The old schema enforced one row per End-User/Fiscal Year. PPMP now
+  // allows multiple item records under one PPMP number, so remove that legacy
+  // unique index automatically for existing installations.
+  $idx=$pdo->query("SHOW INDEX FROM ppmp_items WHERE Key_name='uq_ppmp_fiscal_year_area'")->fetch();
+  if($idx) $pdo->exec("ALTER TABLE ppmp_items DROP INDEX uq_ppmp_fiscal_year_area");
 }catch(PDOException $e){}
 
 $currentFiscalYear=(int)date('Y');
@@ -161,7 +166,15 @@ foreach($entryFiscalYears as $entryYear){
   $nextSeries=(int)($ppmpNextByYear[$entryYear]??0)+1;
   $ppmpNextByYear[$entryYear]='PPMP-'.$entryYear.'-'.str_pad((string)$nextSeries,4,'0',STR_PAD_LEFT);
 }
-if(!$editing) $nextPpmpNo=$ppmpNextByYear[$year]??('PPMP-'.$year.'-0001');
+$existingPpmpByYearArea=[];
+$stExistingMap=$pdo->query('SELECT fiscal_year,area_id,MIN(ppmp_no) AS ppmp_no FROM ppmp_items WHERE ppmp_no IS NOT NULL AND ppmp_no<>\'\' GROUP BY fiscal_year,area_id');
+foreach($stExistingMap->fetchAll() as $mapRow){
+  $existingPpmpByYearArea[(int)$mapRow['fiscal_year'].':'.(int)$mapRow['area_id']]=(string)$mapRow['ppmp_no'];
+}
+if(!$editing){
+  $existingForSelectedArea=$existingPpmpByYearArea[$year.':'.$areaId]??'';
+  $nextPpmpNo=$existingForSelectedArea!=='' ? $existingForSelectedArea : ($ppmpNextByYear[$year]??('PPMP-'.$year.'-0001'));
+}
 $personnelByArea=[];
 $stPersonnel=$pdo->query('SELECT id,area_id,name,position_designation FROM area_personnel ORDER BY area_id,name');
 foreach($stPersonnel->fetchAll() as $person){ $personnelByArea[(int)$person['area_id']][]=$person; }
@@ -214,7 +227,7 @@ pageStart('Project Procurement Management Plan');
         <div class="field"><label>Fiscal Year *</label>
           <select class="select" name="fiscal_year" id="ppmp_fiscal_year" required>
             <?php foreach($entryFiscalYears as $entryYear): ?>
-              <option value="<?=$entryYear?>" data-ppmp-no="<?=e($ppmpNextByYear[$entryYear]??('PPMP-'.$entryYear.'-0001'))?>" <?=((int)($formState['fiscal_year']??$year)===$entryYear)?'selected':''?>><?=$entryYear?></option>
+              <option value="<?=$entryYear?>" data-ppmp-no="<?=e($existingPpmpByYearArea[$entryYear.':'.(int)($formState['area_id']??$areaId)]??($ppmpNextByYear[$entryYear]??('PPMP-'.$entryYear.'-0001')))?>" <?=((int)($formState['fiscal_year']??$year)===$entryYear)?'selected':''?>><?=$entryYear?></option>
             <?php endforeach; ?>
           </select>
         </div>
@@ -223,7 +236,7 @@ pageStart('Project Procurement Management Plan');
           <select class="select" name="area_id" id="ppmp_area" required>
             <option value="">Select</option>
             <?php foreach($areas as $a):?>
-              <option value="<?=$a['id']?>" data-person="<?=e($a['authorized_person']??'')?>" <?=((int)($formState['area_id']??0)===(int)$a['id'])?'selected':''?>><?=e($a['name'])?></option>
+              <option value="<?=$a['id']?>" data-person="<?=e($a['authorized_person']??'')?>" <?php foreach($entryFiscalYears as $mapYear): ?>data-ppmp-<?=$mapYear?>="<?=e($existingPpmpByYearArea[$mapYear.':'.(int)$a['id']]??($ppmpNextByYear[$mapYear]??('PPMP-'.$mapYear.'-0001')))?>" <?php endforeach; ?> <?=((int)($formState['area_id']??0)===(int)$a['id'])?'selected':''?>><?=e($a['name'])?></option>
             <?php endforeach;?>
           </select>
         </div>
@@ -370,7 +383,12 @@ $budgetPos=$h['budget_position']??'Budget Section';
 (function(){
  const fiscalYear=document.getElementById('ppmp_fiscal_year'), ppmpNo=document.getElementById('ppmp_no');
  if(fiscalYear&&ppmpNo&&ppmpNo.dataset.locked!=='1'){
-   function syncPpmpNumber(){const o=fiscalYear.options[fiscalYear.selectedIndex]; ppmpNo.value=o?(o.getAttribute('data-ppmp-no')||''):'';}
+   function syncPpmpNumber(){
+      const fy=fiscalYear.value, ao=document.getElementById('ppmp_area'), areaOpt=ao&&ao.options[ao.selectedIndex];
+      const mapped=areaOpt&&fy ? areaOpt.getAttribute('data-ppmp-'+fy) : '';
+      const o=fiscalYear.options[fiscalYear.selectedIndex];
+      ppmpNo.value=mapped || (o?(o.getAttribute('data-ppmp-no')||''):'');
+    }
    fiscalYear.addEventListener('change',syncPpmpNumber);
    syncPpmpNumber();
  }
