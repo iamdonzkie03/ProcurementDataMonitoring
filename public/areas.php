@@ -225,7 +225,7 @@ if(!$embedded) pageStart('Area/Unit Management');
         <div class="table-wrap"><table class="table">
           <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
           <?php foreach($rows as $r): ?><?php $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id'])); ?>
-          <tr><td><?=e($r['division_name'])?></td><td><?=e($r['division_head'])?></td><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td><td><?=e($r['created_at'])?></td><td><div class="actions"><a class="btn secondary" href="areas.php?edit=<?=e($r['id'])?>">Edit</a><form method="post" style="display:inline" onsubmit="return confirm('Delete this Area/Unit? This can only be deleted if it is not used by existing records.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><button class="btn danger" type="submit">Delete</button></form></div></td></tr>
+          <tr><td><?=e($r['division_name'])?></td><td><?=e($r['division_head'])?></td><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td><td><?=e($r['created_at'])?></td><td><div class="actions"><a class="btn secondary master-action" href="areas.php?edit=<?=e($r['id'])?>">Edit</a><form method="post" class="master-action-form" onsubmit="return confirm('Delete this Area/Unit? This can only be deleted if it is not used by existing records.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><button class="btn danger master-action" type="submit">Delete</button></form></div></td></tr>
           <?php endforeach; ?><?php if(!$rows): ?><tr><td colspan="7">No Area/Unit records found.</td></tr><?php endif; ?>
         </table></div>
       </div>
@@ -254,4 +254,8 @@ if(!$embedded) pageStart('Area/Unit Management');
   });
 })();
 </script>
+<style>
+.master-action{width:82px;min-width:82px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center}
+.master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
+</style>
 <?php if(!$embedded) pageEnd(); ?>
