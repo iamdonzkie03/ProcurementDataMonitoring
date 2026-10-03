@@ -17,16 +17,45 @@ try{
 }catch(PDOException $e){ /* Migration can also be applied manually. */ }
 
 function saveElectronicSignature(array $file): string{
-  if(($file['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK) throw new RuntimeException('Unable to upload the electronic signature.');
-  if(($file['size']??0)>2*1024*1024) throw new RuntimeException('Electronic signature must not exceed 2 MB.');
+  $uploadError=(int)($file['error']??UPLOAD_ERR_NO_FILE);
+  if($uploadError!==UPLOAD_ERR_OK){
+    $messages=[
+      UPLOAD_ERR_INI_SIZE=>'The electronic signature exceeds the server upload limit.',
+      UPLOAD_ERR_FORM_SIZE=>'The electronic signature exceeds the form upload limit.',
+      UPLOAD_ERR_PARTIAL=>'The electronic signature upload was incomplete. Please select the file again.',
+      UPLOAD_ERR_NO_FILE=>'No electronic signature file was selected.',
+      UPLOAD_ERR_NO_TMP_DIR=>'The server temporary upload directory is missing.',
+      UPLOAD_ERR_CANT_WRITE=>'The server could not write the uploaded file.',
+      UPLOAD_ERR_EXTENSION=>'The upload was stopped by a PHP extension.'
+    ];
+    throw new RuntimeException($messages[$uploadError]??'Unable to upload the electronic signature.');
+  }
+
+  $tmp=(string)($file['tmp_name']??'');
+  if($tmp==='' || !is_uploaded_file($tmp) || !is_file($tmp) || !is_readable($tmp)){
+    throw new RuntimeException('The uploaded signature file is no longer available in the PHP temporary upload folder. Please select the signature file again. If this continues, check the XAMPP/PHP upload_tmp_dir setting.');
+  }
+
+  $size=(int)($file['size']??0);
+  if($size<=0) throw new RuntimeException('The electronic signature file is empty.');
+  if($size>2*1024*1024) throw new RuntimeException('Electronic signature must not exceed 2 MB.');
+
   $finfo=new finfo(FILEINFO_MIME_TYPE);
-  $mime=$finfo->file($file['tmp_name']);
+  $mime=$finfo->file($tmp);
   $allowed=['image/png'=>'png','image/jpeg'=>'jpg'];
-  if(!isset($allowed[$mime])) throw new RuntimeException('Electronic signature must be a PNG or JPG image.');
+  if($mime===false || !isset($allowed[$mime])) throw new RuntimeException('Electronic signature must be a PNG or JPG image.');
+
   $dir=__DIR__.'/uploads/signatures';
-  if(!is_dir($dir) && !mkdir($dir,0755,true) && !is_dir($dir)) throw new RuntimeException('Unable to create signature upload folder.');
-  $filename='signature_'.date('YmdHis').'_'.bin2hex(random_bytes(5)).'.'.$allowed[$mime];
-  if(!move_uploaded_file($file['tmp_name'],$dir.'/'.$filename)) throw new RuntimeException('Unable to save the electronic signature.');
+  if(!is_dir($dir) && !mkdir($dir,0755,true) && !is_dir($dir)){
+    throw new RuntimeException('Unable to create signature upload folder.');
+  }
+
+  $filename='signature_'.date('YmdHis').'_' . bin2hex(random_bytes(5)).'.'.$allowed[$mime];
+  $destination=$dir.'/'.$filename;
+  if(!move_uploaded_file($tmp,$destination)){
+    throw new RuntimeException('Unable to save the electronic signature. Check that C:\\xampp\\tmp and the signature upload folder are writable.');
+  }
+
   return 'uploads/signatures/'.$filename;
 }
 
@@ -47,7 +76,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $name=trim($_POST['name']??'');
   $code=trim($_POST['code']??'') ?: null;
   $areaSignaturePath=null;
-  if(!empty($_FILES['electronic_signature']['name'])){
+  if(isset($_FILES['electronic_signature']) && ((int)($_FILES['electronic_signature']['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE || !empty($_FILES['electronic_signature']['name']))){
     $areaSignaturePath=saveElectronicSignature($_FILES['electronic_signature']);
   }
 
@@ -70,7 +99,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $head=trim($_POST['division_head']??'');
     $headPosition=trim($_POST['head_position_designation']??'');
     $signaturePath=null;
-    if(!empty($_FILES['electronic_signature']['name'])){
+    if(isset($_FILES['electronic_signature']) && ((int)($_FILES['electronic_signature']['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE || !empty($_FILES['electronic_signature']['name']))){
       $signaturePath=saveElectronicSignature($_FILES['electronic_signature']);
     }
     if($divisionName==='' || $head===''){
@@ -93,7 +122,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $head=trim($_POST['division_head']??'');
     $headPosition=trim($_POST['head_position_designation']??'');
     $signaturePath=null;
-    if(!empty($_FILES['electronic_signature']['name'])){
+    if(isset($_FILES['electronic_signature']) && ((int)($_FILES['electronic_signature']['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE || !empty($_FILES['electronic_signature']['name']))){
       $signaturePath=saveElectronicSignature($_FILES['electronic_signature']);
     }
     if($divisionId<=0 || $divisionName==='' || $head===''){
