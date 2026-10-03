@@ -54,3 +54,19 @@
 .sidebar-submenu,
 .sidebar-submenu a,
 .sidebar-submenu a *{font-size:10.5px!important}
+
+/* FINAL SIDEBAR FONT OVERRIDE - 10.5px */
+.sidebar .sidebar-nav,
+.sidebar .sidebar-nav a,
+.sidebar .sidebar-nav summary,
+.sidebar .sidebar-nav span,
+.sidebar .sidebar-nav strong,
+.sidebar .sidebar-nav button,
+.sidebar .sidebar-nav details,
+.sidebar .sidebar-nav details > summary,
+.sidebar .sidebar-nav details > div,
+.sidebar .sidebar-nav details > div a,
+.sidebar .sidebar-nav details > div span { font-size:10.5px !important; }
+.sidebar .sidebar-nav > a,
+.sidebar .sidebar-nav .sidebar-group-title { font-size:10.5px !important; line-height:1.2 !important; }
+.sidebar .sidebar-nav .sidebar-submenu a { font-size:10.5px !important; line-height:1.2 !important; }
