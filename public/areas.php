@@ -51,17 +51,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $divisionId=(int)($_POST['division_id']??0);
   $name=trim($_POST['name']??'');
   $code=trim($_POST['code']??'') ?: null;
-  $areaSignaturePath=null;
   $signatureData=trim((string)($_POST['electronic_signature_data']??''));
-  if($signatureData!==''){
-    try{
-      $areaSignaturePath=saveElectronicSignatureData($signatureData);
-    }catch(RuntimeException $e){
-      flash('error',$e->getMessage());
-      header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:'')));
-      exit;
-    }
-  }
 
   if($action==='delete'){
     if($id<=0){ flash('error','Invalid Area/Unit.'); }
@@ -77,36 +67,52 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
   }
 
-  if($action==='save_division'){
+  if($action==='save_division' || $action==='update_division'){
+    $divisionId=(int)($_POST['division_id']??0);
     $divisionName=trim($_POST['division_name']??'');
     $head=trim($_POST['division_head']??'');
     $headPosition=trim($_POST['head_position_designation']??'');
     $signaturePath=null;
-    $signatureData=trim((string)($_POST['electronic_signature_data']??''));
+    $oldSignaturePath='';
+
+    if($divisionId<=0 || $divisionName==='' || $head===''){
+      flash('error','Division/Department name and Division/Department Head are required.');
+      header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
+    }
+
     if($signatureData!==''){
       try{
         $signaturePath=saveElectronicSignatureData($signatureData);
       }catch(RuntimeException $e){
         flash('error',$e->getMessage());
-        header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php'));
-        exit;
+        header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
       }
     }
-    if($divisionId<=0 || $divisionName==='' || $head===''){
-      flash('error','Division/Department name and Division/Department Head are required.');
-    }else{
-      try{
-        if($signaturePath!==null){
-          $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=?,electronic_signature=? WHERE id=?');
-          $st->execute([$divisionName,$head,$headPosition,$signaturePath,$divisionId]);
-        }else{
-          $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=? WHERE id=?');
-          $st->execute([$divisionName,$head,$headPosition,$divisionId]);
-        }
-        flash('success','Division/Department updated.');
-      }catch(PDOException $e){
-        flash('error','The Division/Department name already exists.');
+
+    try{
+      $oldSt=$pdo->prepare('SELECT electronic_signature FROM divisions WHERE id=?');
+      $oldSt->execute([$divisionId]);
+      $oldSignaturePath=(string)($oldSt->fetchColumn()??'');
+
+      if($signaturePath!==null){
+        $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=?,electronic_signature=? WHERE id=?');
+        $st->execute([$divisionName,$head,$headPosition,$signaturePath,$divisionId]);
+      }else{
+        $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=? WHERE id=?');
+        $st->execute([$divisionName,$head,$headPosition,$divisionId]);
       }
+
+      if($signaturePath!==null && $oldSignaturePath!=='' && $oldSignaturePath!==$signaturePath){
+        $oldFile=__DIR__.'/'.$oldSignaturePath;
+        if(is_file($oldFile)) @unlink($oldFile);
+      }
+      flash('success','Division/Department updated.');
+    }catch(PDOException $e){
+      if($signaturePath!==null){
+        $newFile=__DIR__.'/'.$signaturePath;
+        if(is_file($newFile)) @unlink($newFile);
+      }
+      flash('error','Unable to save the Division/Department. The Division/Department name may already exist or the record is invalid.');
     }
     header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
   }
@@ -116,8 +122,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $names=array_map('trim',$_POST['names']??[]);
     $positions=array_map('trim',$_POST['positions']??[]);
     $personnel=[];
-    foreach($names as $i=>$personName){ if($personName!=='') $personnel[]=[$personName,$positions[$i]??'']; }
-    $personnel=array_values(array_reduce($personnel,function($carry,$row){ foreach($carry as $existing){ if(strcasecmp($existing[0],$row[0])===0) return $carry; } $carry[]=$row; return $carry;},[]));
+    foreach($names as $i=>$personName){
+      if($personName!=='') $personnel[]=[$personName,$positions[$i]??''];
+    }
+    $personnel=array_values(array_reduce($personnel,function($carry,$row){
+      foreach($carry as $existing){ if(strcasecmp($existing[0],$row[0])===0) return $carry; }
+      $carry[]=$row; return $carry;
+    },[]));
     if($areaId<=0){
       flash('error','Invalid Area/Unit.');
     }else{
@@ -126,7 +137,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $st=$pdo->prepare('DELETE FROM area_personnel WHERE area_id=?');
         $st->execute([$areaId]);
         $ins=$pdo->prepare('INSERT INTO area_personnel(area_id,name,position_designation) VALUES(?,?,?)');
-        foreach($personnel as [$personName,$position]){ $ins->execute([$areaId,$personName,$position]); }
+        foreach($personnel as [$personName,$position]) $ins->execute([$areaId,$personName,$position]);
         $pdo->commit();
         flash('success','Area/Unit names updated.');
       }catch(PDOException $e){
@@ -139,7 +150,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
   if($action==='delete_person'){
     $personId=(int)($_POST['person_id']??0);
-    if($personId<=0){ flash('error','Invalid name record.'); }
+    if($personId<=0) flash('error','Invalid name record.');
     else{
       $st=$pdo->prepare('DELETE FROM area_personnel WHERE id=?');
       $st->execute([$personId]);
@@ -151,6 +162,18 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   if($name==='' || $divisionId<=0){
     flash('error','Division/Department and Area/Unit name are required.');
     header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:''))); exit;
+  }
+
+  $signaturePath=null;
+  $oldSignaturePath='';
+  if($signatureData!==''){
+    try{
+      $signaturePath=saveElectronicSignatureData($signatureData);
+    }catch(RuntimeException $e){
+      flash('error',$e->getMessage());
+      header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:'')));
+      exit;
+    }
   }
 
   $names=array_map('trim',$_POST['names']??[]);
@@ -168,9 +191,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $pdo->beginTransaction();
 
     if($action==='edit' && $id>0){
-      if($areaSignaturePath!==null){
+      $oldSt=$pdo->prepare('SELECT electronic_signature FROM areas WHERE id=?');
+      $oldSt->execute([$id]);
+      $oldSignaturePath=(string)($oldSt->fetchColumn()??'');
+
+      if($signaturePath!==null){
         $st=$pdo->prepare('UPDATE areas SET division_id=?,name=?,code=?,electronic_signature=? WHERE id=?');
-        $st->execute([$divisionId,$name,$code,$areaSignaturePath,$id]);
+        $st->execute([$divisionId,$name,$code,$signaturePath,$id]);
       }else{
         $st=$pdo->prepare('UPDATE areas SET division_id=?,name=?,code=? WHERE id=?');
         $st->execute([$divisionId,$name,$code,$id]);
@@ -179,26 +206,32 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $successMessage='Area/Unit updated.';
     }else{
       $st=$pdo->prepare('INSERT INTO areas(division_id,name,code,electronic_signature) VALUES(?,?,?,?)');
-      $st->execute([$divisionId,$name,$code,$areaSignaturePath]);
+      $st->execute([$divisionId,$name,$code,$signaturePath]);
       $areaId=(int)$pdo->lastInsertId();
       $successMessage='Area/Unit added.';
     }
 
-    // Names are part of the same Area/Unit form and are saved together with it.
     $st=$pdo->prepare('DELETE FROM area_personnel WHERE area_id=?');
     $st->execute([$areaId]);
 
     if($personnel){
       $ins=$pdo->prepare('INSERT INTO area_personnel(area_id,name,position_designation) VALUES(?,?,?)');
-      foreach($personnel as [$personName,$position]){
-        $ins->execute([$areaId,$personName,$position]);
-      }
+      foreach($personnel as [$personName,$position]) $ins->execute([$areaId,$personName,$position]);
     }
 
     $pdo->commit();
+
+    if($signaturePath!==null && $oldSignaturePath!=='' && $oldSignaturePath!==$signaturePath){
+      $oldFile=__DIR__.'/'.$oldSignaturePath;
+      if(is_file($oldFile)) @unlink($oldFile);
+    }
     flash('success',$successMessage);
   }catch(PDOException $e){
     if($pdo->inTransaction()) $pdo->rollBack();
+    if($signaturePath!==null){
+      $newFile=__DIR__.'/'.$signaturePath;
+      if(is_file($newFile)) @unlink($newFile);
+    }
     flash('error','Unable to save the Area/Unit and its names. The Area/Unit name/code may already exist, or the selected Division/Department or name data is invalid.');
   }
   header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
@@ -298,8 +331,6 @@ if(!$embedded) pageStart('Area/Unit Management');
 
 <script>
 (function(){
-  <script>
-(function(){
   document.querySelectorAll('form[enctype="multipart/form-data"]').forEach(function(form){
     const fileInput=form.querySelector('input[type="file"][name="electronic_signature"]');
     const dataInput=form.querySelector('input[name="electronic_signature_data"]');
@@ -311,14 +342,17 @@ if(!$embedded) pageStart('Area/Unit Management');
       if(file.size>2*1024*1024){ alert('Electronic signature must not exceed 2 MB.'); return; }
       if(file.type!=='image/png' && file.type!=='image/jpeg'){ alert('Electronic signature must be a PNG or JPG image.'); return; }
       const reader=new FileReader();
-      reader.onload=function(){ dataInput.value=String(reader.result||''); fileInput.value=''; form.submit(); };
+      reader.onload=function(){
+        dataInput.value=String(reader.result||'');
+        fileInput.value='';
+        form.submit();
+      };
       reader.onerror=function(){ alert('Unable to read the selected electronic signature file.'); };
       reader.readAsDataURL(file);
     });
   });
-})();
-</script>
-const list=document.getElementById('area-names-list');
+
+  const list=document.getElementById('area-names-list');
   const add=document.getElementById('add-area-name');
   if(!list||!add) return;
   add.addEventListener('click',function(){
@@ -332,7 +366,7 @@ const list=document.getElementById('area-names-list');
     if(e.target.classList.contains('remove-area-name')){
       const rows=list.querySelectorAll('.area-name-row');
       if(rows.length>1) e.target.closest('.area-name-row').remove();
-      else e.target.closest('.area-name-row').querySelector('input').value='';
+      else e.target.closest('.area-name-row').querySelectorAll('input').forEach(function(input){input.value='';});
     }
   });
 })();
