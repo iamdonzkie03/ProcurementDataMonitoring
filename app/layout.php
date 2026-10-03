@@ -1,7 +1,7 @@
 <?php require_once __DIR__.'/../config/config.php';
 function pageStart(string $title): void { $u=currentUser(); ?>
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=e($title)?> | Procurement Data Monitoring</title><link rel="stylesheet" href="assets/style.css?v=20261003-1100"><style id="sidebar-font-size-fix">.sidebar .sidebar-nav,.sidebar .sidebar-nav a,.sidebar .sidebar-nav summary,.sidebar .sidebar-nav span{font-size:11px !important;line-height:1.2 !important}</style></head><body>
-<div class="app"><aside class="sidebar"><div class="brand"><span class="brand-mark">P</span><div><b>Procurement</b><small>Data Monitoring</small></div></div><nav class="sidebar-nav" aria-label="Primary navigation">
+<div class="app"><header class="site-header"><div class="site-brand"><span class="brand-mark">P</span><div><b>Procurement Data Monitoring</b><small>Procurement Planning and Monitoring System</small></div></div><div class="site-user"><span class="avatar"><?=strtoupper(substr($u['full_name']??'G',0,1))?></span><div><b><?=e($u['full_name']??'Guest')?></b><small><?=e($u['role']??'Guest')?></small></div><a href="logout.php">Logout</a></div></header><aside class="sidebar"><div class="brand"><span class="brand-mark">P</span><div><b>Procurement</b><small>Data Monitoring</small></div></div><nav class="sidebar-nav" aria-label="Primary navigation">
 <a href="index.php">▦ <span>Dashboard</span></a>
 <div class="sidebar-divider"></div>
 <?php if(hasRole(['Administrator','Editor','Viewer'])): ?>
@@ -28,6 +28,6 @@ function pageStart(string $title): void { $u=currentUser(); ?>
 <div class="sidebar-divider"></div>
 <?php if(hasRole(['Administrator'])): ?><a href="users.php">♙ <span>User Management</span></a><?php endif; ?>
 </nav><div class="side-foot"><small>Fiscal year</small><strong><?=date('Y')?></strong></div></aside>
-<main class="main"><header class="topbar"><button class="menu-btn" onclick="document.body.classList.toggle('collapsed')">☰</button><div><h1><?=e($title)?></h1><p>Procurement planning and monitoring</p></div><div class="profile"><span class="avatar"><?=strtoupper(substr($u['full_name']??'G',0,1))?></span><div><b><?=e($u['full_name']??'Guest')?></b><small><?=e($u['role']??'Guest')?></small></div><a href="logout.php">Logout</a></div></header><section class="content"><?php foreach(flashes() as $f): ?><div class="alert <?=$f['type']?>"><?=e($f['message'])?></div><?php endforeach; ?>
+<main class="main"><section class="page-heading"><div><h1><?=e($title)?></h1><p>Procurement planning and monitoring</p></div></section><section class="content"><?php foreach(flashes() as $f): ?><div class="alert <?=$f['type']?>"><?=e($f['message'])?></div><?php endforeach; ?>
 <?php }
 function pageEnd(): void { ?></section></main></div><script src="assets/app.js"></script></body></html><?php }
