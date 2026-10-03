@@ -1,6 +1,20 @@
 CREATE DATABASE IF NOT EXISTS procurement CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE procurement;
 
+CREATE TABLE IF NOT EXISTS units_of_measure (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(80) NOT NULL UNIQUE,
+  status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO units_of_measure (name) VALUES
+('Unit'),('Piece'),('Lot'),('Vial'),('Box'),('Pack'),('Set'),('Bottle'),('Can'),('Roll'),('Ream'),('Meter'),('Kilogram'),('Liter')
+ON DUPLICATE KEY UPDATE name=VALUES(name);
+
+ALTER TABLE areas
+  ADD COLUMN IF NOT EXISTS authorized_person VARCHAR(150) NULL AFTER code;
+
 ALTER TABLE ppmp_items
   ADD COLUMN IF NOT EXISTS ppmp_no VARCHAR(80) NULL AFTER fiscal_year,
   ADD COLUMN IF NOT EXISTS procurement_type VARCHAR(80) NULL AFTER description,
