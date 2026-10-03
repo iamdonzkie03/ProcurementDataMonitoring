@@ -44,3 +44,8 @@
 .sidebar-group-title::marker{display:none}
 .sidebar-group[open] .sidebar-chevron{transform:rotate(180deg)}
 .sidebar-submenu{max-height:none!important;overflow:visible!important;padding:0 0 2px 18px!important}
+
+/* Compact sidebar typography */
+.sidebar-nav > a,
+.sidebar-group-title,
+.sidebar-submenu a{font-size:12px!important}
