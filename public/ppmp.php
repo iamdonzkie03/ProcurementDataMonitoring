@@ -110,7 +110,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   }
 
   if($action==='add'){
-    $stSeries=$pdo->prepare("SELECT MAX(CASE WHEN ppmp_no REGEXP CONCAT('^PPMP-', ?, '-[0-9]{4}
+    $stSeries=$pdo->prepare("SELECT MAX(CAST(SUBSTRING_INDEX(ppmp_no,'-',-1) AS UNSIGNED)) FROM ppmp_items WHERE fiscal_year=? AND ppmp_no LIKE CONCAT('PPMP-',?,'-%')");
+    $stSeries->execute([$year,$year]);
+    $nextSeries=((int)$stSeries->fetchColumn())+1;
+    $ppmpNo='PPMP-'.$year.'-'.str_pad((string)$nextSeries,4,'0',STR_PAD_LEFT);
+  }else{
+    $ppmpNo=trim($_POST['ppmp_no']??($editing['ppmp_no']??''));
+  }
   $values=[
     $year,$ppmpNo,$areaId,(int)$_POST['category_id'],trim($_POST['item_name']),
     trim($_POST['description']??''),trim($_POST['procurement_type']??''),$qty,trim($_POST['unit']),
