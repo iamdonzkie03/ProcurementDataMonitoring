@@ -28,6 +28,14 @@ if($editId>0 && !$print){
   $year=(int)$editing['fiscal_year']; $areaId=(int)$editing['area_id'];
 }
 
+function ppmpSaveFormError(string $message,int $year,int $areaId,int $id=0): void{
+  $_SESSION['ppmp_form_old']=$_POST;
+  $_SESSION['ppmp_form_edit_id']=$id;
+  flash('error',$message);
+  header('Location:ppmp.php?year='.$year.'&area_id='.$areaId.($id>0?'&edit='.$id:'').'#ppmpForm');
+  exit;
+}
+
 if($_SERVER['REQUEST_METHOD']==='POST'){
   requireRole(['Administrator','Editor']); checkCsrf();
   $action=$_POST['action']??'add';
@@ -41,15 +49,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $stRequested->execute([$areaId,$requestedBy]);
     $requestedPerson=$stRequested->fetch();
     if(!$requestedPerson){
-      flash('error','Requested By must be selected from the personnel assigned to the selected End-User / Implementing Unit.');
-      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+      ppmpSaveFormError('Requested By must be selected from the personnel assigned to the selected End-User / Implementing Unit.',$year,$areaId,$id);
     }
     $preparedPosition=trim($requestedPerson['position_designation']??'');
   }
 
   if(!in_array($year,$entryFiscalYears,true)){
-    flash('error','Fiscal Year must be between '.$currentFiscalYear.' and '.($currentFiscalYear+3).'.');
-    header('Location:ppmp.php?year='.$currentFiscalYear.'&area_id='.$areaId); exit;
+    ppmpSaveFormError('Fiscal Year must be between '.$currentFiscalYear.' and '.($currentFiscalYear+3).'.',$currentFiscalYear,$areaId,$id);
   }
 
   if($action==='delete'){
@@ -73,13 +79,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if(!is_dir($uploadDir)) @mkdir($uploadDir,0775,true);
     foreach($_FILES['supporting_documents']['name'] as $i=>$originalName){
       if($_FILES['supporting_documents']['error'][$i]===UPLOAD_ERR_NO_FILE) continue;
-      if($_FILES['supporting_documents']['error'][$i]!==UPLOAD_ERR_OK){ flash('error','One or more supporting documents could not be uploaded.'); header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit; }
-      if((int)$_FILES['supporting_documents']['size'][$i]>10*1024*1024){ flash('error','Each supporting PDF must not exceed 10 MB.'); header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit; }
+      if($_FILES['supporting_documents']['error'][$i]!==UPLOAD_ERR_OK){ ppmpSaveFormError('One or more supporting documents could not be uploaded.',$year,$areaId,$id); }
+      if((int)$_FILES['supporting_documents']['size'][$i]>10*1024*1024){ ppmpSaveFormError('Each supporting PDF must not exceed 10 MB.',$year,$areaId,$id); }
       $ext=strtolower(pathinfo($originalName,PATHINFO_EXTENSION));
       $mime=(new finfo(FILEINFO_MIME_TYPE))->file($_FILES['supporting_documents']['tmp_name'][$i]);
-      if($ext!=='pdf' || $mime!=='application/pdf'){ flash('error','Attached Supporting Documents must be PDF files only.'); header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit; }
+      if($ext!=='pdf' || $mime!=='application/pdf'){ ppmpSaveFormError('Attached Supporting Documents must be PDF files only.',$year,$areaId,$id); }
       $safeName='ppmp_'.date('YmdHis').'_'.bin2hex(random_bytes(5)).'.pdf';
-      if(!move_uploaded_file($_FILES['supporting_documents']['tmp_name'][$i],$uploadDir.'/'.$safeName)){ flash('error','Unable to save one or more supporting PDF files.'); header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit; }
+      if(!move_uploaded_file($_FILES['supporting_documents']['tmp_name'][$i],$uploadDir.'/'.$safeName)){ ppmpSaveFormError('Unable to save one or more supporting PDF files.',$year,$areaId,$id); }
       $existingDocs[]=['name'=>basename($originalName),'path'=>'uploads/ppmp/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s')];
     }
   }
@@ -115,6 +121,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   }
   header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
 }
+$formOld=$_SESSION['ppmp_form_old']??null;
+$formOldEditId=(int)($_SESSION['ppmp_form_edit_id']??0);
+unset($_SESSION['ppmp_form_old'],$_SESSION['ppmp_form_edit_id']);
+$formState=$editing?:($formOld??[]);
+$formIsEditing=$editing!==null || ($formOld!==null && (($formOld['action']??'')==='edit'));
 $areas=$pdo->query('SELECT a.*,d.name division_name,d.division_head authorized_person FROM areas a JOIN divisions d ON d.id=a.division_id ORDER BY d.name,a.name')->fetchAll();
 $cats=$pdo->query("SELECT * FROM categories WHERE status='Active' ORDER BY name")->fetchAll();
 $classifications=$pdo->query("SELECT name FROM classifications WHERE status='Active' ORDER BY name")->fetchAll();
