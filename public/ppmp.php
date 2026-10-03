@@ -408,29 +408,28 @@ function ppmpPrintDate($value): string{
       </tr>
     </thead>
     <tbody>
-      <?php for($i=0;$i<2;$i++): $r=$rows[$i]??null; ?>
+      <?php foreach($rows as $r): ?>
       <tr class="data-row template-data-row">
-        <td><?= $r ? e(trim((string)$r['item_name']).', '.trim((string)$r['description'])) : '' ?></td>
-        <td><?= $r ? e($r['procurement_type']) : '' ?></td>
-        <td><?= $r ? e(rtrim(rtrim(number_format((float)$r['quantity'],4,'.',''), '0'),'.')) : '' ?></td>
-        <td><?= $r ? e($r['unit']) : '' ?></td>
-        <td><?= $r ? e($r['procurement_mode']) : '' ?></td>
-        <td><?= $r ? e($r['preprocurement_conference']) : '' ?></td>
-        <td><?= $r ? e(ppmpPrintDate($r['start_procurement'])) : '' ?></td>
-        <td><?= $r ? e(ppmpPrintDate($r['end_procurement'])) : '' ?></td>
-        <td><?= $r ? e(ppmpPrintDate($r['delivery_period'])) : '' ?></td>
-        <td><?= $r ? e($r['source_of_funds']) : '' ?></td>
-        <td><?= $r ? '₱'.number_format((float)$r['unit_price'],2) : '' ?></td>
-        <td><?= $r ? '₱'.number_format((float)$r['quantity']*(float)$r['unit_price'],2) : '' ?></td>
-        <?php if($i===0): ?>
-        <td rowspan="2"><?php
+        <td><?=e(trim((string)$r['item_name']).', '.trim((string)$r['description']))?></td>
+        <td><?=e($r['procurement_type'])?></td>
+        <td><?=e(rtrim(rtrim(number_format((float)$r['quantity'],4,'.',''), '0'),'.'))?></td>
+        <td><?=e($r['unit'])?></td>
+        <td><?=e($r['procurement_mode'])?></td>
+        <td><?=e($r['preprocurement_conference'])?></td>
+        <td><?=e(ppmpPrintDate($r['start_procurement']))?></td>
+        <td><?=e(ppmpPrintDate($r['end_procurement']))?></td>
+        <td><?=e(ppmpPrintDate($r['delivery_period']))?></td>
+        <td><?=e($r['source_of_funds'])?></td>
+        <td>₱<?=number_format((float)$r['unit_price'],2)?></td>
+        <td>₱<?=number_format((float)$r['quantity']*(float)$r['unit_price'],2)?></td>
+        <td><?php
           $printDocs=[];
-          if($r && !empty($r['supporting_documents'])){
+          if(!empty($r['supporting_documents'])){
             $decodedDocs=json_decode((string)$r['supporting_documents'],true);
             if(is_array($decodedDocs)){
               foreach($decodedDocs as $doc){
                 if(is_array($doc)){
-                  $docName=trim((string)($doc['name']??$doc['original_name']??'PDF document'));
+                  $docName=trim((string)($doc['name']??''));
                   if($docName!=='') $printDocs[]=$docName;
                 }
               }
@@ -438,10 +437,9 @@ function ppmpPrintDate($value): string{
           }
           echo $printDocs ? implode('<br>',array_map('e',$printDocs)) : '';
         ?></td>
-        <td rowspan="2"><?= $r ? nl2br(e($r['remarks'])) : '' ?></td>
-        <?php endif; ?>
+        <td><?=nl2br(e($r['remarks']))?></td>
       </tr>
-      <?php endfor; ?>
+      <?php endforeach; ?>
       <tr class="grand-total-row">
         <td colspan="10"></td>
         <td><b>GRAND TOTAL</b></td>
