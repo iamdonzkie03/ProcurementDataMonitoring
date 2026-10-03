@@ -452,7 +452,7 @@ function ppmpPrintDate($value): string{
   <div class="ppmp-note"><b>Important Note:</b> The Market Scoping Form and its proof of documentation and activities shall be attached to this PPMP prior to approval. Failure to provide both the Market Scoping Form and proof of documentation shall result to deferment or rejection of this PPMP.</div>
 
   <div class="ppmp-signatures">
-    <div><b>Prepared by:</b><div class="signature-line"><?=e($person)?></div><div>Signature over Printed Name</div><div><?=e($preparedPos)?></div><div><i>End-User or Implementing Unit</i></div><div>Date : <?=e(ppmpPrintDate($h['prepared_date']??''))?></div></div>
+    <div><b>Prepared by:</b><div class="signature-line"><?=e($person)?></div><div>Signature over Printed Name</div><div><?=e($preparedPos)?></div><div><i>End-User or Implementing Unit</i></div><div>Date : <?=e(ppmpPrintDate($h['updated_at']??$h['created_at']??date('Y-m-d'))) ?></div></div>
     <div><b>Submitted by:</b><div class="signature-line"><?=e($submitted)?></div><div>Signature over Printed Name</div><div><?=e($submittedPos)?></div><div><i>Division/Department/Section Unit</i></div><div>Date : <?=e(ppmpPrintDate($h['submitted_date']??''))?></div></div>
     <div><b>within the budget allocation:</b><div class="signature-line"><?=e($budgetName)?></div><div>Signature over Printed Name</div><div>Supervising Administrative Officer</div><div><i><?=e($budgetPos)?></i></div><div>Date : <?=e(ppmpPrintDate($h['budget_date']??''))?></div></div>
   </div>
