@@ -381,6 +381,7 @@ function ppmpPrintDate($value): string{
   return $timestamp ? date('F d, Y',$timestamp) : $value;
 }
 ?>
+<?php if($print): ?>
 <div class="ppmp-print-sheet paper-long" id="ppmpPrintSheet">
   <div class="ppmp-head">
     <div class="ppmp-brand">
@@ -527,6 +528,7 @@ function ppmpPrintDate($value): string{
   <button class="btn secondary" onclick="printPpmp('a4')">Print A4</button>
   <a class="btn secondary" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>">Back</a>
 </div>
+<?php endif; ?>
 <script>
 function printPpmp(paper){
   const sheet=document.getElementById('ppmpPrintSheet');
