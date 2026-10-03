@@ -190,7 +190,10 @@ pageStart('Area/Unit Management');
 </div>
 
 
-    <div class="panel" style="margin-top:18px">
+
+
+    <div class="management-inner-list">
+    <div class="panel" style="margin-top:0">
   <h2>Division/Department List</h2>
   <div class="table-wrap"><table class="table">
     <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit Count</th><th>Actions</th></tr>
@@ -200,7 +203,6 @@ pageStart('Area/Unit Management');
     <?php if(!$divisions): ?><tr><td colspan="4">No Division/Department records found.</td></tr><?php endif; ?>
   </table></div>
 </div>
-  </div>
   <div class="management-column">
     <div class="panel area-unit-add-panel">
   <h2><?= $editing ? 'Edit Area/Unit' : 'Add Area/Unit' ?></h2>
@@ -249,7 +251,10 @@ pageStart('Area/Unit Management');
 
 </div>
 
-    <div class="panel area-unit-list-panel">
+
+
+    <div class="management-inner-list">
+    <div class="panel area-unit-list-panel" style="margin-top:0">
       <h2>Area/Unit List</h2>
       <div class="table-wrap"><table class="table">
         <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
@@ -280,7 +285,6 @@ pageStart('Area/Unit Management');
 </div>
 
 
-;
 <script>
 (function(){
   const list=document.getElementById('area-names-list');
