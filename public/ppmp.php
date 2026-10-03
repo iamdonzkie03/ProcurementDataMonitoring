@@ -122,7 +122,21 @@ $procurementMethods=$pdo->query("SELECT procurement_method,details FROM procurem
 $units=$pdo->query("SELECT id,name FROM units_of_measure WHERE status='Active' ORDER BY name")->fetchAll();
 $nextPpmpNo='';
 $ppmpNextByYear=[];
-$stNextAll=$pdo->query("SELECT fiscal_year, MAX(CASE WHEN ppmp_no REGEXP CONCAT('^PPMP-',fiscal_year,'-[0-9]{4}
+$stNextAll=$pdo->query('SELECT fiscal_year,ppmp_no FROM ppmp_items WHERE ppmp_no IS NOT NULL AND ppmp_no<>\'\' ORDER BY fiscal_year,ppmp_no');
+foreach($stNextAll->fetchAll() as $seriesRow){
+  $fy=(int)$seriesRow['fiscal_year'];
+  $prefix='PPMP-'.$fy.'-';
+  $number=(int)substr((string)$seriesRow['ppmp_no'],strlen($prefix));
+  if(strpos((string)$seriesRow['ppmp_no'],$prefix)===0 && $number>0){
+    $current=$ppmpNextByYear[$fy]??0;
+    if($number>$current) $ppmpNextByYear[$fy]=$number;
+  }
+}
+foreach($entryFiscalYears as $entryYear){
+  $nextSeries=(int)($ppmpNextByYear[$entryYear]??0)+1;
+  $ppmpNextByYear[$entryYear]='PPMP-'.$entryYear.'-'.str_pad((string)$nextSeries,4,'0',STR_PAD_LEFT);
+}
+if(!$editing) $nextPpmpNo=$ppmpNextByYear[$year]??('PPMP-'.$year.'-0001');
 $personnelByArea=[];
 $stPersonnel=$pdo->query('SELECT id,area_id,name,position_designation FROM area_personnel ORDER BY area_id,name');
 foreach($stPersonnel->fetchAll() as $person){ $personnelByArea[(int)$person['area_id']][]=$person; }
