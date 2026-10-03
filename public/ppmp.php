@@ -328,25 +328,44 @@ $person=$h['requested_by']??'';
 $preparedPos=$h['prepared_position']??'End-User or Implementing Unit';
 $submitted=$selectedArea['authorized_person']??($h['authorized_person']??'');
 $submittedPos=$selectedArea['authorized_position']??($h['authorized_position']??'');
-// Select the Budget personnel from the selected Area/Unit personnel list.
-// A person is treated as the Budget signatory when the stored name or
-// position/designation contains "Budget" (case-insensitive). This keeps the
-// signatory tied to the Area/Unit master data instead of using a hard-coded name.
+// Budget signatory comes from the Area/Unit master list.
+// IMPORTANT: do not inspect the selected PPMP Area/Unit personnel and do not
+// look for the word "Budget" in a person's name/position. Instead, locate the
+// Area/Unit record whose own Area/Unit name identifies it as Budget, then pull
+// the person(s) attached to that Area/Unit.
 $budgetName='';
 $budgetPos='';
-$budgetPeople=[];
-if($areaId>0){
-  $stBudgetPeople=$pdo->prepare('SELECT name,position_designation FROM area_personnel WHERE area_id=? ORDER BY name');
-  $stBudgetPeople->execute([$areaId]);
+$budgetAreaId=0;
+
+// Match Budget, Budget Unit, Budget Section, Budget Office, etc.
+// The Area/Unit name is the source of truth for the Budget signatory.
+$stBudgetArea=$pdo->query("SELECT id,name FROM areas
+  WHERE LOWER(name) REGEXP '(^|[[:space:]-])(budget)([[:space:]-]|$)'
+     OR LOWER(name) LIKE 'budget %'
+     OR LOWER(name) LIKE '% budget'
+  ORDER BY
+    CASE
+      WHEN LOWER(name)='budget' THEN 0
+      WHEN LOWER(name) LIKE 'budget %' THEN 1
+      WHEN LOWER(name) LIKE '%budget%' THEN 2
+      ELSE 3
+    END, name
+  LIMIT 1")->fetch();
+
+if($stBudgetArea){
+  $budgetAreaId=(int)$stBudgetArea['id'];
+  $stBudgetPeople=$pdo->prepare('SELECT name,position_designation
+    FROM area_personnel
+    WHERE area_id=?
+    ORDER BY id');
+  $stBudgetPeople->execute([$budgetAreaId]);
   $budgetPeople=$stBudgetPeople->fetchAll();
-}
-foreach($budgetPeople as $bp){
-  $bpName=trim((string)($bp['name']??''));
-  $bpPos=trim((string)($bp['position_designation']??''));
-  if($bpName!=='' && (stripos($bpName,'budget')!==false || stripos($bpPos,'budget')!==false)){
-    $budgetName=$bpName;
-    $budgetPos=$bpPos;
-    break;
+
+  // Use the first configured person under the Budget Area/Unit.
+  // Their stored Position/Designation is printed as-is.
+  if($budgetPeople){
+    $budgetName=trim((string)($budgetPeople[0]['name']??''));
+    $budgetPos=trim((string)($budgetPeople[0]['position_designation']??''));
   }
 }
 function ppmpPrintDate($value): string{
