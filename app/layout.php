@@ -1,6 +1,6 @@
 <?php require_once __DIR__.'/../config/config.php';
 function pageStart(string $title): void { $u=currentUser(); ?>
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=e($title)?> | Procurement Data Monitoring</title><link rel="stylesheet" href="assets/style.css"></head><body>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=e($title)?> | Procurement Data Monitoring</title><link rel="stylesheet" href="assets/style.css?v=20261003-105"></head><body>
 <div class="app"><aside class="sidebar"><div class="brand"><span class="brand-mark">P</span><div><b>Procurement</b><small>Data Monitoring</small></div></div><nav class="sidebar-nav" aria-label="Primary navigation">
 <a href="index.php">▦ <span>Dashboard</span></a>
 <div class="sidebar-divider"></div>
