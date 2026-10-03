@@ -170,6 +170,7 @@ if($divisionEditId>0){
 }
 pageStart('Area/Unit Management');
 ?>
+<div class="management-split">
 <div class="panel">
   <div class="toolbar"><div><h2><?= $divisionEditing ? 'Edit Division/Department' : 'Division/Department Management' ?></h2><p>Each Division/Department has exactly one designated Head. Multiple Area/Units may be assigned under the same Division/Department.</p></div></div>
   <form method="post">
@@ -187,7 +188,7 @@ pageStart('Area/Unit Management');
   </form>
 </div>
 
-<div class="panel" style="margin-top:18px">
+<div class="panel area-unit-add-panel">
   <h2><?= $editing ? 'Edit Area/Unit' : 'Add Area/Unit' ?></h2>
   <p>Area/Units inherit the Division/Department Head from their selected Division/Department and can contain multiple names.</p>
   <form method="post">
@@ -232,6 +233,7 @@ pageStart('Area/Unit Management');
   </form>
 </div>
 
+</div>
 <div class="panel" style="margin-top:18px">
   <h2>Division/Department List</h2>
   <div class="table-wrap"><table class="table">
