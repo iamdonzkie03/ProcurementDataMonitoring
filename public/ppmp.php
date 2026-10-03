@@ -1,4 +1,4 @@
-<?php
+<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
 require_once __DIR__.'/../app/layout.php';
@@ -85,13 +85,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     foreach($_FILES['supporting_documents']['name'] as $i=>$originalName){
       if($_FILES['supporting_documents']['error'][$i]===UPLOAD_ERR_NO_FILE) continue;
       if($_FILES['supporting_documents']['error'][$i]!==UPLOAD_ERR_OK){ ppmpSaveFormError('One or more supporting documents could not be uploaded.',$year,$areaId,$id); }
-      if((int)$_FILES['supporting_documents']['size'][$i]>10*1024*1024){ ppmpSaveFormError('Each supporting PDF must not exceed 10 MB.',$year,$areaId,$id); }
+      if((int)$_FILES['supporting_documents']['size'][$i]>20*1024*1024){ ppmpSaveFormError('Each supporting PDF must not exceed 20 MB.',$year,$areaId,$id); }
       $ext=strtolower(pathinfo($originalName,PATHINFO_EXTENSION));
       $mime=(new finfo(FILEINFO_MIME_TYPE))->file($_FILES['supporting_documents']['tmp_name'][$i]);
       if($ext!=='pdf' || $mime!=='application/pdf'){ ppmpSaveFormError('Attached Supporting Documents must be PDF files only.',$year,$areaId,$id); }
       $safeName='ppmp_'.date('YmdHis').'_'.bin2hex(random_bytes(5)).'.pdf';
       if(!move_uploaded_file($_FILES['supporting_documents']['tmp_name'][$i],$uploadDir.'/'.$safeName)){ ppmpSaveFormError('Unable to save one or more supporting PDF files.',$year,$areaId,$id); }
-      $existingDocs[]=['name'=>basename($originalName),'path'=>'uploads/ppmp/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s')];
+      $documentName=trim((string)(($_POST['supporting_document_names']??[])[$i]??'')); if($documentName===''){ ppmpSaveFormError('Please provide a Name for every Attached Supporting Document.',$year,$areaId,$id); } $existingDocs[]=['name'=>$documentName,'original_name'=>basename($originalName),'path'=>'uploads/ppmp/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s')];
     }
   }
   $supportingDocuments=$existingDocs ? json_encode($existingDocs,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) : '';
@@ -294,8 +294,9 @@ pageStart('Project Procurement Management Plan');
       <div class="ppmp-input-grid">
         <div class="field full">
           <label>Attached Supporting Documents (PDF only)</label>
-          <input class="input" type="file" name="supporting_documents[]" accept="application/pdf,.pdf" multiple>
-          <small class="muted">You may select multiple PDF files. Maximum 10 MB per file.</small>
+          <div id="ppmp-supporting-documents"><div class="ppmp-document-row"><input class="input" type="file" name="supporting_documents[]" accept="application/pdf,.pdf"><input class="input" type="text" name="supporting_document_names[]" placeholder="Name of document"><button class="btn secondary ppmp-remove-document" type="button">Remove</button></div></div>
+          <button class="btn secondary" type="button" id="ppmp-add-document">+ Add Another Document</button>
+          <small class="muted">Multiple PDF files are allowed. Each file must not exceed 20 MB. Give each file a descriptive Name.</small>
           <?php
           $existingDocs=[];
           if(!empty($formState['supporting_documents'])){
@@ -411,6 +412,12 @@ if(area){
   syncSupervisor(); syncRequested();
 }
  const quantity=document.getElementById('ppmp_quantity'), unitPrice=document.getElementById('ppmp_unit_price'), totalBudget=document.getElementById('ppmp_total_budget');
+ const supportingDocuments=document.getElementById('ppmp-supporting-documents'), addDocument=document.getElementById('ppmp-add-document');
+ function syncDocumentRows(){if(!supportingDocuments)return; supportingDocuments.querySelectorAll('.ppmp-document-row').forEach(function(row,index){const remove=row.querySelector('.ppmp-remove-document');if(remove)remove.style.display=index===0?'none':'inline-flex';});}
+ function addDocumentRow(){if(!supportingDocuments)return;const row=document.createElement('div');row.className='ppmp-document-row';row.innerHTML='<input class="input" type="file" name="supporting_documents[]" accept="application/pdf,.pdf"><input class="input" type="text" name="supporting_document_names[]" placeholder="Name of document"><button class="btn secondary ppmp-remove-document" type="button">Remove</button>';supportingDocuments.appendChild(row);syncDocumentRows();}
+ if(addDocument)addDocument.addEventListener('click',addDocumentRow);
+ if(supportingDocuments)supportingDocuments.addEventListener('click',function(e){if(e.target.classList.contains('ppmp-remove-document')){const row=e.target.closest('.ppmp-document-row');if(row)row.remove();syncDocumentRows();}});
+ syncDocumentRows();
  function moneyNumber(value){return parseFloat(String(value||'').replace(/,/g,''))||0;}
  function formatMoney(value){return Number(value||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
  function syncTotalBudget(){if(!quantity||!unitPrice||!totalBudget)return; const q=moneyNumber(quantity.value), p=moneyNumber(unitPrice.value); totalBudget.value=formatMoney(q*p);}
