@@ -305,3 +305,13 @@ body{font-size:11px!important}
 .management-column>.panel{margin-top:0!important}
 .management-column .management-inner-list{border-top:1px solid var(--border);margin-top:18px;padding-top:18px}
 .management-column .management-inner-list>.panel{box-shadow:none;border:0;padding:0}
+
+
+/* Unified Area/Unit management panels */
+.management-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:stretch}
+.management-column.panel{margin:0!important;padding:20px!important;display:flex;flex-direction:column;min-width:0;height:100%;box-sizing:border-box}
+.management-column.panel>.management-section{margin:0;padding:0}
+.management-column.panel>.management-inner-list{margin-top:20px!important;padding-top:20px!important;border-top:1px solid var(--border);flex:1}
+.management-column.panel .management-list-content{margin:0;padding:0;border:0;box-shadow:none}
+.management-column.panel .management-list-content h2{margin-top:0}
+@media(max-width:1050px){.management-columns{grid-template-columns:1fr}}
