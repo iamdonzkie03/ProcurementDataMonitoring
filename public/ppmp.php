@@ -575,7 +575,6 @@ if(area){
  function moneyNumber(value){return parseFloat(String(value||'').replace(/,/g,''))||0;}
  function formatMoney(value){return Number(value||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
  function syncTotalBudget(){if(!quantity||!unitPrice||!totalBudget)return; const q=moneyNumber(quantity.value), p=moneyNumber(unitPrice.value); totalBudget.value=formatMoney(q*p);}
- if(fiscalYear){fiscalYear.addEventListener('change',syncPpmpNumber);syncPpmpNumber();}
  function liveFormatMoney(field){
    if(!field)return;
    const raw=String(field.value||'').replace(/[^0-9.]/g,'');
