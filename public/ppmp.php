@@ -178,7 +178,7 @@ if(!$editing){
   $nextPpmpNo=$existingForSelectedArea!=='' ? $existingForSelectedArea : ($ppmpNextByYear[$year]??('PPMP-'.$year.'-0001'));
 }
 $personnelByArea=[];
-$stPersonnel=$pdo->query('SELECT id,area_id,name,position_designation FROM area_personnel ORDER BY area_id,name');
+$stPersonnel=$pdo->query('SELECT id,area_id,name,position_designation,electronic_signature FROM area_personnel ORDER BY area_id,name');
 foreach($stPersonnel->fetchAll() as $person){ $personnelByArea[(int)$person['area_id']][]=$person; }
 
 $where=' WHERE p.fiscal_year=?'; $args=[$year];
@@ -326,6 +326,12 @@ $h=$rows[0]??[];
 $ppmpNo=$h['ppmp_no']??'';
 $person=$h['requested_by']??'';
 $preparedPos=$h['prepared_position']??'End-User or Implementing Unit';
+$preparedSignature='';
+if($person!=='' && !empty($h['area_id'])){
+  $stPreparedSignature=$pdo->prepare('SELECT electronic_signature FROM area_personnel WHERE area_id=? AND name=? LIMIT 1');
+  $stPreparedSignature->execute([(int)$h['area_id'],$person]);
+  $preparedSignature=trim((string)($stPreparedSignature->fetchColumn()??''));
+}
 $submitted=$selectedArea['authorized_person']??($h['authorized_person']??'');
 $submittedPos=$selectedArea['authorized_position']??($h['authorized_position']??'');
 // Budget signatory comes from the Area/Unit master list.
@@ -492,7 +498,7 @@ function ppmpPrintDate($value): string{
   <div class="ppmp-signatures ppmp-signature-template">
     <div class="ppmp-signature-box">
       <b>Prepared by:</b>
-      <div class="signature-line"><?=e($person)?></div>
+      <div class="signature-line ppmp-prepared-signature"><?php if($preparedSignature!==''): ?><img src="<?=e($preparedSignature)?>" alt="Prepared By electronic signature"><?php endif; ?><span><?=e($person)?></span></div>
       <div>Signature over Printed Name</div>
       <div><?=e($preparedPos)?></div>
       <div><i>End-User or Implementing Unit</i></div>
