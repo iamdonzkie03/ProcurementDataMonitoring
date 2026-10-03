@@ -22,3 +22,17 @@
 .sidebar-divider{height:1px;background:rgba(255,255,255,.16);margin:10px 10px}.sidebar-group{margin:4px 0}.sidebar-group-title{display:flex!important;align-items:center}.sidebar-group-title .sidebar-chevron{margin-left:auto;font-size:11px;opacity:.7}.sidebar-submenu{padding:0 0 2px 18px}.sidebar-submenu a{font-size:12px!important;padding:8px 10px!important;margin:2px 0!important;gap:8px!important;color:#b9cbea!important}.sidebar-submenu a:hover{color:#fff!important;background:rgba(255,255,255,.08)!important}
 
 .settings-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.settings-panel{margin-top:18px}
+
+
+/* Sidebar scrolling and Settings accordion */
+.sidebar{display:flex;flex-direction:column;overflow:hidden}
+.sidebar-nav{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding-right:3px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.25) transparent}
+.sidebar-nav::-webkit-scrollbar{width:6px}.sidebar-nav::-webkit-scrollbar-track{background:transparent}.sidebar-nav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:99px}.sidebar-nav::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.4)}
+.sidebar-group-title{width:100%;border:0;background:transparent;color:#dbeafe;text-decoration:none;padding:12px 14px;border-radius:9px;margin:4px 0;cursor:pointer;text-align:left;font:inherit}
+.sidebar-group-title:hover{background:rgba(255,255,255,.1);color:#fff}
+.sidebar-group-label{display:flex;align-items:center;gap:12px;min-width:0}.sidebar-group-label span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-chevron{transition:transform .18s ease}.sidebar-group.is-open .sidebar-chevron{transform:rotate(180deg)}
+.sidebar-submenu{overflow:hidden;max-height:0;padding:0 0 0 18px;transition:max-height .2s ease,padding .2s ease}.sidebar-group.is-open .sidebar-submenu{max-height:500px;padding-bottom:2px}
+.sidebar-submenu[hidden]{display:none}
+.side-foot{flex-shrink:0}
+@media(max-width:700px){.sidebar-nav{padding-bottom:8px}.side-foot{position:static;margin:8px 10px 0;padding-top:15px}.sidebar{overflow:hidden}}
