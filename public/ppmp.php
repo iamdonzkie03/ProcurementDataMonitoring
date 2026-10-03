@@ -328,19 +328,6 @@ $person=$h['requested_by']??'';
 $preparedPos=$h['prepared_position']??'End-User or Implementing Unit';
 $submitted=$selectedArea['authorized_person']??($h['authorized_person']??'');
 $submittedPos='Supervisor / Authorized Person';
-$printSupportingDocuments=[];
-foreach($rows as $printRow){
-  if(empty($printRow['supporting_documents'])) continue;
-  $docs=json_decode((string)$printRow['supporting_documents'],true);
-  if(is_array($docs)){
-    foreach($docs as $doc){
-      if(!is_array($doc)) continue;
-      $docName=trim((string)($doc['name']??$doc['original_name']??'PDF document'));
-      if($docName!=='') $printSupportingDocuments[$docName]=true;
-    }
-  }
-}
-$printSupportingLabels=array_keys($printSupportingDocuments);
 $budgetName=$h['budget_approved_by']??'';
 $budgetPos=$h['budget_position']??'Budget Section';
 ?>
