@@ -433,3 +433,8 @@ body{font-size:11px!important}
   .ppmp-prepared-signature{min-height:42px!important;}
   .ppmp-prepared-signature img{max-width:125px;max-height:34px;}
 }
+
+/* Saved PPMP Items action buttons */
+.ppmp-row-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap;}
+.ppmp-row-actions .btn,
+.ppmp-row-actions form .btn{width:82px;min-width:82px;height:36px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;padding:0 12px;margin:0;line-height:1;}
