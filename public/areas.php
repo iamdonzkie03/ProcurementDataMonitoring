@@ -172,7 +172,16 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       if($data!=='') $signaturePathsByIndex[(int)$idx]=saveElectronicSignatureData($data);
     }
   }catch(RuntimeException $e){
-    foreach($signaturePathsByI  $names=array_map('trim',$_POST['names']??[]);
+    foreach($signaturePathsByIndex as $savedPath){
+      $savedFile=__DIR__.'/'.$savedPath;
+      if(is_file($savedFile)) @unlink($savedFile);
+    }
+    flash('error',$e->getMessage());
+    header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:'')));
+    exit;
+  }
+
+  $names=array_map('trim',$_POST['names']??[]);
   $positions=array_map('trim',$_POST['positions']??[]);
   $personnel=[];
   foreach($names as $i=>$personName){
@@ -230,8 +239,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     flash('success',$successMessage);
   }catch(PDOException $e){
     if($pdo->inTransaction()) $pdo->rollBack();
-    if($signaturePath!==null){
-      $newFile=__DIR__.'/'.$signaturePath;
+    foreach($signaturePathsByIndex as $savedPath){
+      $newFile=__DIR__.'/'.$savedPath;
       if(is_file($newFile)) @unlink($newFile);
     }
     flash('error','Unable to save the Area/Unit and its names. The Area/Unit name/code may already exist, or the selected Division/Department or name data is invalid.');
