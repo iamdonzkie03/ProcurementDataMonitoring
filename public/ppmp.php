@@ -408,21 +408,6 @@ function ppmpPrintDate($value): string{
       </tr>
     </thead>
     <tbody>
-      <tr class="explanation-row">
-        <td><?=e($ppmpExplanations[0])?></td>
-        <td></td>
-        <td colspan="2"><?=e($ppmpExplanations[1])?></td>
-        <td><?=e($ppmpExplanations[2])?></td>
-        <td><?=e($ppmpExplanations[3])?></td>
-        <td><?=e($ppmpExplanations[4])?></td>
-        <td><?=e($ppmpExplanations[5])?></td>
-        <td><?=e($ppmpExplanations[6])?></td>
-        <td><?=e($ppmpExplanations[7])?></td>
-        <td></td>
-        <td><?=e($ppmpExplanations[9])?></td>
-        <td></td>
-        <td><?=e($ppmpExplanations[11])?></td>
-      </tr>
       <?php for($i=0;$i<2;$i++): $r=$rows[$i]??null; ?>
       <tr class="data-row template-data-row">
         <td><?= $r ? e(trim((string)$r['item_name']).', '.trim((string)$r['description'])) : '' ?></td>
