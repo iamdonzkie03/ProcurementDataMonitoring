@@ -274,10 +274,10 @@ pageStart('Project Procurement Management Plan');
 
       <div class="ppmp-input-grid">
         <div class="field full"><label>General Description / Technical Specifications *</label><textarea class="input" name="description" rows="4" required><?=e($formState['description']??'')?></textarea></div>
-        <div class="field ppmp-quantity-field"><label>Quantity *</label><input class="input ppmp-money-input" type="text" inputmode="decimal" name="quantity" id="ppmp_quantity" required value="<?=e(!empty($formState['quantity']) ? number_format((float)$formState['quantity'],2,'.','') : '')?>"></div>
+        <div class="field ppmp-quantity-field"><label>Quantity *</label><input class="input ppmp-money-input" type="text" inputmode="decimal" name="quantity" id="ppmp_quantity" required value="<?=e(!empty($formState['quantity']) ? number_format((float)$formState['quantity'],2,'.',',') : '')?>"></div>
         <div class="field ppmp-unit-field"><label>Unit or Measurement / Size *</label><select class="select" name="unit" required><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>" <?=((string)($formState['unit']??'')===(string)$u['name'])?'selected':''?>><?=e($u['name'])?></option><?php endforeach;?></select></div>
-        <div class="field ppmp-unit-cost-field"><label>Unit Cost (PhP) *</label><input class="input ppmp-money-input" type="text" inputmode="decimal" name="unit_price" id="ppmp_unit_price" required value="<?=e(!empty($formState['unit_price']) ? number_format((float)$formState['unit_price'],2,'.','') : '')?>"></div>
-        <div class="field ppmp-total-field"><label>Total Budget</label><input class="input ppmp-total-budget" type="text" id="ppmp_total_budget" value="<?=e(((float)($formState['quantity']??0)*(float)($formState['unit_price']??0)) ? number_format((float)$formState['quantity']*(float)$formState['unit_price'],2,'.','') : '')?>" readonly></div>
+        <div class="field ppmp-unit-cost-field"><label>Unit Cost (PhP) *</label><input class="input ppmp-money-input" type="text" inputmode="decimal" name="unit_price" id="ppmp_unit_price" required value="<?=e(!empty($formState['unit_price']) ? number_format((float)$formState['unit_price'],2,'.',',') : '')?>"></div>
+        <div class="field ppmp-total-field"><label>Total Budget</label><input class="input ppmp-total-budget" type="text" id="ppmp_total_budget" value="<?=e(((float)($formState['quantity']??0)*(float)($formState['unit_price']??0)) ? number_format((float)$formState['quantity']*(float)$formState['unit_price'],2,'.',',') : '')?>" readonly></div>
       </div>
     </div>
 
