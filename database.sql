@@ -138,7 +138,17 @@ CREATE TABLE IF NOT EXISTS purchase_order_items (
   UNIQUE KEY uq_po_pritem (po_id, pr_item_id)
 ) ENGINE=InnoDB;
 
-INSERT INTO areas(name,code) VALUES ('Administration','ADMIN'),('Finance','FIN'),('Human Resource','HR'),('Information Technology','IT') ON DUPLICATE KEY UPDATE name=VALUES(name);
+INSERT INTO divisions(name,division_head) VALUES
+('Administration','Not Yet Assigned'),
+('Finance','Not Yet Assigned'),
+('Human Resource','Not Yet Assigned'),
+('Information Technology','Not Yet Assigned')
+ON DUPLICATE KEY UPDATE name=VALUES(name), division_head=division_head;
+INSERT INTO areas(division_id,name,code)
+SELECT d.id,'Administration','ADMIN' FROM divisions d WHERE d.name='Administration' AND NOT EXISTS (SELECT 1 FROM areas a WHERE a.name='Administration')
+UNION ALL SELECT d.id,'Finance','FIN' FROM divisions d WHERE d.name='Finance' AND NOT EXISTS (SELECT 1 FROM areas a WHERE a.name='Finance')
+UNION ALL SELECT d.id,'Human Resource','HR' FROM divisions d WHERE d.name='Human Resource' AND NOT EXISTS (SELECT 1 FROM areas a WHERE a.name='Human Resource')
+UNION ALL SELECT d.id,'Information Technology','IT' FROM divisions d WHERE d.name='Information Technology' AND NOT EXISTS (SELECT 1 FROM areas a WHERE a.name='Information Technology');
 INSERT INTO categories(name) VALUES ('Office Supplies'),('IT Equipment'),('Furniture'),('Infrastructure'),('Professional Services') ON DUPLICATE KEY UPDATE name=VALUES(name);
 INSERT INTO users(username,full_name,email,password_hash,role,status) VALUES
 ('admin','System Administrator','admin@example.local','$2y$12$xauFrgrusgURr3xHolB7KeOrO7zCyWm.RqoGXz5VjFrZ0csA6Lxca','Administrator','Active')
