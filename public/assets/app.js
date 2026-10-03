@@ -28,6 +28,9 @@
 
       function openSettings() {
         clearTimeout(closeTimer);
+        // Use the native <details> state so the submenu is visible
+        // even when CSS hover selectors are overridden elsewhere.
+        settings.open = true;
         settings.classList.add('js-hover-open');
         settingsSubmenu.setAttribute('aria-hidden', 'false');
       }
@@ -36,10 +39,11 @@
         clearTimeout(closeTimer);
         closeTimer = setTimeout(function () {
           if (!settings.matches(':hover') && !settings.matches(':focus-within')) {
+            settings.open = false;
             settings.classList.remove('js-hover-open');
             settingsSubmenu.setAttribute('aria-hidden', 'true');
           }
-        }, 120);
+        }, 180);
       }
 
       settingsSummary.addEventListener('mouseenter', openSettings);
