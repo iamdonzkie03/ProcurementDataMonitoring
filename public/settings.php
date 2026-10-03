@@ -12,6 +12,15 @@ $pdo=db();
 if($_SERVER['REQUEST_METHOD']==='POST'){
   checkCsrf();
   $action=$_POST['action']??'';
+  if($action==='procurement_method_toggle'){
+    $id=(int)($_POST['id']??0);
+    if($id>0){
+      $st=$pdo->prepare("UPDATE procurement_methods SET status=IF(status='Active','Inactive','Active') WHERE id=?");
+      $st->execute([$id]);
+      flash('success','Procurement Method status updated.');
+    }
+    header('Location:settings.php?tab=procurement-method'); exit;
+  }
   if($action==='procurement_method_save'){
     $id=(int)($_POST['id']??0);
     $method=trim($_POST['procurement_method']??'');
@@ -52,11 +61,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 $editingMethod=null;
 if($tab==='procurement-method' && isset($_GET['edit'])){
-  $st=$pdo->prepare('SELECT id,procurement_method,details FROM procurement_methods WHERE id=?');
+  $st=$pdo->prepare('SELECT id,procurement_method,details,status FROM procurement_methods WHERE id=?');
   $st->execute([(int)$_GET['edit']]);
   $editingMethod=$st->fetch() ?: null;
 }
-$procurementMethods=$pdo->query('SELECT id,procurement_method,details FROM procurement_methods ORDER BY procurement_method')->fetchAll();
+$procurementMethods=$pdo->query('SELECT id,procurement_method,details,status FROM procurement_methods ORDER BY procurement_method')->fetchAll();
 $categories=$pdo->query('SELECT id,name FROM categories ORDER BY name')->fetchAll();
 pageStart('Settings');
 ?>
@@ -97,14 +106,21 @@ pageStart('Settings');
 
   <div class="table-wrap" style="margin-top:22px">
     <table class="table">
-      <thead><tr><th>Procurement Method</th><th>Details</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Procurement Method</th><th>Details</th><th>Status</th><th>Actions</th></tr></thead>
       <tbody>
       <?php if($procurementMethods): foreach($procurementMethods as $pm): ?>
         <tr>
           <td><?=e($pm['procurement_method'])?></td>
           <td><?=nl2br(e($pm['details']??''))?></td>
+          <td><span class="badge <?=$pm['status']==='Active'?'success':'muted'?>"><?=e($pm['status'])?></span></td>
           <td>
             <a class="btn secondary" href="settings.php?tab=procurement-method&edit=<?=(int)$pm['id']?>">Edit</a>
+            <form method="post" style="display:inline">
+              <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+              <input type="hidden" name="action" value="procurement_method_toggle">
+              <input type="hidden" name="id" value="<?=(int)$pm['id']?>">
+              <button class="btn secondary" type="submit"><?= $pm['status']==='Active' ? 'Deactivate' : 'Activate' ?></button>
+            </form>
             <form method="post" style="display:inline" onsubmit="return confirm('Delete this Procurement Method?');">
               <input type="hidden" name="csrf" value="<?=e(csrf())?>">
               <input type="hidden" name="action" value="procurement_method_delete">
@@ -114,7 +130,7 @@ pageStart('Settings');
           </td>
         </tr>
       <?php endforeach; else: ?>
-        <tr><td colspan="3" class="empty">No Procurement Methods have been added yet.</td></tr>
+        <tr><td colspan="4" class="empty">No Procurement Methods have been added yet.</td></tr>
       <?php endif; ?>
       </tbody>
     </table>
