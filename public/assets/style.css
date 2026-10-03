@@ -81,21 +81,21 @@
 
 
 /* FINAL APPLICATION TYPOGRAPHY */
-@import url('https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;500;600;700&display=swap');
-html,body,button,input,select,textarea{font-family:'Inconsolata',monospace!important}
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&display=swap');
+html,body,button,input,select,textarea{font-family:'Raleway',monospace!important}
 body{font-size:11px!important}
-.site-header{font-family:'Inconsolata',monospace!important}
+.site-header{font-family:'Raleway',monospace!important}
 .site-brand b{font-size:17px!important;line-height:1.15!important}
 .site-brand small{font-size:10px!important;line-height:1.15!important}
 .site-user b{font-size:11px!important}.site-user small{font-size:10px!important}.site-user a{font-size:11px!important}
 .sidebar-nav,.sidebar-nav>a,.sidebar-nav>a *,.sidebar-group-title,.sidebar-group-title *,.sidebar-submenu,.sidebar-submenu a,.sidebar-submenu a *{font-size:12px!important;line-height:1.2!important}
 .page-heading h1{font-size:15px!important;line-height:1.2!important}.page-heading p{font-size:11px!important;line-height:1.2!important}
 .content{font-size:11px!important}
-.content h1,.content h2,.content h3,.content h4,.content h5,.content h6{font-family:'Inconsolata',monospace!important}
+.content h1,.content h2,.content h3,.content h4,.content h5,.content h6{font-family:'Raleway',monospace!important}
 .content h1,.content h2{font-size:15px!important}.content h3{font-size:13px!important}.content h4,.content h5,.content h6{font-size:12px!important}
 .content,.content label,.content input,.content select,.content textarea,.content button,.content .table,.content .table td,.content .table th,.content .btn,.content .badge,.content .alert,.content .muted,.content .card,.content .panel,.content .field{font-size:11px!important}
 .content .table th,.content .card .label,.content .card .hint{font-size:11px!important}.content .metric{font-size:20px!important}
-.login-page,.login-card{font-family:'Inconsolata',monospace!important}
+.login-page,.login-card{font-family:'Raleway',monospace!important}
 .ppmp-print-sheet{font-family:Arial,Helvetica,sans-serif!important}
 
 
