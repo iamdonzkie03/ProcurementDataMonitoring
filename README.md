@@ -58,3 +58,6 @@ PO preparation is linked to an existing Submitted/Approved PR and automatically 
 ## Production considerations
 
 Before public deployment, add HTTPS, audit logging, database backups, stronger password/session policies, approval controls, document numbering rules, attachment storage, and server hardening.
+
+### Official PPMP Form
+The PPMP module now follows the supplied **PPMP Form.xlsx** layout for the printable Project Procurement Management Plan. The page captures the form's required procurement details, projected timeline, funding details, supporting documents, remarks, and signature/approval fields. Use **Print PPMP Form** after selecting an Area/Unit to generate the landscape official-form layout. Apply `database_migration_stage4.sql` to existing databases before using the expanded PPMP fields.
