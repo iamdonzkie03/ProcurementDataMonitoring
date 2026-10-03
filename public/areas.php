@@ -77,7 +77,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $code=trim($_POST['code']??'') ?: null;
   $areaSignaturePath=null;
   if(isset($_FILES['electronic_signature']) && ((int)($_FILES['electronic_signature']['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE || !empty($_FILES['electronic_signature']['name']))){
-    $areaSignaturePath=saveElectronicSignature($_FILES['electronic_signature']);
+    try{
+      $areaSignaturePath=saveElectronicSignature($_FILES['electronic_signature']);
+    }catch(RuntimeException $e){
+      flash('error',$e->getMessage());
+      header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:'')));
+      exit;
+    }
   }
 
   if($action==='delete'){
@@ -100,7 +106,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $headPosition=trim($_POST['head_position_designation']??'');
     $signaturePath=null;
     if(isset($_FILES['electronic_signature']) && ((int)($_FILES['electronic_signature']['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE || !empty($_FILES['electronic_signature']['name']))){
-      $signaturePath=saveElectronicSignature($_FILES['electronic_signature']);
+      try{
+        $signaturePath=saveElectronicSignature($_FILES['electronic_signature']);
+      }catch(RuntimeException $e){
+        flash('error',$e->getMessage());
+        header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php'));
+        exit;
+      }
     }
     if($divisionName==='' || $head===''){
       flash('error','Division/Department name and Division/Department Head are required.');
@@ -123,7 +135,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $headPosition=trim($_POST['head_position_designation']??'');
     $signaturePath=null;
     if(isset($_FILES['electronic_signature']) && ((int)($_FILES['electronic_signature']['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE || !empty($_FILES['electronic_signature']['name']))){
-      $signaturePath=saveElectronicSignature($_FILES['electronic_signature']);
+      try{
+        $signaturePath=saveElectronicSignature($_FILES['electronic_signature']);
+      }catch(RuntimeException $e){
+        flash('error',$e->getMessage());
+        header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php'));
+        exit;
+      }
     }
     if($divisionId<=0 || $divisionName==='' || $head===''){
       flash('error','Division/Department name and Division/Department Head are required.');
