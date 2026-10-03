@@ -157,15 +157,9 @@ pageStart('Settings');
         <tr>
           <td><?=e($pm['procurement_method'])?></td>
           <td><?=nl2br(e($pm['details']??''))?></td>
-          <td><span class="badge <?=$pm['status']==='Active'?'success':'muted'?>"><?=e($pm['status'])?></span></td>
+          <td><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="procurement_method_toggle"><input type="hidden" name="id" value="<?=(int)$pm['id']?>"><button class="status-toggle <?=$pm['status']==='Active'?'status-active':'status-inactive'?>" type="submit" title="Click to change status"><?=e($pm['status'])?></button></form></td>
           <td>
             <a class="btn secondary" href="settings.php?tab=procurement-method&edit=<?=(int)$pm['id']?>">Edit</a>
-            <form method="post" style="display:inline">
-              <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-              <input type="hidden" name="action" value="procurement_method_toggle">
-              <input type="hidden" name="id" value="<?=(int)$pm['id']?>">
-              <button class="btn secondary" type="submit"><?= $pm['status']==='Active' ? 'Deactivate' : 'Activate' ?></button>
-            </form>
             <form method="post" style="display:inline" onsubmit="return confirm('Delete this Procurement Method?');">
               <input type="hidden" name="csrf" value="<?=e(csrf())?>">
               <input type="hidden" name="action" value="procurement_method_delete">
@@ -191,9 +185,8 @@ pageStart('Settings');
     <div class="actions"><button class="btn" type="submit"><?=$editingClassification?'Save Changes':'Add Classification'?></button><?php if($editingClassification): ?><a class="btn secondary" href="settings.php?tab=classification">Cancel</a><?php endif; ?></div>
   </form>
   <div class="table-wrap" style="margin-top:22px"><table class="table"><thead><tr><th>Classification</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-  <?php foreach($classifications as $row): ?><tr><td><?=e($row['name'])?></td><td><span class="badge <?=$row['status']==='Active'?'success':'muted'?>"><?=e($row['status'])?></span></td><td>
+  <?php foreach($classifications as $row): ?><tr><td><?=e($row['name'])?></td><td><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="classification_toggle"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="status-toggle <?=$row['status']==='Active'?'status-active':'status-inactive'?>" type="submit" title="Click to change status"><?=e($row['status'])?></button></form></td><td>
   <a class="btn secondary" href="settings.php?tab=classification&edit=<?=(int)$row['id']?>">Edit</a>
-  <form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="classification_toggle"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn secondary" type="submit"><?=$row['status']==='Active'?'Deactivate':'Activate'?></button></form>
   <form method="post" style="display:inline" onsubmit="return confirm('Delete this Classification?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="classification_delete"><input type="hidden" name="id" value="<?=(int)$row['id']?>"><button class="btn danger" type="submit">Delete</button></form>
   </td></tr><?php endforeach; ?><?php if(!$classifications): ?><tr><td colspan="3" class="empty">No Classifications have been added yet.</td></tr><?php endif; ?></tbody></table></div>
 <?php elseif($tab==='category'): ?>
@@ -218,4 +211,10 @@ pageStart('Settings');
   <?php $embedded=true; include __DIR__.'/units.php'; ?>
 <?php endif; ?>
 </div>
+<style>
+.status-toggle{border:0!important;color:#fff!important;border-radius:999px;padding:5px 12px;font:inherit;font-weight:700;cursor:pointer;transition:none!important;box-shadow:none!important;transform:none!important}
+.status-toggle.status-active{background:#198754!important}
+.status-toggle.status-inactive{background:#dc3545!important}
+.status-toggle:hover,.status-toggle:focus,.status-toggle:active{color:#fff!important;box-shadow:none!important;transform:none!important;outline:none!important}
+</style>
 <?php pageEnd();
