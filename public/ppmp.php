@@ -4,7 +4,13 @@ requireRole(['Administrator','Editor','Viewer','Guest']);
 require_once __DIR__.'/../app/layout.php';
 $pdo=db();
 
-$year=(int)($_GET['year']??date('Y'));
+$currentFiscalYear=(int)date('Y');
+$entryFiscalYears=range($currentFiscalYear,$currentFiscalYear+3);
+$existingFiscalYears=array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN));
+$searchFiscalYears=array_values(array_unique(array_merge($existingFiscalYears,$entryFiscalYears)));
+rsort($searchFiscalYears);
+$year=(int)($_GET['year']??$currentFiscalYear);
+if(!in_array($year,$searchFiscalYears,true)) $year=$currentFiscalYear;
 $areaId=(int)($_GET['area_id']??0);
 $q=trim($_GET['q']??'');
 $print=isset($_GET['print']) && $_GET['print']=='1';
@@ -22,6 +28,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $id=(int)($_POST['id']??0);
   $year=(int)($_POST['fiscal_year']??0);
   $areaId=(int)($_POST['area_id']??0);
+
+  if(!in_array($year,$entryFiscalYears,true)){
+    flash('error','Fiscal Year must be between '.$currentFiscalYear.' and '.($currentFiscalYear+3).'.');
+    header('Location:ppmp.php?year='.$currentFiscalYear.'&area_id='.$areaId); exit;
+  }
 
   if($action==='delete'){
     if($id<=0){ flash('error','Invalid PPMP item.'); }
@@ -83,7 +94,11 @@ pageStart('Project Procurement Management Plan');
 <div class="panel ppmp-toolbar">
   <div class="toolbar">
     <form class="ppmp-filter">
-      <input class="input" type="number" name="year" value="<?=$year?>" min="2020" max="2100" aria-label="Fiscal Year">
+      <select class="select" name="year" aria-label="Search Fiscal Year">
+        <?php foreach($searchFiscalYears as $searchYear): ?>
+          <option value="<?=$searchYear?>" <?=$year===$searchYear?'selected':''?>><?=$searchYear?></option>
+        <?php endforeach; ?>
+      </select>
       <select class="select" name="area_id"><option value="0">All Areas/Units</option><?php foreach($areas as $a):?><option value="<?=$a['id']?>" <?=$areaId===$a['id']?'selected':''?>><?=e($a['name'])?></option><?php endforeach;?></select>
       <input class="input" name="q" placeholder="Search item, area or description" value="<?=e($q)?>">
       <button class="btn" type="submit">View</button>
@@ -101,7 +116,13 @@ pageStart('Project Procurement Management Plan');
     <input type="hidden" name="action" value="<?= $editing ? 'edit' : 'add' ?>">
     <?php if($editing): ?><input type="hidden" name="id" value="<?=e($editing['id'])?>"><?php endif; ?>
     <div class="ppmp-input-grid">
-      <div class="field"><label>Fiscal Year *</label><input class="input" type="number" name="fiscal_year" value="<?=e($editing['fiscal_year']??$year)?>" required></div>
+      <div class="field"><label>Fiscal Year *</label>
+        <select class="select" name="fiscal_year" required>
+          <?php foreach($entryFiscalYears as $entryYear): ?>
+            <option value="<?=$entryYear?>" <?=((int)($editing['fiscal_year']??$year)===$entryYear)?'selected':''?>><?=$entryYear?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
       <div class="field"><label>PPMP No. *</label><input class="input" name="ppmp_no" required placeholder="e.g. PPMP-2027-001" value="<?=e($editing['ppmp_no']??'')?>"></div>
       <div class="field"><label>End-User / Implementing Unit *</label><select class="select" name="area_id" id="ppmp_area" required><option value="">Select</option><?php foreach($areas as $a):?><option value="<?=$a['id']?>" data-person="<?=e($a['authorized_person']??'')?>" <?=((int)($editing['area_id']??0)===(int)$a['id'])? 'selected' : '' ?>><?=e($a['name'])?></option><?php endforeach;?></select></div>
       <div class="field"><label>Supervisor / Authorized Person *</label><input class="input" id="ppmp_person" name="prepared_by" value="<?=e($editing['prepared_by']??'')?>" readonly required></div>
