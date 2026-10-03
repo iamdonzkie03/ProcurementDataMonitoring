@@ -371,7 +371,7 @@ function ppmpPrintDate($value): string{
     <tbody>
       <?php foreach($rows as $rowIndex=>$r): $mergeWithBlank=($rowIndex===count($rows)-1 && count($rows)<3); $rowspan=$mergeWithBlank?' rowspan="2"':''; ?>
       <tr class="data-row">
-        <td<?=$rowspan?>><?=e(trim((string)$r['item_name']).', '.trim((string)$r['description']))?></td><td<?=$rowspan?>><?=e($r['procurement_type'])?></td><td<?=$rowspan?>><?=rtrim(rtrim(number_format($r['quantity'],4,'.',''), '0'),'.')?></td><td<?=$rowspan?>><?=e($r['unit'])?></td><td<?=$rowspan?>><?=e($r['procurement_mode'])?></td><td<?=$rowspan?>><?=e($r['preprocurement_conference'])?></td><td<?=$rowspan?>><?=e(ppmpPrintDate($r['start_procurement']))?></td><td<?=$rowspan?>><?=e(ppmpPrintDate($r['end_procurement']))?></td><td<?=$rowspan?>><?=e(ppmpPrintDate($r['delivery_period']))?></td><td<?=$rowspan?>><?=e($r['source_of_funds'])?></td><td<?=$rowspan?>>₱<?=number_format($r['unit_price'],2)?></td><td<?=$rowspan?>>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td<?=$rowspan?>><?php
+        <td<?=$rowspan?>><?=e(trim((string)$r['item_name']).', '.trim((string)$r['description']))?></td><td<?=$rowspan?>><?=e($r['procurement_type'])?></td><td<?=$rowspan?>><?=rtrim(rtrim(number_format($r['quantity'],4,'.',''), '0'),'.')?></td><td<?=$rowspan?>><?=e($r['unit'])?></td><td<?=$rowspan?>><?=e($r['procurement_mode'])?></td><td<?=$rowspan?>><?=e($r['preprocurement_conference'])?></td><td<?=$rowspan?>><?=e(ppmpPrintDate($r['start_procurement']))?></td><td<?=$rowspan?>><?=e(ppmpPrintDate($r['end_procurement']))?></td><td<?=$rowspan?>><?=e(ppmpPrintDate($r['delivery_period']))?></td><td<?=$rowspan?>><?=e($r['source_of_funds'])?></td><td<?=$rowspan?>>₱<?=number_format($r['unit_price'],2)?></td><td<?=$rowspan?>>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td rowspan="2"><?php
 $printDocs=[];
 if(!empty($r['supporting_documents'])){
   $decodedDocs=json_decode((string)$r['supporting_documents'],true);
@@ -385,7 +385,7 @@ if(!empty($r['supporting_documents'])){
   }
 }
 echo $printDocs ? implode('<br>',array_map('e',$printDocs)) : '';
-?></td><td<?=$rowspan?>><?=nl2br(e($r['remarks']))?></td>
+?></td><td rowspan="2"><?=nl2br(e($r['remarks']))?></td>
       </tr>
       <?php endforeach; ?>
       <?php for($i=count($rows);$i<3;$i++): ?><tr class="data-row blank"><?php if(count($rows)===0 || $i>count($rows)): ?><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><?php endif; ?></tr><?php endfor; ?>
