@@ -298,3 +298,10 @@ body{font-size:11px!important}
 .management-column .table-wrap{max-width:100%;overflow:auto}
 .area-unit-add-panel .field.full{grid-column:1/-1}
 @media(max-width:1050px){.management-columns{grid-template-columns:1fr}}
+
+
+/* Unified management panels */
+.management-columns{align-items:start}
+.management-column>.panel{margin-top:0!important}
+.management-column .management-inner-list{border-top:1px solid var(--border);margin-top:18px;padding-top:18px}
+.management-column .management-inner-list>.panel{box-shadow:none;border:0;padding:0}
