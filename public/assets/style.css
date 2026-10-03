@@ -385,3 +385,41 @@ body{font-size:11px!important}
 .ppmp-money-input{font-variant-numeric:tabular-nums;text-align:right}
 .ppmp-total-budget{font-size:20px!important;font-weight:700!important;border:0!important;border-color:transparent!important;outline:0!important;box-shadow:none!important;background:transparent!important;padding-left:0!important;padding-right:0!important;text-align:right;font-variant-numeric:tabular-nums}
 .ppmp-total-budget:focus{border:0!important;outline:0!important;box-shadow:none!important}
+
+/* PPMP print typography refinement */
+.ppmp-print-sheet,
+.ppmp-official-table{font-family:"Century Gothic",CenturyGothic,Arial,sans-serif!important}
+.ppmp-print-sheet{font-size:9.5px!important}
+.ppmp-brand{font-size:8px!important}
+.ppmp-brand strong{font-size:9.5px!important}
+.ppmp-brand small{font-size:7.5px!important}
+.ppmp-brand-mark{font-size:9px!important}
+.ppmp-control{font-size:7.5px!important}
+.ppmp-title{font-size:18px!important;margin:4px 0 2px!important}
+.ppmp-classification{font-size:7.5px!important;margin-bottom:7px!important}
+.ppmp-meta{font-size:11px!important;line-height:1.3!important;margin-bottom:7px!important}
+.ppmp-official-table{font-size:9.5px!important}
+.ppmp-official-table th,.ppmp-official-table td{padding:2px 2px!important}
+.ppmp-excel-template .group-head th{font-size:9.5px!important}
+.ppmp-excel-template .field-head th{font-size:9.5px!important}
+.ppmp-excel-template .quantity-head th{font-size:9.5px!important}
+.ppmp-excel-template .column-head th{font-size:10.5px!important}
+.ppmp-excel-template .template-data-row td{font-size:9.5px!important}
+.ppmp-excel-template .grand-total-row td{font-size:9.5px!important}
+.ppmp-note{font-size:11px!important;line-height:1.2!important;padding:2px!important}
+.ppmp-signatures{font-size:10.5px!important;margin-top:12px!important;gap:40px!important}
+.signature-line{height:22px!important;padding-top:10px!important}
+@media print{
+  .ppmp-print-sheet{font-size:9.5px!important}
+  .ppmp-title{font-size:18px!important}
+  .ppmp-meta{font-size:11px!important}
+  .ppmp-official-table{font-size:9.5px!important}
+  .ppmp-excel-template .group-head th,
+  .ppmp-excel-template .field-head th,
+  .ppmp-excel-template .quantity-head th,
+  .ppmp-excel-template .template-data-row td,
+  .ppmp-excel-template .grand-total-row td{font-size:9.5px!important}
+  .ppmp-excel-template .column-head th{font-size:10.5px!important}
+  .ppmp-note{font-size:11px!important}
+  .ppmp-signatures{font-size:10.5px!important}
+}
