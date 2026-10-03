@@ -90,32 +90,27 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
   }
   $supportingDocuments=$existingDocs ? json_encode($existingDocs,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) : '';
-  // One PPMP is allowed per End-User / Implementing Unit for each Fiscal Year.
-  // The Division/Department Head (Supervisor / Authorized Person) is inherited from
-  // the selected End-User, so the End-User + Fiscal Year pair is the authoritative key.
-  $duplicateSql='SELECT p.id,p.ppmp_no,a.name AS area_name,d.division_head
-                 FROM ppmp_items p
-                 JOIN areas a ON a.id=p.area_id
-                 JOIN divisions d ON d.id=a.division_id
-                 WHERE p.fiscal_year=? AND p.area_id=?';
-  $duplicateArgs=[$year,$areaId];
-  if($action==='edit' && $id>0){ $duplicateSql.=' AND p.id<>?'; $duplicateArgs[]=$id; }
-  $stDuplicate=$pdo->prepare($duplicateSql.' LIMIT 1');
-  $stDuplicate->execute($duplicateArgs);
-  $duplicate=$stDuplicate->fetch();
-  if($duplicate){
-    $existingNo=trim((string)($duplicate['ppmp_no']??'')); 
-    $label=$existingNo!=='' ? ' (PPMP No. '.$existingNo.')' : '';
-    ppmpSaveFormError('A PPMP for '.$duplicate['area_name'].' for Fiscal Year '.$year.' has already been created'.$label.'. Only one PPMP is allowed per End-User per Fiscal Year. Please edit, modify, or realign the existing PPMP as a supplemental PPMP instead of creating another PPMP.',$year,$areaId,$id);
-  }
+  // One PPMP header/number is maintained per End-User / Implementing Unit and Fiscal Year.
+  // Multiple item records may be added, edited, or deleted under that same PPMP.
+  // When adding an item, reuse the existing PPMP number for the selected End-User/Fiscal Year.
+  // A new PPMP number is generated only when that End-User/Fiscal Year has no PPMP yet.
+  $stExistingPpmp=$pdo->prepare('SELECT ppmp_no FROM ppmp_items WHERE fiscal_year=? AND area_id=? AND ppmp_no IS NOT NULL AND ppmp_no<>"" ORDER BY id LIMIT 1');
+  $stExistingPpmp->execute([$year,$areaId]);
+  $existingPpmpNo=trim((string)$stExistingPpmp->fetchColumn());
 
   if($action==='add'){
-    $stSeries=$pdo->prepare("SELECT MAX(CAST(SUBSTRING_INDEX(ppmp_no,'-',-1) AS UNSIGNED)) FROM ppmp_items WHERE fiscal_year=? AND ppmp_no LIKE CONCAT('PPMP-',?,'-%')");
-    $stSeries->execute([$year,$year]);
-    $nextSeries=((int)$stSeries->fetchColumn())+1;
-    $ppmpNo='PPMP-'.$year.'-'.str_pad((string)$nextSeries,4,'0',STR_PAD_LEFT);
+    if($existingPpmpNo!==''){
+      $ppmpNo=$existingPpmpNo;
+    }else{
+      $stSeries=$pdo->prepare("SELECT MAX(CAST(SUBSTRING_INDEX(ppmp_no,'-',-1) AS UNSIGNED)) FROM ppmp_items WHERE fiscal_year=? AND ppmp_no LIKE CONCAT('PPMP-',?,'-%')");
+      $stSeries->execute([$year,$year]);
+      $nextSeries=((int)$stSeries->fetchColumn())+1;
+      $ppmpNo='PPMP-'.$year.'-'.str_pad((string)$nextSeries,4,'0',STR_PAD_LEFT);
+    }
   }else{
-    $ppmpNo=trim($_POST['ppmp_no']??($editing['ppmp_no']??''));
+    // Keep the existing PPMP number when editing an item. If the item is realigned
+    // to another End-User/Fiscal Year that already has a PPMP, use that PPMP number.
+    $ppmpNo=$existingPpmpNo!=='' ? $existingPpmpNo : trim($_POST['ppmp_no']??($editing['ppmp_no']??''));
   }
   $values=[
     $year,$ppmpNo,$areaId,(int)$_POST['category_id'],trim($_POST['item_name']),
