@@ -20,3 +20,5 @@
 
 /* Sidebar hierarchy */
 .sidebar-divider{height:1px;background:rgba(255,255,255,.16);margin:10px 10px}.sidebar-group{margin:4px 0}.sidebar-group-title{display:flex!important;align-items:center}.sidebar-group-title .sidebar-chevron{margin-left:auto;font-size:11px;opacity:.7}.sidebar-submenu{padding:0 0 2px 18px}.sidebar-submenu a{font-size:12px!important;padding:8px 10px!important;margin:2px 0!important;gap:8px!important;color:#b9cbea!important}.sidebar-submenu a:hover{color:#fff!important;background:rgba(255,255,255,.08)!important}
+
+.settings-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.settings-panel{margin-top:18px}
