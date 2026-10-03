@@ -11,7 +11,7 @@ if($editId>0){
   $st=$pdo->prepare('SELECT a.*,d.name division_name FROM areas a LEFT JOIN divisions d ON d.id=a.division_id WHERE a.id=?');
   $st->execute([$editId]);
   $editing=$st->fetch();
-  if(!$editing){ flash('error','Area/Unit not found.'); header('Location:areas.php'); exit; }
+  if(!$editing){ flash('error','Area/Unit not found.'); header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit; }
 }
 
 if($_SERVER['REQUEST_METHOD']==='POST'){
@@ -143,7 +143,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if($pdo->inTransaction()) $pdo->rollBack();
     flash('error','Unable to save the Area/Unit and its names. The Area/Unit name/code may already exist, or the selected Division/Department or name data is invalid.');
   }
-  header('Location:areas.php'); exit;
+  header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
 }
 
 $divisions=$pdo->query('SELECT id,name,division_head FROM divisions ORDER BY name')->fetchAll();
