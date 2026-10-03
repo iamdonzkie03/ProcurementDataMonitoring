@@ -28,6 +28,18 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $id=(int)($_POST['id']??0);
   $year=(int)($_POST['fiscal_year']??0);
   $areaId=(int)($_POST['area_id']??0);
+  $requestedBy=trim($_POST['requested_by']??'');
+  $preparedPosition='';
+  if($requestedBy!==''){
+    $stRequested=$pdo->prepare('SELECT position_designation FROM area_personnel WHERE area_id=? AND name=? LIMIT 1');
+    $stRequested->execute([$areaId,$requestedBy]);
+    $requestedPerson=$stRequested->fetch();
+    if(!$requestedPerson){
+      flash('error','Requested By must be selected from the personnel assigned to the selected End-User / Implementing Unit.');
+      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+    }
+    $preparedPosition=trim($requestedPerson['position_designation']??'');
+  }
 
   if(!in_array($year,$entryFiscalYears,true)){
     flash('error','Fiscal Year must be between '.$currentFiscalYear.' and '.($currentFiscalYear+3).'.');
@@ -51,7 +63,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     trim($_POST['procurement_mode']??''),trim($_POST['preprocurement_conference']??''),
     trim($_POST['start_procurement']??''),trim($_POST['end_procurement']??''),trim($_POST['delivery_period']??''),
     trim($_POST['source_of_funds']??''),$unitPrice,trim($_POST['supporting_documents']??''),
-    trim($_POST['requested_by']??''),trim($_POST['prepared_by']??''),trim($_POST['prepared_position']??''),
+    $requestedBy,trim($_POST['prepared_by']??''),$preparedPosition,
     trim($_POST['submitted_by']??''),trim($_POST['submitted_position']??''),trim($_POST['budget_approved_by']??''),
     trim($_POST['budget_position']??''),($_POST['prepared_date']??'')?:null,($_POST['submitted_date']??'')?:null,
     ($_POST['budget_date']??'')?:null,trim($_POST['remarks']??'')
