@@ -8,9 +8,27 @@ $pdo=db();
 try{
   $cols=$pdo->query("SHOW COLUMNS FROM divisions LIKE 'head_position_designation'")->fetch();
   if(!$cols) $pdo->exec("ALTER TABLE divisions ADD COLUMN head_position_designation VARCHAR(150) NULL AFTER division_head");
+  $cols=$pdo->query("SHOW COLUMNS FROM divisions LIKE 'electronic_signature'")->fetch();
+  if(!$cols) $pdo->exec("ALTER TABLE divisions ADD COLUMN electronic_signature VARCHAR(255) NULL AFTER head_position_designation");
+  $cols=$pdo->query("SHOW COLUMNS FROM areas LIKE 'electronic_signature'")->fetch();
+  if(!$cols) $pdo->exec("ALTER TABLE areas ADD COLUMN electronic_signature VARCHAR(255) NULL AFTER code");
   $cols=$pdo->query("SHOW COLUMNS FROM area_personnel LIKE 'position_designation'")->fetch();
   if(!$cols) $pdo->exec("ALTER TABLE area_personnel ADD COLUMN position_designation VARCHAR(150) NULL AFTER name");
 }catch(PDOException $e){ /* Migration can also be applied manually. */ }
+
+function saveElectronicSignature(array $file): string{
+  if(($file['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK) throw new RuntimeException('Unable to upload the electronic signature.');
+  if(($file['size']??0)>2*1024*1024) throw new RuntimeException('Electronic signature must not exceed 2 MB.');
+  $finfo=new finfo(FILEINFO_MIME_TYPE);
+  $mime=$finfo->file($file['tmp_name']);
+  $allowed=['image/png'=>'png','image/jpeg'=>'jpg'];
+  if(!isset($allowed[$mime])) throw new RuntimeException('Electronic signature must be a PNG or JPG image.');
+  $dir=__DIR__.'/uploads/signatures';
+  if(!is_dir($dir) && !mkdir($dir,0755,true) && !is_dir($dir)) throw new RuntimeException('Unable to create signature upload folder.');
+  $filename='signature_'.date('YmdHis').'_'.bin2hex(random_bytes(5)).'.'.$allowed[$mime];
+  if(!move_uploaded_file($file['tmp_name'],$dir.'/'.$filename)) throw new RuntimeException('Unable to save the electronic signature.');
+  return 'uploads/signatures/'.$filename;
+}
 
 $editId=(int)($_GET['edit']??0);
 $editing=null;
@@ -28,6 +46,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $divisionId=(int)($_POST['division_id']??0);
   $name=trim($_POST['name']??'');
   $code=trim($_POST['code']??'') ?: null;
+  $areaSignaturePath=null;
+  if(!empty($_FILES['electronic_signature']['name'])){
+    $areaSignaturePath=saveElectronicSignature($_FILES['electronic_signature']);
+  }
 
   if($action==='delete'){
     if($id<=0){ flash('error','Invalid Area/Unit.'); }
@@ -47,12 +69,16 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $divisionName=trim($_POST['division_name']??'');
     $head=trim($_POST['division_head']??'');
     $headPosition=trim($_POST['head_position_designation']??'');
+    $signaturePath=null;
+    if(!empty($_FILES['electronic_signature']['name'])){
+      $signaturePath=saveElectronicSignature($_FILES['electronic_signature']);
+    }
     if($divisionName==='' || $head===''){
       flash('error','Division/Department name and Division/Department Head are required.');
     }else{
       try{
-        $st=$pdo->prepare('INSERT INTO divisions(name,division_head,head_position_designation) VALUES(?,?,?)');
-        $st->execute([$divisionName,$head,$headPosition]);
+        $st=$pdo->prepare('INSERT INTO divisions(name,division_head,head_position_designation,electronic_signature) VALUES(?,?,?,?)');
+        $st->execute([$divisionName,$head,$headPosition,$signaturePath]);
         flash('success','Division/Department added with one designated Head.');
       }catch(PDOException $e){
         flash('error','The Division/Department name already exists.');
@@ -66,12 +92,21 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $divisionName=trim($_POST['division_name']??'');
     $head=trim($_POST['division_head']??'');
     $headPosition=trim($_POST['head_position_designation']??'');
+    $signaturePath=null;
+    if(!empty($_FILES['electronic_signature']['name'])){
+      $signaturePath=saveElectronicSignature($_FILES['electronic_signature']);
+    }
     if($divisionId<=0 || $divisionName==='' || $head===''){
       flash('error','Division/Department name and Division/Department Head are required.');
     }else{
       try{
-        $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=? WHERE id=?');
-        $st->execute([$divisionName,$head,$headPosition,$divisionId]);
+        if($signaturePath!==null){
+          $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=?,electronic_signature=? WHERE id=?');
+          $st->execute([$divisionName,$head,$headPosition,$signaturePath,$divisionId]);
+        }else{
+          $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=? WHERE id=?');
+          $st->execute([$divisionName,$head,$headPosition,$divisionId]);
+        }
         flash('success','Division/Department updated.');
       }catch(PDOException $e){
         flash('error','The Division/Department name already exists.');
@@ -137,13 +172,18 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $pdo->beginTransaction();
 
     if($action==='edit' && $id>0){
-      $st=$pdo->prepare('UPDATE areas SET division_id=?,name=?,code=? WHERE id=?');
-      $st->execute([$divisionId,$name,$code,$id]);
+      if($areaSignaturePath!==null){
+        $st=$pdo->prepare('UPDATE areas SET division_id=?,name=?,code=?,electronic_signature=? WHERE id=?');
+        $st->execute([$divisionId,$name,$code,$areaSignaturePath,$id]);
+      }else{
+        $st=$pdo->prepare('UPDATE areas SET division_id=?,name=?,code=? WHERE id=?');
+        $st->execute([$divisionId,$name,$code,$id]);
+      }
       $areaId=$id;
       $successMessage='Area/Unit updated.';
     }else{
-      $st=$pdo->prepare('INSERT INTO areas(division_id,name,code) VALUES(?,?,?)');
-      $st->execute([$divisionId,$name,$code]);
+      $st=$pdo->prepare('INSERT INTO areas(division_id,name,code,electronic_signature) VALUES(?,?,?,?)');
+      $st->execute([$divisionId,$name,$code,$areaSignaturePath]);
       $areaId=(int)$pdo->lastInsertId();
       $successMessage='Area/Unit added.';
     }
@@ -168,9 +208,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
 }
 
-$divisions=$pdo->query('SELECT id,name,division_head,head_position_designation FROM divisions ORDER BY name')->fetchAll();
+$divisions=$pdo->query('SELECT id,name,division_head,head_position_designation,electronic_signature FROM divisions ORDER BY name')->fetchAll();
 $rows=$pdo->query('
-  SELECT a.id,a.name,a.code,a.created_at,d.id division_id,d.name division_name,d.division_head
+  SELECT a.id,a.name,a.code,a.electronic_signature,a.created_at,d.id division_id,d.name division_name,d.division_head
   FROM areas a
   JOIN divisions d ON d.id=a.division_id
   ORDER BY d.name,a.name
@@ -187,7 +227,7 @@ $people=$pdo->query('
 $divisionEditId=(int)($_GET['edit_division']??0);
 $divisionEditing=null;
 if($divisionEditId>0){
-  $st=$pdo->prepare('SELECT id,name,division_head,head_position_designation FROM divisions WHERE id=?');
+  $st=$pdo->prepare('SELECT id,name,division_head,head_position_designation,electronic_signature FROM divisions WHERE id=?');
   $st->execute([$divisionEditId]);
   $divisionEditing=$st->fetch();
 }
@@ -197,7 +237,7 @@ if(!$embedded) pageStart('Area/Unit Management');
   <div class="management-column panel">
     <div class="management-section">
       <div class="toolbar"><div><h2><?= $divisionEditing ? 'Edit Division/Department' : 'Division/Department Management' ?></h2><p>Each Division/Department has exactly one designated Head. Multiple Area/Units may be assigned under the same Division/Department.</p></div></div>
-      <form method="post">
+      <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="action" value="<?= $divisionEditing ? 'update_division' : 'save_division' ?>">
         <?php if($divisionEditing): ?><input type="hidden" name="division_id" value="<?=e($divisionEditing['id'])?>"><?php endif; ?>
@@ -205,6 +245,7 @@ if(!$embedded) pageStart('Area/Unit Management');
           <div class="field"><label>Division/Department Name</label><input class="input" name="division_name" required placeholder="e.g. Medical Service" value="<?=e($divisionEditing['name']??'')?>"></div>
           <div class="field"><label>Division/Department Head</label><input class="input" name="division_head" required placeholder="e.g. Juan Dela Cruz" value="<?=e($divisionEditing['division_head']??'')?>"></div>
           <div class="field"><label>Position/Designation</label><input class="input" name="head_position_designation" placeholder="e.g. Medical Center Chief / Division Chief" value="<?=e($divisionEditing['head_position_designation']??'')?>"></div>
+          <div class="field full"><label>Electronic Signature</label><input class="input" type="file" name="electronic_signature" accept="image/png,image/jpeg"><small class="muted">Upload PNG or JPG signature image, maximum 2 MB.</small><?php if(!empty($divisionEditing['electronic_signature'])): ?><div class="signature-preview"><img src="<?=e($divisionEditing['electronic_signature'])?>" alt="Division/Department electronic signature"></div><?php endif; ?></div>
         </div>
         <div class="actions"><button class="btn" type="submit"><?= $divisionEditing ? 'Save Division/Department' : '+ Add Division/Department' ?></button><?php if($divisionEditing): ?><a class="btn secondary" href="areas.php">Cancel</a><?php endif; ?></div>
       </form>
@@ -226,7 +267,7 @@ if(!$embedded) pageStart('Area/Unit Management');
     <div class="management-section area-unit-add-panel">
       <h2><?= $editing ? 'Edit Area/Unit' : 'Add Area/Unit' ?></h2>
       <p>Area/Units inherit the Division/Department Head from their selected Division/Department and can contain multiple names.</p>
-      <form method="post">
+      <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="action" value="<?= $editing ? 'edit' : 'add' ?>">
         <?php if($editing): ?><input type="hidden" name="id" value="<?=e($editing['id'])?>"><?php endif; ?>
@@ -234,6 +275,7 @@ if(!$embedded) pageStart('Area/Unit Management');
           <div class="field"><label>Division/Department *</label><select class="select" name="division_id" required><option value="">Select Division/Department</option><?php foreach($divisions as $d): ?><option value="<?=e($d['id'])?>" <?=((int)($editing['division_id']??0)===(int)$d['id'])?'selected':''?>><?=e($d['name'])?> — Head: <?=e($d['division_head'])?></option><?php endforeach; ?></select></div>
           <div class="field"><label>Area/Unit Name *</label><input class="input" name="name" required placeholder="e.g. Operating Room" value="<?=e($editing['name']??'')?>"></div>
           <div class="field"><label>Code <small>(optional)</small></label><input class="input" name="code" placeholder="e.g. OR" value="<?=e($editing['code']??'')?>"></div>
+          <div class="field full"><label>Electronic Signature</label><input class="input" type="file" name="electronic_signature" accept="image/png,image/jpeg"><small class="muted">Upload PNG or JPG signature image, maximum 2 MB.</small><?php if(!empty($editing['electronic_signature'])): ?><div class="signature-preview"><img src="<?=e($editing['electronic_signature'])?>" alt="Area/Unit electronic signature"></div><?php endif; ?></div>
           <div class="field full"><label>Names Under This Area/Unit</label><div id="area-names-list">
           <?php $editingPeople=[]; if($editing){$stPeople=$pdo->prepare('SELECT id,name,position_designation FROM area_personnel WHERE area_id=? ORDER BY name');$stPeople->execute([$editing['id']]);$editingPeople=$stPeople->fetchAll();} ?>
           <?php if($editingPeople): foreach($editingPeople as $person): ?><div class="area-name-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px"><input class="input" name="names[]" value="<?=e($person['name'])?>" placeholder="e.g. Maria Santos"><input class="input" name="positions[]" value="<?=e($person['position_designation']??'')?>" placeholder="e.g. Nurse / Administrative Officer"><button class="btn danger remove-area-name" type="button">Remove</button></div><?php endforeach; else: ?><div class="area-name-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px"><input class="input" name="names[]" placeholder="e.g. Maria Santos"><input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer"><button class="btn danger remove-area-name" type="button">Remove</button></div><?php endif; ?>
@@ -280,5 +322,7 @@ if(!$embedded) pageStart('Area/Unit Management');
 <style>
 .master-action{width:82px;min-width:82px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center}
 .master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
+.signature-preview{margin-top:8px;padding:8px;border:1px solid #ddd;background:#fff;display:inline-block}
+.signature-preview img{display:block;max-width:240px;max-height:90px;object-fit:contain}
 </style>
 <?php if(!$embedded) pageEnd(); ?>
