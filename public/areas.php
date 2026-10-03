@@ -70,21 +70,26 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location:areas.php'); exit;
   }
 
-  if($action==='save_person'){
-    $areaId=(int)($_POST['area_id']??0);
-    $personName=trim($_POST['person_name']??'');
-    if($areaId<=0 || $personName===''){
-      flash('error','Area/Unit and Name are required.');
+  if($action==='save_area_names'){
+    $areaId=(int)($_POST['id']??0);
+    $names=array_values(array_unique(array_filter(array_map('trim',$_POST['names']??[]),fn($v)=>$v!=='')));
+    if($areaId<=0){
+      flash('error','Invalid Area/Unit.');
     }else{
       try{
-        $st=$pdo->prepare('INSERT INTO area_personnel(area_id,name) VALUES(?,?)');
-        $st->execute([$areaId,$personName]);
-        flash('success','Name added under the Area/Unit.');
+        $pdo->beginTransaction();
+        $st=$pdo->prepare('DELETE FROM area_personnel WHERE area_id=?');
+        $st->execute([$areaId]);
+        $ins=$pdo->prepare('INSERT INTO area_personnel(area_id,name) VALUES(?,?)');
+        foreach($names as $personName){ $ins->execute([$areaId,$personName]); }
+        $pdo->commit();
+        flash('success','Area/Unit names updated.');
       }catch(PDOException $e){
-        flash('error','This name is already listed under the selected Area/Unit.');
+        if($pdo->inTransaction()) $pdo->rollBack();
+        flash('error','Unable to save the Area/Unit names. Please check for duplicate names.');
       }
     }
-    header('Location:areas.php'); exit;
+    header('Location:areas.php?edit='.$areaId); exit;
   }
 
   if($action==='delete_person'){
@@ -172,24 +177,37 @@ pageStart('Area/Unit Management');
       <div class="field"><label>Division/Department *</label><select class="select" name="division_id" required><option value="">Select Division/Department</option><?php foreach($divisions as $d): ?><option value="<?=e($d['id'])?>" <?=((int)($editing['division_id']??0)===(int)$d['id'])?'selected':''?>><?=e($d['name'])?> — Head: <?=e($d['division_head'])?></option><?php endforeach; ?></select></div>
       <div class="field"><label>Area/Unit Name *</label><input class="input" name="name" required placeholder="e.g. Operating Room" value="<?=e($editing['name']??'')?>"></div>
       <div class="field"><label>Code <small>(optional)</small></label><input class="input" name="code" placeholder="e.g. OR" value="<?=e($editing['code']??'')?>"></div>
+      <div class="field full">
+        <label>Names Under This Area/Unit</label>
+        <div id="area-names-list">
+          <?php
+          $editingPeople=[];
+          if($editing){
+            $stPeople=$pdo->prepare('SELECT id,name FROM area_personnel WHERE area_id=? ORDER BY name');
+            $stPeople->execute([$editing['id']]);
+            $editingPeople=$stPeople->fetchAll();
+          }
+          ?>
+          <?php if($editingPeople): foreach($editingPeople as $person): ?>
+            <div class="area-name-row" style="display:flex;gap:8px;margin-bottom:8px">
+              <input class="input" name="names[]" value="<?=e($person['name'])?>" placeholder="e.g. Maria Santos">
+              <button class="btn danger remove-area-name" type="button">Remove</button>
+            </div>
+          <?php endforeach; else: ?>
+            <div class="area-name-row" style="display:flex;gap:8px;margin-bottom:8px">
+              <input class="input" name="names[]" placeholder="e.g. Maria Santos">
+              <button class="btn danger remove-area-name" type="button">Remove</button>
+            </div>
+          <?php endif; ?>
+        </div>
+        <button class="btn secondary" type="button" id="add-area-name">+ Add Another Name</button>
+        <small class="muted">Add as many names as needed for this Area/Unit.</small>
+      </div>
     </div>
     <div class="actions">
       <button class="btn" type="submit"><?= $editing ? 'Save Changes' : '+ Add Area/Unit' ?></button>
       <?php if($editing): ?><a class="btn secondary" href="areas.php">Cancel</a><?php endif; ?>
     </div>
-  </form>
-</div>
-
-<div class="panel" style="margin-top:18px">
-  <div class="toolbar"><div><h2>Names Under Area/Unit</h2><p>You can add multiple names to each Area/Unit.</p></div></div>
-  <form method="post">
-    <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-    <input type="hidden" name="action" value="save_person">
-    <div class="form-grid">
-      <div class="field"><label>Area/Unit *</label><select class="select" name="area_id" required><option value="">Select Area/Unit</option><?php foreach($rows as $r): ?><option value="<?=e($r['id'])?>"><?=e($r['division_name'])?> — <?=e($r['name'])?></option><?php endforeach; ?></select></div>
-      <div class="field"><label>Name *</label><input class="input" name="person_name" required placeholder="e.g. Maria Santos"></div>
-    </div>
-    <div class="actions"><button class="btn" type="submit">+ Add Name</button></div>
   </form>
 </div>
 
@@ -232,22 +250,26 @@ pageStart('Area/Unit Management');
   </table></div>
 </div>
 
-<div class="panel" style="margin-top:18px">
-  <h2>Names List</h2>
-  <div class="table-wrap"><table class="table">
-    <tr><th>Division/Department</th><th>Area/Unit</th><th>Name</th><th>Created</th><th>Actions</th></tr>
-    <?php foreach($people as $p): ?>
-      <tr>
-        <td><?=e($p['division_name'])?></td><td><?=e($p['area_name'])?></td><td><?=e($p['name'])?></td><td><?=e($p['created_at'])?></td>
-        <td><form method="post" style="display:inline" onsubmit="return confirm('Remove this name from the Area/Unit?');">
-          <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-          <input type="hidden" name="action" value="delete_person">
-          <input type="hidden" name="person_id" value="<?=e($p['id'])?>">
-          <button class="btn danger" type="submit">Delete</button>
-        </form></td>
-      </tr>
-    <?php endforeach; ?>
-    <?php if(!$people): ?><tr><td colspan="5">No names have been added yet.</td></tr><?php endif; ?>
-  </table></div>
-</div>
-<?php pageEnd();
+;
+<script>
+(function(){
+  const list=document.getElementById('area-names-list');
+  const add=document.getElementById('add-area-name');
+  if(!list||!add) return;
+  add.addEventListener('click',function(){
+    const row=document.createElement('div');
+    row.className='area-name-row';
+    row.style.cssText='display:flex;gap:8px;margin-bottom:8px';
+    row.innerHTML='<input class="input" name="names[]" placeholder="e.g. Maria Santos"><button class="btn danger remove-area-name" type="button">Remove</button>';
+    list.appendChild(row);
+  });
+  list.addEventListener('click',function(e){
+    if(e.target.classList.contains('remove-area-name')){
+      const rows=list.querySelectorAll('.area-name-row');
+      if(rows.length>1) e.target.closest('.area-name-row').remove();
+      else e.target.closest('.area-name-row').querySelector('input').value='';
+    }
+  });
+})();
+</script>
+<?php pageEnd(); ?>
