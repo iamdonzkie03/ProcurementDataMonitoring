@@ -121,7 +121,11 @@ $procurementMethods=$pdo->query("SELECT procurement_method,details FROM procurem
 $units=$pdo->query("SELECT id,name FROM units_of_measure WHERE status='Active' ORDER BY name")->fetchAll();
 $nextPpmpNo='';
 if(!$editing){
-  $stNext=$pdo->prepare("SELECT MAX(CASE WHEN ppmp_no REGEXP CONCAT('^PPMP-',?, '-[0-9]{4}
+  $stNext=$pdo->prepare("SELECT MAX(CASE WHEN ppmp_no REGEXP CONCAT('^PPMP-',?, '-[0-9]{4}$') THEN CAST(RIGHT(ppmp_no,4) AS UNSIGNED) ELSE 0 END) FROM ppmp_items WHERE fiscal_year=?");
+  $stNext->execute([$year,$year]);
+  $nextPpmpNo='PPMP-'.$year.'-'.str_pad((string)(((int)$stNext->fetchColumn())+1),4,'0',STR_PAD_LEFT);
+}
+$personnelByArea=[];
 $stPersonnel=$pdo->query('SELECT id,area_id,name,position_designation FROM area_personnel ORDER BY area_id,name');
 foreach($stPersonnel->fetchAll() as $person){ $personnelByArea[(int)$person['area_id']][]=$person; }
 
