@@ -62,7 +62,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
   }
 
-  $qty=max(0,(float)($_POST['quantity']??0));
+  $qty=max(0,(float)str_replace(',','',$_POST['quantity']??0));
   $unitPrice=max(0,(float)str_replace(',','',$_POST['unit_price']??0));
   $totalBudget=$qty*$unitPrice;
   $supportingDocuments=trim($_POST['existing_supporting_documents']??'');
@@ -226,10 +226,10 @@ pageStart('Project Procurement Management Plan');
         </div>
         <div class="field"><label>Item Name *</label><input class="input" name="item_name" required value="<?=e($editing['item_name']??'')?>"></div>
         <div class="field full"><label>General Description / Technical Specifications *</label><textarea class="input" name="description" rows="4" required><?=e($editing['description']??'')?></textarea></div>
-        <div class="field"><label>Quantity *</label><input class="input ppmp-money-input" type="text" inputmode="decimal" name="quantity" id="ppmp_quantity" required value="<?=e(!empty($editing['quantity']) ? number_format((float)$editing['quantity'],2,'.','') : '')?>"></div>
-        <div class="field"><label>Unit or Measurement / Size *</label><select class="select" name="unit" required><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>" <?=((string)($editing['unit']??'')===(string)$u['name'])?'selected':''?>><?=e($u['name'])?></option><?php endforeach;?></select></div>
-        <div class="field"><label>Unit Cost (PhP) *</label><input class="input ppmp-money-input" type="text" inputmode="decimal" name="unit_price" id="ppmp_unit_price" required value="<?=e(!empty($editing['unit_price']) ? number_format((float)$editing['unit_price'],2,'.','') : '')?>"></div>
-        <div class="field"><label>Total Budget</label><input class="input ppmp-total-budget" type="text" id="ppmp_total_budget" value="<?=e(((float)($editing['quantity']??0)*(float)($editing['unit_price']??0)) ? number_format((float)$editing['quantity']*(float)$editing['unit_price'],2,'.','') : '')?>" readonly></div>
+        <div class="field ppmp-quantity-field"><label>Quantity *</label><input class="input ppmp-money-input" type="text" inputmode="decimal" name="quantity" id="ppmp_quantity" required value="<?=e(!empty($editing['quantity']) ? number_format((float)$editing['quantity'],2,'.','') : '')?>"></div>
+        <div class="field ppmp-unit-field"><label>Unit or Measurement / Size *</label><select class="select" name="unit" required><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>" <?=((string)($editing['unit']??'')===(string)$u['name'])?'selected':''?>><?=e($u['name'])?></option><?php endforeach;?></select></div>
+        <div class="field ppmp-unit-cost-field"><label>Unit Cost (PhP) *</label><input class="input ppmp-money-input" type="text" inputmode="decimal" name="unit_price" id="ppmp_unit_price" required value="<?=e(!empty($editing['unit_price']) ? number_format((float)$editing['unit_price'],2,'.','') : '')?>"></div>
+        <div class="field ppmp-total-field"><label>Total Budget</label><input class="input ppmp-total-budget" type="text" id="ppmp_total_budget" value="<?=e(((float)($editing['quantity']??0)*(float)($editing['unit_price']??0)) ? number_format((float)$editing['quantity']*(float)$editing['unit_price'],2,'.','') : '')?>" readonly></div>
       </div>
     </div>
 
@@ -369,8 +369,65 @@ if(area){
  function formatMoney(value){return Number(value||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
  function syncTotalBudget(){if(!quantity||!unitPrice||!totalBudget)return; const q=moneyNumber(quantity.value), p=moneyNumber(unitPrice.value); totalBudget.value=formatMoney(q*p);}
  if(fiscalYear){fiscalYear.addEventListener('change',syncPpmpNumber);syncPpmpNumber();}
- if(unitPrice){unitPrice.addEventListener('input',function(){const raw=this.value.replace(/[^0-9.]/g,''); const parts=raw.split('.'); this.value=parts.length>2?parts[0]+'.'+parts.slice(1).join(''):raw; syncTotalBudget();}); unitPrice.addEventListener('blur',function(){if(this.value!=='')this.value=formatMoney(moneyNumber(this.value));});}
- if(quantity&&unitPrice){quantity.addEventListener('input',syncTotalBudget);syncTotalBudget();}
+ function liveFormatMoney(field){
+   if(!field)return;
+   const raw=String(field.value||'').replace(/[^0-9.]/g,'');
+   if(raw===''){field.value='';syncTotalBudget();return;}
+   const parts=raw.split('.');
+   let integer=(parts[0]||'0').replace(/^0+(?=\d)/,'');
+   integer=integer.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+   if(parts.length>1){
+     field.value=integer+'.'+(parts.slice(1).join('').slice(0,2));
+   }else{
+     field.value=integer;
+   }
+   syncTotalBudget();
+ }
+ function finalizeMoney(field){
+   if(!field||field.value==='')return;
+   field.value=formatMoney(moneyNumber(field.value));
+   syncTotalBudget();
+ }
+ [quantity,unitPrice].forEach(function(field){
+   if(!field)return;
+   field.addEventListener('input',function(){liveFormatMoney(this);});
+   field.addEventListener('blur',function(){finalizeMoney(this);});
+   field.addEventListener('focus',function(){
+     if(this.value==='0.00')this.select();
+   });
+ });
+ if(quantity&&unitPrice){syncTotalBudget();}
 
 })();
 </script>
+
+<style>
+.ppmp-entry .ppmp-quantity-field,
+.ppmp-entry .ppmp-unit-field,
+.ppmp-entry .ppmp-unit-cost-field,
+.ppmp-entry .ppmp-total-field{
+  min-width:0
+}
+.ppmp-entry .ppmp-quantity-field{grid-column:span 3}
+.ppmp-entry .ppmp-unit-field{grid-column:span 6}
+.ppmp-entry .ppmp-unit-cost-field{grid-column:span 4}
+.ppmp-entry .ppmp-total-field{grid-column:span 7}
+.ppmp-entry .ppmp-quantity-field input{
+  text-align:left!important
+}
+@media (min-width: 900px){
+  .ppmp-entry .ppmp-input-grid:has(.ppmp-quantity-field){
+    grid-template-columns:repeat(20,minmax(0,1fr))
+  }
+  .ppmp-entry .ppmp-quantity-field{grid-column:span 3}
+  .ppmp-entry .ppmp-unit-field{grid-column:span 6}
+  .ppmp-entry .ppmp-unit-cost-field{grid-column:span 4}
+  .ppmp-entry .ppmp-total-field{grid-column:span 7}
+}
+@media (max-width: 899px){
+  .ppmp-entry .ppmp-quantity-field,
+  .ppmp-entry .ppmp-unit-field,
+  .ppmp-entry .ppmp-unit-cost-field,
+  .ppmp-entry .ppmp-total-field{grid-column:1/-1}
+}
+</style>
