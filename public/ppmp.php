@@ -385,14 +385,10 @@ if(!empty($r['supporting_documents'])){
   }
 }
 echo $printDocs ? implode('<br>',array_map('e',$printDocs)) : '';
-$printRemarks=trim((string)($r['remarks']??''));
-if($printRemarks!==''){
-  echo ($printDocs ? '<br><br><b>Remarks:</b><br>' : '<b>Remarks:</b><br>').nl2br(e($printRemarks));
-}
-?></td>
+?></td><td<?=$rowspan?>><?=nl2br(e($r['remarks']))?></td>
       </tr>
-      
-      <?php for($i=count($rows);$i<3;$i++): ?><tr class="data-row blank"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><?php endfor; ?>
+      <?php endforeach; ?>
+      <?php for($i=count($rows);$i<3;$i++): ?><tr class="data-row blank"><?php if(count($rows)===0 || $i>count($rows)): ?><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><?php endif; ?></tr><?php endfor; ?>
     </tbody>
   </table>
 
