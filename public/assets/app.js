@@ -28,30 +28,35 @@
 
       function openSettings() {
         clearTimeout(closeTimer);
-        // Use the native <details> state so the submenu is visible
-        // even when CSS hover selectors are overridden elsewhere.
         settings.open = true;
         settings.classList.add('js-hover-open');
         settingsSubmenu.setAttribute('aria-hidden', 'false');
       }
 
-      function closeSettings() {
+      function closeSettings(delay) {
         clearTimeout(closeTimer);
         closeTimer = setTimeout(function () {
-          if (!settings.matches(':hover') && !settings.matches(':focus-within')) {
-            settings.open = false;
-            settings.classList.remove('js-hover-open');
-            settingsSubmenu.setAttribute('aria-hidden', 'true');
-          }
-        }, 180);
+          settings.open = false;
+          settings.classList.remove('js-hover-open');
+          settingsSubmenu.setAttribute('aria-hidden', 'true');
+        }, delay || 0);
       }
 
+      // Settings opens only while hovering/focusing the Settings control.
       settingsSummary.addEventListener('mouseenter', openSettings);
       settingsSubmenu.addEventListener('mouseenter', openSettings);
-      settings.addEventListener('mouseleave', closeSettings);
+      settings.addEventListener('mouseleave', function () {
+        closeSettings(180);
+      });
       settingsSummary.addEventListener('focus', openSettings);
-      settings.addEventListener('focusout', closeSettings);
+      settings.addEventListener('focusout', function (event) {
+        if (!settings.contains(event.relatedTarget)) {
+          closeSettings(0);
+        }
+      });
 
+      // Clicking any Settings submenu item closes the dropdown immediately.
+      // Navigation then proceeds normally to the selected page.
       settingsSubmenu.querySelectorAll('a').forEach(function (link) {
         link.addEventListener('mouseenter', function () {
           this.classList.add('submenu-hover');
@@ -59,7 +64,18 @@
         link.addEventListener('mouseleave', function () {
           this.classList.remove('submenu-hover');
         });
+        link.addEventListener('click', function () {
+          clearTimeout(closeTimer);
+          settings.open = false;
+          settings.classList.remove('js-hover-open');
+          settingsSubmenu.setAttribute('aria-hidden', 'true');
+        });
       });
+
+      // Always start closed on a newly loaded page.
+      settings.open = false;
+      settings.classList.remove('js-hover-open');
+      settingsSubmenu.setAttribute('aria-hidden', 'true');
     }
   }
 
