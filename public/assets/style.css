@@ -424,3 +424,12 @@ body{font-size:11px!important}
   .ppmp-note{font-size:11px!important}
   .ppmp-signatures{font-size:10.5px!important}
 }
+
+/* PPMP Prepared By electronic signature */
+.ppmp-prepared-signature{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;min-height:48px!important;padding-top:2px!important;}
+.ppmp-prepared-signature img{display:block;max-width:150px;max-height:42px;width:auto;height:auto;object-fit:contain;margin:0 auto 1px;}
+.ppmp-prepared-signature span{display:block;line-height:1.1;}
+@media print{
+  .ppmp-prepared-signature{min-height:42px!important;}
+  .ppmp-prepared-signature img{max-width:125px;max-height:34px;}
+}
