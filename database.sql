@@ -93,7 +93,8 @@ CREATE TABLE IF NOT EXISTS ppmp_items (
   CONSTRAINT fk_ppmp_area FOREIGN KEY(area_id) REFERENCES areas(id),
   CONSTRAINT fk_ppmp_category FOREIGN KEY(category_id) REFERENCES categories(id),
   CONSTRAINT fk_ppmp_user FOREIGN KEY(created_by) REFERENCES users(id),
-  INDEX idx_ppmp_year (fiscal_year)
+  INDEX idx_ppmp_year (fiscal_year),
+  UNIQUE KEY uq_ppmp_fiscal_year_area (fiscal_year,area_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS purchase_requests (
