@@ -53,11 +53,13 @@ if(!$embedded) pageStart('Units of Measurement');
 <div class="field" style="display:flex;align-items:end;gap:8px"><button class="btn"><?= $editing ? 'Save Changes' : '+ Add Unit' ?></button><?php if($editing): ?><a class="btn secondary" href="<?=e($embedded?'settings.php?tab=uom':'units.php')?>">Cancel</a><?php endif; ?></div>
 </form>
 <div class="table-wrap"><table class="table"><tr><th>Unit</th><th>Status</th><th>Action</th></tr><?php foreach($rows as $r):?><tr><td><b><?=e($r['name'])?></b></td><td><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="status-toggle <?=$r['status']==='Active'?'status-active':'status-inactive'?>" type="submit" title="Click to change status"><?=e($r['status'])?></button></form></td><td>
-<a class="btn secondary" href="<?=e(($embedded?'settings.php?tab=uom':'units.php').'?edit='.(int)$r['id'])?>">Edit</a>
-<form method="post" style="display:inline" onsubmit="return confirm('Delete this Unit of Measurement?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="btn danger" type="submit">Delete</button></form>
+<a class="btn secondary master-action" href="<?=e(($embedded?'settings.php?tab=uom':'units.php').'?edit='.(int)$r['id'])?>">Edit</a>
+<form method="post" class="master-action-form" onsubmit="return confirm('Delete this Unit of Measurement?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="btn danger master-action" type="submit">Delete</button></form>
 </td></tr><?php endforeach;?></table></div>
 </div>
 <style>
+.master-action{width:82px;min-width:82px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center}
+.master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
 .status-toggle{border:0!important;color:#fff!important;border-radius:999px;padding:5px 12px;font:inherit;font-weight:700;cursor:pointer;transition:none!important;box-shadow:none!important;transform:none!important}
 .status-toggle.status-active{background:#198754!important}
 .status-toggle.status-inactive{background:#dc3545!important}
