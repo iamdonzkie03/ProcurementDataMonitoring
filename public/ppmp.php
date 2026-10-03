@@ -89,9 +89,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $ext=strtolower(pathinfo($originalName,PATHINFO_EXTENSION));
       $mime=(new finfo(FILEINFO_MIME_TYPE))->file($_FILES['supporting_documents']['tmp_name'][$i]);
       if($ext!=='pdf' || $mime!=='application/pdf'){ ppmpSaveFormError('Attached Supporting Documents must be PDF files only.',$year,$areaId,$id); }
-      $safeName='ppmp_'.date('YmdHis').'_'.bin2hex(random_bytes(5)).'.pdf';
+      $documentName=trim((string)(($_POST['supporting_document_names']??[])[$i]??''));
+      if($documentName===''){ ppmpSaveFormError('Please provide a Name for every Attached Supporting Document.',$year,$areaId,$id); }
+      $safeName='ppmp_'.date('YmdHis').'_'.$i.'_'.bin2hex(random_bytes(5)).'.pdf';
       if(!move_uploaded_file($_FILES['supporting_documents']['tmp_name'][$i],$uploadDir.'/'.$safeName)){ ppmpSaveFormError('Unable to save one or more supporting PDF files.',$year,$areaId,$id); }
-      $documentName=trim((string)(($_POST['supporting_document_names']??[])[$i]??'')); if($documentName===''){ ppmpSaveFormError('Please provide a Name for every Attached Supporting Document.',$year,$areaId,$id); } $existingDocs[]=['name'=>$documentName,'original_name'=>basename($originalName),'path'=>'uploads/ppmp/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s')];
+      $existingDocs[]=['name'=>$documentName,'original_name'=>basename($originalName),'path'=>'uploads/ppmp/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s')];
     }
   }
   $supportingDocuments=$existingDocs ? json_encode($existingDocs,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) : '';
