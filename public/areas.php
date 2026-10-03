@@ -108,18 +108,39 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location:areas.php'.($action==='edit'&&$id?'?edit='.$id:'')); exit;
   }
 
+  $names=array_values(array_unique(array_filter(array_map('trim',$_POST['names']??[]),fn($v)=>$v!=='')));
+
   try{
+    $pdo->beginTransaction();
+
     if($action==='edit' && $id>0){
       $st=$pdo->prepare('UPDATE areas SET division_id=?,name=?,code=? WHERE id=?');
       $st->execute([$divisionId,$name,$code,$id]);
-      flash('success','Area/Unit updated.');
+      $areaId=$id;
+      $successMessage='Area/Unit updated.';
     }else{
       $st=$pdo->prepare('INSERT INTO areas(division_id,name,code) VALUES(?,?,?)');
       $st->execute([$divisionId,$name,$code]);
-      flash('success','Area/Unit added.');
+      $areaId=(int)$pdo->lastInsertId();
+      $successMessage='Area/Unit added.';
     }
+
+    // Names are part of the same Area/Unit form and are saved together with it.
+    $st=$pdo->prepare('DELETE FROM area_personnel WHERE area_id=?');
+    $st->execute([$areaId]);
+
+    if($names){
+      $ins=$pdo->prepare('INSERT INTO area_personnel(area_id,name) VALUES(?,?)');
+      foreach($names as $personName){
+        $ins->execute([$areaId,$personName]);
+      }
+    }
+
+    $pdo->commit();
+    flash('success',$successMessage);
   }catch(PDOException $e){
-    flash('error','Area/Unit name or code already exists, or the selected Division/Department is invalid.');
+    if($pdo->inTransaction()) $pdo->rollBack();
+    flash('error','Unable to save the Area/Unit and its names. The Area/Unit name/code may already exist, or the selected Division/Department or name data is invalid.');
   }
   header('Location:areas.php'); exit;
 }
