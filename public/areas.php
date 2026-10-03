@@ -32,18 +32,27 @@ function saveElectronicSignature(array $file): string{
   }
 
   $tmp=(string)($file['tmp_name']??'');
-  if($tmp==='' || !is_uploaded_file($tmp) || !is_file($tmp) || !is_readable($tmp)){
-    throw new RuntimeException('The uploaded signature file is no longer available in the PHP temporary upload folder. Please select the signature file again. If this continues, check the XAMPP/PHP upload_tmp_dir setting.');
+  if($tmp==='' || !is_file($tmp) || !is_readable($tmp)){
+    $uploadDir=(string)ini_get('upload_tmp_dir');
+    $uploadDir=$uploadDir!=='' ? $uploadDir : sys_get_temp_dir();
+    throw new RuntimeException('PHP received the upload but the temporary file cannot be read. Please verify that the PHP upload temporary folder exists and is writable: '.$uploadDir);
   }
 
   $size=(int)($file['size']??0);
   if($size<=0) throw new RuntimeException('The electronic signature file is empty.');
   if($size>2*1024*1024) throw new RuntimeException('Electronic signature must not exceed 2 MB.');
 
-  $finfo=new finfo(FILEINFO_MIME_TYPE);
-  $mime=$finfo->file($tmp);
+  $mime=false;
+  if(function_exists('mime_content_type')) $mime=@mime_content_type($tmp);
+  if($mime===false || $mime==='') {
+    $finfo=new finfo(FILEINFO_MIME_TYPE);
+    $mime=@$finfo->file($tmp);
+  }
+
   $allowed=['image/png'=>'png','image/jpeg'=>'jpg'];
-  if($mime===false || !isset($allowed[$mime])) throw new RuntimeException('Electronic signature must be a PNG or JPG image.');
+  if($mime===false || !isset($allowed[$mime])){
+    throw new RuntimeException('Electronic signature must be a valid PNG or JPG image.');
+  }
 
   $dir=__DIR__.'/uploads/signatures';
   if(!is_dir($dir) && !mkdir($dir,0755,true) && !is_dir($dir)){
