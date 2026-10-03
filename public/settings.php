@@ -8,6 +8,55 @@ $allowed=['procurement-method','classification','category','area-unit','uom'];
 if(!in_array($tab,$allowed,true)) $tab='procurement-method';
 
 $pdo=db();
+
+if($_SERVER['REQUEST_METHOD']==='POST'){
+  checkCsrf();
+  $action=$_POST['action']??'';
+  if($action==='procurement_method_save'){
+    $id=(int)($_POST['id']??0);
+    $method=trim($_POST['procurement_method']??'');
+    $details=trim($_POST['details']??'');
+    if($method===''){
+      flash('error','Procurement Method is required.');
+    }else{
+      try{
+        if($id>0){
+          $st=$pdo->prepare('UPDATE procurement_methods SET procurement_method=?,details=? WHERE id=?');
+          $st->execute([$method,$details!==''?$details:null,$id]);
+          flash('success','Procurement Method updated.');
+        }else{
+          $st=$pdo->prepare('INSERT INTO procurement_methods(procurement_method,details) VALUES(?,?)');
+          $st->execute([$method,$details!==''?$details:null]);
+          flash('success','Procurement Method added.');
+        }
+      }catch(PDOException $e){
+        flash('error',$e->getCode()==='23000'?'That Procurement Method already exists.':'Unable to save the Procurement Method.');
+      }
+    }
+    header('Location:settings.php?tab=procurement-method'); exit;
+  }
+  if($action==='procurement_method_delete'){
+    $id=(int)($_POST['id']??0);
+    if($id>0){
+      try{
+        $st=$pdo->prepare('DELETE FROM procurement_methods WHERE id=?');
+        $st->execute([$id]);
+        flash('success','Procurement Method deleted.');
+      }catch(PDOException $e){
+        flash('error','Unable to delete the Procurement Method. It may already be referenced by another record.');
+      }
+    }
+    header('Location:settings.php?tab=procurement-method'); exit;
+  }
+}
+
+$editingMethod=null;
+if($tab==='procurement-method' && isset($_GET['edit'])){
+  $st=$pdo->prepare('SELECT id,procurement_method,details FROM procurement_methods WHERE id=?');
+  $st->execute([(int)$_GET['edit']]);
+  $editingMethod=$st->fetch() ?: null;
+}
+$procurementMethods=$pdo->query('SELECT id,procurement_method,details FROM procurement_methods ORDER BY procurement_method')->fetchAll();
 $categories=$pdo->query('SELECT id,name FROM categories ORDER BY name')->fetchAll();
 pageStart('Settings');
 ?>
@@ -26,8 +75,50 @@ pageStart('Settings');
 <div class="panel settings-panel">
 <?php if($tab==='procurement-method'): ?>
   <h2>Procurement Method</h2>
-  <p class="muted">Procurement methods are currently entered in the PPMP Recommended Mode of Procurement field. A dedicated master list can be added here when the approved list is finalized.</p>
-  <div class="empty">No procurement method master list has been configured yet.</div>
+  <p class="muted">Add and maintain the procurement methods available for procurement planning and monitoring.</p>
+
+  <form method="post" class="form-grid" style="margin-top:18px">
+    <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+    <input type="hidden" name="action" value="procurement_method_save">
+    <input type="hidden" name="id" value="<?=e((string)($editingMethod['id']??0))?>">
+    <div class="field">
+      <label>Procurement Method</label>
+      <input class="input" name="procurement_method" value="<?=e($editingMethod['procurement_method']??'')?>" required placeholder="e.g. Public Bidding">
+    </div>
+    <div class="field full">
+      <label>Details</label>
+      <textarea class="input" name="details" rows="4" placeholder="Enter details or description of the procurement method"><?=e($editingMethod['details']??'')?></textarea>
+    </div>
+    <div class="actions">
+      <button class="btn" type="submit"><?= $editingMethod ? 'Save Changes' : 'Add Procurement Method' ?></button>
+      <?php if($editingMethod): ?><a class="btn secondary" href="settings.php?tab=procurement-method">Cancel</a><?php endif; ?>
+    </div>
+  </form>
+
+  <div class="table-wrap" style="margin-top:22px">
+    <table class="table">
+      <thead><tr><th>Procurement Method</th><th>Details</th><th>Actions</th></tr></thead>
+      <tbody>
+      <?php if($procurementMethods): foreach($procurementMethods as $pm): ?>
+        <tr>
+          <td><?=e($pm['procurement_method'])?></td>
+          <td><?=nl2br(e($pm['details']??''))?></td>
+          <td>
+            <a class="btn secondary" href="settings.php?tab=procurement-method&edit=<?=(int)$pm['id']?>">Edit</a>
+            <form method="post" style="display:inline" onsubmit="return confirm('Delete this Procurement Method?');">
+              <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+              <input type="hidden" name="action" value="procurement_method_delete">
+              <input type="hidden" name="id" value="<?=(int)$pm['id']?>">
+              <button class="btn danger" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <?php endforeach; else: ?>
+        <tr><td colspan="3" class="empty">No Procurement Methods have been added yet.</td></tr>
+      <?php endif; ?>
+      </tbody>
+    </table>
+  </div>
 <?php elseif($tab==='classification'): ?>
   <h2>Classification</h2>
   <p class="muted">This area is reserved for the procurement classification master list.</p>
