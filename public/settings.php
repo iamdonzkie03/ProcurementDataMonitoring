@@ -9,6 +9,25 @@ if(!in_array($tab,$allowed,true)) $tab='procurement-method';
 
 $pdo=db();
 
+function ensureSettingsSchema(PDO $pdo): void {
+  try {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS classifications (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(120) NOT NULL UNIQUE,
+      status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+    $cols=$pdo->query("SHOW COLUMNS FROM categories LIKE 'status'")->fetch();
+    if(!$cols) $pdo->exec("ALTER TABLE categories ADD COLUMN status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active' AFTER name");
+    $cols=$pdo->query("SHOW COLUMNS FROM procurement_methods LIKE 'status'")->fetch();
+    if(!$cols) $pdo->exec("ALTER TABLE procurement_methods ADD COLUMN status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active' AFTER details");
+  } catch(PDOException $e) {
+    // The page will still show the original database error if the DB user cannot alter/create tables.
+  }
+}
+ensureSettingsSchema($pdo);
+
 if($_SERVER['REQUEST_METHOD']==='POST'){
   checkCsrf();
   $action=$_POST['action']??'';
