@@ -36,3 +36,11 @@
 .sidebar-submenu[hidden]{display:none}
 .side-foot{flex-shrink:0}
 @media(max-width:700px){.sidebar-nav{padding-bottom:8px}.side-foot{position:static;margin:8px 10px 0;padding-top:15px}.sidebar{overflow:hidden}}
+
+/* Native Settings accordion */
+.sidebar-group{margin:4px 0}
+.sidebar-group-title{display:flex!important;align-items:center;list-style:none}
+.sidebar-group-title::-webkit-details-marker{display:none}
+.sidebar-group-title::marker{display:none}
+.sidebar-group[open] .sidebar-chevron{transform:rotate(180deg)}
+.sidebar-submenu{max-height:none!important;overflow:visible!important;padding:0 0 2px 18px!important}
