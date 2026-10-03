@@ -147,7 +147,7 @@ $formOldEditId=(int)($_SESSION['ppmp_form_edit_id']??0);
 unset($_SESSION['ppmp_form_old'],$_SESSION['ppmp_form_edit_id']);
 $formState=$editing?:($formOld??[]);
 $formIsEditing=$editing!==null || ($formOld!==null && (($formOld['action']??'')==='edit'));
-$areas=$pdo->query('SELECT a.*,d.name division_name,d.division_head authorized_person FROM areas a JOIN divisions d ON d.id=a.division_id ORDER BY d.name,a.name')->fetchAll();
+$areas=$pdo->query('SELECT a.*,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position FROM areas a JOIN divisions d ON d.id=a.division_id ORDER BY d.name,a.name')->fetchAll();
 $cats=$pdo->query("SELECT * FROM categories WHERE status='Active' ORDER BY name")->fetchAll();
 $classifications=$pdo->query("SELECT name FROM classifications WHERE status='Active' ORDER BY name")->fetchAll();
 $procurementMethods=$pdo->query("SELECT procurement_method,details FROM procurement_methods WHERE status='Active' ORDER BY procurement_method")->fetchAll();
@@ -184,7 +184,7 @@ foreach($stPersonnel->fetchAll() as $person){ $personnelByArea[(int)$person['are
 $where=' WHERE p.fiscal_year=?'; $args=[$year];
 if($areaId>0){$where.=' AND p.area_id=?';$args[]=$areaId;}
 if($q!==''){$where.=' AND (p.item_name LIKE ? OR p.description LIKE ? OR a.name LIKE ? OR c.name LIKE ?)';$args=[...$args,"%$q%","%$q%","%$q%","%$q%"];}
-$sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,c.name category FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id'.$where.' ORDER BY p.id';
+$sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,c.name category FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id'.$where.' ORDER BY p.id';
 $st=$pdo->prepare($sql);$st->execute($args);$rows=$st->fetchAll();
 
 $selectedArea=null;
@@ -193,7 +193,7 @@ if($print && !$selectedArea && $rows){$areaId=(int)$rows[0]['area_id'];foreach($
 if($print && !$selectedArea){flash('error','Select an Area/Unit before printing the PPMP form.');header('Location:ppmp.php?year='.$year);exit;}
 if($print && $rows){
   $header=$rows[0];
-  $selectedArea=$selectedArea ?: ['name'=>$header['area'],'authorized_person'=>$header['authorized_person']];
+  $selectedArea=$selectedArea ?: ['name'=>$header['area'],'authorized_person'=>$header['authorized_person'],'authorized_position'=>$header['authorized_position']??''];
 }
 pageStart('Project Procurement Management Plan');
 ?>
@@ -327,7 +327,7 @@ $ppmpNo=$h['ppmp_no']??'';
 $person=$h['requested_by']??'';
 $preparedPos=$h['prepared_position']??'End-User or Implementing Unit';
 $submitted=$selectedArea['authorized_person']??($h['authorized_person']??'');
-$submittedPos='Supervisor / Authorized Person';
+$submittedPos=$selectedArea['authorized_position']??($h['authorized_position']??'');
 $budgetName=$h['budget_approved_by']??'';
 $budgetPos=$h['budget_position']??'Budget Section';
 function ppmpPrintDate($value): string{
