@@ -265,3 +265,27 @@ body{font-size:11px!important}
     transition: none !important;
   }
 }
+
+
+/* Area/Unit Management split view */
+.management-split{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:18px;
+  align-items:start;
+}
+.management-split > .panel{
+  margin-top:0!important;
+  height:100%;
+}
+.management-split .panel h2{
+  min-height:20px;
+}
+.management-split .area-unit-add-panel .field.full{
+  grid-column:1/-1;
+}
+@media(max-width:950px){
+  .management-split{
+    grid-template-columns:1fr;
+  }
+}
