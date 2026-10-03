@@ -603,7 +603,13 @@ if(area){
      if(this.value==='0.00')this.select();
    });
  });
- if(quantity&&unitPrice){syncTotalBudget();}
+ if(quantity&&unitPrice){
+   // Initialize Edit PPMP Item exactly like Add PPMP Item: format existing
+   // Quantity and Unit Cost immediately and recalculate Total Budget.
+   if(quantity.value!=='') liveFormatMoney(quantity);
+   if(unitPrice.value!=='') liveFormatMoney(unitPrice);
+   syncTotalBudget();
+ }
 
 })();
 </script>
