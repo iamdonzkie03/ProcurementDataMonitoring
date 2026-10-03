@@ -59,14 +59,14 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   }
   header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
 }
-$areas=$pdo->query('SELECT * FROM areas ORDER BY name')->fetchAll();
+$areas=$pdo->query('SELECT a.*,d.name division_name,d.division_head authorized_person FROM areas a JOIN divisions d ON d.id=a.division_id ORDER BY d.name,a.name')->fetchAll();
 $cats=$pdo->query('SELECT * FROM categories ORDER BY name')->fetchAll();
 $units=$pdo->query("SELECT id,name FROM units_of_measure WHERE status='Active' ORDER BY name")->fetchAll();
 
 $where=' WHERE p.fiscal_year=?'; $args=[$year];
 if($areaId>0){$where.=' AND p.area_id=?';$args[]=$areaId;}
 if($q!==''){$where.=' AND (p.item_name LIKE ? OR p.description LIKE ? OR a.name LIKE ? OR c.name LIKE ?)';$args=[...$args,"%$q%","%$q%","%$q%","%$q%"];}
-$sql='SELECT p.*,a.name area,a.authorized_person,c.name category FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id'.$where.' ORDER BY p.id';
+$sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,c.name category FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id'.$where.' ORDER BY p.id';
 $st=$pdo->prepare($sql);$st->execute($args);$rows=$st->fetchAll();
 
 $selectedArea=null;
