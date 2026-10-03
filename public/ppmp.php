@@ -328,8 +328,27 @@ $person=$h['requested_by']??'';
 $preparedPos=$h['prepared_position']??'End-User or Implementing Unit';
 $submitted=$selectedArea['authorized_person']??($h['authorized_person']??'');
 $submittedPos=$selectedArea['authorized_position']??($h['authorized_position']??'');
-$budgetName=$h['budget_approved_by']??'';
-$budgetPos=$h['budget_position']??'Budget Section';
+// Select the Budget personnel from the selected Area/Unit personnel list.
+// A person is treated as the Budget signatory when the stored name or
+// position/designation contains "Budget" (case-insensitive). This keeps the
+// signatory tied to the Area/Unit master data instead of using a hard-coded name.
+$budgetName='';
+$budgetPos='';
+$budgetPeople=[];
+if($areaId>0){
+  $stBudgetPeople=$pdo->prepare('SELECT name,position_designation FROM area_personnel WHERE area_id=? ORDER BY name');
+  $stBudgetPeople->execute([$areaId]);
+  $budgetPeople=$stBudgetPeople->fetchAll();
+}
+foreach($budgetPeople as $bp){
+  $bpName=trim((string)($bp['name']??''));
+  $bpPos=trim((string)($bp['position_designation']??''));
+  if($bpName!=='' && (stripos($bpName,'budget')!==false || stripos($bpPos,'budget')!==false)){
+    $budgetName=$bpName;
+    $budgetPos=$bpPos;
+    break;
+  }
+}
 function ppmpPrintDate($value): string{
   $value=trim((string)$value);
   if($value==='') return '';
@@ -454,7 +473,7 @@ function ppmpPrintDate($value): string{
   <div class="ppmp-signatures">
     <div><b>Prepared by:</b><div class="signature-line"><?=e($person)?></div><div>Signature over Printed Name</div><div><?=e($preparedPos)?></div><div><i>End-User or Implementing Unit</i></div><div>Date : <?=e(ppmpPrintDate($h['updated_at']??$h['created_at']??date('Y-m-d'))) ?></div></div>
     <div><b>Submitted by:</b><div class="signature-line"><?=e($submitted)?></div><div>Signature over Printed Name</div><div><?=e($submittedPos)?></div><div><i>Division/Department/Section Unit</i></div><div>Date : <?=e(ppmpPrintDate($h['submitted_date']??''))?></div></div>
-    <div><b>within the budget allocation:</b><div class="signature-line"><?=e($budgetName)?></div><div>Signature over Printed Name</div><div>Supervising Administrative Officer</div><div><i><?=e($budgetPos)?></i></div><div>Date : <?=e(ppmpPrintDate($h['budget_date']??''))?></div></div>
+    <div><b>within the budget allocation:</b><div class="signature-line"><?=e($budgetName)?></div><div>Signature over Printed Name</div><div><?=e($budgetPos)?></div><div><i>Budget Section</i></div><div>Date : <?=e(ppmpPrintDate($h['budget_date']??''))?></div></div>
   </div>
 </div>
 <div class="ppmp-print-actions">
