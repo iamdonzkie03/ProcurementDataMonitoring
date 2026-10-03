@@ -14,6 +14,8 @@ try{
   if(!$cols) $pdo->exec("ALTER TABLE areas ADD COLUMN electronic_signature VARCHAR(255) NULL AFTER code");
   $cols=$pdo->query("SHOW COLUMNS FROM area_personnel LIKE 'position_designation'")->fetch();
   if(!$cols) $pdo->exec("ALTER TABLE area_personnel ADD COLUMN position_designation VARCHAR(150) NULL AFTER name");
+  $cols=$pdo->query("SHOW COLUMNS FROM area_personnel LIKE 'electronic_signature'")->fetch();
+  if(!$cols) $pdo->exec("ALTER TABLE area_personnel ADD COLUMN electronic_signature VARCHAR(255) NULL AFTER position_designation");
 }catch(PDOException $e){ /* Migration can also be applied manually. */ }
 
 function saveElectronicSignatureData(string $data): string{
@@ -164,28 +166,32 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:''))); exit;
   }
 
-  $signaturePath=null;
-  $oldSignaturePath='';
-  if($signatureData!==''){
-    try{
-      $signaturePath=saveElectronicSignatureData($signatureData);
-    }catch(RuntimeException $e){
-      flash('error',$e->getMessage());
-      header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:'')));
-      exit;
+  $signaturePathsByIndex=[];
+  $signatureDataByIndex=$_POST['electronic_signature_data']??[];
+  if(!is_array($signatureDataByIndex)) $signatureDataByIndex=[];
+  try{
+    foreach($signatureDataByIndex as $idx=>$data){
+      $data=trim((string)$data);
+      if($data!=='') $signaturePathsByIndex[(int)$idx]=saveElectronicSignatureData($data);
     }
-  }
-
-  $names=array_map('trim',$_POST['names']??[]);
+  }catch(RuntimeException $e){
+    foreach($signaturePathsByI  $names=array_map('trim',$_POST['names']??[]);
   $positions=array_map('trim',$_POST['positions']??[]);
   $personnel=[];
   foreach($names as $i=>$personName){
-    if($personName!=='') $personnel[]=[$personName,$positions[$i]??''];
+    if($personName!=='') $personnel[]=[
+      'name'=>$personName,
+      'position'=>$positions[$i]??'',
+      'signature'=>$signaturePathsByIndex[$i]??null
+    ];
   }
-  $personnel=array_values(array_reduce($personnel,function($carry,$row){
-    foreach($carry as $existing){ if(strcasecmp($existing[0],$row[0])===0) return $carry; }
-    $carry[]=$row; return $carry;
-  },[]));
+  $unique=[];
+  foreach($personnel as $person){
+    $duplicate=false;
+    foreach($unique as $existing){if(strcasecmp($existing['name'],$person['name'])===0){$duplicate=true;break;}}
+    if(!$duplicate)$unique[]=$person;
+  }
+  $personnel=$unique;
 
   try{
     $pdo->beginTransaction();
@@ -211,12 +217,24 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $successMessage='Area/Unit added.';
     }
 
+    $existingPeopleByName=[];
+    $oldSt=$pdo->prepare('SELECT name,electronic_signature FROM area_personnel WHERE area_id=?');
+    $oldSt->execute([$areaId]);
+    foreach($oldSt->fetchAll() as $oldPerson){
+      $existingPeopleByName[mb_strtolower(trim((string)$oldPerson['name']))]=(string)($oldPerson['electronic_signature']??'');
+    }
+
     $st=$pdo->prepare('DELETE FROM area_personnel WHERE area_id=?');
     $st->execute([$areaId]);
 
     if($personnel){
-      $ins=$pdo->prepare('INSERT INTO area_personnel(area_id,name,position_designation) VALUES(?,?,?)');
-      foreach($personnel as [$personName,$position]) $ins->execute([$areaId,$personName,$position]);
+      $ins=$pdo->prepare('INSERT INTO area_personnel(area_id,name,position_designation,electronic_signature) VALUES(?,?,?,?)');
+      foreach($personnel as $person){
+        $key=mb_strtolower(trim($person['name']));
+        $signature=$person['signature'];
+        if($signature===null && isset($existingPeopleByName[$key])) $signature=$existingPeopleByName[$key] ?: null;
+        $ins->execute([$areaId,$person['name'],$person['position'],$signature]);
+      }
     }
 
     $pdo->commit();
@@ -239,14 +257,14 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 $divisions=$pdo->query('SELECT id,name,division_head,head_position_designation,electronic_signature FROM divisions ORDER BY name')->fetchAll();
 $rows=$pdo->query('
-  SELECT a.id,a.name,a.code,a.electronic_signature,a.created_at,d.id division_id,d.name division_name,d.division_head
+  SELECT a.id,a.name,a.code,a.created_at,d.id division_id,d.name division_name,d.division_head
   FROM areas a
   JOIN divisions d ON d.id=a.division_id
   ORDER BY d.name,a.name
 ')->fetchAll();
 
 $people=$pdo->query('
-  SELECT ap.id,ap.area_id,ap.name,ap.position_designation,ap.created_at,a.name area_name,d.name division_name
+  SELECT ap.id,ap.area_id,ap.name,ap.position_designation,ap.electronic_signature,ap.created_at,a.name area_name,d.name division_name
   FROM area_personnel ap
   JOIN areas a ON a.id=ap.area_id
   JOIN divisions d ON d.id=a.division_id
@@ -306,10 +324,24 @@ if(!$embedded) pageStart('Area/Unit Management');
           <div class="field"><label>Division/Department *</label><select class="select" name="division_id" required><option value="">Select Division/Department</option><?php foreach($divisions as $d): ?><option value="<?=e($d['id'])?>" <?=((int)($editing['division_id']??0)===(int)$d['id'])?'selected':''?>><?=e($d['name'])?> — Head: <?=e($d['division_head'])?></option><?php endforeach; ?></select></div>
           <div class="field"><label>Area/Unit Name *</label><input class="input" name="name" required placeholder="e.g. Operating Room" value="<?=e($editing['name']??'')?>"></div>
           <div class="field"><label>Code <small>(optional)</small></label><input class="input" name="code" placeholder="e.g. OR" value="<?=e($editing['code']??'')?>"></div>
-          <div class="field full"><label>Electronic Signature</label><input class="input" type="file" name="electronic_signature" accept="image/png,image/jpeg"><small class="muted">Upload PNG or JPG signature image, maximum 2 MB.</small><?php if(!empty($editing['electronic_signature'])): ?><div class="signature-preview"><img src="<?=e($editing['electronic_signature'])?>" alt="Area/Unit electronic signature"></div><?php endif; ?></div>
+
           <div class="field full"><label>Names Under This Area/Unit</label><div id="area-names-list">
-          <?php $editingPeople=[]; if($editing){$stPeople=$pdo->prepare('SELECT id,name,position_designation FROM area_personnel WHERE area_id=? ORDER BY name');$stPeople->execute([$editing['id']]);$editingPeople=$stPeople->fetchAll();} ?>
-          <?php if($editingPeople): foreach($editingPeople as $person): ?><div class="area-name-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px"><input class="input" name="names[]" value="<?=e($person['name'])?>" placeholder="e.g. Maria Santos"><input class="input" name="positions[]" value="<?=e($person['position_designation']??'')?>" placeholder="e.g. Nurse / Administrative Officer"><button class="btn danger remove-area-name" type="button">Remove</button></div><?php endforeach; else: ?><div class="area-name-row" style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px"><input class="input" name="names[]" placeholder="e.g. Maria Santos"><input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer"><button class="btn danger remove-area-name" type="button">Remove</button></div><?php endif; ?>
+          <?php $editingPeople=[]; if($editing){$stPeople=$pdo->prepare('SELECT id,name,position_designation,electronic_signature FROM area_personnel WHERE area_id=? ORDER BY name');$stPeople->execute([$editing['id']]);$editingPeople=$stPeople->fetchAll();} ?>
+          <?php if($editingPeople): foreach($editingPeople as $person): ?>
+          <div class="area-name-row" style="display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:8px;margin-bottom:8px;align-items:start">
+            <input class="input" name="names[]" value="<?=e($person['name'])?>" placeholder="e.g. Maria Santos">
+            <input class="input" name="positions[]" value="<?=e($person['position_designation']??'')?>" placeholder="e.g. Nurse / Administrative Officer">
+            <div><input class="input" type="file" name="electronic_signature_file[]" accept="image/png,image/jpeg"><input type="hidden" name="electronic_signature_data[]" value=""><small class="muted">Electronic Signature (PNG/JPG, max 2 MB)</small><?php if(!empty($person['electronic_signature'])): ?><div class="signature-preview"><img src="<?=e($person['electronic_signature'])?>" alt="Electronic signature"></div><?php endif; ?></div>
+            <button class="btn danger remove-area-name" type="button">Remove</button>
+          </div>
+          <?php endforeach; else: ?>
+          <div class="area-name-row" style="display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:8px;margin-bottom:8px;align-items:start">
+            <input class="input" name="names[]" placeholder="e.g. Maria Santos">
+            <input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer">
+            <div><input class="input" type="file" name="electronic_signature_file[]" accept="image/png,image/jpeg"><input type="hidden" name="electronic_signature_data[]" value=""><small class="muted">Electronic Signature (PNG/JPG, max 2 MB)</small></div>
+            <button class="btn danger remove-area-name" type="button">Remove</button>
+          </div>
+          <?php endif; ?>
           </div><button class="btn secondary" type="button" id="add-area-name">+ Add Another Name</button><small class="muted">Add as many names as needed for this Area/Unit.</small></div>
         </div>
         <div class="actions"><button class="btn" type="submit"><?= $editing ? 'Save Changes' : '+ Add Area/Unit' ?></button><?php if($editing): ?><a class="btn secondary" href="areas.php">Cancel</a><?php endif; ?></div>
@@ -331,41 +363,39 @@ if(!$embedded) pageStart('Area/Unit Management');
 
 <script>
 (function(){
-  document.querySelectorAll('form[enctype="multipart/form-data"]').forEach(function(form){
-    const fileInput=form.querySelector('input[type="file"][name="electronic_signature"]');
-    const dataInput=form.querySelector('input[name="electronic_signature_data"]');
-    if(!fileInput||!dataInput) return;
-    form.addEventListener('submit',function(event){
-      const file=fileInput.files && fileInput.files[0];
-      if(!file) return;
-      event.preventDefault();
-      if(file.size>2*1024*1024){ alert('Electronic signature must not exceed 2 MB.'); return; }
-      if(file.type!=='image/png' && file.type!=='image/jpeg'){ alert('Electronic signature must be a PNG or JPG image.'); return; }
-      const reader=new FileReader();
-      reader.onload=function(){
-        dataInput.value=String(reader.result||'');
-        fileInput.value='';
-        form.submit();
-      };
-      reader.onerror=function(){ alert('Unable to read the selected electronic signature file.'); };
-      reader.readAsDataURL(file);
-    });
-  });
-
+  const form=document.querySelector('.area-unit-add-panel form');
   const list=document.getElementById('area-names-list');
   const add=document.getElementById('add-area-name');
-  if(!list||!add) return;
+  if(form){
+    form.addEventListener('submit',function(event){
+      const files=Array.from(form.querySelectorAll('input[name="electronic_signature_file[]"]'));
+      const data=Array.from(form.querySelectorAll('input[name="electronic_signature_data[]"]'));
+      const selected=files.map((input,i)=>({input:input,data:data[i],file:input.files&&input.files[0]})).filter(x=>x.file);
+      if(!selected.length) return;
+      event.preventDefault();
+      let done=0, failed=false;
+      selected.forEach(function(item){
+        if(item.file.size>2*1024*1024){alert('Electronic signature must not exceed 2 MB.');failed=true;return;}
+        if(item.file.type!=='image/png'&&item.file.type!=='image/jpeg'){alert('Electronic signature must be a PNG or JPG image.');failed=true;return;}
+        const reader=new FileReader();
+        reader.onload=function(){item.data.value=String(reader.result||'');done++;if(done===selected.length&&!failed){files.forEach(function(f){f.value='';});form.submit();}};
+        reader.onerror=function(){failed=true;alert('Unable to read the selected electronic signature file.');};
+        reader.readAsDataURL(item.file);
+      });
+    });
+  }
+  if(!list||!add)return;
   add.addEventListener('click',function(){
     const row=document.createElement('div');
     row.className='area-name-row';
-    row.style.cssText='display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px';
-    row.innerHTML='<input class="input" name="names[]" placeholder="e.g. Maria Santos"><input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer"><button class="btn danger remove-area-name" type="button">Remove</button>';
+    row.style.cssText='display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:8px;margin-bottom:8px;align-items:start';
+    row.innerHTML='<input class="input" name="names[]" placeholder="e.g. Maria Santos"><input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer"><div><input class="input" type="file" name="electronic_signature_file[]" accept="image/png,image/jpeg"><input type="hidden" name="electronic_signature_data[]" value=""><small class="muted">Electronic Signature (PNG/JPG, max 2 MB)</small></div><button class="btn danger remove-area-name" type="button">Remove</button>';
     list.appendChild(row);
   });
   list.addEventListener('click',function(e){
     if(e.target.classList.contains('remove-area-name')){
       const rows=list.querySelectorAll('.area-name-row');
-      if(rows.length>1) e.target.closest('.area-name-row').remove();
+      if(rows.length>1)e.target.closest('.area-name-row').remove();
       else e.target.closest('.area-name-row').querySelectorAll('input').forEach(function(input){input.value='';});
     }
   });
