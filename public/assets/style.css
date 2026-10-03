@@ -191,3 +191,77 @@ body{font-size:11px!important}
   color: #fff !important;
   transform: translateX(3px);
 }
+
+
+/* Refined fade transitions for menus and submenus */
+.sidebar-nav > a,
+.sidebar-group-title,
+.sidebar-submenu a {
+  opacity: 1;
+  transition:
+    background-color .28s ease,
+    color .28s ease,
+    opacity .28s ease,
+    transform .28s cubic-bezier(.22,1,.36,1),
+    box-shadow .28s ease !important;
+}
+
+.sidebar-nav > a:hover,
+.sidebar-nav > a.menu-hover,
+.sidebar-group-title:hover,
+.sidebar-group.js-hover-open > .sidebar-group-title {
+  opacity: .94;
+  transform: translateY(-1px);
+}
+
+.sidebar-group > .sidebar-submenu {
+  display: block !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: translateY(-8px) !important;
+  transition:
+    opacity .30s ease,
+    transform .30s cubic-bezier(.22,1,.36,1),
+    visibility 0s linear .30s !important;
+}
+
+.sidebar-group.js-hover-open > .sidebar-submenu,
+.sidebar-group.settings-menu:hover > .sidebar-submenu,
+.sidebar-group.settings-menu:focus-within > .sidebar-submenu {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) !important;
+  transition:
+    opacity .30s ease,
+    transform .30s cubic-bezier(.22,1,.36,1),
+    visibility 0s linear 0s !important;
+}
+
+.sidebar-submenu a {
+  opacity: .92;
+  transform: translateX(0);
+}
+
+.sidebar-submenu a:hover,
+.sidebar-submenu a.submenu-hover {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+.sidebar-group.js-hover-open .sidebar-chevron,
+.sidebar-group.settings-menu:hover .sidebar-chevron,
+.sidebar-group.settings-menu:focus-within .sidebar-chevron {
+  transform: rotate(180deg);
+  transition: transform .30s ease;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .sidebar-nav > a,
+  .sidebar-group-title,
+  .sidebar-submenu a,
+  .sidebar-group > .sidebar-submenu {
+    transition: none !important;
+  }
+}
