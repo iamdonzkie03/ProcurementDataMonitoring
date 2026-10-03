@@ -345,50 +345,124 @@ function ppmpPrintDate($value): string{
     </div>
     <div class="ppmp-control"><div>Form No.: ZCMC-F-PROC-01</div><div>Revision No.: 1</div><div>Effectivity Date: February 11, 2026</div></div>
   </div>
+
   <div class="ppmp-title">PROJECT PROCUREMENT MANAGEMENT PLAN (PPMP) NO. <span class="line"><?=e($ppmpNo)?></span></div>
   <div class="ppmp-classification"><span>☐ INDICATIVE</span><span>☐ FINAL</span></div>
-  <div class="ppmp-meta"><div><b>Fiscal Year :</b> <?=e($year)?></div><div><b>End-User or Implementing Unit:</b> <?=e($selectedArea['name'])?></div></div>
+  <div class="ppmp-meta">
+    <div><b>Fiscal Year :</b> <?=e($year)?></div>
+    <div><b>End-User or Implementing Unit:</b> <?=e($selectedArea['name'])?></div>
+  </div>
 
-  <table class="ppmp-official-table">
+  <?php
+  $ppmpExplanations=[
+    'Refers to the type of procurement—whether for Goods (e.g., supplies, materials, ICT equipment, medicines); Infrastructure Projects (e.g., roads, buildings, site development or land improvement, public utilities such as water systems or flood control); Consulting Services (e.g., feasibility studies, advisory and management consulting, training and capacity building); or General Support Services (e.g., security, janitorial, transportation and logistics, training and event management). It also describes the objective of the project.',
+    'Refers to quantity / size of the contract (whether by lot, item or package). If items are too many to use this column, a separate attachment may be included)\n\nItem refers to the smallest unit or individual good/service being procured.\nLot refers to a group or related items bundled together in one bidding.\nPackage is a collection of one or more lots grouped under a single procurement project.\n\nIt is sufficient to indicate that this information is reflected in the Technical Specifications, Scope of Work (SOW), or Terms of Reference (TOR) (as applicable) when the latter is attached to this PPMP.',
+    'Indicate applicable procurement mode under RA No. 12009 recommended by the End-User.',
+    'Indicate the projected month (MM/YYYY) of the Pre-procurement Conference.',
+    'Indicate the projected month (MM/YYYY) of the start of procurement activity which will depend on the applicable mode of procurement used by the Procuring Entity.',
+    'Indicate the projected month (MM/YYYY) of issuance of Notice of Award or Purchase Order, as the case may be, based on the prescribed procurement timelines.',
+    'This refers to the target start date (MM/YYYY) when the delivery of goods, implementation of infrastructure projects, or provision of consulting services is expected to begin, indicating when the project is needed. The End-User may indicate "as needed" if the project is on a per-need basis.',
+    'The fund source for the payment of the project to be procured may include, but shall not be limited to GAA, Corporate Operating Budget, Internally Generated Funds, General or other sources of funds for LGUs, Special Purpose Funds or Trust Funds, and Foreign Assisted Projects (FAPs).',
+    '',
+    'Use Estimated Budget when the GAA or other appropriate fund source has not yet been passed or approved and Authorized Budgetary Allocation when the GAA or other appropriate fund source has been passed or approved. These amounts are determined after market scoping.',
+    '',
+    'This column refers to additional details regarding the project, such as basis of changes from previous PPMP, contract package details, procurement strategies, and recommended award criterion.'
+  ];
+  $printRows=$rows;
+  if(count($printRows)<2) $printRows=array_pad($printRows,2,null);
+  $grandTotal=0;
+  foreach($rows as $gr){$grandTotal+=(float)$gr['quantity']*(float)$gr['unit_price'];}
+  ?>
+
+  <table class="ppmp-official-table ppmp-excel-template">
+    <colgroup>
+      <col class="c1"><col class="c2"><col class="c3"><col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8"><col class="c9"><col class="c10"><col class="c11"><col class="c12"><col class="c13"><col class="c14">
+    </colgroup>
     <thead>
-      <tr><th colspan="6">PROCUREMENT PROJECT DETAILS</th><th colspan="3">PROJECTED TIMELINE (MM/YYYY)</th><th colspan="3">FUNDING DETAILS</th><th>ATTACHED SUPPORTING<br>DOCUMENTS</th><th>REMARKS</th></tr>
-      <tr>
-        <th>General Description and Objective<br>of the Project to be Procured</th>
-        <th>Type of the Project to be Procured<br>(whether Goods, Infrastructure and Consulting Services)</th>
-        <th colspan="2">Quantity and Size of the Project to be Procured</th>
-        <th>Recommended Mode of Procurement</th>
-        <th>Pre-Procurement Conference, if applicable (Yes/No)</th>
-        <th>Start of Procurement Activity</th>
-        <th>End of Procurement Activity</th>
-        <th>Expected Delivery / Implementation Period</th>
-        <th>Source of Funds</th>
-        <th>Unit Cost</th>
-        <th>Estimated Budget / Authorized Budgetary Allocation (PhP)</th>
-        <th></th><th></th>
+      <tr class="group-head">
+        <th colspan="6">PROCUREMENT PROJECT DETAILS</th>
+        <th colspan="3">PROJECTED TIMELINE (MM/YYYY)</th>
+        <th colspan="3">FUNDING DETAILS</th>
+        <th rowspan="3">ATTACHED SUPPORTING DOCUMENTS</th>
+        <th rowspan="3">REMARKS</th>
       </tr>
-      <tr class="subhead"><th>Column 1</th><th>Column 2</th><th>Quantity</th><th>Unit or Measurement/Size</th><th>Column 4</th><th>Column 5</th><th>Column 6</th><th>Column 7</th><th>Column 8</th><th>Column 9</th><th>Column 9A</th><th>Column 10</th><th>Column 11</th><th>Column 12</th></tr>
+      <tr class="field-head">
+        <th rowspan="2">General Description and Objective<br>of the Project to be Procured</th>
+        <th rowspan="2">Type of the Project to be Procured<br>(whether Goods, Infrastructure and Consulting Services)</th>
+        <th colspan="2">Quantity and Size of the Project to be Procured</th>
+        <th rowspan="2">Recommended Mode of Procurement</th>
+        <th rowspan="2">Pre-Procurement Conference, if applicable (Yes/No)</th>
+        <th rowspan="2">Start of Procurement Activity</th>
+        <th rowspan="2">End of Procurement Activity</th>
+        <th rowspan="2">Expected Delivery / Implementation Period</th>
+        <th rowspan="2">Source of Funds</th>
+        <th rowspan="2">Unit Cost</th>
+        <th rowspan="2">Estimated Budget / Authorized Budgetary Allocation (PhP)</th>
+      </tr>
+      <tr class="quantity-head">
+        <th>Quantity</th>
+        <th>Unit or Measurement/Size</th>
+      </tr>
+      <tr class="column-head">
+        <th>Column 1</th><th>Column 2</th><th>Column 3</th><th></th><th>Column 4</th><th>Column 5</th><th>Column 6</th><th>Column 7</th><th>Column 8</th><th>Column 9</th><th>Column 9A</th><th>Column 10</th><th>Column 11</th><th>Column 12</th>
+      </tr>
     </thead>
     <tbody>
-      <?php foreach($rows as $r): ?>
-      <tr class="data-row">
-        <td><?=e(trim((string)$r['item_name']).', '.trim((string)$r['description']))?></td><td><?=e($r['procurement_type'])?></td><td><?=rtrim(rtrim(number_format($r['quantity'],4,'.',''), '0'),'.')?></td><td><?=e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td><?=e($r['preprocurement_conference'])?></td><td><?=e(ppmpPrintDate($r['start_procurement']))?></td><td><?=e(ppmpPrintDate($r['end_procurement']))?></td><td><?=e(ppmpPrintDate($r['delivery_period']))?></td><td><?=e($r['source_of_funds'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td rowspan="2"><?php
-$printDocs=[];
-if(!empty($r['supporting_documents'])){
-  $decodedDocs=json_decode((string)$r['supporting_documents'],true);
-  if(is_array($decodedDocs)){
-    foreach($decodedDocs as $doc){
-      if(is_array($doc)){
-        $docName=trim((string)($doc['name']??$doc['original_name']??'PDF document'));
-        if($docName!=='') $printDocs[]=$docName;
-      }
-    }
-  }
-}
-echo $printDocs ? implode('<br>',array_map('e',$printDocs)) : '';
-?></td><td rowspan="2"><?=nl2br(e($r['remarks']))?></td>
+      <tr class="explanation-row">
+        <td><?=e($ppmpExplanations[0])?></td>
+        <td></td>
+        <td colspan="2"><?=e($ppmpExplanations[1])?></td>
+        <td><?=e($ppmpExplanations[2])?></td>
+        <td><?=e($ppmpExplanations[3])?></td>
+        <td><?=e($ppmpExplanations[4])?></td>
+        <td><?=e($ppmpExplanations[5])?></td>
+        <td><?=e($ppmpExplanations[6])?></td>
+        <td><?=e($ppmpExplanations[7])?></td>
+        <td></td>
+        <td><?=e($ppmpExplanations[9])?></td>
+        <td></td>
+        <td><?=e($ppmpExplanations[11])?></td>
       </tr>
-      <?php endforeach; ?>
-      <?php for($i=count($rows);$i<3;$i++): ?><tr class="data-row blank"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><?php endfor; ?>
+      <?php for($i=0;$i<2;$i++): $r=$rows[$i]??null; ?>
+      <tr class="data-row template-data-row">
+        <td><?= $r ? e(trim((string)$r['item_name']).', '.trim((string)$r['description'])) : '' ?></td>
+        <td><?= $r ? e($r['procurement_type']) : '' ?></td>
+        <td><?= $r ? e(rtrim(rtrim(number_format((float)$r['quantity'],4,'.',''), '0'),'.')) : '' ?></td>
+        <td><?= $r ? e($r['unit']) : '' ?></td>
+        <td><?= $r ? e($r['procurement_mode']) : '' ?></td>
+        <td><?= $r ? e($r['preprocurement_conference']) : '' ?></td>
+        <td><?= $r ? e(ppmpPrintDate($r['start_procurement'])) : '' ?></td>
+        <td><?= $r ? e(ppmpPrintDate($r['end_procurement'])) : '' ?></td>
+        <td><?= $r ? e(ppmpPrintDate($r['delivery_period'])) : '' ?></td>
+        <td><?= $r ? e($r['source_of_funds']) : '' ?></td>
+        <td><?= $r ? '₱'.number_format((float)$r['unit_price'],2) : '' ?></td>
+        <td><?= $r ? '₱'.number_format((float)$r['quantity']*(float)$r['unit_price'],2) : '' ?></td>
+        <?php if($i===0): ?>
+        <td rowspan="2"><?php
+          $printDocs=[];
+          if($r && !empty($r['supporting_documents'])){
+            $decodedDocs=json_decode((string)$r['supporting_documents'],true);
+            if(is_array($decodedDocs)){
+              foreach($decodedDocs as $doc){
+                if(is_array($doc)){
+                  $docName=trim((string)($doc['name']??$doc['original_name']??'PDF document'));
+                  if($docName!=='') $printDocs[]=$docName;
+                }
+              }
+            }
+          }
+          echo $printDocs ? implode('<br>',array_map('e',$printDocs)) : '';
+        ?></td>
+        <td rowspan="2"><?= $r ? nl2br(e($r['remarks'])) : '' ?></td>
+        <?php endif; ?>
+      </tr>
+      <?php endfor; ?>
+      <tr class="grand-total-row">
+        <td colspan="10"></td>
+        <td><b>GRAND TOTAL</b></td>
+        <td><b>₱<?=number_format($grandTotal,2)?></b></td>
+        <td></td><td></td>
+      </tr>
     </tbody>
   </table>
 
