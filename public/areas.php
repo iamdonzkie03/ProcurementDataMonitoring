@@ -10,8 +10,6 @@ try{
   if(!$cols) $pdo->exec("ALTER TABLE divisions ADD COLUMN head_position_designation VARCHAR(150) NULL AFTER division_head");
   $cols=$pdo->query("SHOW COLUMNS FROM divisions LIKE 'electronic_signature'")->fetch();
   if(!$cols) $pdo->exec("ALTER TABLE divisions ADD COLUMN electronic_signature VARCHAR(255) NULL AFTER head_position_designation");
-  $cols=$pdo->query("SHOW COLUMNS FROM areas LIKE 'electronic_signature'")->fetch();
-  if(!$cols) $pdo->exec("ALTER TABLE areas ADD COLUMN electronic_signature VARCHAR(255) NULL AFTER code");
   $cols=$pdo->query("SHOW COLUMNS FROM area_personnel LIKE 'position_designation'")->fetch();
   if(!$cols) $pdo->exec("ALTER TABLE area_personnel ADD COLUMN position_designation VARCHAR(150) NULL AFTER name");
   $cols=$pdo->query("SHOW COLUMNS FROM area_personnel LIKE 'electronic_signature'")->fetch();
@@ -75,8 +73,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $head=trim($_POST['division_head']??'');
     $headPosition=trim($_POST['head_position_designation']??'');
     $signaturePath=null;
-    $oldSignaturePath='';
-
+  
     if($divisionId<=0 || $divisionName==='' || $head===''){
       flash('error','Division/Department name and Division/Department Head are required.');
       header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
@@ -197,22 +194,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $pdo->beginTransaction();
 
     if($action==='edit' && $id>0){
-      $oldSt=$pdo->prepare('SELECT electronic_signature FROM areas WHERE id=?');
-      $oldSt->execute([$id]);
-      $oldSignaturePath=(string)($oldSt->fetchColumn()??'');
-
-      if($signaturePath!==null){
-        $st=$pdo->prepare('UPDATE areas SET division_id=?,name=?,code=?,electronic_signature=? WHERE id=?');
-        $st->execute([$divisionId,$name,$code,$signaturePath,$id]);
-      }else{
-        $st=$pdo->prepare('UPDATE areas SET division_id=?,name=?,code=? WHERE id=?');
-        $st->execute([$divisionId,$name,$code,$id]);
-      }
+      $st=$pdo->prepare('UPDATE areas SET division_id=?,name=?,code=? WHERE id=?');
+      $st->execute([$divisionId,$name,$code,$id]);
       $areaId=$id;
       $successMessage='Area/Unit updated.';
     }else{
-      $st=$pdo->prepare('INSERT INTO areas(division_id,name,code,electronic_signature) VALUES(?,?,?,?)');
-      $st->execute([$divisionId,$name,$code,$signaturePath]);
+      $st=$pdo->prepare('INSERT INTO areas(division_id,name,code) VALUES(?,?,?)');
+      $st->execute([$divisionId,$name,$code]);
       $areaId=(int)$pdo->lastInsertId();
       $successMessage='Area/Unit added.';
     }
@@ -239,10 +227,6 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
     $pdo->commit();
 
-    if($signaturePath!==null && $oldSignaturePath!=='' && $oldSignaturePath!==$signaturePath){
-      $oldFile=__DIR__.'/'.$oldSignaturePath;
-      if(is_file($oldFile)) @unlink($oldFile);
-    }
     flash('success',$successMessage);
   }catch(PDOException $e){
     if($pdo->inTransaction()) $pdo->rollBack();
