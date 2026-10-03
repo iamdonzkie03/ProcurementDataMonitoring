@@ -411,7 +411,6 @@ if(area){
   syncSupervisor(); syncRequested();
 }
  const quantity=document.getElementById('ppmp_quantity'), unitPrice=document.getElementById('ppmp_unit_price'), totalBudget=document.getElementById('ppmp_total_budget');
- function syncPpmpNumber(){if(!fiscalYear||!ppmpNo||ppmpNo.dataset.locked==='1')return; const o=fiscalYear.options[fiscalYear.selectedIndex]; ppmpNo.value=o?(o.dataset.ppmpNo||''):'';}
  function moneyNumber(value){return parseFloat(String(value||'').replace(/,/g,''))||0;}
  function formatMoney(value){return Number(value||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
  function syncTotalBudget(){if(!quantity||!unitPrice||!totalBudget)return; const q=moneyNumber(quantity.value), p=moneyNumber(unitPrice.value); totalBudget.value=formatMoney(q*p);}
