@@ -119,11 +119,27 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     // to another End-User/Fiscal Year that already has a PPMP, use that PPMP number.
     $ppmpNo=$existingPpmpNo!=='' ? $existingPpmpNo : trim($_POST['ppmp_no']??($editing['ppmp_no']??''));
   }
+  // Normalize timeline dates server-side so editing a PPMP cannot lose already-saved
+  // dates if the browser-side hidden-date synchronization does not run.
+  $normalizePpmpDate=function($value){
+    $value=trim((string)$value);
+    if($value==='') return '';
+    if(preg_match('/^\d{4}-\d{2}-\d{2}$/',$value)) return $value;
+    $timestamp=strtotime($value);
+    return $timestamp!==false ? date('Y-m-d',$timestamp) : $value;
+  };
+  $startProcurement=$normalizePpmpDate($_POST['start_procurement']??'');
+  if($startProcurement==='') $startProcurement=$normalizePpmpDate($_POST['start_procurement_display']??'');
+  $endProcurement=$normalizePpmpDate($_POST['end_procurement']??'');
+  if($endProcurement==='') $endProcurement=$normalizePpmpDate($_POST['end_procurement_display']??'');
+  $deliveryPeriod=$normalizePpmpDate($_POST['delivery_period']??'');
+  if($deliveryPeriod==='') $deliveryPeriod=$normalizePpmpDate($_POST['delivery_period_display']??'');
+
   $values=[
     $year,$ppmpNo,$areaId,(int)$_POST['category_id'],trim($_POST['item_name']),
     trim($_POST['description']??''),trim($_POST['procurement_type']??''),$qty,trim($_POST['unit']),
     trim($_POST['procurement_mode']??''),trim($_POST['preprocurement_conference']??''),
-    trim($_POST['start_procurement']??''),trim($_POST['end_procurement']??''),trim($_POST['delivery_period']??''),
+    $startProcurement,$endProcurement,$deliveryPeriod,
     trim($_POST['source_of_funds']??''),$unitPrice,$totalBudget,$supportingDocuments,
     $requestedBy,trim($_POST['prepared_by']??''),$preparedPosition,
     '', '', '', '', null, null, null, trim($_POST['remarks']??'')
@@ -288,10 +304,17 @@ pageStart('Project Procurement Management Plan');
           <select class="select" name="procurement_mode" required><option value="">Select</option><?php foreach($procurementMethods as $method):?><option value="<?=e($method['procurement_method'])?>" <?=((string)($formState['procurement_mode']??'')===(string)$method['procurement_method'])?'selected':''?>><?=e($method['procurement_method'])?></option><?php endforeach;?></select>
         </div>
         <div class="field"><label>Pre-Procurement Conference *</label><select class="select" name="preprocurement_conference" required><option value="">Select</option><option value="Yes" <?=($formState['preprocurement_conference']??'')==='Yes'?'selected':''?>>Yes</option><option value="No" <?=($formState['preprocurement_conference']??'')==='No'?'selected':''?>>No</option><option value="N/A" <?=($formState['preprocurement_conference']??'')==='N/A'?'selected':''?>>N/A</option></select></div>
-        <?php $startDate=!empty($formState['start_procurement'])?date('F d, Y',strtotime($formState['start_procurement'])):''; $endDate=!empty($formState['end_procurement'])?date('F d, Y',strtotime($formState['end_procurement'])):''; $deliveryDate=!empty($formState['delivery_period'])?date('F d, Y',strtotime($formState['delivery_period'])):''; ?>
-        <div class="field"><label>Start of Procurement Activity *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="start_procurement_display" data-date-target="start_procurement" placeholder="October 03, 2026" value="<?=e($startDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="start_procurement_picker" aria-hidden="true" tabindex="-1"><input type="hidden" name="start_procurement" id="start_procurement"></div></div>
-        <div class="field"><label>End of Procurement Activity *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="end_procurement_display" data-date-target="end_procurement" placeholder="October 03, 2026" value="<?=e($endDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="end_procurement_picker" aria-hidden="true" tabindex="-1"><input type="hidden" name="end_procurement" id="end_procurement"></div></div>
-        <div class="field"><label>Expected Delivery / Implementation Period *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="delivery_period_display" data-date-target="delivery_period" placeholder="October 03, 2026" value="<?=e($deliveryDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="delivery_period_picker" aria-hidden="true" tabindex="-1"><input type="hidden" name="delivery_period" id="delivery_period"></div></div>
+        <?php
+          $startDate=!empty($formState['start_procurement'])?date('F d, Y',strtotime($formState['start_procurement'])):'';
+          $endDate=!empty($formState['end_procurement'])?date('F d, Y',strtotime($formState['end_procurement'])):'';
+          $deliveryDate=!empty($formState['delivery_period'])?date('F d, Y',strtotime($formState['delivery_period'])):'';
+          $startDateIso=!empty($formState['start_procurement'])?date('Y-m-d',strtotime($formState['start_procurement'])):'';
+          $endDateIso=!empty($formState['end_procurement'])?date('Y-m-d',strtotime($formState['end_procurement'])):'';
+          $deliveryDateIso=!empty($formState['delivery_period'])?date('Y-m-d',strtotime($formState['delivery_period'])):'';
+        ?>
+        <div class="field"><label>Start of Procurement Activity *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="start_procurement_display" data-date-target="start_procurement" placeholder="October 03, 2026" value="<?=e($startDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="start_procurement_picker" aria-hidden="true" tabindex="-1"><input type="hidden" name="start_procurement" id="start_procurement" value="<?=e($startDateIso)?>"></div></div>
+        <div class="field"><label>End of Procurement Activity *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="end_procurement_display" data-date-target="end_procurement" placeholder="October 03, 2026" value="<?=e($endDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="end_procurement_picker" aria-hidden="true" tabindex="-1"><input type="hidden" name="end_procurement" id="end_procurement" value="<?=e($endDateIso)?>"></div></div>
+        <div class="field"><label>Expected Delivery / Implementation Period *</label><div class="ppmp-date-picker"><input class="input ppmp-long-date" type="text" name="delivery_period_display" data-date-target="delivery_period" placeholder="October 03, 2026" value="<?=e($deliveryDate)?>" autocomplete="off" required><input type="date" class="ppmp-date-native" id="delivery_period_picker" aria-hidden="true" tabindex="-1"><input type="hidden" name="delivery_period" id="delivery_period" value="<?=e($deliveryDateIso)?>"></div></div>
         <div class="field"><label>Source of Funds *</label><input class="input" name="source_of_funds" required value="<?=e($formState['source_of_funds']??'')?>"></div>
       </div>
     </div>
