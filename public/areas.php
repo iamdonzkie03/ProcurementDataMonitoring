@@ -2,6 +2,7 @@
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor']);
 require_once __DIR__.'/../app/layout.php';
+$embedded=!empty($embedded);
 $pdo=db();
 
 $editId=(int)($_GET['edit']??0);
@@ -32,7 +33,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         flash('error','This Area/Unit cannot be deleted because it is already used by existing PPMP or Purchase Request records.');
       }
     }
-    header('Location:areas.php'); exit;
+    header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
   }
 
   if($action==='save_division'){
@@ -49,7 +50,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         flash('error','The Division/Department name already exists.');
       }
     }
-    header('Location:areas.php'); exit;
+    header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
   }
 
   if($action==='update_division'){
@@ -67,7 +68,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         flash('error','The Division/Department name already exists.');
       }
     }
-    header('Location:areas.php'); exit;
+    header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
   }
 
   if($action==='save_area_names'){
@@ -89,7 +90,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         flash('error','Unable to save the Area/Unit names. Please check for duplicate names.');
       }
     }
-    header('Location:areas.php?edit='.$areaId); exit;
+    header('Location:'.($embedded ? 'settings.php?tab=area-unit&edit='.$areaId : 'areas.php?edit='.$areaId)); exit;
   }
 
   if($action==='delete_person'){
@@ -100,12 +101,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $st->execute([$personId]);
       flash($st->rowCount() ? 'success' : 'error',$st->rowCount() ? 'Name removed from the Area/Unit.' : 'Name record not found.');
     }
-    header('Location:areas.php'); exit;
+    header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
   }
 
   if($name==='' || $divisionId<=0){
     flash('error','Division/Department and Area/Unit name are required.');
-    header('Location:areas.php'.($action==='edit'&&$id?'?edit='.$id:'')); exit;
+    header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:''))); exit;
   }
 
   $names=array_values(array_unique(array_filter(array_map('trim',$_POST['names']??[]),fn($v)=>$v!=='')));
@@ -168,7 +169,7 @@ if($divisionEditId>0){
   $st->execute([$divisionEditId]);
   $divisionEditing=$st->fetch();
 }
-pageStart('Area/Unit Management');
+if(!$embedded) pageStart('Area/Unit Management');
 ?>
 <div class="management-columns">
   <div class="management-column panel">
@@ -253,4 +254,4 @@ pageStart('Area/Unit Management');
   });
 })();
 </script>
-<?php pageEnd(); ?>
+<?php if(!$embedded) pageEnd(); ?>
