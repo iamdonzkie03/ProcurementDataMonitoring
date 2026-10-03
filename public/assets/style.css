@@ -328,3 +328,30 @@ body{font-size:11px!important}
 .management-columns>.management-column:first-child>.management-inner-list:before{width:70%;}
 .management-columns>.management-column:last-child>.management-inner-list{border-top:0!important;padding-top:0!important;position:relative}
 .management-columns>.management-column:last-child>.management-inner-list:before{content:"";display:block;width:100%;border-top:1px solid var(--border);margin-bottom:20px}
+
+
+/* Settings tab hover effect */
+.settings-tabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.settings-tabs .btn{
+  transition:
+    background-color .25s ease,
+    color .25s ease,
+    border-color .25s ease,
+    transform .25s ease,
+    box-shadow .25s ease;
+}
+.settings-tabs .btn:hover,
+.settings-tabs .btn:focus-visible{
+  background-color:var(--accent,#1f6feb) !important;
+  color:#fff !important;
+  border-color:var(--accent,#1f6feb) !important;
+  transform:translateY(-1px);
+  box-shadow:0 4px 10px rgba(0,0,0,.12);
+}
+@media(prefers-reduced-motion:reduce){
+  .settings-tabs .btn{transition:none !important}
+}
