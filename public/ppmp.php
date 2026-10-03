@@ -226,9 +226,9 @@ pageStart('Project Procurement Management Plan');
         </div>
         <div class="field"><label>Item Name *</label><input class="input" name="item_name" required value="<?=e($editing['item_name']??'')?>"></div>
         <div class="field full"><label>General Description / Technical Specifications *</label><textarea class="input" name="description" rows="4" required><?=e($editing['description']??'')?></textarea></div>
-        <div class="field"><label>Quantity *</label><input class="input" type="number" step="0.0001" min="0" name="quantity" id="ppmp_quantity" required value="<?=e($editing['quantity']??'')?>"></div>
+        <div class="field"><label>Quantity *</label><input class="input ppmp-money-input" type="text" inputmode="decimal" name="quantity" id="ppmp_quantity" required value="<?=e(!empty($editing['quantity']) ? number_format((float)$editing['quantity'],2,'.','') : '')?>"></div>
         <div class="field"><label>Unit or Measurement / Size *</label><select class="select" name="unit" required><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>" <?=((string)($editing['unit']??'')===(string)$u['name'])?'selected':''?>><?=e($u['name'])?></option><?php endforeach;?></select></div>
-        <div class="field"><label>Unit Cost (PhP) *</label><input class="input" type="number" step="0.01" min="0" name="unit_price" id="ppmp_unit_price" required value="<?=e($editing['unit_price']??'')?>"></div>
+        <div class="field"><label>Unit Cost (PhP) *</label><input class="input ppmp-money-input" type="text" inputmode="decimal" name="unit_price" id="ppmp_unit_price" required value="<?=e(!empty($editing['unit_price']) ? number_format((float)$editing['unit_price'],2,'.','') : '')?>"></div>
         <div class="field"><label>Total Budget</label><input class="input ppmp-total-budget" type="text" id="ppmp_total_budget" value="<?=e(((float)($editing['quantity']??0)*(float)($editing['unit_price']??0)) ? number_format((float)$editing['quantity']*(float)$editing['unit_price'],2,'.','') : '')?>" readonly></div>
       </div>
     </div>
@@ -367,7 +367,7 @@ if(area){
  function syncPpmpNumber(){if(!fiscalYear||!ppmpNo||ppmpNo.dataset.locked==='1')return; const o=fiscalYear.options[fiscalYear.selectedIndex]; ppmpNo.value=o?(o.dataset.ppmpNo||''):'';}
  function moneyNumber(value){return parseFloat(String(value||'').replace(/,/g,''))||0;}
  function formatMoney(value){return Number(value||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
- function syncTotalBudget(){if(!quantity||!unitPrice||!totalBudget)return; const q=parseFloat(quantity.value)||0, p=moneyNumber(unitPrice.value); totalBudget.value=formatMoney(q*p);}
+ function syncTotalBudget(){if(!quantity||!unitPrice||!totalBudget)return; const q=moneyNumber(quantity.value), p=moneyNumber(unitPrice.value); totalBudget.value=formatMoney(q*p);}
  if(fiscalYear){fiscalYear.addEventListener('change',syncPpmpNumber);syncPpmpNumber();}
  if(unitPrice){unitPrice.addEventListener('input',function(){const raw=this.value.replace(/[^0-9.]/g,''); const parts=raw.split('.'); this.value=parts.length>2?parts[0]+'.'+parts.slice(1).join(''):raw; syncTotalBudget();}); unitPrice.addEventListener('blur',function(){if(this.value!=='')this.value=formatMoney(moneyNumber(this.value));});}
  if(quantity&&unitPrice){quantity.addEventListener('input',syncTotalBudget);syncTotalBudget();}
