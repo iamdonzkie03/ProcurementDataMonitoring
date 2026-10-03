@@ -192,7 +192,7 @@ pageStart('Project Procurement Management Plan');
   <form method="post" enctype="multipart/form-data">
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="<?= $formIsEditing ? 'edit' : 'add' ?>"><input type="hidden" name="existing_supporting_documents" value="<?=e($formState['supporting_documents']??'')?>">
-    <?php if($formState): ?><input type="hidden" name="id" value="<?=e($formState['id'])?>"><?php endif; ?>
+    <?php if($formIsEditing): ?><input type="hidden" name="id" value="<?=e($formState['id']??$formOldEditId)?>"><?php endif; ?>
 
     <div class="ppmp-section">
       <h3>1. PPMP Identification and Requesting Personnel</h3>
@@ -282,7 +282,7 @@ pageStart('Project Procurement Management Plan');
       </div>
     </div>
 
-    <div class="actions"><button class="btn" type="submit"><?= $formState ? 'Save Changes' : 'Save PPMP Item' ?></button><?php if($formState): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>">Cancel</a><?php endif; ?></div>
+    <div class="actions"><button class="btn" type="submit"><?= $formIsEditing ? 'Save Changes' : 'Save PPMP Item' ?></button><?php if($formIsEditing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>">Cancel</a><?php endif; ?></div>
   </form>
 </div>
 <div class="panel ppmp-records">
