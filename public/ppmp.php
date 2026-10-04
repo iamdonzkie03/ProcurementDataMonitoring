@@ -356,7 +356,7 @@ $supervisorPending=[];
 if(!$print && $isPpmpSupervisor && currentLoginDivisionId()>0){
   $stSupervisorQueue=$pdo->prepare("SELECT r.id,r.fiscal_year,r.ppmp_no,r.status,r.submitted_at,a.name area,d.name division,u.full_name submitted_by_name,
     COUNT(DISTINCT p.id) item_count,
-    COALESCE(SUM(DISTINCT p.total_budget),SUM(DISTINCT p.quantity*p.unit_price),0) total_abc
+    COALESCE(SUM(CASE WHEN p.total_budget IS NULL OR p.total_budget=0 THEN p.quantity*p.unit_price ELSE p.total_budget END),0) total_abc
     FROM ppmp_reviews r JOIN areas a ON a.id=r.area_id JOIN divisions d ON d.id=a.division_id
     LEFT JOIN users u ON u.id=r.submitted_by
     LEFT JOIN ppmp_items p ON p.fiscal_year=r.fiscal_year AND p.area_id=r.area_id AND p.ppmp_no=r.ppmp_no
