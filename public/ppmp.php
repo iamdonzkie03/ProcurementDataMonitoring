@@ -217,8 +217,7 @@ pageStart('Project Procurement Management Plan');
 <div class="panel ppmp-toolbar">
   <div class="toolbar">
     <form class="ppmp-filter">
-      <select class="select" name="year" aria-label="Search Fiscal Year">
-        <?php foreach($searchFiscalYears as $searchYear): ?>
+      <select class="select" name="year" aria-label="Search Fiscal Year">        <?php foreach($searchFiscalYears as $searchYear): ?>
           <option value="<?=$searchYear?>" <?=$year===$searchYear?'selected':''?>><?=$searchYear?></option>
         <?php endforeach; ?>
       </select>
@@ -226,7 +225,7 @@ pageStart('Project Procurement Management Plan');
       <input class="input" name="q" placeholder="Search item, area or description" value="<?=e($q)?>">
       <button class="btn" type="submit">View</button>
     </form>
-    <?php if(hasRole(['Administrator','Editor'])):?><a class="btn" href="#ppmpForm">+ Add PPMP Item</a><?php endif;?>
+    <?php if(hasRole(['Administrator','Editor'])):?><button class="btn" type="button" id="addPpmpItemBtn">+ Add PPMP Item</button><?php endif;?>
     <?php if($areaId>0):?><a class="btn secondary" target="_blank" href="ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>">Print PPMP Form</a><?php endif;?>
   </div>
 </div>
@@ -236,7 +235,8 @@ pageStart('Project Procurement Management Plan');
   <div class="table-wrap"><table class="table"><tr><th>PPMP No.</th><th>Item</th><th>Type</th><th>Qty / Unit</th><th>Mode</th><th>Unit Cost</th><th>Total Budget</th><th>Saved</th><th>Actions</th></tr>
   <?php foreach($rows as $r):?><tr><td><?=e($r['ppmp_no'])?></td><td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['procurement_type'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td><?=!empty($r['saved_at'])?e(date('F j, Y g:i A',strtotime($r['saved_at']))):e(date('F j, Y g:i A',strtotime($r['created_at'])))?></td><td class="ppmp-actions-cell"><div class="ppmp-row-actions"><a class="btn secondary ppmp-action-btn" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>&edit=<?=$r['id']?>">Edit</a><form method="post" class="ppmp-delete-form" onsubmit="return confirm('Delete this PPMP item? This action cannot be undone.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn danger ppmp-action-btn" type="submit">Delete</button></form></div></td></tr><?php endforeach;?></table></div>
 </div>
-<div class="ppmp-entry panel" id="ppmpForm">
+<?php $ppmpFormOpen=$formIsEditing || $formOld!==null; ?>
+<div class="ppmp-entry panel" id="ppmpForm" style="<?= $ppmpFormOpen ? '' : 'display:none;' ?>">
   <h2><?= $formIsEditing ? 'Edit PPMP Item' : 'Project Procurement Management Plan — Data Entry' ?></h2>
   <p class="muted">Complete the four sections below. Requested By personnel are based on the selected End-User / Implementing Unit.</p>
   <form method="post" enctype="multipart/form-data">
@@ -437,8 +437,7 @@ function ppmpPrintDate($value): string{
     'This column refers to additional details regarding the project, such as basis of changes from previous PPMP, contract package details, procurement strategies, and recommended award criterion.'
   ];
   $printRows=$rows;
-  if(count($printRows)<2) $printRows=array_pad($printRows,2,null);
-  $grandTotal=0;
+  if(count($printRows)<2) $printRows=array_pad($printRows,2,null);  $grandTotal=0;
   foreach($rows as $gr){$grandTotal+=(float)$gr['quantity']*(float)$gr['unit_price'];}
   ?>
 
@@ -559,6 +558,17 @@ function printPpmp(paper){
   window.print();
 }
 (function(){
+ const addPpmpItemBtn=document.getElementById('addPpmpItemBtn');
+ const ppmpForm=document.getElementById('ppmpForm');
+ if(addPpmpItemBtn && ppmpForm){
+   addPpmpItemBtn.addEventListener('click',function(){
+     ppmpForm.style.display='';
+     ppmpForm.scrollIntoView({behavior:'smooth',block:'start'});
+     const firstInput=ppmpForm.querySelector('select:not([disabled]), input:not([type="hidden"]), textarea');
+     if(firstInput) setTimeout(function(){firstInput.focus();},250);
+   });
+ }
+
  const fiscalYear=document.getElementById('ppmp_fiscal_year'), ppmpNo=document.getElementById('ppmp_no');
  if(fiscalYear&&ppmpNo&&ppmpNo.dataset.locked!=='1'){
    function syncPpmpNumber(){
@@ -657,8 +667,7 @@ if(area){
 .ppmp-entry .ppmp-unit-field{grid-column:span 6}
 .ppmp-entry .ppmp-unit-cost-field{grid-column:span 4}
 .ppmp-entry .ppmp-total-field{grid-column:span 7}
-.ppmp-entry .ppmp-quantity-field input{
-  text-align:left!important
+.ppmp-entry .ppmp-quantity-field input{  text-align:left!important
 }
 .ppmp-entry .ppmp-total-budget{
   font-size:25px!important
