@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__.'/../config/config.php';
-requireRole(['Administrator','Editor','Viewer','Guest']); 
+requireLogin(); 
 require_once __DIR__.'/../app/layout.php';$pdo=db();$currentYear=(int)date('Y');$availableYears=array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN));
 if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;rsort($availableYears);$year=(int)($_GET['year']??$currentYear);
 	if(!in_array($year,$availableYears,true))$year=$currentYear;$q=trim($_GET['q']??'');
