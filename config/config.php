@@ -76,18 +76,41 @@ function buildLoginContext(PDO $pdo, array $u): array {
     ensureUserAccessSchema($pdo);
     $divisionId=(int)($u['division_id']??0);
     $areaId=(int)($u['area_id']??0);
-    if($divisionId>0 && $areaId>0){
-        $st=$pdo->prepare("SELECT a.id area_id,a.name area_name,d.id division_id,d.name division_name,
-          d.division_head,d.ppmp_supervisor_enabled
-          FROM areas a JOIN divisions d ON d.id=a.division_id
-          WHERE a.id=? AND d.id=? LIMIT 1");
-        $st->execute([$areaId,$divisionId]);$ctx=$st->fetch();
-        if($ctx){
-            $ctx['is_ppmp_supervisor']=((int)$ctx['ppmp_supervisor_enabled']===1 &&
-              strcasecmp(trim((string)$ctx['division_head']),trim((string)($u['full_name']??'')))===0);
-            return $ctx;
+
+    // A Division Head / Supervisor must be recognized even when no Area/Unit
+    // is assigned to the user account. Supervisor access is division-wide.
+    if($divisionId>0){
+        $st=$pdo->prepare("SELECT id division_id,name division_name,division_head,head_position_designation,
+          ppmp_supervisor_enabled
+          FROM divisions
+          WHERE id=? LIMIT 1");
+        $st->execute([$divisionId]);
+        $division=$st->fetch();
+        if($division){
+            $isSupervisor=((int)$division['ppmp_supervisor_enabled']===1 &&
+              strcasecmp(trim((string)$division['division_head']),trim((string)($u['full_name']??'')))===0);
+
+            $areaName='';$resolvedAreaId=0;
+            if($areaId>0){
+                $a=$pdo->prepare("SELECT id,name FROM areas WHERE id=? AND division_id=? LIMIT 1");
+                $a->execute([$areaId,$divisionId]);
+                $area=$a->fetch();
+                if($area){$resolvedAreaId=(int)$area['id'];$areaName=(string)$area['name'];}
+            }
+
+            return [
+              'division_id'=>(int)$division['division_id'],
+              'area_id'=>$resolvedAreaId,
+              'division_name'=>(string)$division['division_name'],
+              'area_name'=>$areaName,
+              'division_head'=>(string)$division['division_head'],
+              'head_position_designation'=>(string)($division['head_position_designation']??''),
+              'ppmp_supervisor_enabled'=>(int)$division['ppmp_supervisor_enabled'],
+              'is_ppmp_supervisor'=>$isSupervisor
+            ];
         }
     }
+
     return ['division_id'=>0,'area_id'=>0,'division_name'=>'','area_name'=>'','is_ppmp_supervisor'=>false];
 }
 
