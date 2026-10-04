@@ -216,10 +216,12 @@ pageStart('PPMP Review');
 <span class="ppmp-review-status <?=strtolower(str_replace(' ','-',($review['status']==='Pending for Approval'?'pfa':$review['status'])))?>"><?=e($review['status'])?></span>
 <form method="post" id="supervisorReviewForm">
 <input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="review_items"><input type="hidden" name="review_id" value="<?=$reviewId?>">
+<div class="review-actions"><button type="button" class="btn secondary" id="approveSelected">Approve Selected</button><button type="button" class="btn secondary" id="declineSelected">Decline Selected</button><span class="muted" id="selectedCount">0 selected</span></div>
 <div class="table-wrap"><table class="table">
-<tr><th>PPMP Item</th><th>Category</th><th>Qty / Unit</th><th>Unit Cost</th><th>Total</th><th>Review Decision</th></tr>
+<tr><th><input type="checkbox" id="selectAllItems" aria-label="Select all items"></th><th>PPMP Item</th><th>Category</th><th>Qty / Unit</th><th>Unit Cost</th><th>Total</th><th>Review Decision</th></tr>
 <?php foreach($items as $r):?>
 <tr class="item-review-row" data-item="<?=$r['id']?>">
+<td><input type="checkbox" class="item-check" aria-label="Select PPMP item"></td>
 <td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['category'])?></td><td><?=number_format((float)$r['quantity'],2).' '.e($r['unit'])?></td><td>₱<?=number_format((float)$r['unit_price'],2)?></td><td>₱<?=number_format((float)($r['total_budget']??((float)$r['quantity']*(float)$r['unit_price'])),2)?></td>
 <td>
 <?php if($review['status']==='Pending for Review' && isSupervisorForArea($pdo,(int)$review['area_id'],$userName)):?>
@@ -250,11 +252,34 @@ pageStart('PPMP Review');
 </div>
 <script>
 (function(){
-document.querySelectorAll('.item-review-row').forEach(function(row){
- const select=row.querySelector('.decision-select'),remark=row.querySelector('.decline-remark');if(!select||!remark)return;
- function sync(){row.classList.toggle('is-declined',select.value==='Declined'||select.value==='Budget Declined');remark.required=select.value==='Declined'||select.value==='Budget Declined';}
- select.addEventListener('change',sync);sync();
-});
+ const rows=Array.from(document.querySelectorAll('.item-review-row'));
+ const selectAll=document.getElementById('selectAllItems'),count=document.getElementById('selectedCount');
+ const approve=document.getElementById('approveSelected'),decline=document.getElementById('declineSelected');
+ function syncRow(row){
+   const select=row.querySelector('.decision-select'),remark=row.querySelector('.decline-remark');if(!select||!remark)return;
+   const declined=select.value==='Declined'||select.value==='Budget Declined';
+   row.classList.toggle('is-declined',declined);remark.required=declined;
+ }
+ function syncCount(){
+   const selected=rows.filter(r=>r.querySelector('.item-check')?.checked).length;
+   if(count)count.textContent=selected+' selected';
+   if(selectAll)selectAll.checked=rows.length>0&&selected===rows.length;
+ }
+ rows.forEach(function(row){
+   const select=row.querySelector('.decision-select'),check=row.querySelector('.item-check');
+   if(select){select.addEventListener('change',function(){syncRow(row);});syncRow(row);}
+   if(check)check.addEventListener('change',syncCount);
+ });
+ if(selectAll)selectAll.addEventListener('change',function(){rows.forEach(r=>{const c=r.querySelector('.item-check');if(c)c.checked=selectAll.checked;});syncCount();});
+ function applySelected(value){
+   const selected=rows.filter(r=>r.querySelector('.item-check')?.checked);
+   if(!selected.length){alert('Select at least one PPMP item first.');return;}
+   selected.forEach(function(row){const s=row.querySelector('.decision-select');if(s){s.value=value;s.dispatchEvent(new Event('change'));}});
+   syncCount();
+ }
+ if(approve)approve.addEventListener('click',function(){applySelected('Approved');});
+ if(decline)decline.addEventListener('click',function(){applySelected('Declined');});
+ syncCount();
 })();
 </script>
 <?php pageEnd(); ?>
