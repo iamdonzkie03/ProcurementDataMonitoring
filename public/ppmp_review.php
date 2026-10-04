@@ -156,11 +156,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 $supervisorQueue=[];$budgetQueue=[];
 $stQueue=$pdo->prepare("SELECT r.*,a.name area,d.name division,u.full_name submitted_by_name,
-  COUNT(pri.id) item_count,COALESCE(SUM(p.quantity*p.unit_price),0) total_abc
+  COUNT(DISTINCT p.id) item_count,COALESCE(SUM(CASE WHEN p.total_budget IS NULL OR p.total_budget=0 THEN p.quantity*p.unit_price ELSE p.total_budget END),0) total_abc
   FROM ppmp_reviews r JOIN areas a ON a.id=r.area_id JOIN divisions d ON d.id=a.division_id
   LEFT JOIN users u ON u.id=r.submitted_by
-  LEFT JOIN ppmp_review_items pri ON pri.review_id=r.id
-  LEFT JOIN ppmp_items p ON p.id=pri.ppmp_item_id
+  LEFT JOIN ppmp_items p ON p.fiscal_year=r.fiscal_year AND p.area_id=r.area_id AND p.ppmp_no=r.ppmp_no
   WHERE r.status IN ('Pending for Review','Pending for Approval')
     AND d.id=?
   GROUP BY r.id ORDER BY r.updated_at DESC");
@@ -178,10 +177,23 @@ if($reviewId>0){
   if($review){
     $allowed=isSupervisorForArea($pdo,(int)$review['area_id'],$userName)||isBudgetOfficerForArea($pdo,(int)$review['area_id'],$userName)||hasRole(['Administrator']);
     if(!$allowed){http_response_code(403);exit('403 - This PPMP is not assigned to you for review.');}
+    // Ensure the review snapshot contains every actual PPMP item for this PPMP.
+    // Older review records may have missing ppmp_review_items rows, so synchronize them
+    // from ppmp_items before loading the review screen.
+    $stItems=$pdo->prepare('SELECT id FROM ppmp_items WHERE fiscal_year=? AND area_id=? AND ppmp_no=? ORDER BY id');
+    $stItems->execute([(int)$review['fiscal_year'],(int)$review['area_id'],(string)$review['ppmp_no']]);
+    $insMissing=$pdo->prepare("INSERT IGNORE INTO ppmp_review_items(review_id,ppmp_item_id,status) VALUES(?,?, 'Pending for Review')");
+    foreach($stItems->fetchAll(PDO::FETCH_COLUMN) as $ppmpItemId){
+      $insMissing->execute([$reviewId,(int)$ppmpItemId]);
+    }
+
     $st=$pdo->prepare("SELECT pri.*,p.item_name,p.description,p.quantity,p.unit,p.unit_price,p.procurement_mode,p.total_budget,c.name category
-      FROM ppmp_review_items pri JOIN ppmp_items p ON p.id=pri.ppmp_item_id JOIN categories c ON c.id=p.category_id
-      WHERE pri.review_id=? ORDER BY p.id");
-    $st->execute([$reviewId]);$items=$st->fetchAll();
+      FROM ppmp_review_items pri
+      JOIN ppmp_items p ON p.id=pri.ppmp_item_id
+      JOIN categories c ON c.id=p.category_id
+      WHERE pri.review_id=? AND p.fiscal_year=? AND p.area_id=? AND p.ppmp_no=?
+      ORDER BY p.id");
+    $st->execute([$reviewId,(int)$review['fiscal_year'],(int)$review['area_id'],(string)$review['ppmp_no']]);$items=$st->fetchAll();
   }
 }
 pageStart('PPMP Review');
