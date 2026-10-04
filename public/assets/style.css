@@ -468,6 +468,16 @@ body{font-size:11px!important}
 .ppmp-toolbar .toolbar .ppmp-toolbar-action::after{
   display:none!important;
 }
+.ppmp-toolbar .toolbar .ppmp-toolbar-label{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  text-align:center!important;
+  text-indent:0!important;
+  line-height:36px!important;
+  white-space:nowrap!important;
+}
 .ppmp-toolbar .toolbar a.ppmp-toolbar-action{
   text-decoration:none!important;
   color:inherit;
