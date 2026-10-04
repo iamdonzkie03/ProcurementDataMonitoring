@@ -225,8 +225,8 @@ pageStart('Project Procurement Management Plan');
       <input class="input" name="q" placeholder="Search item, area or description" value="<?=e($q)?>">
       <button class="btn" type="submit">View</button>
     </form>
-    <?php if(hasRole(['Administrator','Editor']) && $areaId>0):?><button class="btn" type="button" id="addPpmpItemBtn">+ Add PPMP Item</button><?php endif;?>
-    <?php if($areaId>0):?><a class="btn secondary" target="_blank" href="ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>">Print PPMP Form</a><?php endif;?>
+    <?php if(hasRole(['Administrator','Editor']) && $areaId>0):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn">+ Add PPMP Item</button><?php endif;?>
+    <?php if($areaId>0):?><a class="btn secondary ppmp-toolbar-action" target="_blank" href="ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>">Print PPMP Form</a><?php endif;?>
   </div>
 </div>
 
