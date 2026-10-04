@@ -253,7 +253,7 @@ $formOldEditId=(int)($_SESSION['ppmp_form_edit_id']??0);
 unset($_SESSION['ppmp_form_old'],$_SESSION['ppmp_form_edit_id']);
 $formState=$editing?:($formOld??[]);
 $formIsEditing=$editing!==null || ($formOld!==null && (($formOld['action']??'')==='edit'));
-$areas=$pdo->query('SELECT a.*,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position FROM areas a JOIN divisions d ON d.id=a.division_id ORDER BY d.name,a.name')->fetchAll();
+$areas=$pdo->query('SELECT a.*,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,d.electronic_signature authorized_signature,d.ppmp_supervisor_enabled FROM areas a JOIN divisions d ON d.id=a.division_id ORDER BY d.name,a.name')->fetchAll();
 $cats=$pdo->query("SELECT * FROM categories WHERE status='Active' ORDER BY name")->fetchAll();
 $classifications=$pdo->query("SELECT name FROM classifications WHERE status='Active' ORDER BY name")->fetchAll();
 $procurementMethods=$pdo->query("SELECT procurement_method,details FROM procurement_methods WHERE status='Active' ORDER BY procurement_method")->fetchAll();
@@ -445,8 +445,9 @@ if($person!=='' && !empty($h['area_id'])){
   $stPreparedSignature->execute([(int)$h['area_id'],$person]);
   $preparedSignature=trim((string)($stPreparedSignature->fetchColumn()??''));
 }
-$submitted=$selectedArea['authorized_person']??($h['authorized_person']??'');
-$submittedPos=$selectedArea['authorized_position']??($h['authorized_position']??'');
+$submitted=(((int)($selectedArea['ppmp_supervisor_enabled']??0)===1) ? ($selectedArea['authorized_person']??($h['authorized_person']??'')) : '');
+$submittedPos=(((int)($selectedArea['ppmp_supervisor_enabled']??0)===1) ? ($selectedArea['authorized_position']??($h['authorized_position']??'')) : '');
+$submittedSignature=(((int)($selectedArea['ppmp_supervisor_enabled']??0)===1) ? trim((string)($selectedArea['authorized_signature']??'')) : '');
 // Budget signatory comes from the Area/Unit master list.
 // IMPORTANT: do not inspect the selected PPMP Area/Unit personnel and do not
 // look for the word "Budget" in a person's name/position. Instead, locate the
@@ -619,7 +620,7 @@ function ppmpPrintDate($value): string{
     </div>
     <div class="ppmp-signature-box">
       <b>Submitted by:</b>
-      <div class="signature-line"><?=e($submitted)?></div>
+      <div class="signature-line"><?php if($submittedSignature!==''): ?><img src="<?=e($submittedSignature)?>" alt="Submitted By electronic signature"><?php endif; ?><span><?=e($submitted)?></span></div>
       <div>Signature over Printed Name</div>
       <div><?=e($submittedPos)?></div>
       <div><i>Division/Department/Section Unit</i></div>
