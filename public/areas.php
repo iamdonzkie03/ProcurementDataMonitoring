@@ -10,6 +10,8 @@ try{
   if(!$cols) $pdo->exec("ALTER TABLE divisions ADD COLUMN head_position_designation VARCHAR(150) NULL AFTER division_head");
   $cols=$pdo->query("SHOW COLUMNS FROM divisions LIKE 'electronic_signature'")->fetch();
   if(!$cols) $pdo->exec("ALTER TABLE divisions ADD COLUMN electronic_signature VARCHAR(255) NULL AFTER head_position_designation");
+  $cols=$pdo->query("SHOW COLUMNS FROM divisions LIKE 'ppmp_supervisor_enabled'")->fetch();
+  if(!$cols) $pdo->exec("ALTER TABLE divisions ADD COLUMN ppmp_supervisor_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER electronic_signature");
   $cols=$pdo->query("SHOW COLUMNS FROM area_personnel LIKE 'position_designation'")->fetch();
   if(!$cols) $pdo->exec("ALTER TABLE area_personnel ADD COLUMN position_designation VARCHAR(150) NULL AFTER name");
   $cols=$pdo->query("SHOW COLUMNS FROM area_personnel LIKE 'electronic_signature'")->fetch();
@@ -72,6 +74,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $divisionName=trim($_POST['division_name']??'');
     $head=trim($_POST['division_head']??'');
     $headPosition=trim($_POST['head_position_designation']??'');
+    $supervisorEnabled=(int)($_POST['ppmp_supervisor_enabled']??0)===1 ? 1 : 0;
     $signaturePath=null;
   
     if($divisionId<=0 || $divisionName==='' || $head===''){
@@ -94,11 +97,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $oldSignaturePath=(string)($oldSt->fetchColumn()??'');
 
       if($signaturePath!==null){
-        $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=?,electronic_signature=? WHERE id=?');
-        $st->execute([$divisionName,$head,$headPosition,$signaturePath,$divisionId]);
+        $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=?,ppmp_supervisor_enabled=?,electronic_signature=? WHERE id=?');
+        $st->execute([$divisionName,$head,$headPosition,$supervisorEnabled,$signaturePath,$divisionId]);
       }else{
-        $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=? WHERE id=?');
-        $st->execute([$divisionName,$head,$headPosition,$divisionId]);
+        $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=?,ppmp_supervisor_enabled=? WHERE id=?');
+        $st->execute([$divisionName,$head,$headPosition,$supervisorEnabled,$divisionId]);
       }
 
       if($signaturePath!==null && $oldSignaturePath!=='' && $oldSignaturePath!==$signaturePath){
@@ -262,7 +265,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
 }
 
-$divisions=$pdo->query('SELECT id,name,division_head,head_position_designation,electronic_signature FROM divisions ORDER BY name')->fetchAll();
+$divisions=$pdo->query('SELECT id,name,division_head,head_position_designation,electronic_signature,ppmp_supervisor_enabled FROM divisions ORDER BY name')->fetchAll();
 $rows=$pdo->query('
   SELECT a.id,a.name,a.code,a.created_at,d.id division_id,d.name division_name,d.division_head
   FROM areas a
@@ -300,6 +303,13 @@ if(!$embedded) pageStart('Area/Unit Management');
           <div class="field"><label>Division/Department Name</label><input class="input" name="division_name" required placeholder="e.g. Medical Service" value="<?=e($divisionEditing['name']??'')?>"></div>
           <div class="field"><label>Division/Department Head</label><input class="input" name="division_head" required placeholder="e.g. Juan Dela Cruz" value="<?=e($divisionEditing['division_head']??'')?>"></div>
           <div class="field"><label>Position/Designation</label><input class="input" name="head_position_designation" placeholder="e.g. Medical Center Chief / Division Chief" value="<?=e($divisionEditing['head_position_designation']??'')?>"></div>
+          <div class="field full"><label>Assigned as Supervisor/Authorized Person for PPMP Review?</label>
+            <div style="display:flex;gap:18px;align-items:center">
+              <label><input type="radio" name="ppmp_supervisor_enabled" value="1" <?=((int)($divisionEditing['ppmp_supervisor_enabled']??0)===1)?'checked':''?>> Yes</label>
+              <label><input type="radio" name="ppmp_supervisor_enabled" value="0" <?=((int)($divisionEditing['ppmp_supervisor_enabled']??0)!==1)?'checked':''?>> No</label>
+            </div>
+            <small class="muted">Yes assigns the Division/Department Head as the Supervisor/Authorized Person for PPMP review and the Submitted by signatory.</small>
+          </div>
           <div class="field full"><label>Electronic Signature</label><input class="input" type="file" name="electronic_signature" accept="image/png,image/jpeg"><small class="muted">Upload PNG or JPG signature image, maximum 2 MB.</small><?php if(!empty($divisionEditing['electronic_signature'])): ?><div class="signature-preview"><img src="<?=e($divisionEditing['electronic_signature'])?>" alt="Division/Department electronic signature"></div><?php endif; ?></div>
         </div>
         <div class="actions"><button class="btn" type="submit"><?= $divisionEditing ? 'Save Division/Department' : '+ Add Division/Department' ?></button><?php if($divisionEditing): ?><a class="btn secondary" href="areas.php">Cancel</a><?php endif; ?></div>
@@ -309,11 +319,11 @@ if(!$embedded) pageStart('Area/Unit Management');
       <div class="management-list-content">
         <h2>Division/Department List</h2>
         <div class="table-wrap"><table class="table">
-          <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit Count</th><th>Actions</th></tr>
+          <tr><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized</th><th>Area/Unit Count</th><th>Actions</th></tr>
           <?php foreach($divisions as $d): $cnt=0; foreach($rows as $r){if((int)$r['division_id']===(int)$d['id'])$cnt++;} ?>
           <tr><td><?=e($d['name'])?></td><td><div><?=e($d['division_head'])?></div><?php if(trim((string)($d['head_position_designation']??''))!==''): ?><small class="muted"><?=e($d['head_position_designation'])?></small><?php endif; ?></td><td><?=e($cnt)?></td><td><a class="btn secondary" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a></td></tr>
           <?php endforeach; ?>
-          <?php if(!$divisions): ?><tr><td colspan="4">No Division/Department records found.</td></tr><?php endif; ?>
+          <?php if(!$divisions): ?><tr><td colspan="5">No Division/Department records found.</td></tr><?php endif; ?>
         </table></div>
       </div>
     </div>
