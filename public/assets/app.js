@@ -95,3 +95,14 @@
     initNavigation();
   });
 })();
+
+/* PPMP Review navigation is intentionally hidden for all users. */
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('.sidebar .sidebar-nav a').forEach(function(link){
+    var href=(link.getAttribute('href')||'').toLowerCase();
+    var label=(link.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+    if(href.indexOf('ppmp_review.php')!==-1 || label.indexOf('ppmp review')!==-1){
+      link.remove();
+    }
+  });
+});
