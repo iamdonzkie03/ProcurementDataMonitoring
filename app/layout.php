@@ -10,7 +10,7 @@ function pageStart(string $title): void { $u=currentUser(); ?>
 <a href="pr.php">▰ <span>Purchase Requests</span></a>
 <a href="po.php">▱ <span>Purchase Orders</span></a>
 <a href="reports.php">◫ <span>Reports</span></a>
-<a href="ppmp_review.php">✓ <span>PPMP Review</span></a>
+<?php if(currentUserIsPpmpSupervisor() || currentUserIsBudgetOfficer() || hasRole(['Administrator'])): ?><a href="ppmp_review.php">✓ <span>PPMP Review</span></a><?php endif; ?>
 <?php else: ?>
 <a href="app.php">▥ <span>Annual Procurement Plan</span></a>
 <?php endif; ?>
