@@ -39,6 +39,4 @@ $st=$pdo->prepare('INSERT INTO users(username,full_name,email,password_hash,role
  d.addEventListener('change',filterAreas);a.addEventListener('change',filterNames);
  filterAreas();
 })();
-</script>script>
-(function(){const d=document.getElementById('userDivision'),a=document.getElementById('userArea');function f(){Array.from(a.options).forEach((o,i)=>{if(i)o.hidden=!!d.value&&o.dataset.division!==d.value;});if(a.selectedOptions[0]?.hidden)a.value='';}d.addEventListener('change',f);f();})();
 </script><?php pageEnd();
