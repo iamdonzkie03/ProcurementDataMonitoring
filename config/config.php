@@ -47,7 +47,17 @@ function currentLoginAreaId(): int {
 }
 
 function currentUserIsPpmpSupervisor(): bool {
-    return !empty(loginContext()['is_ppmp_supervisor']);
+    $u=currentUser();
+    if(!$u) return false;
+    $divisionId=(int)($u['division_id']??currentLoginDivisionId());
+    $name=trim((string)($u['full_name']??''));
+    if($divisionId<=0 || $name==='') return false;
+    try{
+        $pdo=db();
+        $st=$pdo->prepare("SELECT COUNT(*) FROM divisions WHERE id=? AND ppmp_supervisor_enabled=1 AND division_head=?");
+        $st->execute([$divisionId,$name]);
+        return (int)$st->fetchColumn()>0;
+    }catch(Throwable $e){ return false; }
 }
 
 function currentUserIsBudgetOfficer(): bool {
