@@ -47,11 +47,9 @@ try{
 $currentFiscalYear=(int)date('Y');
 $entryFiscalYears=range($currentFiscalYear,$currentFiscalYear+3);
 $existingFiscalYears=$isPpmpSupervisor
-  ? array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL AND created_by='.(int)$currentUserId.' ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN))
+  ? array_map('intval',$pdo->query('SELECT DISTINCT p.fiscal_year FROM ppmp_items p JOIN areas a ON a.id=p.area_id WHERE p.fiscal_year IS NOT NULL AND a.division_id='.(int)currentLoginDivisionId().' ORDER BY p.fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN))
   : array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN));
-$searchFiscalYears=$isPpmpSupervisor
-  ? array_values(array_unique($existingFiscalYears))
-  : array_values(array_unique(array_merge($existingFiscalYears,$entryFiscalYears)));
+$searchFiscalYears=array_values(array_unique(array_merge($existingFiscalYears,$entryFiscalYears)));
 rsort($searchFiscalYears);
 $year=(int)($_GET['year']??(($isPpmpSupervisor && $searchFiscalYears) ? $searchFiscalYears[0] : $currentFiscalYear));
 if($searchFiscalYears && !in_array($year,$searchFiscalYears,true)) $year=$searchFiscalYears[0];
@@ -290,17 +288,21 @@ $formState=$editing?:($formOld??[]);
 $formIsEditing=$editing!==null || ($formOld!==null && (($formOld['action']??'')==='edit'));
 $areas=$pdo->query('SELECT a.*,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,d.electronic_signature authorized_signature,d.ppmp_supervisor_enabled FROM areas a JOIN divisions d ON d.id=a.division_id ORDER BY d.name,a.name')->fetchAll();
 $supervisorOwnAreaIds=[];
+$supervisorOwnFiscalYears=[];
 $supervisorOwnPpmpExists=false;
 if($isPpmpSupervisor && $currentUserId>0 && currentLoginDivisionId()>0){
   $stOwnAreas=$pdo->prepare('SELECT DISTINCT p.area_id FROM ppmp_items p JOIN areas a ON a.id=p.area_id WHERE p.created_by=? AND a.division_id=? ORDER BY p.area_id');
   $stOwnAreas->execute([$currentUserId,currentLoginDivisionId()]);
   $supervisorOwnAreaIds=array_map('intval',$stOwnAreas->fetchAll(PDO::FETCH_COLUMN));
+  $stOwnYears=$pdo->prepare('SELECT DISTINCT p.fiscal_year FROM ppmp_items p JOIN areas a ON a.id=p.area_id WHERE p.created_by=? AND a.division_id=? ORDER BY p.fiscal_year DESC');
+  $stOwnYears->execute([$currentUserId,currentLoginDivisionId()]);
+  $supervisorOwnFiscalYears=array_map('intval',$stOwnYears->fetchAll(PDO::FETCH_COLUMN));
   $supervisorOwnPpmpExists=!empty($supervisorOwnAreaIds);
-  if($supervisorOwnPpmpExists){
-    $areas=array_values(array_filter($areas,fn($a)=>in_array((int)$a['id'],$supervisorOwnAreaIds,true)));
+  if($isPpmpSupervisor){
+    $areas=array_values(array_filter($areas,fn($a)=>(int)$a['division_id']===currentLoginDivisionId()));
   }
   $canManagePpmp=$supervisorOwnPpmpExists;
-  if($areaId>0 && !in_array($areaId,$supervisorOwnAreaIds,true)) $areaId=0;
+  if($areaId>0 && $isPpmpSupervisor && !in_array($areaId,array_map('intval',array_column($areas,'id')),true)) $areaId=0;
 }
 $cats=$pdo->query("SELECT * FROM categories WHERE status='Active' ORDER BY name")->fetchAll();
 $classifications=$pdo->query("SELECT name FROM classifications WHERE status='Active' ORDER BY name")->fetchAll();
@@ -336,7 +338,7 @@ $stPersonnel=$pdo->query('SELECT id,area_id,name,position_designation,electronic
 foreach($stPersonnel->fetchAll() as $person){ $personnelByArea[(int)$person['area_id']][]=$person; }
 
 $where=' WHERE p.fiscal_year=?'; $args=[$year];
-if($isPpmpSupervisor){ $where.=' AND p.created_by=? AND a.division_id=?'; $args[]=$currentUserId; $args[]=currentLoginDivisionId(); }
+if($isPpmpSupervisor){ $where.=' AND a.division_id=?'; $args[]=currentLoginDivisionId(); }
 if($areaId>0){$where.=' AND p.area_id=?';$args[]=$areaId;}
 if($q!==''){$where.=' AND (p.item_name LIKE ? OR p.description LIKE ? OR a.name LIKE ? OR c.name LIKE ?)';$args=[...$args,"%$q%","%$q%","%$q%","%$q%"];}
 $sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,c.name category,COALESCE(pr.status,\'Draft\') review_status,pr.remarks review_remarks FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id LEFT JOIN ppmp_reviews pr ON pr.fiscal_year=p.fiscal_year AND pr.area_id=p.area_id AND pr.ppmp_no=p.ppmp_no'.$where.' ORDER BY p.id';
@@ -381,7 +383,7 @@ pageStart('Project Procurement Management Plan');
       <input class="input" name="q" placeholder="Search item, area or description" value="<?=e($q)?>">
       <button class="btn" type="submit">View</button>
     </form>
-    <?php if((hasRole(['Administrator','Editor']) && (!$isPpmpSupervisor || $canManagePpmp)) && $areaId>0):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn"><span class="ppmp-toolbar-label">+ Add PPMP Item</span></button><?php endif;?>
+    <?php if(hasRole(['Administrator','Editor']) && (!$isPpmpSupervisor || in_array($areaId,$supervisorOwnAreaIds,true)) && $areaId>0):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn"><span class="ppmp-toolbar-label">+ Add PPMP Item</span></button><?php endif;?>
     <?php if($areaId>0):?><button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button><?php endif;?>\n    <?php if($areaId>0 && $rows && in_array(($rows[0]['review_status']??'Draft'),['Draft','Declined'],true)):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
   </div>
 </div>
@@ -406,7 +408,7 @@ pageStart('Project Procurement Management Plan');
       <div class="ppmp-input-grid">
         <div class="field"><label>Fiscal Year *</label>
           <select class="select" name="fiscal_year" id="ppmp_fiscal_year" required>
-            <?php $formFiscalYears=$isPpmpSupervisor ? array_values(array_intersect($entryFiscalYears,$existingFiscalYears)) : $entryFiscalYears; ?>
+            <?php $formFiscalYears=$isPpmpSupervisor ? $supervisorOwnFiscalYears : $entryFiscalYears; ?>
             <?php foreach($formFiscalYears as $entryYear): ?>
               <option value="<?=$entryYear?>" data-ppmp-no="<?=e($existingPpmpByYearArea[$entryYear.':'.(int)($formState['area_id']??$areaId)]??($ppmpNextByYear[$entryYear]??('PPMP-'.$entryYear.'-0001')))?>" <?=((int)($formState['fiscal_year']??$year)===$entryYear)?'selected':''?>><?=$entryYear?></option>
             <?php endforeach; ?>
@@ -416,7 +418,8 @@ pageStart('Project Procurement Management Plan');
         <div class="field"><label>End-User / Implementing Unit *</label>
           <select class="select" name="area_id" id="ppmp_area" required>
             <option value="">Select</option>
-            <?php foreach($areas as $a):?>
+            <?php $formAreas=$isPpmpSupervisor ? array_values(array_filter($areas,fn($a)=>in_array((int)$a['id'],$supervisorOwnAreaIds,true))) : $areas; ?>
+            <?php foreach($formAreas as $a):?>
               <option value="<?=$a['id']?>" data-person="<?=e($a['authorized_person']??'')?>" <?php foreach($entryFiscalYears as $mapYear): ?>data-ppmp-<?=$mapYear?>="<?=e($existingPpmpByYearArea[$mapYear.':'.(int)$a['id']]??($ppmpNextByYear[$mapYear]??('PPMP-'.$mapYear.'-0001')))?>" <?php endforeach; ?> <?=((int)($formState['area_id']??0)===(int)$a['id'])?'selected':''?>><?=e($a['name'])?></option>
             <?php endforeach;?>
           </select>
