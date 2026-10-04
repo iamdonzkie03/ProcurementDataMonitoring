@@ -54,7 +54,7 @@ $user=currentUser();
 $userName=trim((string)($user['full_name']??''));
 
 function isSupervisorForArea(PDO $pdo,int $areaId,string $userName): bool{
-  if(!currentUserIsPpmpSupervisor()) return false;
+  if(currentLoginDivisionId()<=0 || $userName==='') return false;
   $st=$pdo->prepare("SELECT COUNT(*) FROM areas a JOIN divisions d ON d.id=a.division_id
     WHERE a.id=? AND d.id=? AND d.ppmp_supervisor_enabled=1 AND d.division_head=?");
   $st->execute([$areaId,currentLoginDivisionId(),$userName]);
