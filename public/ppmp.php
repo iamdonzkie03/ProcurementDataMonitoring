@@ -115,12 +115,27 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
     }
 
-    if($review){
-      $st=$pdo->prepare("UPDATE ppmp_reviews SET status='Pending for Review',submitted_by=?,submitted_at=NOW(),supervisor_reviewed_by=NULL,supervisor_reviewed_at=NULL,budget_reviewed_by=NULL,budget_reviewed_at=NULL,remarks=NULL WHERE id=?");
-      $st->execute([currentUser()['id'],(int)$review['id']]);
-    }else{
-      $st=$pdo->prepare("INSERT INTO ppmp_reviews(fiscal_year,area_id,ppmp_no,status,submitted_by,submitted_at) VALUES(?,?,?,'Pending for Review',?,NOW())");
-      $st->execute([$year,$areaId,$ppmpNo,currentUser()['id']]);
+    $pdo->beginTransaction();
+    try{
+      if($review){
+        $reviewId=(int)$review['id'];
+        $st=$pdo->prepare("UPDATE ppmp_reviews SET status='Pending for Review',submitted_by=?,submitted_at=NOW(),supervisor_reviewed_by=NULL,supervisor_reviewed_at=NULL,budget_reviewed_by=NULL,budget_reviewed_at=NULL,remarks=NULL WHERE id=?");
+        $st->execute([currentUser()['id'],$reviewId]);
+        $pdo->prepare('DELETE FROM ppmp_review_items WHERE review_id=?')->execute([$reviewId]);
+      }else{
+        $st=$pdo->prepare("INSERT INTO ppmp_reviews(fiscal_year,area_id,ppmp_no,status,submitted_by,submitted_at) VALUES(?,?,?,'Pending for Review',?,NOW())");
+        $st->execute([$year,$areaId,$ppmpNo,currentUser()['id']]);
+        $reviewId=(int)$pdo->lastInsertId();
+      }
+      $stItem=$pdo->prepare('SELECT id FROM ppmp_items WHERE fiscal_year=? AND area_id=? AND ppmp_no=? ORDER BY id');
+      $stItem->execute([$year,$areaId,$ppmpNo]);
+      $ins=$pdo->prepare("INSERT INTO ppmp_review_items(review_id,ppmp_item_id,status) VALUES(?,?, 'Pending for Review')");
+      foreach($stItem->fetchAll(PDO::FETCH_COLUMN) as $ppmpItemId){$ins->execute([$reviewId,(int)$ppmpItemId]);}
+      $pdo->commit();
+    }catch(Throwable $e){
+      if($pdo->inTransaction())$pdo->rollBack();
+      flash('error','Unable to submit the PPMP for review: '.$e->getMessage());
+      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
     }
     flash('success','The entire '.$ppmpNo.' PPMP list has been submitted to '.$target['name'].' for review.');
     header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
