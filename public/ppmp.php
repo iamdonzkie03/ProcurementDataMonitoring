@@ -221,9 +221,9 @@ pageStart('Project Procurement Management Plan');
           <option value="<?=$searchYear?>" <?=$year===$searchYear?'selected':''?>><?=$searchYear?></option>
         <?php endforeach; ?>
       </select>
-      <select class="select" name="area_id" id="ppmpFilterArea" required><option value="">Select Area/Unit</option><?php foreach($areas as $a):?><option value="<?=$a['id']?>" <?=$areaId===$a['id']?'selected':''?>><?=e($a['name'])?></option><?php endforeach;?></select>
+      <select class="select" name="area_id"><option value="0">All Areas/Units</option><?php foreach($areas as $a):?><option value="<?=$a['id']?>" <?=$areaId===$a['id']?'selected':''?>><?=e($a['name'])?></option><?php endforeach;?></select>
       <input class="input" name="q" placeholder="Search item, area or description" value="<?=e($q)?>">
-      <button class="btn" type="submit" id="ppmpViewBtn" disabled>View</button>
+      <button class="btn" type="submit">View</button>
     </form>
     <?php if(hasRole(['Administrator','Editor'])):?><button class="btn" type="button" id="addPpmpItemBtn">+ Add PPMP Item</button><?php endif;?>
     <?php if($areaId>0):?><a class="btn secondary" target="_blank" href="ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>">Print PPMP Form</a><?php endif;?>
@@ -558,20 +558,6 @@ function printPpmp(paper){
   window.print();
 }
 (function(){
- const filterForm=document.querySelector('.ppmp-filter');
- const filterYear=filterForm&&filterForm.querySelector('select[name="year"]');
- const filterArea=document.getElementById('ppmpFilterArea');
- const viewBtn=document.getElementById('ppmpViewBtn');
- function syncPpmpViewButton(){
-   if(!viewBtn)return;
-   const enabled=!!(filterYear&&filterYear.value&&filterArea&&filterArea.value);
-   viewBtn.disabled=!enabled;
-   viewBtn.setAttribute('aria-disabled',enabled?'false':'true');
- }
- if(filterYear)filterYear.addEventListener('change',syncPpmpViewButton);
- if(filterArea)filterArea.addEventListener('change',syncPpmpViewButton);
- syncPpmpViewButton();
-
  const addPpmpItemBtn=document.getElementById('addPpmpItemBtn');
  const ppmpForm=document.getElementById('ppmpForm');
  if(addPpmpItemBtn && ppmpForm){
