@@ -190,7 +190,7 @@ if($reviewId>0){
     $st=$pdo->prepare("SELECT pri.*,p.item_name,p.description,p.quantity,p.unit,p.unit_price,p.procurement_mode,p.total_budget,c.name category
       FROM ppmp_review_items pri
       JOIN ppmp_items p ON p.id=pri.ppmp_item_id
-      JOIN categories c ON c.id=p.category_id
+      LEFT JOIN categories c ON c.id=p.category_id
       WHERE pri.review_id=? AND p.fiscal_year=? AND p.area_id=? AND p.ppmp_no=?
       ORDER BY p.id");
     $st->execute([$reviewId,(int)$review['fiscal_year'],(int)$review['area_id'],(string)$review['ppmp_no']]);$items=$st->fetchAll();
