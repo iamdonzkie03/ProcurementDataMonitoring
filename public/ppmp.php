@@ -3,6 +3,9 @@ require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
 require_once __DIR__.'/../app/layout.php';
 $pdo=db();
+$isPpmpSupervisor=currentUserIsPpmpSupervisor();
+$currentUserId=(int)(currentUser()['id']??0);
+$canManagePpmp=true;
 try{
   $col=$pdo->query("SHOW COLUMNS FROM ppmp_items LIKE 'saved_at'")->fetch();
   if(!$col) $pdo->exec("ALTER TABLE ppmp_items ADD COLUMN saved_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER updated_at");
@@ -43,7 +46,9 @@ try{
 
 $currentFiscalYear=(int)date('Y');
 $entryFiscalYears=range($currentFiscalYear,$currentFiscalYear+3);
-$existingFiscalYears=array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN));
+$existingFiscalYears=$isPpmpSupervisor
+  ? array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL AND created_by='.(int)$currentUserId.' ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN))
+  : array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN));
 $searchFiscalYears=array_values(array_unique(array_merge($existingFiscalYears,$entryFiscalYears)));
 rsort($searchFiscalYears);
 $year=(int)($_GET['year']??$currentFiscalYear);
@@ -54,8 +59,9 @@ $print=isset($_GET['print']) && $_GET['print']=='1';
 $editId=(int)($_GET['edit']??0);
 $editing=null;
 if($editId>0 && !$print){
-  $stEdit=$pdo->prepare('SELECT * FROM ppmp_items WHERE id=?'); $stEdit->execute([$editId]); $editing=$stEdit->fetch();
+  $stEdit=$pdo->prepare('SELECT p.*,a.division_id FROM ppmp_items p JOIN areas a ON a.id=p.area_id WHERE p.id=?'); $stEdit->execute([$editId]); $editing=$stEdit->fetch();
   if(!$editing){ flash('error','PPMP item not found.'); header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit; }
+  if($isPpmpSupervisor && ((int)$editing['created_by']!==$currentUserId || (int)$editing['division_id']!==currentLoginDivisionId())){ http_response_code(403); exit('403 - Supervisors may only edit PPMP items they created.'); }
   $year=(int)$editing['fiscal_year']; $areaId=(int)$editing['area_id'];
 }
 
@@ -76,6 +82,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $requestedBy=trim($_POST['requested_by']??'');
 
   if($action==='submit_for_review'){
+    if($isPpmpSupervisor){
+      http_response_code(403); exit('403 - A Supervisor may manage only their own PPMP and may not submit it as a subordinate PPMP for Supervisor review.');
+    }
     if($areaId<=0 || $year<=0){
       flash('error','Select a Fiscal Year and a specific Area/Unit before submitting the PPMP for review.');
       header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
@@ -139,6 +148,19 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
     flash('success','The entire '.$ppmpNo.' PPMP list has been submitted to '.$target['name'].' for review.');
     header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+  }
+
+  if($isPpmpSupervisor && in_array($action,['add','edit','delete'],true)){
+    if($action==='edit' && $id<=0){ http_response_code(403); exit('403 - Invalid PPMP item.'); }
+    $stOwn=$pdo->prepare("SELECT COUNT(*) FROM ppmp_items p JOIN areas a ON a.id=p.area_id WHERE p.created_by=? AND p.fiscal_year=? AND p.area_id=? AND a.division_id=?" );
+    $stOwn->execute([$currentUserId,$year,$areaId,currentLoginDivisionId()]);
+    if((int)$stOwn->fetchColumn()===0){
+      http_response_code(403); exit('403 - Supervisors may only add, edit, or delete items from a PPMP they created within their own Division/Department.');
+    }
+    if($action==='edit'){
+      $stItemOwner=$pdo->prepare('SELECT created_by,area_id FROM ppmp_items WHERE id=? LIMIT 1'); $stItemOwner->execute([$id]); $ownerRow=$stItemOwner->fetch();
+      if(!$ownerRow || (int)$ownerRow['created_by']!==$currentUserId || (int)$ownerRow['area_id']!==$areaId){ http_response_code(403); exit('403 - You may only modify PPMP items you created.'); }
+    }
   }
 
   $preparedPosition='';
@@ -264,6 +286,18 @@ unset($_SESSION['ppmp_form_old'],$_SESSION['ppmp_form_edit_id']);
 $formState=$editing?:($formOld??[]);
 $formIsEditing=$editing!==null || ($formOld!==null && (($formOld['action']??'')==='edit'));
 $areas=$pdo->query('SELECT a.*,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,d.electronic_signature authorized_signature,d.ppmp_supervisor_enabled FROM areas a JOIN divisions d ON d.id=a.division_id ORDER BY d.name,a.name')->fetchAll();
+$supervisorOwnAreaIds=[];
+$supervisorOwnPpmpExists=false;
+if($isPpmpSupervisor && $currentUserId>0 && currentLoginDivisionId()>0){
+  $stOwnAreas=$pdo->prepare('SELECT DISTINCT p.area_id FROM ppmp_items p JOIN areas a ON a.id=p.area_id WHERE p.created_by=? AND a.division_id=? ORDER BY p.area_id');
+  $stOwnAreas->execute([$currentUserId,currentLoginDivisionId()]);
+  $supervisorOwnAreaIds=array_map('intval',$stOwnAreas->fetchAll(PDO::FETCH_COLUMN));
+  $supervisorOwnPpmpExists=!empty($supervisorOwnAreaIds);
+  if($supervisorOwnPpmpExists){
+    $areas=array_values(array_filter($areas,fn($a)=>in_array((int)$a['id'],$supervisorOwnAreaIds,true)));
+  }
+  $canManagePpmp=$supervisorOwnPpmpExists;
+}
 $cats=$pdo->query("SELECT * FROM categories WHERE status='Active' ORDER BY name")->fetchAll();
 $classifications=$pdo->query("SELECT name FROM classifications WHERE status='Active' ORDER BY name")->fetchAll();
 $procurementMethods=$pdo->query("SELECT procurement_method,details FROM procurement_methods WHERE status='Active' ORDER BY procurement_method")->fetchAll();
@@ -298,6 +332,7 @@ $stPersonnel=$pdo->query('SELECT id,area_id,name,position_designation,electronic
 foreach($stPersonnel->fetchAll() as $person){ $personnelByArea[(int)$person['area_id']][]=$person; }
 
 $where=' WHERE p.fiscal_year=?'; $args=[$year];
+if($isPpmpSupervisor){ $where.=' AND p.created_by=? AND a.division_id=?'; $args[]=$currentUserId; $args[]=currentLoginDivisionId(); }
 if($areaId>0){$where.=' AND p.area_id=?';$args[]=$areaId;}
 if($q!==''){$where.=' AND (p.item_name LIKE ? OR p.description LIKE ? OR a.name LIKE ? OR c.name LIKE ?)';$args=[...$args,"%$q%","%$q%","%$q%","%$q%"];}
 $sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,c.name category,COALESCE(pr.status,\'Draft\') review_status,pr.remarks review_remarks FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id LEFT JOIN ppmp_reviews pr ON pr.fiscal_year=p.fiscal_year AND pr.area_id=p.area_id AND pr.ppmp_no=p.ppmp_no'.$where.' ORDER BY p.id';
@@ -312,7 +347,7 @@ if($print && $rows){
   $selectedArea=$selectedArea ?: ['name'=>$header['area'],'authorized_person'=>$header['authorized_person'],'authorized_position'=>$header['authorized_position']??''];
 }
 $supervisorPending=[];
-if(!$print && currentUserIsPpmpSupervisor() && currentLoginDivisionId()>0){
+if(!$print && $isPpmpSupervisor && currentLoginDivisionId()>0){
   $stSupervisorQueue=$pdo->prepare("SELECT r.id,r.fiscal_year,r.ppmp_no,r.status,r.submitted_at,a.name area,d.name division,u.full_name submitted_by_name,COUNT(pri.id) item_count,COALESCE(SUM(p.quantity*p.unit_price),0) total_abc
     FROM ppmp_reviews r JOIN areas a ON a.id=r.area_id JOIN divisions d ON d.id=a.division_id
     LEFT JOIN users u ON u.id=r.submitted_by LEFT JOIN ppmp_review_items pri ON pri.review_id=r.id LEFT JOIN ppmp_items p ON p.id=pri.ppmp_item_id
@@ -321,13 +356,16 @@ if(!$print && currentUserIsPpmpSupervisor() && currentLoginDivisionId()>0){
 }
 pageStart('Project Procurement Management Plan');
 ?>
-<?php if(!$print && currentUserIsPpmpSupervisor()): ?>
+<?php if(!$print && $isPpmpSupervisor): ?>
 <div class="panel" style="margin-bottom:16px"><h2>PPMPs Pending for Review</h2><p class="muted">Review PPMP submissions from all Areas/Units under your Division/Department.</p>
 <?php if($supervisorPending): ?><div class="table-wrap"><table class="table"><tr><th>Division/Department</th><th>Area/Unit</th><th>PPMP No.</th><th>Fiscal Year</th><th>Items</th><th>Submitted By</th><th>Status</th><th>Action</th></tr>
 <?php foreach($supervisorPending as $r): ?><tr><td><?=e($r['division'])?></td><td><?=e($r['area'])?></td><td><?=e($r['ppmp_no'])?></td><td><?=e((string)$r['fiscal_year'])?></td><td><?=e((string)$r['item_count'])?></td><td><?=e($r['submitted_by_name']??'')?></td><td><span class="ppmp-status-badge ppmp-status-pending-for-review">Pending for Review</span></td><td><a class="btn secondary ppmp-action-btn" href="ppmp_review.php?review_id=<?=$r['id']?>">Review PPMP</a></td></tr><?php endforeach; ?></table></div>
 <?php else: ?><div class="empty">No Areas/Units have submitted a PPMP for review.</div><?php endif; ?></div>
 <?php endif; ?>
-<?php if(!$print): ?>
+<?php if(!$print && $isPpmpSupervisor && !$canManagePpmp): ?>
+<div class="panel" style="margin-bottom:16px"><h2>PPMP Workspace</h2><div class="empty">You have not created your own PPMP yet. Only PPMPs submitted by Areas/Units in your Division/Department that are <b>Pending for Review</b> are available above. You may not add or modify another Area/Unit's PPMP.</div></div>
+<?php endif; ?>
+<?php if(!$print && (!$isPpmpSupervisor || $canManagePpmp)): ?>
 <div class="panel ppmp-toolbar">
   <div class="toolbar">
     <form class="ppmp-filter">
@@ -339,7 +377,7 @@ pageStart('Project Procurement Management Plan');
       <input class="input" name="q" placeholder="Search item, area or description" value="<?=e($q)?>">
       <button class="btn" type="submit">View</button>
     </form>
-    <?php if(hasRole(['Administrator','Editor']) && $areaId>0):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn"><span class="ppmp-toolbar-label">+ Add PPMP Item</span></button><?php endif;?>
+    <?php if((hasRole(['Administrator','Editor']) && (!$isPpmpSupervisor || $canManagePpmp)) && $areaId>0):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn"><span class="ppmp-toolbar-label">+ Add PPMP Item</span></button><?php endif;?>
     <?php if($areaId>0):?><button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button><?php endif;?>\n    <?php if($areaId>0 && $rows && in_array(($rows[0]['review_status']??'Draft'),['Draft','Declined'],true)):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
   </div>
 </div>
@@ -347,9 +385,10 @@ pageStart('Project Procurement Management Plan');
 <div class="panel ppmp-records">
   <h2>Saved PPMP Items — FY <?=$year?><?= $selectedArea?' / '.e($selectedArea['name']):'' ?></h2>
   <div class="table-wrap"><table class="table"><tr><th>PPMP No.</th><th>Area/Unit</th><th>Item</th><th>Type</th><th>Qty / Unit</th><th>Mode</th><th>Unit Cost</th><th>Total Budget</th><th>Saved</th><th>Status</th><th>Actions</th></tr>
-  <?php foreach($rows as $r):?><tr><td><?=e($r['ppmp_no'])?></td><td><?=e($r['area'])?></td><td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['procurement_type'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td><?=!empty($r['saved_at'])?e(date('F j, Y g:i A',strtotime($r['saved_at']))):e(date('F j, Y g:i A',strtotime($r['created_at'])))?></td><td><span class="ppmp-status-badge ppmp-status-<?=e(strtolower(str_replace(' ','-',(string)$r['review_status'])))?>"><?=e($r['review_status'])?></span><?php if($r['review_status']==='Declined' && !empty($r['review_remarks'])):?><br><small><?=e($r['review_remarks'])?></small><?php endif;?></td><td class="ppmp-actions-cell"><?php if(hasRole(['Administrator','Editor']) && in_array($r['review_status'],['Draft','Declined'],true)):?><div class="ppmp-row-actions"><a class="btn secondary ppmp-action-btn" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>&edit=<?=$r['id']?>">Edit</a><form method="post" class="ppmp-delete-form" onsubmit="return confirm('Delete this PPMP item? This action cannot be undone.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn danger ppmp-action-btn" type="submit">Delete</button></form></div><?php endif;?></td></tr><?php endforeach;?></table></div>
+  <?php foreach($rows as $r):?><tr><td><?=e($r['ppmp_no'])?></td><td><?=e($r['area'])?></td><td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['procurement_type'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td><?=!empty($r['saved_at'])?e(date('F j, Y g:i A',strtotime($r['saved_at']))):e(date('F j, Y g:i A',strtotime($r['created_at'])))?></td><td><span class="ppmp-status-badge ppmp-status-<?=e(strtolower(str_replace(' ','-',(string)$r['review_status'])))?>"><?=e($r['review_status'])?></span><?php if($r['review_status']==='Declined' && !empty($r['review_remarks'])):?><br><small><?=e($r['review_remarks'])?></small><?php endif;?></td><td class="ppmp-actions-cell"><?php if(hasRole(['Administrator','Editor']) && (!$isPpmpSupervisor || (int)$r['created_by']===$currentUserId) && in_array($r['review_status'],['Draft','Declined'],true)):?><div class="ppmp-row-actions"><a class="btn secondary ppmp-action-btn" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>&edit=<?=$r['id']?>">Edit</a><form method="post" class="ppmp-delete-form" onsubmit="return confirm('Delete this PPMP item? This action cannot be undone.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn danger ppmp-action-btn" type="submit">Delete</button></form></div><?php endif;?></td></tr><?php endforeach;?></table></div>
 </div>
-<?php $ppmpFormOpen=$formIsEditing || $formOld!==null; ?>
+<?php $ppmpFormOpen=(!$isPpmpSupervisor || $canManagePpmp) && ($formIsEditing || $formOld!==null); ?>
+<?php if(!$isPpmpSupervisor || $canManagePpmp): ?>
 <div class="ppmp-entry panel" id="ppmpForm" style="<?= $ppmpFormOpen ? '' : 'display:none;' ?>">
   <h2><?= $formIsEditing ? 'Edit PPMP Item' : 'Project Procurement Management Plan — Data Entry' ?></h2>
   <p class="muted">Complete the four sections below. Requested By personnel are based on the selected End-User / Implementing Unit.</p>
@@ -457,6 +496,7 @@ pageStart('Project Procurement Management Plan');
     <div class="actions"><button class="btn" type="submit"><?= $formIsEditing ? 'Save Changes' : 'Save PPMP Item' ?></button><?php if($formIsEditing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>">Cancel</a><?php endif; ?></div>
   </form>
 </div>
+<?php endif; ?>
 <?php endif; ?>
 <?php
 $h=$rows[0]??[];
