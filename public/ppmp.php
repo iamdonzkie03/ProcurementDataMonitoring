@@ -341,15 +341,23 @@ $where=' WHERE p.fiscal_year=?'; $args=[$year];
 if($isPpmpSupervisor){ $where.=' AND a.division_id=?'; $args[]=currentLoginDivisionId(); }
 if($areaId>0){$where.=' AND p.area_id=?';$args[]=$areaId;}
 if($q!==''){$where.=' AND (p.item_name LIKE ? OR p.description LIKE ? OR a.name LIKE ? OR c.name LIKE ?)';$args=[...$args,"%$q%","%$q%","%$q%","%$q%"];}
-$sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,c.name category,COALESCE(pr.status,\'Draft\') review_status,pr.remarks review_remarks FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id LEFT JOIN ppmp_reviews pr ON pr.fiscal_year=p.fiscal_year AND pr.area_id=p.area_id AND pr.ppmp_no=p.ppmp_no'.$where.' ORDER BY p.id';
+$sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,c.name category,COALESCE(pri.status,pr.status,\'Draft\') review_status,COALESCE(pri.supervisor_remarks,pri.budget_remarks,pr.remarks,\'\') review_remarks FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id LEFT JOIN ppmp_reviews pr ON pr.fiscal_year=p.fiscal_year AND pr.area_id=p.area_id AND pr.ppmp_no=p.ppmp_no LEFT JOIN ppmp_review_items pri ON pri.review_id=pr.id AND pri.ppmp_item_id=p.id'.$where.' ORDER BY p.id';
 $st=$pdo->prepare($sql);$st->execute($args);$rows=$st->fetchAll();
+// Keep all items available for page metadata, but declined items are excluded
+// from the official printed PPMP Form.
+$allPpmpRows=$rows;
+if($print){
+  $rows=array_values(array_filter($rows,function($r){
+    return !in_array((string)($r['review_status']??''),['Declined','Budget Declined'],true);
+  }));
+}
 
 $selectedArea=null;
 foreach($areas as $a){if((int)$a['id']===$areaId){$selectedArea=$a;break;}}
 if($print && !$selectedArea && $rows){$areaId=(int)$rows[0]['area_id'];foreach($areas as $a){if((int)$a['id']===$areaId){$selectedArea=$a;break;}}}
 if($print && !$selectedArea){flash('error','Select an Area/Unit before printing the PPMP form.');header('Location:ppmp.php?year='.$year);exit;}
 if($print && $rows){
-  $header=$rows[0];
+  $header=($allPpmpRows[0]??$rows[0]??null);
   $selectedArea=$selectedArea ?: ['name'=>$header['area'],'authorized_person'=>$header['authorized_person'],'authorized_position'=>$header['authorized_position']??''];
 }
 $supervisorPending=[];
@@ -510,7 +518,7 @@ pageStart('Project Procurement Management Plan');
 <?php endif; ?>
 <?php endif; ?>
 <?php
-$h=$rows[0]??[];
+$h=($allPpmpRows[0]??$rows[0]??[]);
 $ppmpNo=$h['ppmp_no']??'';
 $person=$h['requested_by']??'';
 $preparedPos=$h['prepared_position']??'End-User or Implementing Unit';
