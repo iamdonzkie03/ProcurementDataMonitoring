@@ -311,8 +311,22 @@ if($print && $rows){
   $header=$rows[0];
   $selectedArea=$selectedArea ?: ['name'=>$header['area'],'authorized_person'=>$header['authorized_person'],'authorized_position'=>$header['authorized_position']??''];
 }
+$supervisorPending=[];
+if(!$print && currentUserIsPpmpSupervisor() && currentLoginDivisionId()>0){
+  $stSupervisorQueue=$pdo->prepare("SELECT r.id,r.fiscal_year,r.ppmp_no,r.status,r.submitted_at,a.name area,d.name division,u.full_name submitted_by_name,COUNT(pri.id) item_count,COALESCE(SUM(p.quantity*p.unit_price),0) total_abc
+    FROM ppmp_reviews r JOIN areas a ON a.id=r.area_id JOIN divisions d ON d.id=a.division_id
+    LEFT JOIN users u ON u.id=r.submitted_by LEFT JOIN ppmp_review_items pri ON pri.review_id=r.id LEFT JOIN ppmp_items p ON p.id=pri.ppmp_item_id
+    WHERE r.status='Pending for Review' AND d.id=? GROUP BY r.id ORDER BY r.updated_at DESC");
+  $stSupervisorQueue->execute([currentLoginDivisionId()]);$supervisorPending=$stSupervisorQueue->fetchAll();
+}
 pageStart('Project Procurement Management Plan');
 ?>
+<?php if(!$print && currentUserIsPpmpSupervisor()): ?>
+<div class="panel" style="margin-bottom:16px"><h2>PPMPs Pending for Review</h2><p class="muted">Review PPMP submissions from all Areas/Units under your Division/Department.</p>
+<?php if($supervisorPending): ?><div class="table-wrap"><table class="table"><tr><th>Division/Department</th><th>Area/Unit</th><th>PPMP No.</th><th>Fiscal Year</th><th>Items</th><th>Submitted By</th><th>Status</th><th>Action</th></tr>
+<?php foreach($supervisorPending as $r): ?><tr><td><?=e($r['division'])?></td><td><?=e($r['area'])?></td><td><?=e($r['ppmp_no'])?></td><td><?=e((string)$r['fiscal_year'])?></td><td><?=e((string)$r['item_count'])?></td><td><?=e($r['submitted_by_name']??'')?></td><td><span class="ppmp-status-badge ppmp-status-pending-for-review">Pending for Review</span></td><td><a class="btn secondary ppmp-action-btn" href="ppmp_review.php?review_id=<?=$r['id']?>">Review PPMP</a></td></tr><?php endforeach; ?></table></div>
+<?php else: ?><div class="empty">No Areas/Units have submitted a PPMP for review.</div><?php endif; ?></div>
+<?php endif; ?>
 <?php if(!$print): ?>
 <div class="panel ppmp-toolbar">
   <div class="toolbar">
