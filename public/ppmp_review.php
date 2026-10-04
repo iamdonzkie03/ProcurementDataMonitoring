@@ -34,14 +34,11 @@ $user=currentUser();
 $userName=trim((string)($user['full_name']??''));
 
 function isSupervisorForArea(PDO $pdo,int $areaId,string $userName): bool{
-  $st=$pdo->prepare("SELECT COUNT(*) FROM area_personnel
-    WHERE area_id=? AND name=?
-      AND (LOWER(COALESCE(position_designation,'')) LIKE '%supervisor%'
-           OR LOWER(COALESCE(position_designation,'')) LIKE '%authorized%')");
-  $st->execute([$areaId,$userName]);
-  if((int)$st->fetchColumn()>0)return true;
-  $st=$pdo->prepare("SELECT COUNT(*) FROM areas a JOIN divisions d ON d.id=a.division_id WHERE a.id=? AND d.division_head=?");
-  $st->execute([$areaId,$userName]);
+  if(!currentUserIsPpmpSupervisor()) return false;
+  $contextDivision=currentLoginDivisionId();
+  $st=$pdo->prepare("SELECT COUNT(*) FROM areas a JOIN divisions d ON d.id=a.division_id
+    WHERE a.id=? AND d.id=? AND d.ppmp_supervisor_enabled=1 AND d.division_head=?");
+  $st->execute([$areaId,$contextDivision,$userName]);
   return (int)$st->fetchColumn()>0;
 }
 
@@ -97,7 +94,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 $supervisorQueue=[];
 $budgetQueue=[];
-$stQueue=$pdo->query("SELECT r.*,a.name area,d.name division,u.full_name submitted_by_name,
+$stQueue=$pdo->prepare("SELECT r.*,a.name area,d.name division,u.full_name submitted_by_name,
   COUNT(p.id) item_count,COALESCE(SUM(p.quantity*p.unit_price),0) total_abc
   FROM ppmp_reviews r
   JOIN areas a ON a.id=r.area_id
@@ -105,7 +102,10 @@ $stQueue=$pdo->query("SELECT r.*,a.name area,d.name division,u.full_name submitt
   LEFT JOIN users u ON u.id=r.submitted_by
   LEFT JOIN ppmp_items p ON p.fiscal_year=r.fiscal_year AND p.area_id=r.area_id AND p.ppmp_no=r.ppmp_no
   WHERE r.status IN ('Pending for Review','Pending for Approval')
-  GROUP BY r.id ORDER BY r.updated_at DESC")->fetchAll();
+    AND (d.id=? OR ?=1)
+  GROUP BY r.id ORDER BY r.updated_at DESC");
+$stQueue->execute([currentLoginDivisionId(),hasRole(['Administrator'])?1:0]);
+$stQueue=$stQueue->fetchAll();
 foreach($stQueue as $item){
   $area=(int)$item['area_id'];
   if($item['status']==='Pending for Review' && isSupervisorForArea($pdo,$area,$userName))$supervisorQueue[]=$item;
