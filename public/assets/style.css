@@ -434,6 +434,22 @@ body{font-size:11px!important}
   .ppmp-prepared-signature img{max-width:125px;max-height:34px;}
 }
 
+
+/* PPMP toolbar action buttons */
+.ppmp-toolbar .toolbar .ppmp-toolbar-action{
+  width:150px!important;
+  min-width:150px!important;
+  height:36px!important;
+  box-sizing:border-box!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  padding:0 12px!important;
+  margin:0!important;
+  line-height:1!important;
+}
+
 /* Saved PPMP Items action buttons */
 .ppmp-row-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap;}
 .ppmp-row-actions .btn,
