@@ -11,7 +11,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   if($u && password_verify($_POST['password']??'',$u['password_hash'])){
     $_SESSION['user']=$u;
     $_SESSION['login_context']=buildLoginContext($pdo,$u);
-    header('Location:index.php');exit;
+    header('Location:'.(currentUserIsPpmpSupervisor()?'ppmp_review.php':'index.php'));exit;
   }
   $error='Invalid username or password.';
 }
