@@ -436,18 +436,37 @@ body{font-size:11px!important}
 
 
 /* PPMP toolbar action buttons */
-.ppmp-toolbar .toolbar .ppmp-toolbar-action{
+.ppmp-toolbar .toolbar{
+  display:flex!important;
+  align-items:center!important;
+  flex-wrap:wrap!important;
+}
+.ppmp-toolbar .toolbar .ppmp-toolbar-action,
+.ppmp-toolbar .toolbar a.ppmp-toolbar-action,
+.ppmp-toolbar .toolbar button.ppmp-toolbar-action{
   width:150px!important;
   min-width:150px!important;
+  max-width:150px!important;
   height:36px!important;
+  min-height:36px!important;
+  max-height:36px!important;
   box-sizing:border-box!important;
   display:inline-flex!important;
+  flex:0 0 150px!important;
   align-items:center!important;
   justify-content:center!important;
   text-align:center!important;
-  padding:0 12px!important;
+  vertical-align:middle!important;
+  padding:0!important;
   margin:0!important;
-  line-height:1!important;
+  border-width:1px!important;
+  line-height:normal!important;
+  font-size:inherit!important;
+  font-family:inherit!important;
+}
+.ppmp-toolbar .toolbar .ppmp-toolbar-action::before,
+.ppmp-toolbar .toolbar .ppmp-toolbar-action::after{
+  display:none!important;
 }
 
 /* Saved PPMP Items action buttons */
