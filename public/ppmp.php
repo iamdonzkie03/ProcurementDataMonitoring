@@ -182,7 +182,22 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $stWorkflowLock=$pdo->prepare('SELECT status FROM ppmp_reviews WHERE fiscal_year=? AND area_id=? ORDER BY id DESC LIMIT 1');
   $stWorkflowLock->execute([$year,$areaId]);
   $workflowStatus=(string)$stWorkflowLock->fetchColumn();
-  if($workflowStatus!=='' && !in_array($workflowStatus,['Draft','Declined'],true) && in_array($action,['add','edit','delete'],true)){
+
+  // A PPMP may contain a mixture of items: some can be Pending for Approval while
+  // another item has been Declined. The creator must be able to edit/delete the
+  // declined item without unlocking the items already submitted for approval.
+  $declinedItemEdit=false;
+  if(in_array($action,['edit','delete'],true) && $id>0){
+    $stDeclinedItem=$pdo->prepare("SELECT COUNT(*) FROM ppmp_review_items pri
+      JOIN ppmp_reviews pr ON pr.id=pri.review_id
+      WHERE pri.ppmp_item_id=? AND pr.fiscal_year=? AND pr.area_id=?
+        AND pri.status IN ('Declined','Budget Declined')");
+    $stDeclinedItem->execute([$id,$year,$areaId]);
+    $declinedItemEdit=(int)$stDeclinedItem->fetchColumn()>0;
+  }
+
+  if($workflowStatus!=='' && !in_array($workflowStatus,['Draft','Declined'],true)
+     && in_array($action,['add','edit','delete'],true) && !$declinedItemEdit){
     ppmpSaveFormError('This PPMP is '.$workflowStatus.' and can no longer be changed until the review workflow is completed.',$year,$areaId,$id);
   }
 
