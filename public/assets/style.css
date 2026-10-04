@@ -9,7 +9,18 @@
 @page long{size:8.5in 13in landscape;margin:.75in .25in .75in .25in}
 @page a4{size:A4 landscape;margin:.75in .25in .75in .25in}
 @media print{
- html,body{background:#fff!important;margin:0!important;padding:0!important}
+ html,body{
+   background:#fff!important;
+   margin:0!important;
+   padding:0!important;
+   -webkit-print-color-adjust:exact!important;
+   print-color-adjust:exact!important;
+ }
+ #ppmpPrintSheet,
+ #ppmpPrintSheet *{
+   -webkit-print-color-adjust:exact!important;
+   print-color-adjust:exact!important;
+ }
  body *{visibility:hidden!important}
  #ppmpPrintSheet,#ppmpPrintSheet *{visibility:visible!important}
  #ppmpPrintSheet{position:absolute!important;left:0!important;top:0!important;margin:0!important}
