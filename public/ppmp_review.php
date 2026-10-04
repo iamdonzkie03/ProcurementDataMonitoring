@@ -108,7 +108,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $itemReviewId=(int)$itemReviewId;
         if(!in_array($status,['Approved','Declined'],true))continue;
         $get->execute([$itemReviewId,$reviewId]);$row=$get->fetch();
-        if(!$row)continue;
+        if(!$row || $row['status']!=='Pending for Review')continue;
         $remark=trim((string)($remarks[$itemReviewId]??''));
         if($status==='Declined' && $remark===''){throw new RuntimeException('A decline reason is required for every item marked Declined.');}
         $up->execute([$status,$status==='Declined'?$remark:null,(int)$user['id'],$itemReviewId,$reviewId]);
@@ -233,11 +233,11 @@ pageStart('PPMP Review');
 <tr><th><input type="checkbox" id="selectAllItems" aria-label="Select all items"></th><th>PPMP Item</th><th>Category</th><th>Qty / Unit</th><th>Unit Cost</th><th>Total</th><th>Review Decision</th></tr>
 <?php foreach($items as $r):?>
 <tr class="item-review-row" data-item="<?=$r['id']?>">
-<td><input type="checkbox" class="item-check" aria-label="Select PPMP item"></td>
+<td><input type="checkbox" class="item-check" aria-label="Select PPMP item" <?=$r['status']!=='Pending for Review' && $review['status']==='Pending for Review'?'disabled':''?>></td>
 <td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['category'])?></td><td><?=number_format((float)$r['quantity'],2).' '.e($r['unit'])?></td><td>₱<?=number_format((float)$r['unit_price'],2)?></td><td>₱<?=number_format((float)($r['total_budget']??((float)$r['quantity']*(float)$r['unit_price'])),2)?></td>
 <td>
-<?php if($review['status']==='Pending for Review' && isSupervisorForArea($pdo,(int)$review['area_id'],$userName)):?>
-<select class="select decision-select" name="item_status[<?=$r['id']?>]"><option value="">Select</option><option value="Approved" <?=$r['status']==='Approved'?'selected':''?>>Approved</option><option value="Declined" <?=$r['status']==='Declined'?'selected':''?>>Declined</option></select>
+<?php if($review['status']==='Pending for Review' && isSupervisorForArea($pdo,(int)$review['area_id'],$userName) && $r['status']==='Pending for Review'):?>
+<select class="select decision-select" name="item_status[<?=$r['id']?>]"><option value="">Select</option><option value="Approved">Approved</option><option value="Declined">Declined</option></select>
 <textarea class="input decline-remark" name="item_remarks[<?=$r['id']?>]" rows="2" placeholder="Reason for decline"><?=e($r['supervisor_remarks']??'')?></textarea>
 <?php elseif($review['status']==='Pending for Approval' && isBudgetOfficerForArea($pdo,(int)$review['area_id'],$userName) && $r['status']==='Pending for Approval'):?>
 <select class="select decision-select" name="budget_status[<?=$r['id']?>]"><option value="">Select</option><option value="Budget Approved">Approved</option><option value="Budget Declined">Declined</option></select>
