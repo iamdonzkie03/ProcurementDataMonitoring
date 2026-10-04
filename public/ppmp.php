@@ -1,4 +1,4 @@
-<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
+\n<style>\n.ppmp-submit-review{background:#d9f7df!important;color:#166534!important;border:1px solid #b7e4c0!important;}\n.ppmp-submit-review:hover,.ppmp-submit-review:focus,.ppmp-submit-review:active{background:#d9f7df!important;color:#166534!important;}\n</style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
 require_once __DIR__.'/../app/layout.php';
@@ -226,7 +226,7 @@ pageStart('Project Procurement Management Plan');
       <button class="btn" type="submit">View</button>
     </form>
     <?php if(hasRole(['Administrator','Editor']) && $areaId>0):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn"><span class="ppmp-toolbar-label">+ Add PPMP Item</span></button><?php endif;?>
-    <?php if($areaId>0):?><button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button><?php endif;?>
+    <?php if($areaId>0):?><button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button><?php endif;?>\n    <?php if($areaId>0):?><button class="btn ppmp-toolbar-action ppmp-submit-review" type="button"><span class="ppmp-toolbar-label">Submit for Review</span></button><?php endif;?>
   </div>
 </div>
 
