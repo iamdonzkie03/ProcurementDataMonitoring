@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__.'/../config/config.php';
-if(isLoggedIn()){header('Location:index.php');exit;}
+if(isLoggedIn()){header('Location:'.(currentUserIsPpmpSupervisor()?'ppmp_review.php':'index.php'));exit;}
 $pdo=db(); ensureUserAccessSchema($pdo);
 $error='';
 if($_SERVER['REQUEST_METHOD']==='POST'){
