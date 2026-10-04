@@ -63,6 +63,34 @@ function currentUserIsBudgetOfficer(): bool {
     }catch(Throwable $e){ return false; }
 }
 
+function ensureUserAccessSchema(PDO $pdo): void {
+    try {
+        $cols=$pdo->query("SHOW COLUMNS FROM users LIKE 'division_id'")->fetch();
+        if(!$cols) $pdo->exec("ALTER TABLE users ADD COLUMN division_id INT UNSIGNED NULL AFTER status");
+        $cols=$pdo->query("SHOW COLUMNS FROM users LIKE 'area_id'")->fetch();
+        if(!$cols) $pdo->exec("ALTER TABLE users ADD COLUMN area_id INT UNSIGNED NULL AFTER division_id");
+    } catch(Throwable $e) {}
+}
+
+function buildLoginContext(PDO $pdo, array $u): array {
+    ensureUserAccessSchema($pdo);
+    $divisionId=(int)($u['division_id']??0);
+    $areaId=(int)($u['area_id']??0);
+    if($divisionId>0 && $areaId>0){
+        $st=$pdo->prepare("SELECT a.id area_id,a.name area_name,d.id division_id,d.name division_name,
+          d.division_head,d.ppmp_supervisor_enabled
+          FROM areas a JOIN divisions d ON d.id=a.division_id
+          WHERE a.id=? AND d.id=? LIMIT 1");
+        $st->execute([$areaId,$divisionId]);$ctx=$st->fetch();
+        if($ctx){
+            $ctx['is_ppmp_supervisor']=((int)$ctx['ppmp_supervisor_enabled']===1 &&
+              strcasecmp(trim((string)$ctx['division_head']),trim((string)($u['full_name']??'')))===0);
+            return $ctx;
+        }
+    }
+    return ['division_id'=>0,'area_id'=>0,'division_name'=>'','area_name'=>'','is_ppmp_supervisor'=>false];
+}
+
 function isLoggedIn(): bool {
     return currentUser() !== null;
 }
