@@ -49,10 +49,13 @@ $entryFiscalYears=range($currentFiscalYear,$currentFiscalYear+3);
 $existingFiscalYears=$isPpmpSupervisor
   ? array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL AND created_by='.(int)$currentUserId.' ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN))
   : array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN));
-$searchFiscalYears=array_values(array_unique(array_merge($existingFiscalYears,$entryFiscalYears)));
+$searchFiscalYears=$isPpmpSupervisor
+  ? array_values(array_unique($existingFiscalYears))
+  : array_values(array_unique(array_merge($existingFiscalYears,$entryFiscalYears)));
 rsort($searchFiscalYears);
-$year=(int)($_GET['year']??$currentFiscalYear);
-if(!in_array($year,$searchFiscalYears,true)) $year=$currentFiscalYear;
+$year=(int)($_GET['year']??(($isPpmpSupervisor && $searchFiscalYears) ? $searchFiscalYears[0] : $currentFiscalYear));
+if($searchFiscalYears && !in_array($year,$searchFiscalYears,true)) $year=$searchFiscalYears[0];
+elseif(!$searchFiscalYears && $isPpmpSupervisor) $year=$currentFiscalYear;
 $areaId=(int)($_GET['area_id']??0);
 $q=trim($_GET['q']??'');
 $print=isset($_GET['print']) && $_GET['print']=='1';
@@ -297,6 +300,7 @@ if($isPpmpSupervisor && $currentUserId>0 && currentLoginDivisionId()>0){
     $areas=array_values(array_filter($areas,fn($a)=>in_array((int)$a['id'],$supervisorOwnAreaIds,true)));
   }
   $canManagePpmp=$supervisorOwnPpmpExists;
+  if($areaId>0 && !in_array($areaId,$supervisorOwnAreaIds,true)) $areaId=0;
 }
 $cats=$pdo->query("SELECT * FROM categories WHERE status='Active' ORDER BY name")->fetchAll();
 $classifications=$pdo->query("SELECT name FROM classifications WHERE status='Active' ORDER BY name")->fetchAll();
@@ -402,7 +406,8 @@ pageStart('Project Procurement Management Plan');
       <div class="ppmp-input-grid">
         <div class="field"><label>Fiscal Year *</label>
           <select class="select" name="fiscal_year" id="ppmp_fiscal_year" required>
-            <?php foreach($entryFiscalYears as $entryYear): ?>
+            <?php $formFiscalYears=$isPpmpSupervisor ? array_values(array_intersect($entryFiscalYears,$existingFiscalYears)) : $entryFiscalYears; ?>
+            <?php foreach($formFiscalYears as $entryYear): ?>
               <option value="<?=$entryYear?>" data-ppmp-no="<?=e($existingPpmpByYearArea[$entryYear.':'.(int)($formState['area_id']??$areaId)]??($ppmpNextByYear[$entryYear]??('PPMP-'.$entryYear.'-0001')))?>" <?=((int)($formState['fiscal_year']??$year)===$entryYear)?'selected':''?>><?=$entryYear?></option>
             <?php endforeach; ?>
           </select>
