@@ -209,14 +209,14 @@ pageStart('PPMP Review');
 <p class="muted">Select an Area/Unit to review its submitted PPMP items independently.</p>
 <?php if($supervisorQueue):?>
 <h3>Areas/Units Pending Supervisor Review</h3>
-<div class="table-wrap"><table class="table"><tr><th>Division</th><th>Area/Unit</th><th>PPMP No.</th><th>Fiscal Year</th><th>Items</th><th>Submitted By</th><th>Action</th></tr>
-<?php foreach($supervisorQueue as $r):?><tr><td><?=e($r['division'])?></td><td><?=e($r['area'])?></td><td><?=e($r['ppmp_no'])?></td><td><?=e((string)$r['fiscal_year'])?></td><td><?=e((string)$r['item_count'])?></td><td><?=e($r['submitted_by_name']??'')?></td><td><a class="btn secondary" href="ppmp_review.php?review_id=<?=$r['id']?>">Review PPMP</a></td></tr><?php endforeach;?>
+<div class="table-wrap"><table class="table"><tr><th>Division</th><th>Area/Unit</th><th>PPMP No.</th><th>Fiscal Year</th><th>Items</th><th>Submitted By</th><th>Status</th><th>Action</th></tr>
+<?php foreach($supervisorQueue as $r):?><tr><td><?=e($r['division'])?></td><td><?=e($r['area'])?></td><td><?=e($r['ppmp_no'])?></td><td><?=e((string)$r['fiscal_year'])?></td><td><?=e((string)$r['item_count'])?></td><td><?=e($r['submitted_by_name']??'')?></td><td><span class="ppmp-review-status pending"><?=e($r['status'])?></span></td><td><a class="btn secondary" href="ppmp_review.php?review_id=<?=$r['id']?>">Review PPMP</a></td></tr><?php endforeach;?>
 </table></div>
 <?php endif;?>
 <?php if($budgetQueue):?>
 <h3>Areas/Units Pending Budget Approval</h3>
 <div class="table-wrap"><table class="table"><tr><th>Division</th><th>Area/Unit</th><th>PPMP No.</th><th>Fiscal Year</th><th>Items</th><th>Submitted By</th><th>Action</th></tr>
-<?php foreach($budgetQueue as $r):?><tr><td><?=e($r['division'])?></td><td><?=e($r['area'])?></td><td><?=e($r['ppmp_no'])?></td><td><?=e((string)$r['fiscal_year'])?></td><td><?=e((string)$r['item_count'])?></td><td><?=e($r['submitted_by_name']??'')?></td><td><a class="btn secondary" href="ppmp_review.php?review_id=<?=$r['id']?>">Review Approved Items</a></td></tr><?php endforeach;?>
+<?php foreach($budgetQueue as $r):?><tr><td><?=e($r['division'])?></td><td><?=e($r['area'])?></td><td><?=e($r['ppmp_no'])?></td><td><?=e((string)$r['fiscal_year'])?></td><td><?=e((string)$r['item_count'])?></td><td><?=e($r['submitted_by_name']??'')?></td><td><span class="ppmp-review-status pfa"><?=e($r['status'])?></span></td><td><a class="btn secondary" href="ppmp_review.php?review_id=<?=$r['id']?>">Review Approved Items</a></td></tr><?php endforeach;?>
 </table></div>
 <?php endif;?>
 <?php if(!$supervisorQueue&&!$budgetQueue):?><div class="empty">No PPMP requests are currently waiting for your action.</div><?php endif;?>
