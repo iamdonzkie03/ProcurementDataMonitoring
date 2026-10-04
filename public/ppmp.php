@@ -1,4 +1,4 @@
-\n<style>\n.ppmp-submit-review{background:#d9f7df!important;color:#166534!important;border:1px solid #b7e4c0!important;}\n.ppmp-submit-review:hover,.ppmp-submit-review:focus,.ppmp-submit-review:active{background:#d9f7df!important;color:#166534!important;}\n</style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
+\n<style>\n.ppmp-status-badge{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:#eef2f7;color:#374151}.ppmp-status-pending-for-review{background:#fff3cd;color:#856404}.ppmp-status-pending-for-approval{background:#cff4fc;color:#055160}.ppmp-status-approved{background:#d1e7dd;color:#0f5132}.ppmp-status-declined{background:#f8d7da;color:#842029}.ppmp-status-draft{background:#e9ecef;color:#495057}.ppmp-submit-review{background:#d9f7df!important;color:#166534!important;border:1px solid #b7e4c0!important;}\n.ppmp-submit-review:hover,.ppmp-submit-review:focus,.ppmp-submit-review:active{background:#d9f7df!important;color:#166534!important;}\n</style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
 require_once __DIR__.'/../app/layout.php';
@@ -13,6 +13,32 @@ try{
   // unique index automatically for existing installations.
   $idx=$pdo->query("SHOW INDEX FROM ppmp_items WHERE Key_name='uq_ppmp_fiscal_year_area'")->fetch();
   if($idx) $pdo->exec("ALTER TABLE ppmp_items DROP INDEX uq_ppmp_fiscal_year_area");
+}catch(PDOException $e){}
+
+try{
+  $pdo->exec("CREATE TABLE IF NOT EXISTS ppmp_reviews (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    fiscal_year YEAR NOT NULL,
+    area_id INT UNSIGNED NOT NULL,
+    ppmp_no VARCHAR(80) NOT NULL,
+    status ENUM('Draft','Pending for Review','Pending for Approval','Approved','Declined') NOT NULL DEFAULT 'Draft',
+    submitted_by INT UNSIGNED NULL,
+    submitted_at DATETIME NULL,
+    supervisor_reviewed_by INT UNSIGNED NULL,
+    supervisor_reviewed_at DATETIME NULL,
+    budget_reviewed_by INT UNSIGNED NULL,
+    budget_reviewed_at DATETIME NULL,
+    remarks TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ppmp_review_area FOREIGN KEY(area_id) REFERENCES areas(id),
+    CONSTRAINT fk_ppmp_review_submitter FOREIGN KEY(submitted_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_ppmp_review_supervisor FOREIGN KEY(supervisor_reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+    CONSTRAINT fk_ppmp_review_budget FOREIGN KEY(budget_reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+    UNIQUE KEY uq_ppmp_review (fiscal_year, area_id, ppmp_no),
+    INDEX idx_ppmp_review_status (status),
+    INDEX idx_ppmp_review_area (area_id)
+  ) ENGINE=InnoDB");
 }catch(PDOException $e){}
 
 $currentFiscalYear=(int)date('Y');
@@ -48,6 +74,63 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $year=(int)($_POST['fiscal_year']??0);
   $areaId=(int)($_POST['area_id']??0);
   $requestedBy=trim($_POST['requested_by']??'');
+
+  if($action==='submit_for_review'){
+    if($areaId<=0 || $year<=0){
+      flash('error','Select a Fiscal Year and a specific Area/Unit before submitting the PPMP for review.');
+      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+    }
+    $stItems=$pdo->prepare('SELECT ppmp_no, COUNT(*) item_count FROM ppmp_items WHERE fiscal_year=? AND area_id=? AND ppmp_no IS NOT NULL AND ppmp_no<>"" GROUP BY ppmp_no ORDER BY ppmp_no LIMIT 1');
+    $stItems->execute([$year,$areaId]); $ppmpSet=$stItems->fetch();
+    if(!$ppmpSet){
+      flash('error','There are no saved PPMP items to submit for review.');
+      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+    }
+    $ppmpNo=trim((string)$ppmpSet['ppmp_no']);
+
+    $stReview=$pdo->prepare('SELECT * FROM ppmp_reviews WHERE fiscal_year=? AND area_id=? AND ppmp_no=? LIMIT 1');
+    $stReview->execute([$year,$areaId,$ppmpNo]); $review=$stReview->fetch();
+    if($review && in_array($review['status'],['Pending for Review','Pending for Approval','Approved'],true)){
+      flash('error','This PPMP is already '.$review['status'].'.');
+      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+    }
+
+    // Resolve the Supervisor/Authorized Person assigned to this Area/Unit.
+    $stTarget=$pdo->prepare("SELECT ap.name, ap.position_designation
+      FROM area_personnel ap
+      WHERE ap.area_id=?
+        AND (LOWER(COALESCE(ap.position_designation,'')) LIKE '%supervisor%'
+             OR LOWER(COALESCE(ap.position_designation,'')) LIKE '%authorized%')
+      ORDER BY ap.id LIMIT 1");
+    $stTarget->execute([$areaId]); $target=$stTarget->fetch();
+
+    if(!$target){
+      $stTarget=$pdo->prepare("SELECT d.division_head name, d.head_position_designation position_designation
+        FROM areas a JOIN divisions d ON d.id=a.division_id WHERE a.id=? LIMIT 1");
+      $stTarget->execute([$areaId]); $target=$stTarget->fetch();
+    }
+    if(!$target || trim((string)$target['name'])===''){
+      flash('error','No Supervisor or Authorized Person is assigned to this Area/Unit.');
+      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+    }
+    $stUser=$pdo->prepare('SELECT id FROM users WHERE full_name=? AND status="Active" LIMIT 1');
+    $stUser->execute([trim($target['name'])]); $targetUserId=(int)$stUser->fetchColumn();
+    if($targetUserId<=0){
+      flash('error','The Supervisor/Authorized Person ('.trim($target['name']).') does not have an active User account for PPMP review.');
+      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+    }
+
+    if($review){
+      $st=$pdo->prepare("UPDATE ppmp_reviews SET status='Pending for Review',submitted_by=?,submitted_at=NOW(),supervisor_reviewed_by=NULL,supervisor_reviewed_at=NULL,budget_reviewed_by=NULL,budget_reviewed_at=NULL,remarks=NULL WHERE id=?");
+      $st->execute([currentUser()['id'],(int)$review['id']]);
+    }else{
+      $st=$pdo->prepare("INSERT INTO ppmp_reviews(fiscal_year,area_id,ppmp_no,status,submitted_by,submitted_at) VALUES(?,?,?,'Pending for Review',?,NOW())");
+      $st->execute([$year,$areaId,$ppmpNo,currentUser()['id']]);
+    }
+    flash('success','The entire '.$ppmpNo.' PPMP list has been submitted to '.$target['name'].' for review.');
+    header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+  }
+
   $preparedPosition='';
   if($requestedBy!==''){
     $stRequested=$pdo->prepare('SELECT position_designation FROM area_personnel WHERE area_id=? AND name=? LIMIT 1');
@@ -200,7 +283,7 @@ foreach($stPersonnel->fetchAll() as $person){ $personnelByArea[(int)$person['are
 $where=' WHERE p.fiscal_year=?'; $args=[$year];
 if($areaId>0){$where.=' AND p.area_id=?';$args[]=$areaId;}
 if($q!==''){$where.=' AND (p.item_name LIKE ? OR p.description LIKE ? OR a.name LIKE ? OR c.name LIKE ?)';$args=[...$args,"%$q%","%$q%","%$q%","%$q%"];}
-$sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,c.name category FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id'.$where.' ORDER BY p.id';
+$sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,c.name category,COALESCE(pr.status,\'Draft\') review_status,pr.remarks review_remarks FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id LEFT JOIN ppmp_reviews pr ON pr.fiscal_year=p.fiscal_year AND pr.area_id=p.area_id AND pr.ppmp_no=p.ppmp_no'.$where.' ORDER BY p.id';
 $st=$pdo->prepare($sql);$st->execute($args);$rows=$st->fetchAll();
 
 $selectedArea=null;
@@ -226,14 +309,14 @@ pageStart('Project Procurement Management Plan');
       <button class="btn" type="submit">View</button>
     </form>
     <?php if(hasRole(['Administrator','Editor']) && $areaId>0):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn"><span class="ppmp-toolbar-label">+ Add PPMP Item</span></button><?php endif;?>
-    <?php if($areaId>0):?><button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button><?php endif;?>\n    <?php if($areaId>0):?><button class="btn ppmp-toolbar-action ppmp-submit-review" type="button"><span class="ppmp-toolbar-label">Submit for Review</span></button><?php endif;?>
+    <?php if($areaId>0):?><button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button><?php endif;?>\n    <?php if($areaId>0 && $rows):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
   </div>
 </div>
 
 <div class="panel ppmp-records">
   <h2>Saved PPMP Items — FY <?=$year?><?= $selectedArea?' / '.e($selectedArea['name']):'' ?></h2>
-  <div class="table-wrap"><table class="table"><tr><th>PPMP No.</th><th>Area/Unit</th><th>Item</th><th>Type</th><th>Qty / Unit</th><th>Mode</th><th>Unit Cost</th><th>Total Budget</th><th>Saved</th><th>Actions</th></tr>
-  <?php foreach($rows as $r):?><tr><td><?=e($r['ppmp_no'])?></td><td><?=e($r['area'])?></td><td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['procurement_type'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td><?=!empty($r['saved_at'])?e(date('F j, Y g:i A',strtotime($r['saved_at']))):e(date('F j, Y g:i A',strtotime($r['created_at'])))?></td><td class="ppmp-actions-cell"><?php if(hasRole(['Administrator','Editor'])):?><div class="ppmp-row-actions"><a class="btn secondary ppmp-action-btn" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>&edit=<?=$r['id']?>">Edit</a><form method="post" class="ppmp-delete-form" onsubmit="return confirm('Delete this PPMP item? This action cannot be undone.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn danger ppmp-action-btn" type="submit">Delete</button></form></div><?php endif;?></td></tr><?php endforeach;?></table></div>
+  <div class="table-wrap"><table class="table"><tr><th>PPMP No.</th><th>Area/Unit</th><th>Item</th><th>Type</th><th>Qty / Unit</th><th>Mode</th><th>Unit Cost</th><th>Total Budget</th><th>Saved</th><th>Status</th><th>Actions</th></tr>
+  <?php foreach($rows as $r):?><tr><td><?=e($r['ppmp_no'])?></td><td><?=e($r['area'])?></td><td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['procurement_type'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td><?=!empty($r['saved_at'])?e(date('F j, Y g:i A',strtotime($r['saved_at']))):e(date('F j, Y g:i A',strtotime($r['created_at'])))?></td><td><span class="ppmp-status-badge ppmp-status-<?=e(strtolower(str_replace(' ','-',(string)$r['review_status'])))?>"><?=e($r['review_status'])?></span><?php if($r['review_status']==='Declined' && !empty($r['review_remarks'])):?><br><small><?=e($r['review_remarks'])?></small><?php endif;?></td><td class="ppmp-actions-cell"><?php if(hasRole(['Administrator','Editor']) && in_array($r['review_status'],['Draft','Declined'],true)):?><div class="ppmp-row-actions"><a class="btn secondary ppmp-action-btn" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>&edit=<?=$r['id']?>">Edit</a><form method="post" class="ppmp-delete-form" onsubmit="return confirm('Delete this PPMP item? This action cannot be undone.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn danger ppmp-action-btn" type="submit">Delete</button></form></div><?php endif;?></td></tr><?php endforeach;?></table></div>
 </div>
 <?php $ppmpFormOpen=$formIsEditing || $formOld!==null; ?>
 <div class="ppmp-entry panel" id="ppmpForm" style="<?= $ppmpFormOpen ? '' : 'display:none;' ?>">
