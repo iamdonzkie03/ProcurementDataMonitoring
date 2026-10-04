@@ -468,6 +468,20 @@ body{font-size:11px!important}
 .ppmp-toolbar .toolbar .ppmp-toolbar-action::after{
   display:none!important;
 }
+.ppmp-toolbar .toolbar a.ppmp-toolbar-action{
+  text-decoration:none!important;
+  color:inherit;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  text-indent:0!important;
+}
+.ppmp-toolbar .toolbar a.ppmp-toolbar-action{
+  justify-content:center!important;
+  align-items:center!important;
+  text-align:center!important;
+}
+
 
 /* Saved PPMP Items action buttons */
 .ppmp-row-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap;}
