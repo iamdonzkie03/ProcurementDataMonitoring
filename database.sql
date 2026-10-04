@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS divisions (
   division_head VARCHAR(150) NOT NULL,
   head_position_designation VARCHAR(150) NULL,
   electronic_signature VARCHAR(255) NULL,
+  ppmp_supervisor_enabled TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
