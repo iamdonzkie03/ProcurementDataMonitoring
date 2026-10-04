@@ -17,11 +17,12 @@ if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;r
 						$grandQty+=(float)$r['total_qty'];$grandAbc+=(float)$r['total_abc'];}pageStart('Consolidated Annual Procurement Plan');
 ?>
 <div class="panel">
-	<div class="toolbar">
+	<div class="toolbar consolidated-app-toolbar" style="justify-content:center;text-align:center;gap:12px;flex-wrap:wrap;">
 		<form>
-			<select class="input" name="year" aria-label="Calendar Year"><?php foreach($availableYears as $availableYear):?><option value="<?=$availableYear?>" <?=$year===$availableYear?'selected':''?>><?=$availableYear?></option><?php endforeach;?></select> <button class="btn" type="submit">View APP</button></form>
-		<span class="badge"><?=count($rows)?> consolidated lines</span>
-		<span class="badge">Total Approved Budget for the Contract (ABC): ₱<?=number_format($grandAbc,2)?></span>
+			<select class="input" name="year" aria-label="Calendar Year"><?php foreach($availableYears as $availableYear):?><option value="<?=$availableYear?>" <?=$year===$availableYear?'selected':''?>><?=$availableYear?></option><?php endforeach;?></select> <button class="btn" type="submit">View APP</button>
+		</form>
+		<span class="badge" style="display:inline-flex;align-items:center;justify-content:center;text-align:center;"><?=count($rows)?> consolidated lines</span>
+		<span style="display:inline-flex;align-items:center;justify-content:center;text-align:center;font-size:16px;font-weight:700;">Total Approved Budget for the Contract (ABC): <span style="margin-left:6px;font-size:16px;font-weight:700;">₱<?=number_format($grandAbc,2)?></span></span>
 	</div>
 		<p style="font-size:12px;color:#6b7280">Equivalent items are consolidated across all Area/Unit PPMPs using normalized item name + unit + category + unit price. Source quantities are summed only when all of those values match; total ABC is summed.</p>
 		<div class="table-wrap">
