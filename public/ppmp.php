@@ -146,6 +146,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     ppmpSaveFormError('Fiscal Year must be between '.$currentFiscalYear.' and '.($currentFiscalYear+3).'.',$currentFiscalYear,$areaId,$id);
   }
 
+  $stWorkflowLock=$pdo->prepare('SELECT status FROM ppmp_reviews WHERE fiscal_year=? AND area_id=? ORDER BY id DESC LIMIT 1');
+  $stWorkflowLock->execute([$year,$areaId]);
+  $workflowStatus=(string)$stWorkflowLock->fetchColumn();
+  if($workflowStatus!=='' && !in_array($workflowStatus,['Draft','Declined'],true) && in_array($action,['add','edit','delete'],true)){
+    ppmpSaveFormError('This PPMP is '.$workflowStatus.' and can no longer be changed until the review workflow is completed.',$year,$areaId,$id);
+  }
+
   if($action==='delete'){
     if($id<=0){ flash('error','Invalid PPMP item.'); }
     else{
@@ -309,7 +316,7 @@ pageStart('Project Procurement Management Plan');
       <button class="btn" type="submit">View</button>
     </form>
     <?php if(hasRole(['Administrator','Editor']) && $areaId>0):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn"><span class="ppmp-toolbar-label">+ Add PPMP Item</span></button><?php endif;?>
-    <?php if($areaId>0):?><button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button><?php endif;?>\n    <?php if($areaId>0 && $rows):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
+    <?php if($areaId>0):?><button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button><?php endif;?>\n    <?php if($areaId>0 && $rows && in_array(($rows[0]['review_status']??'Draft'),['Draft','Declined'],true)):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
   </div>
 </div>
 
