@@ -95,19 +95,14 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
     }
 
-    // Resolve the Supervisor/Authorized Person assigned to this Area/Unit.
-    $stTarget=$pdo->prepare("SELECT ap.name, ap.position_designation
-      FROM area_personnel ap
-      WHERE ap.area_id=?
-        AND (LOWER(COALESCE(ap.position_designation,'')) LIKE '%supervisor%'
-             OR LOWER(COALESCE(ap.position_designation,'')) LIKE '%authorized%')
-      ORDER BY ap.id LIMIT 1");
+    // The Division/Department Head is the PPMP Supervisor/Authorized Person only
+    // when the Division/Department is explicitly marked Yes in Area/Unit Management.
+    $stTarget=$pdo->prepare("SELECT d.division_head name,d.head_position_designation position_designation,d.ppmp_supervisor_enabled
+      FROM areas a JOIN divisions d ON d.id=a.division_id WHERE a.id=? LIMIT 1");
     $stTarget->execute([$areaId]); $target=$stTarget->fetch();
-
-    if(!$target){
-      $stTarget=$pdo->prepare("SELECT d.division_head name, d.head_position_designation position_designation
-        FROM areas a JOIN divisions d ON d.id=a.division_id WHERE a.id=? LIMIT 1");
-      $stTarget->execute([$areaId]); $target=$stTarget->fetch();
+    if(!$target || (int)$target['ppmp_supervisor_enabled']!==1){
+      flash('error','The selected Division/Department has not assigned its Head as the Supervisor/Authorized Person for PPMP review.');
+      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
     }
     if(!$target || trim((string)$target['name'])===''){
       flash('error','No Supervisor or Authorized Person is assigned to this Area/Unit.');
