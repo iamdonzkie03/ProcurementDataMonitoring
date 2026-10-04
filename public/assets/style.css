@@ -468,14 +468,21 @@ body{font-size:11px!important}
 .ppmp-toolbar .toolbar .ppmp-toolbar-action::after{
   display:none!important;
 }
+.ppmp-toolbar .toolbar .ppmp-toolbar-action{
+  position:relative!important;
+  overflow:hidden!important;
+}
 .ppmp-toolbar .toolbar .ppmp-toolbar-label{
-  display:block!important;
-  width:100%!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:max-content!important;
   margin:0!important;
   padding:0!important;
+  transform:translate(-50%,-50%)!important;
   text-align:center!important;
   text-indent:0!important;
-  line-height:36px!important;
+  line-height:1!important;
   white-space:nowrap!important;
 }
 .ppmp-toolbar .toolbar a.ppmp-toolbar-action{
