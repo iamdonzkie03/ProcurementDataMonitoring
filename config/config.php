@@ -34,6 +34,22 @@ function currentUser(): ?array {
     return $_SESSION['user'] ?? null;
 }
 
+function loginContext(): array {
+    return $_SESSION['login_context'] ?? [];
+}
+
+function currentLoginDivisionId(): int {
+    return (int)(loginContext()['division_id'] ?? 0);
+}
+
+function currentLoginAreaId(): int {
+    return (int)(loginContext()['area_id'] ?? 0);
+}
+
+function currentUserIsPpmpSupervisor(): bool {
+    return !empty(loginContext()['is_ppmp_supervisor']);
+}
+
 function isLoggedIn(): bool {
     return currentUser() !== null;
 }
