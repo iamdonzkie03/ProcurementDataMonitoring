@@ -50,6 +50,19 @@ function currentUserIsPpmpSupervisor(): bool {
     return !empty(loginContext()['is_ppmp_supervisor']);
 }
 
+function currentUserIsBudgetOfficer(): bool {
+    $u=currentUser(); $ctx=loginContext();
+    if(!$u || empty($ctx['area_id'])) return false;
+    try{
+        $pdo=db();
+        $st=$pdo->prepare("SELECT COUNT(*) FROM area_personnel ap JOIN areas a ON a.id=ap.area_id
+          WHERE ap.area_id=? AND ap.name=? AND LOWER(COALESCE(ap.position_designation,'')) LIKE '%budget officer%'
+            AND LOWER(a.name) LIKE '%budget%'");
+        $st->execute([(int)$ctx['area_id'],trim((string)($u['full_name']??''))]);
+        return (int)$st->fetchColumn()>0;
+    }catch(Throwable $e){ return false; }
+}
+
 function isLoggedIn(): bool {
     return currentUser() !== null;
 }
