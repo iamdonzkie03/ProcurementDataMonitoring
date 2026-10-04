@@ -7,11 +7,9 @@ $personnel=$pdo->query('SELECT ap.id,ap.name,ap.area_id,ap.position_designation,
 if($_SERVER['REQUEST_METHOD']==='POST'){checkCsrf();$action=$_POST['action']??'';if($action==='create'){$p=$_POST['password']??'';if(strlen($p)<8){flash('error','Password must be at least 8 characters.');}else{$divisionId=(int)($_POST['division_id']??0);
 $personName=trim($_POST['full_name']??'');
 $person=$pdo->prepare('SELECT ap.name,ap.area_id FROM area_personnel ap JOIN areas a ON a.id=ap.area_id WHERE a.division_id=? AND ap.name=? LIMIT 1');
-$person->execute([$divisionId,$personName]);
-$personRow=$person->fetch();
+$person->execute([$divisionId,$personName]);$personRow=$person->fetch();
 $head=$pdo->prepare('SELECT division_head FROM divisions WHERE id=? AND division_head=? LIMIT 1');
-$head->execute([$divisionId,$personName]);
-$isDivisionHead=(bool)$head->fetchColumn();
+$head->execute([$divisionId,$personName]);$isDivisionHead=(bool)$head->fetchColumn();
 $canonicalName=$personRow['name']??($isDivisionHead?$personName:'');
 $areaId=(int)($personRow['area_id']??0);
 if($divisionId<=0 || $canonicalName===''){flash('error','Please select a valid Division/Department and Name / Full Name assigned to that Division.');}
