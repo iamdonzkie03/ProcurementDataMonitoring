@@ -271,10 +271,10 @@ pageStart('PPMP Review');
    if(check)check.addEventListener('change',syncCount);
  });
  if(selectAll)selectAll.addEventListener('change',function(){rows.forEach(r=>{const c=r.querySelector('.item-check');if(c)c.checked=selectAll.checked;});syncCount();});
- function applySelected(value){
+ function applySelected(decision){
    const selected=rows.filter(r=>r.querySelector('.item-check')?.checked);
    if(!selected.length){alert('Select at least one PPMP item first.');return;}
-   selected.forEach(function(row){const s=row.querySelector('.decision-select');if(s){s.value=value;s.dispatchEvent(new Event('change'));}});
+   selected.forEach(function(row){const s=row.querySelector('.decision-select');if(s){const opt=Array.from(s.options).find(o=>o.value===decision || (decision==='Approved'&&o.value==='Budget Approved') || (decision==='Declined'&&o.value==='Budget Declined'));if(opt){s.value=opt.value;s.dispatchEvent(new Event('change'));}}});
    syncCount();
  }
  if(approve)approve.addEventListener('click',function(){applySelected('Approved');});
