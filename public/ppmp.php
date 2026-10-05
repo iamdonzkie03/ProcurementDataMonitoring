@@ -110,7 +110,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $insert=$pdo->prepare('INSERT INTO ppmp_items (fiscal_year,ppmp_no,area_id,category_id,item_name,description,procurement_type,quantity,unit,procurement_mode,preprocurement_conference,start_procurement,end_procurement,delivery_period,source_of_funds,unit_price,total_budget,supporting_documents,requested_by,prepared_by,prepared_position,submitted_by,submitted_position,budget_approved_by,budget_position,prepared_date,submitted_date,budget_date,remarks,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
     $saved=0; $pdo->beginTransaction();
     try{
-      foreach($items as $item){
+      foreach($items as $itemIndex=>$item){
         if(!is_array($item)) continue;
         $categoryId=(int)($item['category_id']??0);
         $itemName=trim((string)($item['item_name']??''));
@@ -130,15 +130,14 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
           throw new RuntimeException('Every PPMP row must have Category, Item Name, and Technical Specifications.');
         }
         $rowDocs=array();
-        $rowIndex=count($insertValues??array());
         if(isset($_FILES['items']['name'])){
           $fileNames=$_FILES['items']['name'];
           $fileTypes=$_FILES['items']['type'];
           $fileTmp=$_FILES['items']['tmp_name'];
           $fileErrors=$_FILES['items']['error'];
           $fileSizes=$_FILES['items']['size'];
-          $itemKey=array_search($item,$items,true);
-          if($itemKey!==false && isset($fileNames[$itemKey]['supporting_documents']) && is_array($fileNames[$itemKey]['supporting_documents'])){
+          $itemKey=(int)$itemIndex;
+          if(isset($fileNames[$itemKey]['supporting_documents']) && is_array($fileNames[$itemKey]['supporting_documents'])){
             $documentNamesForRow=$item['supporting_document_names']??array();
             foreach($fileNames[$itemKey]['supporting_documents'] as $docIndex=>$originalName){
               if(($fileErrors[$itemKey]['supporting_documents'][$docIndex]??UPLOAD_ERR_NO_FILE)===UPLOAD_ERR_NO_FILE) continue;
