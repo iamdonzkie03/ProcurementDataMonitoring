@@ -129,71 +129,32 @@ pageStart('PPMP Masterlist');
   const container=document.getElementById('masterlistRows');
   if(!button||!container)return;
 
-  function formatUnitCostLive(input){
-    const oldValue=input.value;
-    const oldPos=input.selectionStart===null?oldValue.length:input.selectionStart;
-
-    let before=oldValue.slice(0,oldPos);
-    let digitsBefore=(before.match(/\d/g)||[]).length;
-
-    let value=oldValue.replace(/,/g,'').replace(/[^0-9.]/g,'');
-    const firstDot=value.indexOf('.');
-    if(firstDot!==-1){
-      value=value.slice(0,firstDot+1)+value.slice(firstDot+1).replace(/\./g,'');
-    }
-
-    let parts=value.split('.');
-    let whole=parts[0]||'';
-    let decimal=parts.length>1?parts[1].slice(0,2):'';
-
-    whole=whole.replace(/^0+(?=\d)/,'');
-    const grouped=whole.replace(/\B(?=(\d{3})+(?!\d))/g,',');
-
-    const newValue=grouped+(parts.length>1?'.'+decimal:'');
-    input.value=newValue;
-
-    let newPos=0;
-    let seen=0;
-    for(let i=0;i<newValue.length;i++){
-      if(/\d/.test(newValue[i])) seen++;
-      if(seen>=digitsBefore){
-        newPos=i+1;
-        break;
-      }
-    }
-    if(digitsBefore===0)newPos=0;
-    else if(seen<digitsBefore)newPos=newValue.length;
-
-    input.setSelectionRange(newPos,newPos);
-  }
-
-  function finalizeUnitCost(input){
-    let value=input.value.replace(/,/g,'').replace(/[^0-9.]/g,'');
-    const dot=value.indexOf('.');
-    if(dot!==-1)value=value.slice(0,dot+1)+value.slice(dot+1).replace(/\./g,'');
-    let parts=value.split('.');
-    let whole=(parts[0]||'').replace(/^0+(?=\d)/,'');
-    let decimal=(parts.length>1?parts[1]:'').slice(0,2);
-    if(!whole)whole='0';
-    input.value=whole.replace(/\B(?=(\d{3})+(?!\d))/g,',')+'.'+decimal.padEnd(2,'0');
+  // Same formatter used by the PPMP Form Quantity/Unit Cost fields.
+  function formatNumberInput(field,finalize){
+    if(!field)return;
+    let raw=String(field.value||'').replace(/,/g,'').replace(/[^0-9.]/g,'');
+    if(raw===''){field.value='';return;}
+    const parts=raw.split('.');
+    let integer=(parts[0]||'0').replace(/^0+(?=\d)/,'');
+    integer=integer.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+    let value=integer;
+    if(parts.length>1)value+='.'+(parts.slice(1).join('').slice(0,2));
+    if(finalize && value.indexOf('.')<0)value+='.00';
+    else if(finalize && value.indexOf('.')>=0)value=(parseFloat(value.replace(/,/g,''))||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    field.value=value;
   }
 
   container.addEventListener('input',function(e){
     if(e.target.classList.contains('masterlist-unit-cost')){
-      formatUnitCostLive(e.target);
+      formatNumberInput(e.target,false);
     }
   });
 
   container.addEventListener('blur',function(e){
     if(e.target.classList.contains('masterlist-unit-cost')){
-      finalizeUnitCost(e.target);
+      formatNumberInput(e.target,true);
     }
   },true);
-
-  container.addEventListener('keydown',function(e){
-    if(!e.target.classList.contains('masterlist-unit-cost'))return;
-    if(e.key==='e'||e.key==='E'||e.key==='+'||e.key==='-')e.preventDefault();
-  });
 
   button.addEventListener('click',function(){
     const first=container.querySelector('.masterlist-row');
