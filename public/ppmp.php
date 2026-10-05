@@ -104,8 +104,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if($bulkPpmpNo===''){
       $stSeries=$pdo->prepare("SELECT MAX(CAST(SUBSTRING_INDEX(ppmp_no,'-',-1) AS UNSIGNED)) FROM ppmp_items WHERE fiscal_year=? AND ppmp_no LIKE CONCAT('PPMP-',?,'-%')"); $stSeries->execute([$year,$year]); $bulkPpmpNo='PPMP-'.$year.'-'.str_pad((string)(((int)$stSeries->fetchColumn())+1),4,'0',STR_PAD_LEFT);
     }
-    $stWorkflow=$pdo->prepare('SELECT status FROM ppmp_reviews WHERE fiscal_year=? AND area_id=? ORDER BY id DESC LIMIT 1'); $stWorkflow->execute([$year,$areaId]); $workflowStatus=(string)$stWorkflow->fetchColumn();
-    if($workflowStatus!==''&&!in_array($workflowStatus,['Draft','Declined'],true)) ppmpSaveFormError('This PPMP is '.$workflowStatus.' and cannot accept new items.',$year,$areaId);
+    // Additional PPMP item rows may be added from the same workspace even when
+    // the existing PPMP has already reached Pending for Approval or Approved.
+    // Newly saved rows are placed in Pending for Review and the PPMP review queue
+    // is reopened so the Supervisor can review the new rows.
     $uploadDir=__DIR__.'/uploads/ppmp';
     if(!is_dir($uploadDir)) @mkdir($uploadDir,0775,true);
     $insert=$pdo->prepare('INSERT INTO ppmp_items (fiscal_year,ppmp_no,area_id,category_id,item_name,description,procurement_type,quantity,unit,procurement_mode,preprocurement_conference,start_procurement,end_procurement,delivery_period,source_of_funds,unit_price,total_budget,supporting_documents,requested_by,prepared_by,prepared_position,submitted_by,submitted_position,budget_approved_by,budget_position,prepared_date,submitted_date,budget_date,remarks,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
@@ -174,20 +176,21 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $existingReview=$stReviewSave->fetch();
 
       if($existingReview){
-        if(in_array((string)$existingReview['status'],['Draft','Declined'],true)){
-          $stReviewUpdate=$pdo->prepare("UPDATE ppmp_reviews
-            SET status='Pending for Review',
-                submitted_by=?,
-                submitted_at=CURRENT_TIMESTAMP,
-                supervisor_reviewed_by=NULL,
-                supervisor_reviewed_at=NULL,
-                budget_reviewed_by=NULL,
-                budget_reviewed_at=NULL,
-                remarks=NULL,
-                updated_at=CURRENT_TIMESTAMP
-            WHERE id=?");
-          $stReviewUpdate->execute([(int)(currentUser()['id']??0), (int)$existingReview['id']]);
-        }
+        // Adding rows reopens the PPMP review queue. Existing item-level
+        // decisions are preserved; only the PPMP header workflow is reopened
+        // so the newly added rows can be reviewed.
+        $stReviewUpdate=$pdo->prepare("UPDATE ppmp_reviews
+          SET status='Pending for Review',
+              submitted_by=?,
+              submitted_at=CURRENT_TIMESTAMP,
+              supervisor_reviewed_by=NULL,
+              supervisor_reviewed_at=NULL,
+              budget_reviewed_by=NULL,
+              budget_reviewed_at=NULL,
+              remarks=NULL,
+              updated_at=CURRENT_TIMESTAMP
+          WHERE id=?");
+        $stReviewUpdate->execute([(int)(currentUser()['id']??0), (int)$existingReview['id']]);
         $reviewId=(int)$existingReview['id'];
       }else{
         $stReviewInsert=$pdo->prepare("INSERT INTO ppmp_reviews
