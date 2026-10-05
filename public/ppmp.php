@@ -55,6 +55,8 @@ $year=(int)($_GET['year']??(($isPpmpSupervisor && $searchFiscalYears) ? $searchF
 if($searchFiscalYears && !in_array($year,$searchFiscalYears,true)) $year=$searchFiscalYears[0];
 elseif(!$searchFiscalYears && $isPpmpSupervisor) $year=$currentFiscalYear;
 $areaId=(int)($_GET['area_id']??0);
+$divisionId=(int)($_GET['division_id']??0);
+$areaHeadName=trim((string)($_GET['area_head']??''));
 $q=trim($_GET['q']??'');
 $print=isset($_GET['print']) && $_GET['print']=='1';
 $editId=(int)($_GET['edit']??0);
@@ -393,6 +395,7 @@ if(!$editing){
   $existingForSelectedArea=$existingPpmpByYearArea[$year.':'.$areaId]??'';
   $nextPpmpNo=$existingForSelectedArea!=='' ? $existingForSelectedArea : ($ppmpNextByYear[$year]??('PPMP-'.$year.'-0001'));
 }
+$divisions=$pdo->query('SELECT id,name,division_head,head_position_designation,ppmp_supervisor_enabled FROM divisions ORDER BY name')->fetchAll();
 $personnelByArea=[];
 $stPersonnel=$pdo->query('SELECT id,area_id,name,position_designation,electronic_signature FROM area_personnel ORDER BY area_id,name');
 foreach($stPersonnel->fetchAll() as $person){ $personnelByArea[(int)$person['area_id']][]=$person; }
@@ -444,18 +447,69 @@ pageStart('Project Procurement Management Plan');
 <?php endif; ?>
 <?php if(!$print && (!$isPpmpSupervisor || $canManagePpmp)): ?>
 <div class="panel ppmp-toolbar">
-  <div class="toolbar">
-    <form class="ppmp-filter">
-      <select class="select" name="year" aria-label="Search Fiscal Year">        <?php foreach($searchFiscalYears as $searchYear): ?>
-          <option value="<?=$searchYear?>" <?=$year===$searchYear?'selected':''?>><?=$searchYear?></option>
-        <?php endforeach; ?>
-      </select>
-      <select class="select" name="area_id"><option value="0">All Areas/Units</option><?php foreach($areas as $a):?><option value="<?=$a['id']?>" <?=$areaId===$a['id']?'selected':''?>><?=e($a['name'])?></option><?php endforeach;?></select>
-      <input class="input" name="q" placeholder="Search item, area or description" value="<?=e($q)?>">
-      <button class="btn" type="submit">View</button>
+  <div class="ppmp-selection-header">
+    <h2 style="margin-top:0">Project Procurement Management Plan</h2>
+    <p class="muted">Select the Calendar Year, Division/Department, Area/Unit, and Area/Unit Head, then click <b>View</b> to display the Saved PPMP Items and Data Entry sections.</p>
+    <form class="ppmp-selection-form" method="get" id="ppmpSelectionForm">
+      <div class="ppmp-selection-grid">
+        <div class="field">
+          <label>Calendar Year *</label>
+          <select class="select" name="year" id="ppmp_year" required>
+            <option value="">Select Calendar Year</option>
+            <?php foreach($searchFiscalYears as $searchYear): ?>
+              <option value="<?=$searchYear?>" <?=$year===$searchYear?'selected':''?>><?=$searchYear?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="field">
+          <label>Division / Department *</label>
+          <select class="select" name="division_id" id="ppmp_division" required>
+            <option value="">Select Division / Department</option>
+            <?php foreach($divisions as $d): ?>
+              <option value="<?=$d['id']?>" data-head="<?=e($d['division_head']??'')?>" data-position="<?=e($d['head_position_designation']??'')?>" <?=$divisionId===(int)$d['id']?'selected':''?>><?=e($d['name'])?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="field">
+          <label>Division / Department Head</label>
+          <input class="input" type="text" id="ppmp_division_head" value="" readonly placeholder="Automatically shown">
+        </div>
+        <div class="field">
+          <label>Area / Unit *</label>
+          <select class="select" name="area_id" id="ppmp_area_select" required <?=$divisionId>0?'':'disabled'?>>
+            <option value="">Select Area / Unit</option>
+            <?php foreach($areas as $a): ?>
+              <option value="<?=$a['id']?>" data-division-id="<?=$a['division_id']?>" <?=$areaId===(int)$a['id']?'selected':''?>><?=e($a['name'])?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="field">
+          <label>Supervisor / Area / Unit Head *</label>
+          <select class="select" name="area_head" id="ppmp_area_head" required <?=$areaId>0?'':'disabled'?>>
+            <option value="">Select Supervisor / Head</option>
+            <?php foreach($personnelByArea as $personAreaId=>$people): foreach($people as $person): ?>
+              <option value="<?=e($person['name'])?>" data-area-id="<?=$personAreaId?>" data-position="<?=e($person['position_designation']??'')?>" <?=($areaHeadName!=='' && $areaHeadName===$person['name'] && $areaId===(int)$personAreaId)?'selected':''?>><?=e($person['name'])?></option>
+            <?php endforeach; endforeach; ?>
+          </select>
+        </div>
+        <div class="field">
+          <label>Area / Unit Head Position / Designation</label>
+          <input class="input" type="text" id="ppmp_area_head_position" value="" readonly placeholder="Automatically shown">
+        </div>
+      </div>
+      <div class="actions" style="margin-top:16px">
+        <button class="btn" type="submit">View</button>
+      </div>
     </form>
-    <?php if(hasRole(['Administrator','Editor']) && (!$isPpmpSupervisor || in_array($areaId,$supervisorOwnAreaIds,true)) && $areaId>0):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn"><span class="ppmp-toolbar-label">+ Add PPMP Item</span></button><?php endif;?>
-    <?php if($areaId>0):?><button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button><?php endif;?><?php if($areaId>0 && $rows && in_array(($rows[0]['review_status']??'Draft'),['Draft','Declined'],true)):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
+  </div>
+</div>
+
+<?php if($divisionId>0 && $areaId>0): ?>
+<div class="panel ppmp-toolbar">
+  <div class="toolbar">
+    <?php if(hasRole(['Administrator','Editor']) && (!$isPpmpSupervisor || in_array($areaId,$supervisorOwnAreaIds,true))):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn"><span class="ppmp-toolbar-label">+ Add PPMP Item</span></button><?php endif;?>
+    <button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button>
+    <?php if($rows && in_array(($rows[0]['review_status']??'Draft'),['Draft','Declined'],true)):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
   </div>
 </div>
 
@@ -832,6 +886,48 @@ function printPpmp(paper){
    fiscalYear.addEventListener('change',syncPpmpNumber);
    syncPpmpNumber();
  }
+ const selectionDivision=document.getElementById('ppmp_division');
+ const selectionArea=document.getElementById('ppmp_area_select');
+ const selectionDivisionHead=document.getElementById('ppmp_division_head');
+ const selectionAreaHead=document.getElementById('ppmp_area_head');
+ const selectionAreaHeadPosition=document.getElementById('ppmp_area_head_position');
+ function syncSelectionFields(){
+   if(!selectionDivision)return;
+   const divOpt=selectionDivision.options[selectionDivision.selectedIndex];
+   if(selectionDivisionHead)selectionDivisionHead.value=divOpt?((divOpt.dataset.head||'')):''; 
+   const divId=selectionDivision.value||'';
+   if(selectionArea){
+     Array.from(selectionArea.options).forEach(function(o,i){
+       if(i===0){o.hidden=false;o.disabled=false;return;}
+       const show=o.dataset.divisionId===divId;
+       o.hidden=!show;o.disabled=!show;
+     });
+     if(!Array.from(selectionArea.options).some(function(o){return !o.disabled&&o.value===selectionArea.value;}))selectionArea.value='';
+     selectionArea.disabled=!divId;
+   }
+   if(selectionAreaHead){
+     const areaId=selectionArea?selectionArea.value:'';
+     Array.from(selectionAreaHead.options).forEach(function(o,i){
+       if(i===0){o.hidden=false;o.disabled=false;return;}
+       const show=o.dataset.areaId===areaId;
+       o.hidden=!show;o.disabled=!show;
+     });
+     if(!Array.from(selectionAreaHead.options).some(function(o){return !o.disabled&&o.value===selectionAreaHead.value;}))selectionAreaHead.value='';
+     selectionAreaHead.disabled=!areaId;
+     syncSelectionHeadPosition();
+   }
+ }
+ function syncSelectionHeadPosition(){
+   if(!selectionAreaHeadPosition||!selectionAreaHead)return;
+   const o=selectionAreaHead.options[selectionAreaHead.selectedIndex];
+   selectionAreaHeadPosition.value=(o&&!o.disabled)?(o.dataset.position||''):'';
+ }
+ if(selectionDivision){selectionDivision.addEventListener('change',function(){if(selectionArea)selectionArea.value='';if(selectionAreaHead)selectionAreaHead.value='';syncSelectionFields();});}
+ if(selectionArea){selectionArea.addEventListener('change',function(){if(selectionAreaHead)selectionAreaHead.value='';syncSelectionFields();});}
+ if(selectionAreaHead)selectionAreaHead.addEventListener('change',syncSelectionHeadPosition);
+ syncSelectionFields();
+ syncSelectionHeadPosition();
+
  const area=document.getElementById('ppmp_area'), person=document.getElementById('ppmp_person');
 const requested=document.getElementById('ppmp_requested_by'), preparedPosition=document.getElementById('ppmp_prepared_position');
 if(area){
@@ -899,6 +995,10 @@ if(area){
 </script>
 
 <style>
+.ppmp-selection-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:end}
+.ppmp-selection-grid .field{min-width:0}
+.ppmp-selection-form .actions{justify-content:flex-start}
+@media(max-width:899px){.ppmp-selection-grid{grid-template-columns:1fr}}
 .ppmp-date-picker{position:relative}
 .ppmp-date-picker .ppmp-date-native{position:absolute;inset:0;width:100%;height:100%;opacity:0;pointer-events:none}
 .ppmp-long-date{font-variant-numeric:tabular-nums;cursor:pointer}
