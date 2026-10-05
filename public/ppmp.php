@@ -1,6 +1,5 @@
 \n<style>\n.ppmp-status-badge{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:#eef2f7;color:#374151}.ppmp-status-pending-for-review{background:#fff3cd;color:#856404}.ppmp-status-pending-for-approval{background:#cff4fc;color:#055160}.ppmp-status-approved{background:#d1e7dd;color:#0f5132}.ppmp-status-declined{background:#f8d7da;color:#842029}.ppmp-status-draft{background:#e9ecef;color:#495057}.ppmp-submit-review{background:#d9f7df!important;color:#166534!important;border:1px solid #b7e4c0!important;}\n.ppmp-submit-review:hover,.ppmp-submit-review:focus,.ppmp-submit-review:active{background:#d9f7df!important;color:#166534!important;}\n.ppmp-entry-table-wrap{overflow-x:auto}
-.ppmp-requesting-strip{display:grid;grid-template-columns:minmax(260px,1fr) minmax(260px,1fr);gap:16px;margin:12px 0 16px;padding:12px;border:1px solid #ddd;border-radius:8px}
-@media(max-width:899px){.ppmp-requesting-strip{grid-template-columns:1fr}}.ppmp-entry-table{min-width:2400px}.ppmp-entry-table th,.ppmp-entry-table td{vertical-align:top;padding:7px}.ppmp-entry-table th{white-space:nowrap}.ppmp-entry-table .input,.ppmp-entry-table .select{min-width:120px}.ppmp-entry-table textarea{min-width:180px;resize:vertical}.ppmp-entry-table .ppmp-row-date{min-width:135px}.ppmp-entry-table .ppmp-row-qty,.ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{min-width:110px}.ppmp-row-documents{min-width:280px}
+.ppmp-entry-table{min-width:2400px}.ppmp-entry-table th,.ppmp-entry-table td{vertical-align:top;padding:7px}.ppmp-entry-table th{white-space:nowrap}.ppmp-entry-table .input,.ppmp-entry-table .select{min-width:120px}.ppmp-entry-table textarea{min-width:180px;resize:vertical}.ppmp-entry-table .ppmp-row-date{min-width:135px}.ppmp-entry-table .ppmp-row-qty,.ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{min-width:110px}.ppmp-row-documents{min-width:280px}
 .ppmp-row-documents .ppmp-document-row{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:5px;align-items:center}
 .ppmp-row-documents .input{min-width:0}
 .ppmp-row-documents .ppmp-add-document{white-space:nowrap}
@@ -89,13 +88,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $id=(int)($_POST['id']??0);
   $year=(int)($_POST['fiscal_year']??0);
   $areaId=(int)($_POST['area_id']??0);
-  $requestedBy=trim($_POST['requested_by']??'');
+  $requestedBy='';
 
   if($action==='add_bulk'){
     $items=$_POST['items']??[];
     if(!is_array($items)||!$items) ppmpSaveFormError('Add at least one PPMP item row.',$year,$areaId);
     if(!in_array($year,$entryFiscalYears,true)) ppmpSaveFormError('Fiscal Year is outside the permitted range.',$year,$areaId);
-    $preparedBy=trim($_POST['prepared_by']??''); $requestedBy=trim($_POST['requested_by']??''); $preparedPosition=trim($_POST['prepared_position']??'');
+    $preparedBy=trim($_POST['prepared_by']??''); $requestedBy=''; $preparedPosition='';
     if($requestedBy!==''){
       $stRequested=$pdo->prepare('SELECT position_designation FROM area_personnel WHERE area_id=? AND name=? LIMIT 1'); $stRequested->execute([$areaId,$requestedBy]); $requestedPerson=$stRequested->fetch();
       if(!$requestedPerson) ppmpSaveFormError('Requested By must be selected from personnel assigned to the selected Area/Unit.',$year,$areaId);
@@ -255,16 +254,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
   }
 
-  $preparedPosition='';
-  if($requestedBy!==''){
-    $stRequested=$pdo->prepare('SELECT position_designation FROM area_personnel WHERE area_id=? AND name=? LIMIT 1');
-    $stRequested->execute([$areaId,$requestedBy]);
-    $requestedPerson=$stRequested->fetch();
-    if(!$requestedPerson){
-      ppmpSaveFormError('Requested By must be selected from the personnel assigned to the selected End-User / Implementing Unit.',$year,$areaId,$id);
-    }
-    $preparedPosition=trim($requestedPerson['position_designation']??'');
-  }
+
 
   if(!in_array($year,$entryFiscalYears,true)){
     ppmpSaveFormError('Fiscal Year must be between '.$currentFiscalYear.' and '.($currentFiscalYear+3).'.',$currentFiscalYear,$areaId,$id);
@@ -629,37 +619,20 @@ pageStart('Project Procurement Management Plan');
 <?php if(!$isPpmpSupervisor || $canManagePpmp): ?>
 <div class="ppmp-entry panel" id="ppmpForm" style="<?= $ppmpFormOpen ? '' : 'display:none;' ?>">
   <h2>Project Procurement Management Plan — Data Entry</h2>
-  <p class="muted">Enter multiple PPMP items as individual rows. Common PPMP information is entered once above the table.</p>
+  <p class="muted">Enter multiple PPMP items as individual rows. The Fiscal Year, Division, Area/Unit, and Supervisor information are taken from the selection workflow above.</p>
   <form method="post" enctype="multipart/form-data" id="ppmpBulkForm">
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="add_bulk">
     <input type="hidden" name="fiscal_year" value="<?=e($year)?>">
     <input type="hidden" name="area_id" value="<?=e($areaId)?>">
     <input type="hidden" name="ppmp_no" value="<?=e($nextPpmpNo)?>">
-    <input type="hidden" name="prepared_by" id="ppmp_person" value="<?=e($formState['prepared_by']??($selectedArea['authorized_person']??''))?>">
-    <input type="hidden" name="requested_by" id="ppmp_requested_by" value="<?=e($formState['requested_by']??'')?>">
-    <input type="hidden" name="prepared_position" id="ppmp_prepared_position" value="<?=e($formState['prepared_position']??'')?>">
+    <input type="hidden" name="prepared_by" id="ppmp_person" value="<?=e($formState['prepared_by']??($selectedArea['authorized_person']??''))?>">">">
     <div class="ppmp-section">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
         <h3 style="margin:0">PPMP Items</h3>
         <button class="btn secondary" type="button" id="ppmpAddRow">+ Add Row</button>
       </div>
-      <div class="ppmp-requesting-strip">
-        <div class="field">
-          <label>Requested By</label>
-          <select class="select" name="requested_by_display" id="ppmp_requested_by_display">
-            <option value="">Select</option>
-            <?php foreach($personnelByArea[(int)$areaId]??[] as $person): ?>
-              <option value="<?=e($person['name'])?>" data-position="<?=e($person['position_designation']??'')?>"><?=e($person['name'])?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <div class="field">
-          <label>Prepared Position / Designation</label>
-          <input class="input" id="ppmp_prepared_position_display" value="<?=e($formState['prepared_position']??'')?>" readonly>
-        </div>
-      </div>
-      <div class="table-wrap ppmp-entry-table-wrap">
+            <div class="table-wrap ppmp-entry-table-wrap">
         <table class="table ppmp-entry-table" id="ppmpEntryTable">
           <thead><tr><th>#</th><th>Category *</th><th>Classification *</th><th>Item Name *</th><th>Technical Specifications *</th><th>Quantity *</th><th>Unit *</th><th>Unit Cost *</th><th>Total Budget</th><th>Procurement Mode *</th><th>Pre-Procurement *</th><th>Start *</th><th>End *</th><th>Delivery *</th><th>Source of Funds *</th><th>Supporting Documents</th><th>Remarks</th><th>Action</th></tr></thead>
           <tbody id="ppmpEntryBody">
@@ -987,23 +960,8 @@ function printPpmp(paper){
  syncSelectionHeadPosition();
 
  const area=document.getElementById('ppmp_area'), person=document.getElementById('ppmp_person');
-const requested=document.getElementById('ppmp_requested_by_display'), requestedHidden=document.getElementById('ppmp_requested_by'), preparedPosition=document.getElementById('ppmp_prepared_position_display'), preparedPositionHidden=document.getElementById('ppmp_prepared_position');
-if(area){
-  function syncSupervisor(){const o=area.options[area.selectedIndex]; if(person) person.value=o?(o.dataset.person||''):'';}
-  function syncPreparedPosition(){if(!requested||!preparedPosition)return; const o=requested.options[requested.selectedIndex]; const position=(o&&!o.disabled)?(o.dataset.position||''):''; preparedPosition.value=position; if(preparedPositionHidden)preparedPositionHidden.value=position; if(requestedHidden)requestedHidden.value=requested.value||'';}
-  function syncRequested(){
-    if(!requested)return;
-    const areaId=area.value; let current=requested.dataset.current||'';
-    Array.from(requested.options).forEach(function(o,index){
-      if(index===0){o.hidden=false;o.disabled=false;return;}
-      const show=o.dataset.areaId===areaId; o.hidden=!show; o.disabled=!show;
-    });
-    requested.value=current; if(!requested.value) requested.value=''; syncPreparedPosition();
-  }
-  area.addEventListener('change',function(){requested.dataset.current='';syncSupervisor();syncRequested();});
-  if(requested)requested.addEventListener('change',syncPreparedPosition);
-  syncSupervisor(); syncRequested();
-}
+function syncSupervisor(){const o=area.options[area.selectedIndex]; if(person) person.value=o?(o.dataset.person||''):'';}
+if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
  const quantity=document.getElementById('ppmp_quantity'), unitPrice=document.getElementById('ppmp_unit_price'), totalBudget=document.getElementById('ppmp_total_budget');
  function syncRowDocuments(row,index){
    if(!row)return;
