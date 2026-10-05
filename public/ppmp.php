@@ -82,7 +82,7 @@ $editId=(int)($_GET['edit']??0);
 $editing=null;
 if($editId>0 && !$print){
   $stEdit=$pdo->prepare('SELECT p.*,a.division_id FROM ppmp_items p JOIN areas a ON a.id=p.area_id WHERE p.id=?'); $stEdit->execute([$editId]); $editing=$stEdit->fetch();
-  if(!$editing){ flash('error','PPMP item not found.'); header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit; }
+  if(!$editing){ flash('error','PPMP item not found.'); header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit; }
   if($isPpmpSupervisor && ((int)$editing['created_by']!==$currentUserId || (int)$editing['division_id']!==currentLoginDivisionId())){ http_response_code(403); exit('403 - Supervisors may only edit PPMP items they created.'); }
   $year=(int)$editing['fiscal_year']; $areaId=(int)$editing['area_id'];
 }
@@ -101,6 +101,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $id=(int)($_POST['id']??0);
   $year=(int)($_POST['fiscal_year']??0);
   $areaId=(int)($_POST['area_id']??0);
+  $divisionId=(int)($_POST['division_id']??0);
+  if($divisionId<=0 && $areaId>0){$stPostDivision=$pdo->prepare('SELECT division_id FROM areas WHERE id=? LIMIT 1');$stPostDivision->execute([$areaId]);$divisionId=(int)$stPostDivision->fetchColumn();}
+  $areaHeadName=trim((string)($_POST['area_head']??''));
+  $q=trim((string)($_POST['q']??''));
   $requestedBy='';
 
   if($action==='add_bulk'){
@@ -286,13 +290,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
     if($areaId<=0 || $year<=0){
       flash('error','Select a Fiscal Year and a specific Area/Unit before submitting the PPMP for review.');
-      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+      header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit;
     }
     $stItems=$pdo->prepare('SELECT ppmp_no, COUNT(*) item_count FROM ppmp_items WHERE fiscal_year=? AND area_id=? AND ppmp_no IS NOT NULL AND ppmp_no<>"" GROUP BY ppmp_no ORDER BY ppmp_no LIMIT 1');
     $stItems->execute([$year,$areaId]); $ppmpSet=$stItems->fetch();
     if(!$ppmpSet){
       flash('error','There are no saved PPMP items to submit for review.');
-      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+      header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit;
     }
     $ppmpNo=trim((string)$ppmpSet['ppmp_no']);
 
@@ -300,7 +304,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $stReview->execute([$year,$areaId,$ppmpNo]); $review=$stReview->fetch();
     if($review && in_array($review['status'],['Pending for Review','Pending for Approval','Approved'],true)){
       flash('error','This PPMP is already '.$review['status'].'.');
-      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+      header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit;
     }
 
     // The Division/Department Head is the PPMP Supervisor/Authorized Person only
@@ -310,17 +314,17 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $stTarget->execute([$areaId]); $target=$stTarget->fetch();
     if(!$target || (int)$target['ppmp_supervisor_enabled']!==1){
       flash('error','The selected Division/Department has not assigned its Head as the Supervisor/Authorized Person for PPMP review.');
-      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+      header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit;
     }
     if(!$target || trim((string)$target['name'])===''){
       flash('error','No Supervisor or Authorized Person is assigned to this Area/Unit.');
-      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+      header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit;
     }
     $stUser=$pdo->prepare('SELECT id FROM users WHERE full_name=? AND status="Active" LIMIT 1');
     $stUser->execute([trim($target['name'])]); $targetUserId=(int)$stUser->fetchColumn();
     if($targetUserId<=0){
       flash('error','The Supervisor/Authorized Person ('.trim($target['name']).') does not have an active User account for PPMP review.');
-      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+      header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit;
     }
 
     $pdo->beginTransaction();
@@ -343,10 +347,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }catch(Throwable $e){
       if($pdo->inTransaction())$pdo->rollBack();
       flash('error','Unable to submit the PPMP for review: '.$e->getMessage());
-      header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+      header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit;
     }
     flash('success','The entire '.$ppmpNo.' PPMP list has been submitted to '.$target['name'].' for review.');
-    header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+    header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit;
   }
 
   if($isPpmpSupervisor && in_array($action,['add','edit','delete'],true)){
@@ -429,7 +433,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $stDel->execute([$id]);
       flash($stDel->rowCount() ? 'success' : 'error',$stDel->rowCount() ? 'PPMP item deleted.' : 'PPMP item not found.');
     }
-    header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+    header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit;
   }
 
   $qty=max(0,(float)str_replace(',','',$_POST['quantity']??0));
@@ -537,7 +541,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
     $st->execute([...$values,currentUser()['id']]); flash('success','PPMP item saved.');
   }
-  header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+  header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit;
 }
 $formOld=$_SESSION['ppmp_form_old']??null;
 $formOldEditId=(int)($_SESSION['ppmp_form_edit_id']??0);
@@ -772,7 +776,7 @@ pageStart('Project Procurement Management Plan');
   </div>
 </div>
 
-<div class="panel ppmp-records">
+<div class="panel ppmp-records" id="savedPpmpItems">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:16px">
     <h2 style="margin:0">Saved PPMP Items — FY <?=$year?><?= $selectedArea?' / '.e($selectedArea['name']):'' ?></h2>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px">
@@ -810,15 +814,18 @@ pageStart('Project Procurement Management Plan');
   <p class="muted">Enter multiple PPMP items as individual rows. The Fiscal Year, Division, Area/Unit, and Supervisor information are taken from the selection workflow above.</p>
   <form method="post" enctype="multipart/form-data" id="ppmpBulkForm">
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-    <input type="hidden" name="action" value="add_bulk">
+    <input type="hidden" name="action" value="<?=$editing?'edit':'add_bulk'?>">
+    <input type="hidden" name="id" value="<?=$editing?(int)$editing['id']:0?>">
+    <input type="hidden" name="division_id" value="<?=e($divisionId)?>">
+    <?php if($editing): ?><input type="hidden" name="existing_supporting_documents" value="<?=e($editing['supporting_documents']??'')?>"><?php endif; ?>
     <input type="hidden" name="fiscal_year" value="<?=e($year)?>">
     <input type="hidden" name="area_id" value="<?=e($areaId)?>">
     <input type="hidden" name="ppmp_no" value="<?=e($nextPpmpNo)?>">
     <input type="hidden" name="prepared_by" id="ppmp_person" value="<?=e($formState['prepared_by']??($selectedArea['authorized_person']??''))?>">
     <div class="ppmp-section">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-        <h3 style="margin:0">PPMP Items</h3>
-        <button class="btn secondary" type="button" id="ppmpAddRow">+ Add Row</button>
+        <h3 style="margin:0"><?= $editing ? 'Edit PPMP Item' : 'PPMP Items' ?></h3>
+        <?php if(!$editing): ?><button class="btn secondary" type="button" id="ppmpAddRow">+ Add Row</button><?php endif; ?>
       </div>
             <div class="table-wrap ppmp-entry-table-wrap">
         <table class="table ppmp-entry-table" id="ppmpEntryTable">
@@ -826,20 +833,20 @@ pageStart('Project Procurement Management Plan');
           <tbody id="ppmpEntryBody">
             <tr class="ppmp-entry-row">
               <td class="ppmp-row-number">1</td>
-              <td><select class="select" name="items[0][category_id]" required><option value="">Select</option><?php foreach($cats as $c):?><option value="<?=$c['id']?>"><?=e($c['name'])?></option><?php endforeach;?></select></td>
-              <td><select class="select" name="items[0][procurement_type]" required><option value="">Select</option><?php foreach($classifications as $c):?><option value="<?=e($c['name'])?>"><?=e($c['name'])?></option><?php endforeach;?></select></td>
-              <td><div class="ppmp-item-autocomplete"><input class="input ppmp-item-name" name="items[0][item_name]" required autocomplete="off"><div class="ppmp-item-suggestions" role="listbox"></div></div></td>
-              <td><textarea class="input ppmp-item-description" name="items[0][description]" rows="2" required></textarea></td>
-              <td><input class="input ppmp-row-qty" name="items[0][quantity]" inputmode="decimal" required></td>
-              <td><select class="select" name="items[0][unit]" required><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>"><?=e($u['name'])?></option><?php endforeach;?></select></td>
-              <td><input class="input ppmp-row-unit-price" name="items[0][unit_price]" inputmode="decimal" required></td>
-              <td><input class="input ppmp-row-total ppmp-total-budget" readonly></td>
-              <td><select class="select" name="items[0][procurement_mode]" required><option value="">Select</option><?php foreach($procurementMethods as $method):?><option value="<?=e($method['procurement_method'])?>"><?=e($method['procurement_method'])?></option><?php endforeach;?></select></td>
-              <td><select class="select" name="items[0][preprocurement_conference]" required><option value="">Select</option><option>Yes</option><option>No</option><option>N/A</option></select></td>
-              <td><input class="input ppmp-row-date" type="date" name="items[0][start_procurement]" required></td>
-              <td><input class="input ppmp-row-date" type="date" name="items[0][end_procurement]" required></td>
-              <td><input class="input ppmp-row-date" type="date" name="items[0][delivery_period]" required></td>
-              <td><input class="input" name="items[0][source_of_funds]" required></td>
+              <td><select class="select" name="<?=$editing?'category_id':'items[0][category_id']?>" required><option value="">Select</option><?php foreach($cats as $c):?><option value="<?=$c['id']?>" <?=((int)($formState['category_id']??0)===(int)$c['id'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select></td>
+              <td><select class="select" name="<?=$editing?'procurement_type':'items[0][procurement_type']?>" required><option value="">Select</option><?php foreach($classifications as $c):?><option value="<?=e($c['name'])?>" <?=((string)($formState['procurement_type']??'')===(string)$c['name'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select></td>
+              <td><div class="ppmp-item-autocomplete"><input class="input ppmp-item-name" name="<?=$editing?'item_name':'items[0][item_name']?>" required autocomplete="off" value="<?=e($formState['item_name']??'')?>"><div class="ppmp-item-suggestions" role="listbox"></div></div></td>
+              <td><textarea class="input ppmp-item-description" name="<?=$editing?'description':'items[0][description']?>" rows="2" required><?=e($formState['description']??'')?></textarea></td>
+              <td><input class="input ppmp-row-qty" name="<?=$editing?'quantity':'items[0][quantity']?>" inputmode="decimal" required value="<?=isset($formState['quantity'])?e(number_format((float)$formState['quantity'],2,'.','')):''?>"></td>
+              <td><select class="select" name="<?=$editing?'unit':'items[0][unit']?>" required><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>" <?=((string)($formState['unit']??'')===(string)$u['name'])?'selected':''?>><?=e($u['name'])?></option><?php endforeach;?></select></td>
+              <td><input class="input ppmp-row-unit-price" name="<?=$editing?'unit_price':'items[0][unit_price']?>" inputmode="decimal" required value="<?=isset($formState['unit_price'])?e(number_format((float)$formState['unit_price'],2,'.',',')):''?>"></td>
+              <td><input class="input ppmp-row-total ppmp-total-budget" readonly value="<?=isset($formState['total_budget'])?e(number_format((float)$formState['total_budget'],2,'.',',')):''?>"></td>
+              <td><select class="select" name="<?=$editing?'procurement_mode':'items[0][procurement_mode']?>" required><option value="">Select</option><?php foreach($procurementMethods as $method):?><option value="<?=e($method['procurement_method'])?>" <?=((string)($formState['procurement_mode']??'')===(string)$method['procurement_method'])?'selected':''?>><?=e($method['procurement_method'])?></option><?php endforeach;?></select></td>
+              <td><select class="select" name="<?=$editing?'preprocurement_conference':'items[0][preprocurement_conference']?>" required><option value="">Select</option><option <?=((string)($formState['preprocurement_conference']??'')==='Yes')?'selected':''?>>Yes</option><option <?=((string)($formState['preprocurement_conference']??'')==='No')?'selected':''?>>No</option><option <?=in_array((string)($formState['preprocurement_conference']??''),['N/A','NA','Not Applicable'],true)?'selected':''?>>N/A</option></select></td>
+              <td><input class="input ppmp-row-date" type="date" name="<?=$editing?'start_procurement':'items[0][start_procurement]'?>" required value="<?=e($formState['start_procurement']??'')?>"></td>
+              <td><input class="input ppmp-row-date" type="date" name="<?=$editing?'end_procurement':'items[0][end_procurement]'?>" required value="<?=e($formState['end_procurement']??'')?>"></td>
+              <td><input class="input ppmp-row-date" type="date" name="<?=$editing?'delivery_period':'items[0][delivery_period]'?>" required value="<?=e($formState['delivery_period']??'')?>"></td>
+              <td><input class="input" name="<?=$editing?'source_of_funds':'items[0][source_of_funds']?>" required value="<?=e($formState['source_of_funds']??'')?>"></td>
               <td>
                 <div class="ppmp-row-documents">
                   <div class="ppmp-document-row">
@@ -850,15 +857,15 @@ pageStart('Project Procurement Management Plan');
                   <button class="btn secondary ppmp-add-document" type="button">+ Add PDF</button>
                 </div>
               </td>
-              <td><textarea class="input" name="items[0][remarks]" rows="2"></textarea></td>
-              <td><button class="btn danger ppmp-remove-row" type="button">Remove</button></td>
+              <td><textarea class="input" name="<?=$editing?'remarks':'items[0][remarks]'?>" rows="2"><?=e($formState['remarks']??'')?></textarea></td>
+              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php else: ?><button class="btn danger ppmp-remove-row" type="button">Remove</button><?php endif; ?></td>
             </tr>
           </tbody>
         </table>
       </div>
       <div class="ppmp-table-total" style="text-align:right;margin-top:12px;font-weight:700">Total PPMP Budget: ₱<span id="ppmpGrandTotal">0.00</span></div>
     </div>
-    <div class="actions"><button class="btn" type="submit">Save PPMP Items</button></div>
+    <div class="actions"><button class="btn" type="submit"><?=$editing?'Update PPMP Item':'Save PPMP Items'?></button></div>
   </form>
 </div>
 <?php endif; ?>
