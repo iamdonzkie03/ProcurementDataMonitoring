@@ -1,4 +1,6 @@
-\n<style>\n.ppmp-status-badge{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:#eef2f7;color:#374151}.ppmp-status-pending-for-review{background:#fff3cd;color:#856404}.ppmp-status-pending-for-approval{background:#cff4fc;color:#055160}.ppmp-status-approved{background:#d1e7dd;color:#0f5132}.ppmp-status-declined{background:#f8d7da;color:#842029}.ppmp-status-draft{background:#e9ecef;color:#495057}.ppmp-submit-review{background:#d9f7df!important;color:#166534!important;border:1px solid #b7e4c0!important;}\n.ppmp-submit-review:hover,.ppmp-submit-review:focus,.ppmp-submit-review:active{background:#d9f7df!important;color:#166534!important;}\n.ppmp-entry-table-wrap{overflow-x:auto}.ppmp-entry-table{min-width:2400px}.ppmp-entry-table th,.ppmp-entry-table td{vertical-align:top;padding:7px}.ppmp-entry-table th{white-space:nowrap}.ppmp-entry-table .input,.ppmp-entry-table .select{min-width:120px}.ppmp-entry-table textarea{min-width:180px;resize:vertical}.ppmp-entry-table .ppmp-row-date{min-width:135px}.ppmp-entry-table .ppmp-row-qty,.ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{min-width:110px}.ppmp-row-documents{min-width:280px}
+\n<style>\n.ppmp-status-badge{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:#eef2f7;color:#374151}.ppmp-status-pending-for-review{background:#fff3cd;color:#856404}.ppmp-status-pending-for-approval{background:#cff4fc;color:#055160}.ppmp-status-approved{background:#d1e7dd;color:#0f5132}.ppmp-status-declined{background:#f8d7da;color:#842029}.ppmp-status-draft{background:#e9ecef;color:#495057}.ppmp-submit-review{background:#d9f7df!important;color:#166534!important;border:1px solid #b7e4c0!important;}\n.ppmp-submit-review:hover,.ppmp-submit-review:focus,.ppmp-submit-review:active{background:#d9f7df!important;color:#166534!important;}\n.ppmp-entry-table-wrap{overflow-x:auto}
+.ppmp-requesting-strip{display:grid;grid-template-columns:minmax(260px,1fr) minmax(260px,1fr);gap:16px;margin:12px 0 16px;padding:12px;border:1px solid #ddd;border-radius:8px}
+@media(max-width:899px){.ppmp-requesting-strip{grid-template-columns:1fr}}.ppmp-entry-table{min-width:2400px}.ppmp-entry-table th,.ppmp-entry-table td{vertical-align:top;padding:7px}.ppmp-entry-table th{white-space:nowrap}.ppmp-entry-table .input,.ppmp-entry-table .select{min-width:120px}.ppmp-entry-table textarea{min-width:180px;resize:vertical}.ppmp-entry-table .ppmp-row-date{min-width:135px}.ppmp-entry-table .ppmp-row-qty,.ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{min-width:110px}.ppmp-row-documents{min-width:280px}
 .ppmp-row-documents .ppmp-document-row{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:5px;align-items:center}
 .ppmp-row-documents .input{min-width:0}
 .ppmp-row-documents .ppmp-add-document{white-space:nowrap}
@@ -634,23 +636,29 @@ pageStart('Project Procurement Management Plan');
     <input type="hidden" name="fiscal_year" value="<?=e($year)?>">
     <input type="hidden" name="area_id" value="<?=e($areaId)?>">
     <input type="hidden" name="ppmp_no" value="<?=e($nextPpmpNo)?>">
+    <input type="hidden" name="prepared_by" id="ppmp_person" value="<?=e($formState['prepared_by']??($selectedArea['authorized_person']??''))?>">
+    <input type="hidden" name="requested_by" id="ppmp_requested_by" value="<?=e($formState['requested_by']??'')?>">
+    <input type="hidden" name="prepared_position" id="ppmp_prepared_position" value="<?=e($formState['prepared_position']??'')?>">
     <div class="ppmp-section">
-      <h3>PPMP Identification and Requesting Personnel</h3>
-      <div class="ppmp-input-grid">
-        <div class="field"><label>Fiscal Year</label><input class="input" value="<?=e($year)?>" readonly></div>
-        <div class="field"><label>PPMP No.</label><input class="input" value="<?=e($nextPpmpNo)?>" readonly></div>
-        <div class="field"><label>End-User / Implementing Unit</label><input class="input" value="<?=e($selectedArea['name']??'')?>" readonly></div>
-        <div class="field"><label>Supervisor / Authorized Person *</label><input class="input" name="prepared_by" id="ppmp_person" value="<?=e($formState['prepared_by']??($selectedArea['authorized_person']??''))?>" readonly required></div>
-        <div class="field"><label>Requested By</label>
-          <select class="select" name="requested_by" id="ppmp_requested_by"><option value="">Select</option>
-            <?php foreach($personnelByArea[(int)$areaId]??[] as $person): ?><option value="<?=e($person['name'])?>" data-position="<?=e($person['position_designation']??'')?>"><?=e($person['name'])?></option><?php endforeach; ?>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <h3 style="margin:0">PPMP Items</h3>
+        <button class="btn secondary" type="button" id="ppmpAddRow">+ Add Row</button>
+      </div>
+      <div class="ppmp-requesting-strip">
+        <div class="field">
+          <label>Requested By</label>
+          <select class="select" name="requested_by_display" id="ppmp_requested_by_display">
+            <option value="">Select</option>
+            <?php foreach($personnelByArea[(int)$areaId]??[] as $person): ?>
+              <option value="<?=e($person['name'])?>" data-position="<?=e($person['position_designation']??'')?>"><?=e($person['name'])?></option>
+            <?php endforeach; ?>
           </select>
         </div>
-        <div class="field"><label>Prepared Position / Designation</label><input class="input" id="ppmp_prepared_position" name="prepared_position" value="<?=e($formState['prepared_position']??'')?>" readonly></div>
+        <div class="field">
+          <label>Prepared Position / Designation</label>
+          <input class="input" id="ppmp_prepared_position_display" value="<?=e($formState['prepared_position']??'')?>" readonly>
+        </div>
       </div>
-    </div>
-    <div class="ppmp-section">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h3 style="margin:0">PPMP Items</h3><button class="btn secondary" type="button" id="ppmpAddRow">+ Add Row</button></div>
       <div class="table-wrap ppmp-entry-table-wrap">
         <table class="table ppmp-entry-table" id="ppmpEntryTable">
           <thead><tr><th>#</th><th>Category *</th><th>Classification *</th><th>Item Name *</th><th>Technical Specifications *</th><th>Quantity *</th><th>Unit *</th><th>Unit Cost *</th><th>Total Budget</th><th>Procurement Mode *</th><th>Pre-Procurement *</th><th>Start *</th><th>End *</th><th>Delivery *</th><th>Source of Funds *</th><th>Supporting Documents</th><th>Remarks</th><th>Action</th></tr></thead>
@@ -979,10 +987,10 @@ function printPpmp(paper){
  syncSelectionHeadPosition();
 
  const area=document.getElementById('ppmp_area'), person=document.getElementById('ppmp_person');
-const requested=document.getElementById('ppmp_requested_by'), preparedPosition=document.getElementById('ppmp_prepared_position');
+const requested=document.getElementById('ppmp_requested_by_display'), requestedHidden=document.getElementById('ppmp_requested_by'), preparedPosition=document.getElementById('ppmp_prepared_position_display'), preparedPositionHidden=document.getElementById('ppmp_prepared_position');
 if(area){
   function syncSupervisor(){const o=area.options[area.selectedIndex]; if(person) person.value=o?(o.dataset.person||''):'';}
-  function syncPreparedPosition(){if(!requested||!preparedPosition)return; const o=requested.options[requested.selectedIndex]; preparedPosition.value=(o&&!o.disabled)?(o.dataset.position||''):'';}
+  function syncPreparedPosition(){if(!requested||!preparedPosition)return; const o=requested.options[requested.selectedIndex]; const position=(o&&!o.disabled)?(o.dataset.position||''):''; preparedPosition.value=position; if(preparedPositionHidden)preparedPositionHidden.value=position; if(requestedHidden)requestedHidden.value=requested.value||'';}
   function syncRequested(){
     if(!requested)return;
     const areaId=area.value; let current=requested.dataset.current||'';
