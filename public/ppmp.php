@@ -1051,7 +1051,7 @@ function ppmpPrintDate($value): string{
 
   
 <style>
-/* Keep all PPMP signature sections aligned on identical vertical rows. */
+/* PPMP signature blocks: Signature, Name, Line, Caption, Position, Unit/Section, Date. */
 .ppmp-signature-template{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
@@ -1063,7 +1063,7 @@ function ppmpPrintDate($value): string{
   min-width:0;
   text-align:center;
   display:grid;
-  grid-template-rows:22px 56px 20px 22px 22px 22px 22px;
+  grid-template-rows:22px 50px 20px 20px 22px 22px 22px;
   align-items:start;
 }
 .ppmp-signature-template .ppmp-signature-box > b{
@@ -1071,9 +1071,9 @@ function ppmpPrintDate($value): string{
   height:22px;
   line-height:22px;
 }
- .ppmp-signature-template .signature-line{
-  height:56px;
-  min-height:56px;
+.ppmp-signature-template .signature-line{
+  height:50px;
+  min-height:50px;
   position:relative;
   display:block;
   text-align:center;
@@ -1105,10 +1105,21 @@ function ppmpPrintDate($value): string{
   white-space:nowrap;
   text-overflow:ellipsis;
 }
-.ppmp-signature-template .ppmp-signature-box > div:not(.signature-line){
+.ppmp-signature-template .signature-underline{
+  height:20px;
+  line-height:20px;
+  border-bottom:1px solid #222;
+  margin:0 18px;
+}
+.ppmp-signature-template .signature-caption,
+.ppmp-signature-template .signature-meta{
   height:22px;
   line-height:22px;
   margin:0;
+  text-align:center;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
 }
 @media print{
   .ppmp-signature-template{
@@ -1116,7 +1127,7 @@ function ppmpPrintDate($value): string{
     gap:12px;
   }
   .ppmp-signature-template .ppmp-signature-box{
-    grid-template-rows:22px 56px 20px 22px 22px 22px 22px;
+    grid-template-rows:22px 50px 20px 20px 22px 22px 22px;
   }
 }
 </style>
@@ -1125,30 +1136,34 @@ function ppmpPrintDate($value): string{
       <b>Prepared by:</b>
       <div class="signature-line ppmp-prepared-signature"><?php if($preparedSignature!==''): ?><img src="<?=e($preparedSignature)?>" alt="Prepared By electronic signature"><?php endif; ?></div>
       <div class="signature-name"><?=e($person)?></div>
-      <div>Signature over Printed Name</div>
-      <div><?=e($preparedPos)?></div>
-      <div><i>End-User or Implementing Unit</i></div>
-      <div>Date : <?=e(ppmpPrintDate($h['updated_at']??$h['created_at']??date('Y-m-d'))) ?></div>
+      <div class="signature-underline"></div>
+      <div class="signature-caption">Signature over Printed Name</div>
+      <div class="signature-meta"><?=e($preparedPos)?></div>
+      <div class="signature-meta"><i>End-User or Implementing Unit</i></div>
+      <div class="signature-meta">Date : <?=e(ppmpPrintDate($h['updated_at']??$h['created_at']??date('Y-m-d'))) ?></div>
     </div>
     <div class="ppmp-signature-box">
       <b>Submitted by:</b>
       <div class="signature-line ppmp-submitted-signature"><?php if($submittedSignature!==''): ?><img src="<?=e($submittedSignature)?>" alt="Submitted By electronic signature"><?php endif; ?></div>
       <div class="signature-name"><?=e($submitted)?></div>
-      <div>Signature over Printed Name</div>
-      <div><?=e($submittedPos)?></div>
-      <div><i>Division/Department/Section Unit</i></div>
-      <div>Date : ______________________________</div>
+      <div class="signature-underline"></div>
+      <div class="signature-caption">Signature over Printed Name</div>
+      <div class="signature-meta"><?=e($submittedPos)?></div>
+      <div class="signature-meta"><i>Division/Department/Section Unit</i></div>
+      <div class="signature-meta">Date : ______________________________</div>
     </div>
     <div class="ppmp-signature-box ppmp-budget-signature">
       <b>within the budget allocation:</b>
       <div class="signature-line"></div>
       <div class="signature-name"><?=e($budgetName)?></div>
-      <div>Signature over Printed Name</div>
-      <div><?=e($budgetPos)?></div>
-      <div><i>Budget Section</i></div>
-      <div>Date : ______________________________</div>
+      <div class="signature-underline"></div>
+      <div class="signature-caption">Signature over Printed Name</div>
+      <div class="signature-meta"><?=e($budgetPos)?></div>
+      <div class="signature-meta"><i>Budget Section</i></div>
+      <div class="signature-meta">Date : ______________________________</div>
     </div>
   </div>
+</div>
 </div>
 <div class="ppmp-print-actions">
   <button class="btn" onclick="printPpmp('long')">Print 8.5 × 13</button>
