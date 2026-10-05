@@ -552,7 +552,7 @@ $ppmpStatusAbc=array(
 foreach($rows as $ppmpStatusRow){
   $ppmpStatus=(string)($ppmpStatusRow['review_status']??'');
   if(array_key_exists($ppmpStatus,$ppmpStatusAbc)){
-    $ppmpStatusAbc[$ppmpStatus]+=(float)$ppmpStatusRow['quantity']*(float)$ppmpStatusRow['unit_price'];
+    $ppmpStatusAbc[$ppmpStatus]+=(float)(($ppmpStatusRow['total_budget']??0) ?: ((float)$ppmpStatusRow['quantity']*(float)$ppmpStatusRow['unit_price']));
   }
 }
 if($print){
