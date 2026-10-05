@@ -629,11 +629,10 @@ if(!$print && $isPpmpSupervisor && currentLoginDivisionId()>0){
     JOIN areas a ON a.id=r.area_id
     JOIN divisions d ON d.id=a.division_id
     LEFT JOIN users u ON u.id=r.submitted_by
-    JOIN ppmp_review_items pri ON pri.review_id=r.id AND pri.status='Pending for Review'
-    JOIN ppmp_items p ON p.id=pri.ppmp_item_id
-      AND p.fiscal_year=r.fiscal_year AND p.area_id=r.area_id AND p.ppmp_no=r.ppmp_no
+    LEFT JOIN ppmp_items p ON p.fiscal_year=r.fiscal_year AND p.area_id=r.area_id AND p.ppmp_no=r.ppmp_no
     WHERE d.id=?
-      AND r.status IN ('Pending for Review','Pending for Approval')
+      AND r.status='Pending for Review'
+      AND EXISTS (SELECT 1 FROM ppmp_review_items pri_pending WHERE pri_pending.review_id=r.id AND pri_pending.status='Pending for Review')
     GROUP BY r.id,r.fiscal_year,r.ppmp_no,r.status,r.submitted_at,a.name,d.name,u.full_name,r.updated_at
     ORDER BY r.updated_at DESC");
   $stSupervisorQueue->execute([currentLoginDivisionId()]);$supervisorPending=$stSupervisorQueue->fetchAll();
