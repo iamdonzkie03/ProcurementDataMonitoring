@@ -23,6 +23,8 @@ try{
     INDEX idx_ppmp_masterlist_item (item_name),
     INDEX idx_ppmp_masterlist_uom (unit_of_measurement)
   ) ENGINE=InnoDB");
+  $cols=$pdo->query("SHOW COLUMNS FROM ppmp_masterlist LIKE 'technical_specifications'")->fetch();
+  if(!$cols) $pdo->exec("ALTER TABLE ppmp_masterlist ADD COLUMN technical_specifications TEXT NULL AFTER item_name");
 }catch(PDOException $e){
   flash('error','Unable to initialize the PPMP Masterlist table.');
 }
