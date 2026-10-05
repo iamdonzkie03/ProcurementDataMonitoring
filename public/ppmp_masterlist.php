@@ -239,7 +239,7 @@ document.addEventListener('DOMContentLoaded',function(){
     <div id="masterlistRows">
       <div class="masterlist-row masterlist-form-grid">
         <div class="field masterlist-field"><label>Item Name *</label><input class="input" type="text" name="item_name[]" required maxlength="255" value="<?=e($editing['item_name']??'')?>" placeholder="Enter item name"></div>
-        <div class="field masterlist-field"><label>Technical Specifications</label><textarea class="input" name="technical_specifications[]" rows="3" maxlength="5000" placeholder="Enter technical specifications"><?=e($editing['technical_specifications']??'')?></textarea></div>
+        <div class="field masterlist-field"><label>Technical Specifications</label><input class="input" type="text" name="technical_specifications[]" maxlength="5000" value="<?=e($editing['technical_specifications']??'')?>" placeholder="Enter technical specifications"></div>
         <div class="field masterlist-field"><label>Unit of Measurement *</label><select class="input" name="unit_of_measurement[]" required><option value="">Select Unit</option><?php foreach($uomRows as $uomRow): ?><option value="<?=e($uomRow['name'])?>" <?=($editing['unit_of_measurement']??'')===$uomRow['name']?'selected':''?>><?=e($uomRow['name'])?></option><?php endforeach; ?></select></div>
         <div class="field masterlist-field"><label>Unit Cost *</label><input class="input masterlist-unit-cost" type="text" name="unit_cost[]" required inputmode="decimal" autocomplete="off" maxlength="21" value="<?= $editing ? e(number_format((float)$editing['unit_cost'],2,'.',',')) : '' ?>" placeholder="0.00"></div>
         <div class="masterlist-submit">
