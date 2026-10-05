@@ -3,7 +3,7 @@
 .ppmp-row-documents .ppmp-document-row{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:5px;align-items:center}
 .ppmp-row-documents .input{min-width:0}
 .ppmp-row-documents .ppmp-add-document{white-space:nowrap}
-.ppmp-entry-table .ppmp-row-number{font-weight:700;text-align:center}.ppmp-entry-table .ppmp-total-budget{border:0;background:transparent;font-weight:700}.ppmp-entry-table .ppmp-remove-row{white-space:nowrap}
+.ppmp-entry-table .ppmp-row-number{font-weight:700;text-align:center}.ppmp-entry-table .ppmp-total-budget{border:0;background:transparent;font-weight:700;font-size:12px!important}.ppmp-entry-table .ppmp-remove-row{white-space:nowrap}
 </style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
