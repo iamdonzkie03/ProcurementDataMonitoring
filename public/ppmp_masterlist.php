@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded',function(){
 .masterlist-form-grid .field{margin:0}
 .masterlist-form-grid .masterlist-field{width:100%}
 .masterlist-form-grid .masterlist-field .input{width:100%}
-.masterlist-form-grid .masterlist-submit{display:flex;align-items:flex-start;justify-content:center;height:auto;min-width:105px;padding-top:22px;margin-top:0}
+.masterlist-form-grid .masterlist-submit{display:flex;align-items:flex-start;justify-content:center;height:auto;min-width:105px;padding-top:0;margin-top:22px}
 .masterlist-form-grid .masterlist-submit .btn{white-space:nowrap}
 .masterlist-actions{display:flex;gap:6px;align-items:center;white-space:nowrap}
 .masterlist-actions form{margin:0}
