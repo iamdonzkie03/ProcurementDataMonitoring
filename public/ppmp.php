@@ -1078,6 +1078,8 @@ function ppmpPrintDate($value): string{
   display:block;
   text-align:center;
   margin:0;
+  border:0 !important;
+  border-bottom:0 !important;
 }
 .ppmp-signature-template .signature-line img{
   position:absolute;
