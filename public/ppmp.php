@@ -1,4 +1,8 @@
-\n<style>\n.ppmp-status-badge{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:#eef2f7;color:#374151}.ppmp-status-pending-for-review{background:#fff3cd;color:#856404}.ppmp-status-pending-for-approval{background:#cff4fc;color:#055160}.ppmp-status-approved{background:#d1e7dd;color:#0f5132}.ppmp-status-declined{background:#f8d7da;color:#842029}.ppmp-status-draft{background:#e9ecef;color:#495057}.ppmp-submit-review{background:#d9f7df!important;color:#166534!important;border:1px solid #b7e4c0!important;}\n.ppmp-submit-review:hover,.ppmp-submit-review:focus,.ppmp-submit-review:active{background:#d9f7df!important;color:#166534!important;}\n.ppmp-entry-table-wrap{overflow-x:auto}.ppmp-entry-table{min-width:2400px}.ppmp-entry-table th,.ppmp-entry-table td{vertical-align:top;padding:7px}.ppmp-entry-table th{white-space:nowrap}.ppmp-entry-table .input,.ppmp-entry-table .select{min-width:120px}.ppmp-entry-table textarea{min-width:180px;resize:vertical}.ppmp-entry-table .ppmp-row-date{min-width:135px}.ppmp-entry-table .ppmp-row-qty,.ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{min-width:110px}.ppmp-entry-table .ppmp-row-number{font-weight:700;text-align:center}.ppmp-entry-table .ppmp-total-budget{border:0;background:transparent;font-weight:700}.ppmp-entry-table .ppmp-remove-row{white-space:nowrap}
+\n<style>\n.ppmp-status-badge{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:#eef2f7;color:#374151}.ppmp-status-pending-for-review{background:#fff3cd;color:#856404}.ppmp-status-pending-for-approval{background:#cff4fc;color:#055160}.ppmp-status-approved{background:#d1e7dd;color:#0f5132}.ppmp-status-declined{background:#f8d7da;color:#842029}.ppmp-status-draft{background:#e9ecef;color:#495057}.ppmp-submit-review{background:#d9f7df!important;color:#166534!important;border:1px solid #b7e4c0!important;}\n.ppmp-submit-review:hover,.ppmp-submit-review:focus,.ppmp-submit-review:active{background:#d9f7df!important;color:#166534!important;}\n.ppmp-entry-table-wrap{overflow-x:auto}.ppmp-entry-table{min-width:2400px}.ppmp-entry-table th,.ppmp-entry-table td{vertical-align:top;padding:7px}.ppmp-entry-table th{white-space:nowrap}.ppmp-entry-table .input,.ppmp-entry-table .select{min-width:120px}.ppmp-entry-table textarea{min-width:180px;resize:vertical}.ppmp-entry-table .ppmp-row-date{min-width:135px}.ppmp-entry-table .ppmp-row-qty,.ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{min-width:110px}.ppmp-row-documents{min-width:280px}
+.ppmp-row-documents .ppmp-document-row{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:5px;align-items:center}
+.ppmp-row-documents .input{min-width:0}
+.ppmp-row-documents .ppmp-add-document{white-space:nowrap}
+.ppmp-entry-table .ppmp-row-number{font-weight:700;text-align:center}.ppmp-entry-table .ppmp-total-budget{border:0;background:transparent;font-weight:700}.ppmp-entry-table .ppmp-remove-row{white-space:nowrap}
 </style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
@@ -101,22 +105,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
     $stWorkflow=$pdo->prepare('SELECT status FROM ppmp_reviews WHERE fiscal_year=? AND area_id=? ORDER BY id DESC LIMIT 1'); $stWorkflow->execute([$year,$areaId]); $workflowStatus=(string)$stWorkflow->fetchColumn();
     if($workflowStatus!==''&&!in_array($workflowStatus,['Draft','Declined'],true)) ppmpSaveFormError('This PPMP is '.$workflowStatus.' and cannot accept new items.',$year,$areaId);
-    $docsJson='';
-    $existingDocs=[];
-    if(!empty($_FILES['supporting_documents']['name'])&&is_array($_FILES['supporting_documents']['name'])){
-      $uploadDir=__DIR__.'/uploads/ppmp'; if(!is_dir($uploadDir)) @mkdir($uploadDir,0775,true);
-      foreach($_FILES['supporting_documents']['name'] as $i=>$originalName){
-        if($_FILES['supporting_documents']['error'][$i]===UPLOAD_ERR_NO_FILE) continue;
-        if($_FILES['supporting_documents']['error'][$i]!==UPLOAD_ERR_OK) ppmpSaveFormError('One or more supporting documents could not be uploaded.',$year,$areaId);
-        if((int)$_FILES['supporting_documents']['size'][$i]>20*1024*1024) ppmpSaveFormError('Each supporting PDF must not exceed 20 MB.',$year,$areaId);
-        $ext=strtolower(pathinfo($originalName,PATHINFO_EXTENSION)); $mime=(new finfo(FILEINFO_MIME_TYPE))->file($_FILES['supporting_documents']['tmp_name'][$i]);
-        if($ext!=='pdf'||$mime!=='application/pdf') ppmpSaveFormError('Supporting Documents must be PDF files only.',$year,$areaId);
-        $documentNames=$_POST['supporting_document_names']??[]; $documentName=isset($documentNames[$i])?trim((string)$documentNames[$i]):''; if($documentName==='') ppmpSaveFormError('Please provide a Name for every supporting PDF.',$year,$areaId);
-        $safeName='ppmp_'.date('YmdHis').'_'.$i.'_'.bin2hex(random_bytes(5)).'.pdf'; if(!move_uploaded_file($_FILES['supporting_documents']['tmp_name'][$i],$uploadDir.'/'.$safeName)) ppmpSaveFormError('Unable to save a supporting PDF.',$year,$areaId);
-        $existingDocs[]=['name'=>$documentName,'original_name'=>basename($originalName),'path'=>'uploads/ppmp/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s')];
-      }
-      $docsJson=$existingDocs?json_encode($existingDocs,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE):'';
-    }
+    $uploadDir=__DIR__.'/uploads/ppmp';
+    if(!is_dir($uploadDir)) @mkdir($uploadDir,0775,true);
     $insert=$pdo->prepare('INSERT INTO ppmp_items (fiscal_year,ppmp_no,area_id,category_id,item_name,description,procurement_type,quantity,unit,procurement_mode,preprocurement_conference,start_procurement,end_procurement,delivery_period,source_of_funds,unit_price,total_budget,supporting_documents,requested_by,prepared_by,prepared_position,submitted_by,submitted_position,budget_approved_by,budget_position,prepared_date,submitted_date,budget_date,remarks,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
     $saved=0; $pdo->beginTransaction();
     try{
@@ -139,6 +129,34 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if($itemName===''||$description===''||$categoryId<=0){
           throw new RuntimeException('Every PPMP row must have Category, Item Name, and Technical Specifications.');
         }
+        $rowDocs=array();
+        $rowIndex=count($insertValues??array());
+        if(isset($_FILES['items']['name'])){
+          $fileNames=$_FILES['items']['name'];
+          $fileTypes=$_FILES['items']['type'];
+          $fileTmp=$_FILES['items']['tmp_name'];
+          $fileErrors=$_FILES['items']['error'];
+          $fileSizes=$_FILES['items']['size'];
+          $itemKey=array_search($item,$items,true);
+          if($itemKey!==false && isset($fileNames[$itemKey]['supporting_documents']) && is_array($fileNames[$itemKey]['supporting_documents'])){
+            $documentNamesForRow=$item['supporting_document_names']??array();
+            foreach($fileNames[$itemKey]['supporting_documents'] as $docIndex=>$originalName){
+              if(($fileErrors[$itemKey]['supporting_documents'][$docIndex]??UPLOAD_ERR_NO_FILE)===UPLOAD_ERR_NO_FILE) continue;
+              if(($fileErrors[$itemKey]['supporting_documents'][$docIndex]??UPLOAD_ERR_OK)!==UPLOAD_ERR_OK) throw new RuntimeException('One or more supporting documents for item row '.($itemKey+1).' could not be uploaded.');
+              if((int)($fileSizes[$itemKey]['supporting_documents'][$docIndex]??0)>20*1024*1024) throw new RuntimeException('Each supporting PDF must not exceed 20 MB.');
+              $tmpFile=$fileTmp[$itemKey]['supporting_documents'][$docIndex]??'';
+              $ext=strtolower(pathinfo($originalName,PATHINFO_EXTENSION));
+              $mime=(new finfo(FILEINFO_MIME_TYPE))->file($tmpFile);
+              if($ext!=='pdf'||$mime!=='application/pdf') throw new RuntimeException('Supporting Documents must be PDF files only.');
+              $documentName=trim((string)($documentNamesForRow[$docIndex]??''));
+              if($documentName==='') throw new RuntimeException('Please provide a name for every supporting PDF in item row '.($itemKey+1).'.');
+              $safeName='ppmp_'.date('YmdHis').'_'.$itemKey.'_'.$docIndex.'_'.bin2hex(random_bytes(5)).'.pdf';
+              if(!move_uploaded_file($tmpFile,$uploadDir.'/'.$safeName)) throw new RuntimeException('Unable to save a supporting PDF for item row '.($itemKey+1).'.');
+              $rowDocs[]=array('name'=>$documentName,'original_name'=>basename($originalName),'path'=>'uploads/ppmp/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s'));
+            }
+          }
+        }
+        $docsJson=$rowDocs?json_encode($rowDocs,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE):'';
         $createdBy=(int)(currentUser()['id']??0);
         $insertValues=array(
           $year,$bulkPpmpNo,$areaId,$categoryId,$itemName,$description,$procurementType,$qty,$unit,$procurementMode,
@@ -636,7 +654,7 @@ pageStart('Project Procurement Management Plan');
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h3 style="margin:0">PPMP Items</h3><button class="btn secondary" type="button" id="ppmpAddRow">+ Add Row</button></div>
       <div class="table-wrap ppmp-entry-table-wrap">
         <table class="table ppmp-entry-table" id="ppmpEntryTable">
-          <thead><tr><th>#</th><th>Category *</th><th>Classification *</th><th>Item Name *</th><th>Technical Specifications *</th><th>Quantity *</th><th>Unit *</th><th>Unit Cost *</th><th>Total Budget</th><th>Procurement Mode *</th><th>Pre-Procurement *</th><th>Start *</th><th>End *</th><th>Delivery *</th><th>Source of Funds *</th><th>Remarks</th><th>Action</th></tr></thead>
+          <thead><tr><th>#</th><th>Category *</th><th>Classification *</th><th>Item Name *</th><th>Technical Specifications *</th><th>Quantity *</th><th>Unit *</th><th>Unit Cost *</th><th>Total Budget</th><th>Procurement Mode *</th><th>Pre-Procurement *</th><th>Start *</th><th>End *</th><th>Delivery *</th><th>Source of Funds *</th><th>Supporting Documents</th><th>Remarks</th><th>Action</th></tr></thead>
           <tbody id="ppmpEntryBody">
             <tr class="ppmp-entry-row">
               <td class="ppmp-row-number">1</td>
@@ -654,6 +672,16 @@ pageStart('Project Procurement Management Plan');
               <td><input class="input ppmp-row-date" type="date" name="items[0][end_procurement]" required></td>
               <td><input class="input ppmp-row-date" type="date" name="items[0][delivery_period]" required></td>
               <td><input class="input" name="items[0][source_of_funds]" required></td>
+              <td>
+                <div class="ppmp-row-documents">
+                  <div class="ppmp-document-row">
+                    <input class="input" type="file" name="items[0][supporting_documents][]" accept="application/pdf,.pdf">
+                    <input class="input" type="text" name="items[0][supporting_document_names][]" placeholder="Document name">
+                    <button class="btn secondary ppmp-remove-document" type="button">Remove</button>
+                  </div>
+                  <button class="btn secondary ppmp-add-document" type="button">+ Add PDF</button>
+                </div>
+              </td>
               <td><textarea class="input" name="items[0][remarks]" rows="2"></textarea></td>
               <td><button class="btn danger ppmp-remove-row" type="button">Remove</button></td>
             </tr>
@@ -664,7 +692,7 @@ pageStart('Project Procurement Management Plan');
     </div>
     <div class="ppmp-section">
       <h3>Supporting Documents</h3>
-      <div class="field full"><div id="ppmp-supporting-documents"><div class="ppmp-document-row"><input class="input" type="file" name="supporting_documents[]" accept="application/pdf,.pdf"><input class="input" type="text" name="supporting_document_names[]" placeholder="Name of document"><button class="btn secondary ppmp-remove-document" type="button">Remove</button></div></div><button class="btn secondary" type="button" id="ppmp-add-document">+ Add Another Document</button><small class="muted">Multiple PDF files are allowed. Each file must not exceed 20 MB.</small></div>
+      <p class="muted">Supporting documents are attached per PPMP item row below. Each row may contain multiple PDF files.</p>
     </div>
     <div class="actions"><button class="btn" type="submit">Save PPMP Items</button></div>
   </form>
@@ -970,12 +998,42 @@ if(area){
   syncSupervisor(); syncRequested();
 }
  const quantity=document.getElementById('ppmp_quantity'), unitPrice=document.getElementById('ppmp_unit_price'), totalBudget=document.getElementById('ppmp_total_budget');
- const supportingDocuments=document.getElementById('ppmp-supporting-documents'), addDocument=document.getElementById('ppmp-add-document');
- function syncDocumentRows(){if(!supportingDocuments)return; supportingDocuments.querySelectorAll('.ppmp-document-row').forEach(function(row,index){const remove=row.querySelector('.ppmp-remove-document');if(remove)remove.style.display=index===0?'none':'inline-flex';});}
- function addDocumentRow(){if(!supportingDocuments)return;const row=document.createElement('div');row.className='ppmp-document-row';row.innerHTML='<input class="input" type="file" name="supporting_documents[]" accept="application/pdf,.pdf"><input class="input" type="text" name="supporting_document_names[]" placeholder="Name of document"><button class="btn secondary ppmp-remove-document" type="button">Remove</button>';supportingDocuments.appendChild(row);syncDocumentRows();}
- if(addDocument)addDocument.addEventListener('click',addDocumentRow);
- if(supportingDocuments)supportingDocuments.addEventListener('click',function(e){if(e.target.classList.contains('ppmp-remove-document')){const row=e.target.closest('.ppmp-document-row');if(row)row.remove();syncDocumentRows();}});
- syncDocumentRows();
+ function syncRowDocuments(row,index){
+   if(!row)return;
+   row.querySelectorAll('.ppmp-document-row').forEach(function(docRow,docIndex){
+     const remove=docRow.querySelector('.ppmp-remove-document');
+     if(remove)remove.style.display=docIndex===0?'none':'inline-flex';
+     const file=docRow.querySelector('input[type="file"]');
+     const name=docRow.querySelector('input[type="text"]');
+     if(file)file.name='items['+index+'][supporting_documents][]';
+     if(name)name.name='items['+index+'][supporting_document_names][]';
+   });
+ }
+ function syncAllRowDocuments(){
+   document.querySelectorAll('#ppmpEntryBody .ppmp-entry-row').forEach(function(row,index){syncRowDocuments(row,index);});
+ }
+ document.addEventListener('click',function(e){
+   if(e.target.classList.contains('ppmp-add-document')){
+     const wrap=e.target.closest('.ppmp-row-documents');
+     if(!wrap)return;
+     const first=wrap.querySelector('.ppmp-document-row');
+     if(!first)return;
+     const row=first.cloneNode(true);
+     row.querySelectorAll('input').forEach(function(input){input.value='';});
+     wrap.insertBefore(row,e.target);
+     syncAllRowDocuments();
+   }
+   if(e.target.classList.contains('ppmp-remove-document')){
+     const row=e.target.closest('.ppmp-document-row');
+     const wrap=e.target.closest('.ppmp-row-documents');
+     if(row&&wrap){
+       const rows=wrap.querySelectorAll('.ppmp-document-row');
+       if(rows.length>1)row.remove();
+       else row.querySelectorAll('input').forEach(function(input){input.value='';});
+       syncAllRowDocuments();
+     }
+   }
+ });
  function moneyNumber(value){return parseFloat(String(value||'').replace(/,/g,''))||0;}
  function formatMoney(value){return Number(value||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
  function syncTotalBudget(){if(!quantity||!unitPrice||!totalBudget)return; const q=moneyNumber(quantity.value), p=moneyNumber(unitPrice.value); totalBudget.value=formatMoney(q*p);}
