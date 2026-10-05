@@ -124,7 +124,10 @@ pageStart('PPMP Masterlist');
 .masterlist-remove-row{white-space:nowrap}
 </style>
 <script>
+document.addEventListener('DOMContentLoaded',function(){
+
 (function(){
+
   const button=document.getElementById('addMasterlistRow');
   const container=document.getElementById('masterlistRows');
   if(!container)return;
@@ -183,6 +186,8 @@ pageStart('PPMP Masterlist');
     });
   }
 })();
+
+});
 </script>
 <style>
 .masterlist-toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
