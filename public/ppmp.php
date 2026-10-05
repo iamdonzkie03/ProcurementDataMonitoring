@@ -536,7 +536,7 @@ pageStart('Project Procurement Management Plan');
 <?php endif;?>
 </td></tr><?php endforeach;?></table></div>
 </div>
-<?php $ppmpFormOpen=(!$isPpmpSupervisor || $canManagePpmp) && ($formIsEditing || $formOld!==null); ?>
+<?php $ppmpFormOpen=(!$isPpmpSupervisor || $canManagePpmp) && $divisionId>0 && $areaId>0; ?>
 <?php if(!$isPpmpSupervisor || $canManagePpmp): ?>
 <div class="ppmp-entry panel" id="ppmpForm" style="<?= $ppmpFormOpen ? '' : 'display:none;' ?>">
   <h2><?= $formIsEditing ? 'Edit PPMP Item' : 'Project Procurement Management Plan — Data Entry' ?></h2>
