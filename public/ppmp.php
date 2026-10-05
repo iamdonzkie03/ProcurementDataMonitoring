@@ -662,11 +662,11 @@ pageStart('Project Procurement Management Plan');
 <div class="panel ppmp-records">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:16px">
     <h2 style="margin:0">Saved PPMP Items — FY <?=$year?><?= $selectedArea?' / '.e($selectedArea['name']):'' ?></h2>
-    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-size:13px">
-      <span><b>Pending for Review:</b> ₱<?=number_format($ppmpStatusAbc['Pending for Review'],2)?></span>
-      <span><b>Pending for Approval:</b> ₱<?=number_format($ppmpStatusAbc['Pending for Approval'],2)?></span>
-      <span><b>Declined:</b> ₱<?=number_format($ppmpStatusAbc['Declined'],2)?></span>
-      <span><b>Approved:</b> ₱<?=number_format($ppmpStatusAbc['Approved'],2)?></span>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px">
+      <span style="background:#d9f0ff;color:#1f5f85;padding:6px 10px;border-radius:6px"><b>Pending for Review:</b> ₱<?=number_format($ppmpStatusAbc['Pending for Review'],2)?></span>
+      <span style="background:#e0e0e0;color:#555;padding:6px 10px;border-radius:6px"><b>Pending for Approval:</b> ₱<?=number_format($ppmpStatusAbc['Pending for Approval'],2)?></span>
+      <span style="background:#d9f2df;color:#26733a;padding:6px 10px;border-radius:6px"><b>Approved:</b> ₱<?=number_format($ppmpStatusAbc['Approved'],2)?></span>
+      <span style="background:#f8d7da;color:#a1262f;padding:6px 10px;border-radius:6px"><b>Declined:</b> ₱<?=number_format($ppmpStatusAbc['Declined'],2)?></span>
     </div>
   </div>
   <div class="table-wrap"><table class="table"><tr><th>PPMP No.</th><th>Area/Unit</th><th>Item</th><th>Type</th><th>Qty / Unit</th><th>Mode</th><th>Unit Cost</th><th>Total Budget</th><th>Saved</th><th>Status</th><th>Actions</th></tr>
