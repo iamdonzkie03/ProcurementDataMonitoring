@@ -237,7 +237,14 @@ document.addEventListener('DOMContentLoaded',function(){
         <div class="field"><label>Technical Specifications</label><textarea class="input" name="technical_specifications[]" rows="3" maxlength="5000" placeholder="Enter technical specifications"><?=e($editing['technical_specifications']??'')?></textarea></div>
         <div class="field"><label>Unit of Measurement *</label><select class="input" name="unit_of_measurement[]" required><option value="">Select Unit</option><?php foreach($uomRows as $uomRow): ?><option value="<?=e($uomRow['name'])?>" <?=($editing['unit_of_measurement']??'')===$uomRow['name']?'selected':''?>><?=e($uomRow['name'])?></option><?php endforeach; ?></select></div>
         <div class="field"><label>Unit Cost *</label><input class="input masterlist-unit-cost" type="text" name="unit_cost[]" required inputmode="decimal" autocomplete="off" maxlength="21" value="<?= $editing ? e(number_format((float)$editing['unit_cost'],2,'.',',')) : '' ?>" placeholder="0.00"></div>
-        <div class="masterlist-submit"><button class="btn" type="button" id="addMasterlistRow"><?= $editing ? 'Update Item' : 'Add Row' ?></button><?php if($editing): ?><a class="btn secondary" href="ppmp_masterlist.php">Cancel</a><?php endif; ?></div>
+        <div class="masterlist-submit">
+<?php if($editing): ?>
+  <button class="btn" type="submit">Update Item</button>
+  <a class="btn secondary" href="ppmp_masterlist.php">Cancel</a>
+<?php else: ?>
+  <button class="btn" type="button" id="addMasterlistRow">Add Row</button>
+<?php endif; ?>
+</div>
       </div>
     </div>
     <?php if(!$editing): ?>
