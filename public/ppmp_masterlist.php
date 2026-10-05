@@ -127,9 +127,9 @@ pageStart('PPMP Masterlist');
 (function(){
   const button=document.getElementById('addMasterlistRow');
   const container=document.getElementById('masterlistRows');
-  if(!button||!container)return;
+  if(!container)return;
 
-  // Same formatter used by the PPMP Form Quantity/Unit Cost fields.
+  // Identical number-formatting behavior to the PPMP Form Quantity/Unit Cost fields.
   function formatNumberInput(field,finalize){
     if(!field)return;
     let raw=String(field.value||'').replace(/,/g,'').replace(/[^0-9.]/g,'');
@@ -144,32 +144,44 @@ pageStart('PPMP Masterlist');
     field.value=value;
   }
 
+  function isUnitCostField(target){
+    return target && target.classList && target.classList.contains('masterlist-unit-cost');
+  }
+
   container.addEventListener('input',function(e){
-    if(e.target.classList.contains('masterlist-unit-cost')){
-      formatNumberInput(e.target,false);
-    }
+    if(isUnitCostField(e.target)) formatNumberInput(e.target,false);
   });
 
   container.addEventListener('blur',function(e){
-    if(e.target.classList.contains('masterlist-unit-cost')){
-      formatNumberInput(e.target,true);
-    }
+    if(isUnitCostField(e.target)) formatNumberInput(e.target,true);
   },true);
 
-  button.addEventListener('click',function(){
-    const first=container.querySelector('.masterlist-row');
-    if(!first)return;
-    const row=first.cloneNode(true);
-    row.querySelectorAll('input,textarea').forEach(function(input){input.value='';});
-    const uomSelect=row.querySelector('select[name="unit_of_measurement[]"]');
-    if(uomSelect)uomSelect.selectedIndex=0;
-    const action=row.querySelector('.masterlist-submit');
-    if(action){
-      action.innerHTML='<button class="btn danger masterlist-remove-row" type="button">Remove</button>';
-      action.querySelector('button').addEventListener('click',function(){row.remove();});
-    }
-    container.appendChild(row);
+  container.addEventListener('keydown',function(e){
+    if(!isUnitCostField(e.target))return;
+    if(['e','E','+','-'].includes(e.key))e.preventDefault();
   });
+
+  container.addEventListener('paste',function(e){
+    if(!isUnitCostField(e.target))return;
+    setTimeout(function(){formatNumberInput(e.target,false);},0);
+  });
+
+  if(button){
+    button.addEventListener('click',function(){
+      const first=container.querySelector('.masterlist-row');
+      if(!first)return;
+      const row=first.cloneNode(true);
+      row.querySelectorAll('input,textarea').forEach(function(input){input.value='';});
+      const uomSelect=row.querySelector('select[name="unit_of_measurement[]"]');
+      if(uomSelect)uomSelect.selectedIndex=0;
+      const action=row.querySelector('.masterlist-submit');
+      if(action){
+        action.innerHTML='<button class="btn danger masterlist-remove-row" type="button">Remove</button>';
+        action.querySelector('button').addEventListener('click',function(){row.remove();});
+      }
+      container.appendChild(row);
+    });
+  }
 })();
 </script>
 <style>
@@ -207,7 +219,7 @@ pageStart('PPMP Masterlist');
         <div class="field"><label>Item Name *</label><input class="input" type="text" name="item_name[]" required maxlength="255" value="<?=e($editing['item_name']??'')?>" placeholder="Enter item name"></div>
         <div class="field"><label>Technical Specifications</label><textarea class="input" name="technical_specifications[]" rows="3" maxlength="5000" placeholder="Enter technical specifications"><?=e($editing['technical_specifications']??'')?></textarea></div>
         <div class="field"><label>Unit of Measurement *</label><select class="input" name="unit_of_measurement[]" required><option value="">Select Unit</option><?php foreach($uomRows as $uomRow): ?><option value="<?=e($uomRow['name'])?>" <?=($editing['unit_of_measurement']??'')===$uomRow['name']?'selected':''?>><?=e($uomRow['name'])?></option><?php endforeach; ?></select></div>
-        <div class="field"><label>Unit Cost *</label><input class="input masterlist-unit-cost" type="text" name="unit_cost[]" required inputmode="decimal" value="<?= $editing ? e(number_format((float)$editing['unit_cost'],2,'.',',')) : '' ?>" placeholder="0.00"></div>
+        <div class="field"><label>Unit Cost *</label><input class="input masterlist-unit-cost" type="text" name="unit_cost[]" required inputmode="decimal" autocomplete="off" maxlength="21" value="<?= $editing ? e(number_format((float)$editing['unit_cost'],2,'.',',')) : '' ?>" placeholder="0.00"></div>
         <div class="masterlist-submit"><button class="btn" type="submit"><?= $editing ? 'Update Item' : 'Add Item' ?></button><?php if($editing): ?><a class="btn secondary" href="ppmp_masterlist.php">Cancel</a><?php endif; ?></div>
       </div>
     </div>
