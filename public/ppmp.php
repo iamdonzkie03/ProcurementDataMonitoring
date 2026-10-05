@@ -1051,14 +1051,54 @@ function ppmpPrintDate($value): string{
 
   
 <style>
-/* Keep Prepared By and Submitted By electronic signatures identical in print. */
-.ppmp-signature-template .ppmp-prepared-signature img,
-.ppmp-signature-template .ppmp-submitted-signature img{
+/* Keep all three PPMP signature blocks on one row and use identical signature sizing. */
+.ppmp-signature-template{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
+  align-items:start;
+  width:100%;
+}
+.ppmp-signature-template .ppmp-signature-box{
+  min-width:0;
+  text-align:center;
+}
+.ppmp-signature-template .signature-line{
+  min-height:92px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-end;
+  position:relative;
+  text-align:center;
+}
+.ppmp-signature-template .signature-line img{
   width:180px;
   height:70px;
   object-fit:contain;
   display:block;
   margin:0 auto 2px;
+  flex:0 0 auto;
+}
+.ppmp-signature-template .signature-line span{
+  display:block;
+  width:100%;
+  min-height:20px;
+  line-height:20px;
+  font-weight:600;
+}
+.ppmp-signature-template .ppmp-budget-signature .signature-line{
+  min-height:92px;
+}
+@media print{
+  .ppmp-signature-template{
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+  }
+  .ppmp-signature-template .signature-line img{
+    width:180px;
+    height:70px;
+  }
 }
 </style>
 <div class="ppmp-signatures ppmp-signature-template">
@@ -1080,7 +1120,7 @@ function ppmpPrintDate($value): string{
     </div>
     <div class="ppmp-signature-box ppmp-budget-signature">
       <b>within the budget allocation:</b>
-      <div class="signature-line"><?=e($budgetName)?></div>
+      <div class="signature-line"><span><?=e($budgetName)?></span></div>
       <div>Signature over Printed Name</div>
       <div><?=e($budgetPos)?></div>
       <div><i>Budget Section</i></div>
