@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded',function(){
     </div>
     <?php if(!$editing): ?>
     <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-      <button class="btn secondary" type="submit" id="saveMasterlistItems">Save Item</button>
+      <button class="btn" style="background:#198754;color:#fff;border-color:#198754" type="submit" id="saveMasterlistItems">Save Item</button>
       <span class="muted">Use Add Row to add more items before saving.</span>
     </div>
     <?php endif; ?>
