@@ -479,9 +479,9 @@ if(!$embedded) pageStart('Area/Unit Management');
 .management-column:first-child .management-list-content .table td:nth-child(3){width:25%}
 .management-column:first-child .management-list-content .table th:nth-child(4),
 .management-column:first-child .management-list-content .table td:nth-child(4){width:21%}
-.management-column:first-child .management-list-content .table .actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
-.management-column:first-child .management-list-content .table .master-action{width:68px;min-width:68px;height:32px;padding:4px 7px;font-size:12px}
-.management-column:first-child .management-list-content .table .master-action-form{margin:0}
+.management-column:first-child .management-list-content .table .actions{display:flex;gap:4px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap}
+.management-column:first-child .management-list-content .table .master-action{width:60px;min-width:60px;height:32px;padding:4px 5px;font-size:12px}
+.management-column:first-child .management-list-content .table .master-action-form{margin:0;display:inline-flex;flex:0 0 auto}
 .signature-preview{margin-top:8px;padding:8px;border:1px solid #ddd;background:#fff;display:inline-block}
 .signature-preview img{display:block;max-width:240px;max-height:90px;object-fit:contain}
 </style>
