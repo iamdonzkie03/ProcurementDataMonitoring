@@ -326,7 +326,7 @@ if(!$embedded) pageStart('Area/Unit Management');
   <div class="management-column panel">
     <div class="management-section">
       <div class="toolbar"><div><h2><?= $divisionEditing ? 'Edit Division/Department' : 'Division/Department Management' ?></h2><p>Each Division/Department has exactly one designated Head. Multiple Area/Units may be assigned under the same Division/Department.</p></div></div>
-      <form method="post" enctype="multipart/form-data">
+      <form method="post" enctype="multipart/form-data" id="divisionManagementForm">
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="action" value="<?= $divisionEditing ? 'update_division' : 'save_division' ?>">
         <input type="hidden" name="electronic_signature_data" value="">
@@ -436,6 +436,26 @@ if(!$embedded) pageStart('Area/Unit Management');
 
 <script>
 (function(){
+  // Convert the Division/Department signature upload to the hidden base64
+  // field expected by save_division/update_division. This is separate from
+  // the Area/Unit personnel signature handler below.
+  const divisionForm=document.getElementById('divisionManagementForm');
+  if(divisionForm){
+    divisionForm.addEventListener('submit',function(event){
+      const fileInput=divisionForm.querySelector('input[name="electronic_signature"]');
+      const dataInput=divisionForm.querySelector('input[name="electronic_signature_data"]');
+      const file=fileInput && fileInput.files ? fileInput.files[0] : null;
+      if(!file || !dataInput || dataInput.value) return;
+      if(file.size>2*1024*1024){event.preventDefault();alert('Electronic signature must not exceed 2 MB.');return;}
+      if(file.type!=='image/png'&&file.type!=='image/jpeg'){event.preventDefault();alert('Electronic signature must be a PNG or JPG image.');return;}
+      event.preventDefault();
+      const reader=new FileReader();
+      reader.onload=function(){dataInput.value=String(reader.result||'');fileInput.value='';divisionForm.submit();};
+      reader.onerror=function(){alert('Unable to read the selected electronic signature file.');};
+      reader.readAsDataURL(file);
+    });
+  }
+
   const form=document.querySelector('.area-unit-add-panel form');
   const list=document.getElementById('area-names-list');
   const add=document.getElementById('add-area-name');
