@@ -128,14 +128,23 @@ pageStart('PPMP Masterlist');
   const button=document.getElementById('addMasterlistRow');
   const container=document.getElementById('masterlistRows');
   if(!button||!container)return;
-  function formatCost(input){
-    const raw=input.value.replace(/,/g,'').trim();
-    if(raw==='') return;
-    const n=Number(raw);
-    if(Number.isFinite(n)) input.value=n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  function formatCost(input,finalize){
+    let raw=input.value.replace(/[^0-9.]/g,'');
+    const parts=raw.split('.');
+    if(parts.length>2) raw=parts[0]+'.'+parts.slice(1).join('');
+    let whole=parts[0]||'';
+    let decimal=parts.length>1?parts[1].slice(0,2):'';
+    whole=whole.replace(/^0+(?=\\d)/,'');
+    const formatted=whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g,',');
+    if(finalize) input.value=(formatted||'0')+'.'+decimal.padEnd(2,'0');
+    else input.value=formatted+(parts.length>1?'.'+decimal:'');
   }
-  container.addEventListener('blur',function(e){if(e.target.classList.contains('masterlist-unit-cost'))formatCost(e.target);},true);
-  container.addEventListener('input',function(e){if(e.target.classList.contains('masterlist-unit-cost'))e.target.value=e.target.value.replace(/[^0-9.,]/g,'');});
+  container.addEventListener('input',function(e){
+    if(e.target.classList.contains('masterlist-unit-cost')) formatCost(e.target,false);
+  });
+  container.addEventListener('blur',function(e){
+    if(e.target.classList.contains('masterlist-unit-cost')) formatCost(e.target,true);
+  },true);
   button.addEventListener('click',function(){
     const row=container.querySelector('.masterlist-row').cloneNode(true);
     row.querySelectorAll('input,textarea').forEach(function(input){input.value='';});
