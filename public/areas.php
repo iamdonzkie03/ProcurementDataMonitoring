@@ -494,6 +494,29 @@ if(!$embedded) pageStart('Area/Unit Management');
 .management-column:first-child .management-list-content .table .actions{display:flex;gap:5px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap;width:max-content;max-width:100%}
 .management-column:first-child .management-list-content .table .master-action{width:58px;min-width:58px;height:30px;padding:3px 4px;font-size:11px}
 .management-column:first-child .management-list-content .table .master-action-form{margin:0;display:inline-flex;flex:0 0 auto}
+/* Keep the Area/Unit List compact enough to fit the right-hand panel. */
+.management-column:nth-child(2) .management-list-content .table-wrap{overflow-x:hidden}
+.management-column:nth-child(2) .management-list-content .table{width:100%;table-layout:fixed;font-size:11.5px}
+.management-column:nth-child(2) .management-list-content .table th,
+.management-column:nth-child(2) .management-list-content .table td{padding:7px 4px;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word}
+.management-column:nth-child(2) .management-list-content .table th:nth-child(1),
+.management-column:nth-child(2) .management-list-content .table td:nth-child(1){width:17%}
+.management-column:nth-child(2) .management-list-content .table th:nth-child(2),
+.management-column:nth-child(2) .management-list-content .table td:nth-child(2){width:15%}
+.management-column:nth-child(2) .management-list-content .table th:nth-child(3),
+.management-column:nth-child(2) .management-list-content .table td:nth-child(3){width:16%}
+.management-column:nth-child(2) .management-list-content .table th:nth-child(4),
+.management-column:nth-child(2) .management-list-content .table td:nth-child(4){width:7%}
+.management-column:nth-child(2) .management-list-content .table th:nth-child(5),
+.management-column:nth-child(2) .management-list-content .table td:nth-child(5){width:22%}
+.management-column:nth-child(2) .management-list-content .table th:nth-child(6),
+.management-column:nth-child(2) .management-list-content .table td:nth-child(6){width:11%}
+.management-column:nth-child(2) .management-list-content .table th:nth-child(7),
+.management-column:nth-child(2) .management-list-content .table td:nth-child(7){width:12%}
+.management-column:nth-child(2) .management-list-content .table ul{padding-left:14px!important}
+.management-column:nth-child(2) .management-list-content .table .actions{display:flex;gap:3px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap;width:100%;max-width:100%}
+.management-column:nth-child(2) .management-list-content .table .master-action{width:42px;min-width:42px;height:28px;padding:2px 3px;font-size:10px}
+.management-column:nth-child(2) .management-list-content .table .master-action-form{margin:0;display:inline-flex;flex:0 0 auto}
 .signature-preview{margin-top:8px;padding:8px;border:1px solid #ddd;background:#fff;display:inline-block}
 .signature-preview img{display:block;max-width:240px;max-height:90px;object-fit:contain}
 </style>
