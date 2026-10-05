@@ -1126,8 +1126,27 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
 (function(){
  const body=document.getElementById('ppmpEntryBody'),add=document.getElementById('ppmpAddRow'),grand=document.getElementById('ppmpGrandTotal'); if(!body||!add)return;
  function renumber(){[...body.querySelectorAll('.ppmp-entry-row')].forEach((row,i)=>{row.querySelector('.ppmp-row-number').textContent=i+1;row.querySelectorAll('[name]').forEach(el=>el.name=el.name.replace(/items\[\d+\]/,'items['+i+']'));});}
- function calc(){let g=0;body.querySelectorAll('.ppmp-entry-row').forEach(row=>{let q=parseFloat((row.querySelector('.ppmp-row-qty')?.value||'').replace(/,/g,''))||0,p=parseFloat((row.querySelector('.ppmp-row-unit-price')?.value||'').replace(/,/g,''))||0,t=q*p;g+=t;row.querySelector('.ppmp-row-total').value=t?t.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'';});if(grand)grand.textContent=g.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
- function bind(row){row.querySelectorAll('.ppmp-row-qty,.ppmp-row-unit-price').forEach(x=>x.addEventListener('input',calc));row.querySelector('.ppmp-remove-row')?.addEventListener('click',()=>{if(body.querySelectorAll('.ppmp-entry-row').length===1){row.querySelectorAll('input,textarea,select').forEach(x=>{if(x.type!=='hidden')x.value=''});calc();return;}row.remove();renumber();calc();});}
+ function formatNumberInput(field,finalize){
+   if(!field)return;
+   let raw=String(field.value||'').replace(/,/g,'').replace(/[^0-9.]/g,'');
+   if(raw===''){field.value='';return;}
+   const parts=raw.split('.');
+   let integer=(parts[0]||'0').replace(/^0+(?=\d)/,'');
+   integer=integer.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+   let value=integer;
+   if(parts.length>1)value+='.'+(parts.slice(1).join('').slice(0,2));
+   if(finalize && value.indexOf('.')<0)value+='.00';
+   else if(finalize && value.indexOf('.')>=0)value=(parseFloat(value.replace(/,/g,''))||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+   field.value=value;
+ }
+ function calc(){let g=0;body.querySelectorAll('.ppmp-entry-row').forEach(row=>{let q=parseFloat((row.querySelector('.ppmp-row-qty')?.value||'').replace(/,/g,''))||0,p=parseFloat((row.querySelector('.ppmp-row-unit-price')?.value||'').replace(/,/g,''))||0,t=q*p;g+=t;row.querySelector('.ppmp-row-total').value=t?t.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'';});if(grand)grand.textContent=g.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+ function bind(row){
+   row.querySelectorAll('.ppmp-row-qty,.ppmp-row-unit-price').forEach(x=>{
+     x.addEventListener('input',function(){formatNumberInput(this,false);calc();});
+     x.addEventListener('blur',function(){formatNumberInput(this,true);calc();});
+   });
+   row.querySelector('.ppmp-remove-row')?.addEventListener('click',()=>{if(body.querySelectorAll('.ppmp-entry-row').length===1){row.querySelectorAll('input,textarea,select').forEach(x=>{if(x.type!=='hidden')x.value=''});calc();return;}row.remove();renumber();calc();});
+ }
  add.addEventListener('click',()=>{let row=body.querySelector('.ppmp-entry-row').cloneNode(true);row.querySelectorAll('input,textarea').forEach(x=>x.value='');row.querySelectorAll('select').forEach(x=>x.selectedIndex=0);body.appendChild(row);renumber();bind(row);calc();});
  bind(body.querySelector('.ppmp-entry-row'));renumber();calc();
 })();
