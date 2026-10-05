@@ -3,7 +3,7 @@
 .ppmp-row-documents .ppmp-document-row{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:5px;align-items:center}
 .ppmp-row-documents .input{min-width:0}
 .ppmp-row-documents .ppmp-add-document{white-space:nowrap}
-.ppmp-entry-table .ppmp-row-number{font-weight:700;text-align:center}.ppmp-entry-table .ppmp-total-budget{border:0;background:transparent;font-weight:700;font-size:12px!important}.ppmp-entry-table .ppmp-remove-row{white-space:nowrap}
+.ppmp-entry-table .ppmp-row-number{font-weight:700;text-align:center}.ppmp-item-autocomplete{position:relative;min-width:240px}.ppmp-item-suggestions{position:absolute;left:0;right:0;top:100%;z-index:1000;background:#fff;border:1px solid #cfd6df;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;display:none}.ppmp-item-suggestion{display:block;width:100%;padding:8px 10px;border:0;background:#fff;text-align:left;cursor:pointer;font-size:13px}.ppmp-item-suggestion:hover,.ppmp-item-suggestion:focus{background:#eef5ff}.ppmp-item-suggestion small{display:block;color:#6b7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ppmp-entry-table .ppmp-total-budget{border:0;background:transparent;font-weight:700;font-size:12px!important}.ppmp-entry-table .ppmp-remove-row{white-space:nowrap}
 </style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
@@ -57,6 +57,11 @@ try{
     INDEX idx_ppmp_review_area (area_id)
   ) ENGINE=InnoDB");
 }catch(PDOException $e){}
+
+$ppmpMasterlistRows=[];
+try{
+  $ppmpMasterlistRows=$pdo->query("SELECT id,item_name,technical_specifications FROM ppmp_masterlist WHERE TRIM(item_name)<>'' ORDER BY item_name ASC,id ASC")->fetchAll();
+}catch(PDOException $e){ $ppmpMasterlistRows=[]; }
 
 $currentFiscalYear=(int)date('Y');
 $entryFiscalYears=range($currentFiscalYear,$currentFiscalYear+3);
@@ -823,8 +828,8 @@ pageStart('Project Procurement Management Plan');
               <td class="ppmp-row-number">1</td>
               <td><select class="select" name="items[0][category_id]" required><option value="">Select</option><?php foreach($cats as $c):?><option value="<?=$c['id']?>"><?=e($c['name'])?></option><?php endforeach;?></select></td>
               <td><select class="select" name="items[0][procurement_type]" required><option value="">Select</option><?php foreach($classifications as $c):?><option value="<?=e($c['name'])?>"><?=e($c['name'])?></option><?php endforeach;?></select></td>
-              <td><input class="input" name="items[0][item_name]" required></td>
-              <td><textarea class="input" name="items[0][description]" rows="2" required></textarea></td>
+              <td><div class="ppmp-item-autocomplete"><input class="input ppmp-item-name" name="items[0][item_name]" required autocomplete="off"><div class="ppmp-item-suggestions" role="listbox"></div></div></td>
+              <td><textarea class="input ppmp-item-description" name="items[0][description]" rows="2" required></textarea></td>
               <td><input class="input ppmp-row-qty" name="items[0][quantity]" inputmode="decimal" required></td>
               <td><select class="select" name="items[0][unit]" required><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>"><?=e($u['name'])?></option><?php endforeach;?></select></td>
               <td><input class="input ppmp-row-unit-price" name="items[0][unit_price]" inputmode="decimal" required></td>
@@ -1180,6 +1185,59 @@ function ppmpPrintDate($value): string{
 </div>
 <?php endif; ?>
 <script>
+(function(){
+  const masterlist=<?= json_encode($ppmpMasterlistRows, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT) ?>;
+  function closeSuggestions(box){const list=box&&box.querySelector('.ppmp-item-suggestions');if(list){list.innerHTML='';list.style.display='none';}}
+  function showSuggestions(input){
+    const box=input.closest('.ppmp-item-autocomplete'), list=box&&box.querySelector('.ppmp-item-suggestions');
+    if(!box||!list)return;
+    const term=String(input.value||'').trim().toLowerCase();
+    list.innerHTML='';
+    if(!term){closeSuggestions(box);return;}
+    const matches=masterlist.filter(function(item){return String(item.item_name||'').toLowerCase().includes(term);}).slice(0,20);
+    if(!matches.length){closeSuggestions(box);return;}
+    matches.forEach(function(item){
+      const button=document.createElement('button');
+      button.type='button';button.className='ppmp-item-suggestion';button.setAttribute('role','option');
+      button.dataset.itemId=item.id;
+      button.dataset.itemName=item.item_name||'';
+      button.dataset.specifications=item.technical_specifications||'';
+      button.innerHTML='<strong>'+escapeHtml(item.item_name||'')+'</strong>'+(item.technical_specifications?'<small>'+escapeHtml(item.technical_specifications)+'</small>':'');
+      list.appendChild(button);
+    });
+    list.style.display='block';
+  }
+  function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
+  function bindItemAutocomplete(row){
+    if(!row)return;
+    const input=row.querySelector('.ppmp-item-name'), box=input&&input.closest('.ppmp-item-autocomplete');
+    if(!input||!box||input.dataset.autocompleteBound==='1')return;
+    input.dataset.autocompleteBound='1';
+    input.addEventListener('input',function(){showSuggestions(this);});
+    input.addEventListener('focus',function(){if(this.value.trim())showSuggestions(this);});
+    input.addEventListener('keydown',function(e){
+      const list=box.querySelector('.ppmp-item-suggestions');
+      if(e.key==='Escape'){closeSuggestions(box);return;}
+      if(e.key==='ArrowDown'&&list&&list.style.display==='block'){
+        e.preventDefault();const first=list.querySelector('.ppmp-item-suggestion');if(first)first.focus();
+      }
+    });
+    box.addEventListener('click',function(e){
+      const button=e.target.closest('.ppmp-item-suggestion');if(!button)return;
+      input.value=button.dataset.itemName||'';
+      const description=row.querySelector('.ppmp-item-description');
+      if(description)description.value=button.dataset.specifications||'';
+      closeSuggestions(box);input.focus();
+    });
+  }
+  document.querySelectorAll('#ppmpEntryBody .ppmp-entry-row').forEach(bindItemAutocomplete);
+  document.addEventListener('click',function(e){
+    document.querySelectorAll('.ppmp-item-autocomplete').forEach(function(box){if(!box.contains(e.target))closeSuggestions(box);});
+  });
+  window.ppmpBindItemAutocomplete=bindItemAutocomplete;
+})();
+</script>
+<script>
 function printPpmp(paper){
   const sheet=document.getElementById('ppmpPrintSheet');
   if(sheet){sheet.classList.remove('paper-a4','paper-long');sheet.classList.add(paper==='a4'?'paper-a4':'paper-long');}
@@ -1425,7 +1483,7 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
 </script><script>
 (function(){
  const body=document.getElementById('ppmpEntryBody'),add=document.getElementById('ppmpAddRow'),grand=document.getElementById('ppmpGrandTotal'); if(!body||!add)return;
- function renumber(){[...body.querySelectorAll('.ppmp-entry-row')].forEach((row,i)=>{row.querySelector('.ppmp-row-number').textContent=i+1;row.querySelectorAll('[name]').forEach(el=>el.name=el.name.replace(/items\[\d+\]/,'items['+i+']'));});}
+ function renumber(){[...body.querySelectorAll('.ppmp-entry-row')].forEach((row,i)=>{row.querySelector('.ppmp-row-number').textContent=i+1;row.querySelectorAll('[name]').forEach(el=>el.name=el.name.replace(/items\[\d+\]/,'items['+i+']'));if(window.ppmpBindItemAutocomplete)window.ppmpBindItemAutocomplete(row);});}
  function formatNumberInput(field,finalize){
    if(!field)return;
    let raw=String(field.value||'').replace(/,/g,'').replace(/[^0-9.]/g,'');
