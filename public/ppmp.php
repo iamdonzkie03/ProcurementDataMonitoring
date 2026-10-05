@@ -685,8 +685,8 @@ pageStart('Project Procurement Management Plan');
               <option value="<?=e($currentUserName)?>" data-area-id="<?=$divisionHeadAreaId?>" data-position="<?=e($divisionHeadRecord['head_position_designation']??'')?>" selected><?=e($currentUserName)?></option>
               <?php else: ?><?php foreach($personnelByArea as $personAreaId=>$people): foreach($people as $person): ?>
               <option value="<?=e($person['name'])?>" data-area-id="<?=$personAreaId?>" data-position="<?=e($person['position_designation']??'')?>" <?=($areaHeadName!=='' && $areaHeadName===$person['name'] && $areaId===(int)$personAreaId)?'selected':''?>><?=e($person['name'])?></option>
-            <?php endforeach; endforeach; ?
-              <?php endif; ?>>
+            <?php endforeach; endforeach; ?>
+              <?php endif; ?>
           </select>
         </div>
         <div class="field">
