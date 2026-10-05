@@ -167,6 +167,50 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $saved++;
       }
       if($saved===0) throw new RuntimeException('No valid PPMP item rows were submitted.');
+
+      // Saving a new PPMP automatically places it in the Supervisor review queue.
+      $stReviewSave=$pdo->prepare("SELECT id,status FROM ppmp_reviews WHERE fiscal_year=? AND area_id=? AND ppmp_no=? LIMIT 1");
+      $stReviewSave->execute([$year,$areaId,$bulkPpmpNo]);
+      $existingReview=$stReviewSave->fetch();
+
+      if($existingReview){
+        if(in_array((string)$existingReview['status'],['Draft','Declined'],true)){
+          $stReviewUpdate=$pdo->prepare("UPDATE ppmp_reviews
+            SET status='Pending for Review',
+                submitted_by=?,
+                submitted_at=CURRENT_TIMESTAMP,
+                supervisor_reviewed_by=NULL,
+                supervisor_reviewed_at=NULL,
+                budget_reviewed_by=NULL,
+                budget_reviewed_at=NULL,
+                remarks=NULL,
+                updated_at=CURRENT_TIMESTAMP
+            WHERE id=?");
+          $stReviewUpdate->execute([(int)(currentUser()['id']??0), (int)$existingReview['id']]);
+        }
+        $reviewId=(int)$existingReview['id'];
+      }else{
+        $stReviewInsert=$pdo->prepare("INSERT INTO ppmp_reviews
+          (fiscal_year,area_id,ppmp_no,status,submitted_by,submitted_at)
+          VALUES (?,?,?,'Pending for Review',?,CURRENT_TIMESTAMP)");
+        $stReviewInsert->execute([$year,$areaId,$bulkPpmpNo,(int)(currentUser()['id']??0)]);
+        $reviewId=(int)$pdo->lastInsertId();
+      }
+
+      // Ensure every saved PPMP item has a corresponding Supervisor review row.
+      $stSavedItems=$pdo->prepare("SELECT id FROM ppmp_items WHERE fiscal_year=? AND area_id=? AND ppmp_no=? ORDER BY id");
+      $stSavedItems->execute([$year,$areaId,$bulkPpmpNo]);
+      $stReviewItem=$pdo->prepare("SELECT id FROM ppmp_review_items WHERE review_id=? AND ppmp_item_id=? LIMIT 1");
+      $stInsertReviewItem=$pdo->prepare("INSERT INTO ppmp_review_items
+        (review_id,ppmp_item_id,status)
+        VALUES (?,?,'Pending for Review')");
+      foreach($stSavedItems->fetchAll(PDO::FETCH_COLUMN) as $savedItemId){
+        $stReviewItem->execute([$reviewId,(int)$savedItemId]);
+        if(!$stReviewItem->fetchColumn()){
+          $stInsertReviewItem->execute([$reviewId,(int)$savedItemId]);
+        }
+      }
+
       $pdo->commit();
     }catch(Throwable $e){ if($pdo->inTransaction())$pdo->rollBack(); ppmpSaveFormError('Unable to save the PPMP items: '.$e->getMessage(),$year,$areaId); }
     flash('success',$saved.' PPMP item(s) saved under '.$bulkPpmpNo.'.'); header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
