@@ -29,9 +29,12 @@ try{
 if($_SERVER['REQUEST_METHOD']==='POST'){
   checkCsrf();
   $id=(int)($_POST['id']??0);
-  $itemName=trim((string)($_POST['item_name']??''));
-  $uom=trim((string)($_POST['unit_of_measurement']??''));
-  $unitCostRaw=trim((string)($_POST['unit_cost']??''));
+  $itemNames=(array)($_POST['item_name']??[]);
+  $uoms=(array)($_POST['unit_of_measurement']??[]);
+  $unitCosts=(array)($_POST['unit_cost']??[]);
+  $itemName=trim((string)($itemNames[0]??''));
+  $uom=trim((string)($uoms[0]??''));
+  $unitCostRaw=trim((string)($unitCosts[0]??''));
   $unitCost=is_numeric($unitCostRaw)?(float)$unitCostRaw:-1;
   $userId=(int)(currentUser()['id']??0);
 
@@ -47,6 +50,28 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         flash('error','Unable to delete the masterlist item.');
       }
     }
+    header('Location:ppmp_masterlist.php'); exit;
+  }
+
+  if($action==='save' && !$editId && count($itemNames)>1){
+    $validRows=[];
+    foreach($itemNames as $i=>$name){
+      $name=trim((string)$name); $measure=trim((string)($uoms[$i]??'')); $costRaw=trim((string)($unitCosts[$i]??''));
+      if($name==='' && $measure==='' && $costRaw==='') continue;
+      $cost=is_numeric($costRaw)?(float)$costRaw:-1;
+      if($name==='' || $measure==='' || $costRaw==='' || $cost<0){
+        flash('error','Each masterlist row must have Item Name, Unit of Measurement, and a valid Unit Cost.');
+        header('Location:ppmp_masterlist.php'); exit;
+      }
+      $validRows[]=[$name,$measure,$cost];
+    }
+    if(!$validRows){ flash('error','Add at least one masterlist item.'); header('Location:ppmp_masterlist.php'); exit; }
+    try{
+      $pdo->beginTransaction();
+      $st=$pdo->prepare('INSERT INTO ppmp_masterlist (item_name,unit_of_measurement,unit_cost,created_by,updated_by) VALUES (?,?,?,?,?)');
+      foreach($validRows as $row) $st->execute([$row[0],$row[1],$row[2],$userId,$userId]);
+      $pdo->commit(); flash('success',count($validRows).' PPMP Masterlist item(s) added.');
+    }catch(PDOException $e){ if($pdo->inTransaction())$pdo->rollBack(); flash('error','Unable to save the PPMP Masterlist items.'); }
     header('Location:ppmp_masterlist.php'); exit;
   }
 
@@ -86,6 +111,27 @@ $masterlist=$st->fetchAll();
 
 pageStart('PPMP Masterlist');
 ?>
+
+<style>
+.masterlist-row{margin-bottom:10px}
+.masterlist-row + .masterlist-row{padding-top:10px;border-top:1px solid #eee}
+.masterlist-remove-row{white-space:nowrap}
+</style>
+<script>
+(function(){
+  const button=document.getElementById('addMasterlistRow');
+  const container=document.getElementById('masterlistRows');
+  if(!button||!container)return;
+  button.addEventListener('click',function(){
+    const row=container.querySelector('.masterlist-row').cloneNode(true);
+    row.querySelectorAll('input').forEach(function(input){input.value='';});
+    const action=row.querySelector('.masterlist-submit');
+    action.innerHTML='<button class="btn danger masterlist-remove-row" type="button">Remove</button>';
+    action.querySelector('button').addEventListener('click',function(){row.remove();});
+    container.appendChild(row);
+  });
+})();
+</script>
 <style>
 .masterlist-toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
 .masterlist-toolbar h2{margin:0}
@@ -115,24 +161,20 @@ pageStart('PPMP Masterlist');
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="<?= $editing ? 'update' : 'save' ?>">
     <?php if($editing): ?><input type="hidden" name="id" value="<?=e((string)$editing['id'])?>"><?php endif; ?>
-    <div class="masterlist-form-grid">
-      <div class="field">
-        <label>Item Name *</label>
-        <input class="input" type="text" name="item_name" required maxlength="255" value="<?=e($editing['item_name']??'')?>" placeholder="Enter item name">
-      </div>
-      <div class="field">
-        <label>Unit of Measurement *</label>
-        <input class="input" type="text" name="unit_of_measurement" required maxlength="100" value="<?=e($editing['unit_of_measurement']??'')?>" placeholder="e.g. pc, box, set">
-      </div>
-      <div class="field">
-        <label>Unit Cost *</label>
-        <input class="input" type="number" name="unit_cost" required min="0" step="0.01" inputmode="decimal" value="<?= $editing ? e(number_format((float)$editing['unit_cost'],2,'.','')) : '' ?>" placeholder="0.00">
-      </div>
-      <div class="masterlist-submit">
-        <button class="btn" type="submit"><?= $editing ? 'Update Item' : 'Add Item' ?></button>
-        <?php if($editing): ?><a class="btn secondary" href="ppmp_masterlist.php">Cancel</a><?php endif; ?>
+    <div id="masterlistRows">
+      <div class="masterlist-row masterlist-form-grid">
+        <div class="field"><label>Item Name *</label><input class="input" type="text" name="item_name[]" required maxlength="255" value="<?=e($editing['item_name']??'')?>" placeholder="Enter item name"></div>
+        <div class="field"><label>Unit of Measurement *</label><input class="input" type="text" name="unit_of_measurement[]" required maxlength="100" value="<?=e($editing['unit_of_measurement']??'')?>" placeholder="e.g. pc, box, set"></div>
+        <div class="field"><label>Unit Cost *</label><input class="input" type="number" name="unit_cost[]" required min="0" step="0.01" inputmode="decimal" value="<?= $editing ? e(number_format((float)$editing['unit_cost'],2,'.','')) : '' ?>" placeholder="0.00"></div>
+        <div class="masterlist-submit"><button class="btn" type="submit"><?= $editing ? 'Update Item' : 'Add Item' ?></button><?php if($editing): ?><a class="btn secondary" href="ppmp_masterlist.php">Cancel</a><?php endif; ?></div>
       </div>
     </div>
+    <?php if(!$editing): ?>
+    <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+      <button class="btn secondary" type="button" id="addMasterlistRow">+ Add Row</button>
+      <span class="muted">Add multiple items before saving.</span>
+    </div>
+    <?php endif; ?>
   </form>
 </div>
 
