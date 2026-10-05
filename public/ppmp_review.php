@@ -159,17 +159,28 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 $supervisorQueue=[];$budgetQueue=[];
 $stQueue=$pdo->prepare("SELECT r.*,a.name area,d.name division,u.full_name submitted_by_name,
-  COUNT(DISTINCT p.id) item_count,COALESCE(SUM(CASE WHEN p.total_budget IS NULL OR p.total_budget=0 THEN p.quantity*p.unit_price ELSE p.total_budget END),0) total_abc
-  FROM ppmp_reviews r JOIN areas a ON a.id=r.area_id JOIN divisions d ON d.id=a.division_id
+  COUNT(DISTINCT p.id) item_count,
+  COUNT(DISTINCT CASE WHEN pri_pending.status='Pending for Review' THEN pri_pending.id END) pending_review_count,
+  COALESCE(SUM(CASE WHEN p.total_budget IS NULL OR p.total_budget=0 THEN p.quantity*p.unit_price ELSE p.total_budget END),0) total_abc
+  FROM ppmp_reviews r
+  JOIN areas a ON a.id=r.area_id
+  JOIN divisions d ON d.id=a.division_id
   LEFT JOIN users u ON u.id=r.submitted_by
   LEFT JOIN ppmp_items p ON p.fiscal_year=r.fiscal_year AND p.area_id=r.area_id AND p.ppmp_no=r.ppmp_no
-  WHERE r.status IN ('Pending for Review','Pending for Approval')
-    AND d.id=?
+  LEFT JOIN ppmp_review_items pri_pending ON pri_pending.review_id=r.id AND pri_pending.ppmp_item_id=p.id
+  WHERE d.id=?
+    AND EXISTS (
+      SELECT 1 FROM ppmp_review_items pri
+      WHERE pri.review_id=r.id AND pri.status='Pending for Review'
+    )
   GROUP BY r.id ORDER BY r.updated_at DESC");
 $stQueue->execute([currentLoginDivisionId()]);
 foreach($stQueue->fetchAll() as $item){
-  if($item['status']==='Pending for Review' && isSupervisorForArea($pdo,(int)$item['area_id'],$userName))$supervisorQueue[]=$item;
-  if($item['status']==='Pending for Approval' && isBudgetOfficerForArea($pdo,(int)$item['area_id'],$userName))$budgetQueue[]=$item;
+  // Division Heads see every PPMP in their division that still has at least
+  // one item pending supervisor review, regardless of the parent review status.
+  if((int)($item['pending_review_count']??0)>0 && isSupervisorForArea($pdo,(int)$item['area_id'],$userName)){
+    $supervisorQueue[]=$item;
+  }
 }
 
 $reviewId=(int)($_GET['review_id']??0);$review=null;$items=[];
