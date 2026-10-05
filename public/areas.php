@@ -472,13 +472,13 @@ if(!$embedded) pageStart('Area/Unit Management');
 .management-column:first-child .management-list-content .table th,
 .management-column:first-child .management-list-content .table td{padding:8px 6px;vertical-align:middle;overflow-wrap:anywhere}
 .management-column:first-child .management-list-content .table th:nth-child(1),
-.management-column:first-child .management-list-content .table td:nth-child(1){width:27%}
+.management-column:first-child .management-list-content .table td:nth-child(1){width:25%}
 .management-column:first-child .management-list-content .table th:nth-child(2),
-.management-column:first-child .management-list-content .table td:nth-child(2){width:27%}
+.management-column:first-child .management-list-content .table td:nth-child(2){width:25%}
 .management-column:first-child .management-list-content .table th:nth-child(3),
-.management-column:first-child .management-list-content .table td:nth-child(3){width:25%}
+.management-column:first-child .management-list-content .table td:nth-child(3){width:30%}
 .management-column:first-child .management-list-content .table th:nth-child(4),
-.management-column:first-child .management-list-content .table td:nth-child(4){width:21%}
+.management-column:first-child .management-list-content .table td:nth-child(4){width:20%}
 .management-column:first-child .management-list-content .table .actions{display:flex;gap:4px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap}
 .management-column:first-child .management-list-content .table .master-action{width:60px;min-width:60px;height:32px;padding:4px 5px;font-size:12px}
 .management-column:first-child .management-list-content .table .master-action-form{margin:0;display:inline-flex;flex:0 0 auto}
