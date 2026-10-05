@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded',function(){
 (function(){
 
   const button=document.getElementById('addMasterlistRow');
+  const saveButton=document.getElementById('saveMasterlistItems');
   const container=document.getElementById('masterlistRows');
   if(!container)return;
 
@@ -169,22 +170,33 @@ document.addEventListener('DOMContentLoaded',function(){
     setTimeout(function(){formatNumberInput(e.target,false);},0);
   });
 
-  if(button){
-    button.addEventListener('click',function(){
-      const first=container.querySelector('.masterlist-row');
-      if(!first)return;
-      const row=first.cloneNode(true);
-      row.querySelectorAll('input,textarea').forEach(function(input){input.value='';});
-      const uomSelect=row.querySelector('select[name="unit_of_measurement[]"]');
-      if(uomSelect)uomSelect.selectedIndex=0;
-      const action=row.querySelector('.masterlist-submit');
-      if(action){
-        action.innerHTML='<button class="btn danger masterlist-remove-row" type="button">Remove</button>';
-        action.querySelector('button').addEventListener('click',function(){row.remove();});
-      }
-      container.appendChild(row);
-    });
+  function updateSaveButton(){
+    if(!saveButton)return;
+    const count=container.querySelectorAll('.masterlist-row').length;
+    saveButton.textContent=count>=2?'Save Items':'Save Item';
   }
+
+  function addMasterlistRow(){
+    const first=container.querySelector('.masterlist-row');
+    if(!first)return;
+    const row=first.cloneNode(true);
+    row.querySelectorAll('input,textarea').forEach(function(input){input.value='';});
+    const uomSelect=row.querySelector('select[name="unit_of_measurement[]"]');
+    if(uomSelect)uomSelect.selectedIndex=0;
+    const action=row.querySelector('.masterlist-submit');
+    if(action){
+      action.innerHTML='<button class="btn danger masterlist-remove-row" type="button">Remove</button>';
+      action.querySelector('button').addEventListener('click',function(){row.remove();updateSaveButton();});
+    }
+    container.appendChild(row);
+    updateSaveButton();
+  }
+
+  if(button){
+    button.addEventListener('click',addMasterlistRow);
+  }
+
+  updateSaveButton();
 })();
 
 });
@@ -225,13 +237,13 @@ document.addEventListener('DOMContentLoaded',function(){
         <div class="field"><label>Technical Specifications</label><textarea class="input" name="technical_specifications[]" rows="3" maxlength="5000" placeholder="Enter technical specifications"><?=e($editing['technical_specifications']??'')?></textarea></div>
         <div class="field"><label>Unit of Measurement *</label><select class="input" name="unit_of_measurement[]" required><option value="">Select Unit</option><?php foreach($uomRows as $uomRow): ?><option value="<?=e($uomRow['name'])?>" <?=($editing['unit_of_measurement']??'')===$uomRow['name']?'selected':''?>><?=e($uomRow['name'])?></option><?php endforeach; ?></select></div>
         <div class="field"><label>Unit Cost *</label><input class="input masterlist-unit-cost" type="text" name="unit_cost[]" required inputmode="decimal" autocomplete="off" maxlength="21" value="<?= $editing ? e(number_format((float)$editing['unit_cost'],2,'.',',')) : '' ?>" placeholder="0.00"></div>
-        <div class="masterlist-submit"><button class="btn" type="submit"><?= $editing ? 'Update Item' : 'Add Item' ?></button><?php if($editing): ?><a class="btn secondary" href="ppmp_masterlist.php">Cancel</a><?php endif; ?></div>
+        <div class="masterlist-submit"><button class="btn" type="button" id="addMasterlistRow"><?= $editing ? 'Update Item' : 'Add Row' ?></button><?php if($editing): ?><a class="btn secondary" href="ppmp_masterlist.php">Cancel</a><?php endif; ?></div>
       </div>
     </div>
     <?php if(!$editing): ?>
     <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
-      <button class="btn secondary" type="button" id="addMasterlistRow">+ Add Row</button>
-      <span class="muted">Add multiple items before saving.</span>
+      <button class="btn secondary" type="submit" id="saveMasterlistItems">Save Item</button>
+      <span class="muted">Use Add Row to add more items before saving.</span>
     </div>
     <?php endif; ?>
   </form>
