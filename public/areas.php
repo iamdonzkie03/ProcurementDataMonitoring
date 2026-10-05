@@ -339,7 +339,7 @@ if(!$embedded) pageStart('Area/Unit Management');
       <div class="management-list-content">
         <h2>Division/Department List</h2>
         <div class="table-wrap"><table class="table">
-          <tr><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized</th><th>Actions</th></tr>
+          <tr><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized Person</th><th>Actions</th></tr>
           <?php foreach($divisions as $d): ?>
           <tr>
             <td><?=e($d['name'])?></td>
