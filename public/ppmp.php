@@ -122,9 +122,31 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     try{
       foreach($items as $item){
         if(!is_array($item)) continue;
-        $qty=max(0,(float)str_replace(',','',$item['quantity']??0)); $unitPrice=max(0,(float)str_replace(',','',$item['unit_price']??0));
-        if(trim($item['item_name']??'')===''||trim($item['description']??'')===''||(int)($item['category_id']??0)<=0) throw new RuntimeException('Every PPMP row must have Category, Item Name, and Technical Specifications.');
-        $insert->execute([$year,$bulkPpmpNo,$areaId,(int)$item['category_id'],trim($item['item_name']),trim($item['description']),trim($item['procurement_type']??''),$qty,trim($item['unit']??''),trim($item['procurement_mode']??''),trim($item['preprocurement_conference']??''),trim($item['start_procurement']??''),trim($item['end_procurement']??''),trim($item['delivery_period']??''),trim($item['source_of_funds']??''),$unitPrice,$qty*$unitPrice,$docsJson,$requestedBy,$preparedBy,$preparedPosition,'','','','',null,null,null,trim($item['remarks']??''),currentUser()['id']); $saved++;
+        $categoryId=(int)($item['category_id']??0);
+        $itemName=trim((string)($item['item_name']??''));
+        $description=trim((string)($item['description']??''));
+        $procurementType=trim((string)($item['procurement_type']??''));
+        $qty=max(0,(float)str_replace(',','',(string)($item['quantity']??0)));
+        $unit=trim((string)($item['unit']??''));
+        $unitPrice=max(0,(float)str_replace(',','',(string)($item['unit_price']??0)));
+        $procurementMode=trim((string)($item['procurement_mode']??''));
+        $preprocurement=trim((string)($item['preprocurement_conference']??''));
+        $startProcurement=trim((string)($item['start_procurement']??''));
+        $endProcurement=trim((string)($item['end_procurement']??''));
+        $deliveryPeriod=trim((string)($item['delivery_period']??''));
+        $sourceOfFunds=trim((string)($item['source_of_funds']??''));
+        $remarks=trim((string)($item['remarks']??''));
+        if($itemName===''||$description===''||$categoryId<=0){
+          throw new RuntimeException('Every PPMP row must have Category, Item Name, and Technical Specifications.');
+        }
+        $createdBy=(int)(currentUser()['id']??0);
+        $insertValues=array(
+          $year,$bulkPpmpNo,$areaId,$categoryId,$itemName,$description,$procurementType,$qty,$unit,$procurementMode,
+          $preprocurement,$startProcurement,$endProcurement,$deliveryPeriod,$sourceOfFunds,$unitPrice,$qty*$unitPrice,
+          $docsJson,$requestedBy,$preparedBy,$preparedPosition,'','','','',null,null,null,$remarks,$createdBy
+        );
+        $insert->execute($insertValues);
+        $saved++;
       }
       if($saved===0) throw new RuntimeException('No valid PPMP item rows were submitted.');
       $pdo->commit();
