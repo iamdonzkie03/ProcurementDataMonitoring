@@ -55,8 +55,11 @@ $userName=trim((string)($user['full_name']??''));
 
 function isSupervisorForArea(PDO $pdo,int $areaId,string $userName): bool{
   if(currentLoginDivisionId()<=0 || $userName==='') return false;
+  // A Division/Department Head supervises every Area/Unit within the same
+  // division. Do not require an Area/Unit assignment on the user account.
   $st=$pdo->prepare("SELECT COUNT(*) FROM areas a JOIN divisions d ON d.id=a.division_id
-    WHERE a.id=? AND d.id=? AND d.ppmp_supervisor_enabled=1 AND d.division_head=?");
+    WHERE a.id=? AND d.id=? AND d.ppmp_supervisor_enabled=1
+      AND LOWER(TRIM(d.division_head))=LOWER(TRIM(?))");
   $st->execute([$areaId,currentLoginDivisionId(),$userName]);
   return (int)$st->fetchColumn()>0;
 }
