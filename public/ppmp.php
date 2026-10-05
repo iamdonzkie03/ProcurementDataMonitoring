@@ -1073,12 +1073,17 @@ function ppmpPrintDate($value): string{
   text-align:center;
 }
 .ppmp-signature-template .signature-line img{
-  width:180px;
-  height:70px;
+  width:180px !important;
+  height:70px !important;
+  min-width:180px !important;
+  max-width:180px !important;
+  min-height:70px !important;
+  max-height:70px !important;
   object-fit:contain;
+  object-position:center;
   display:block;
   margin:0 auto 2px;
-  flex:0 0 auto;
+  flex:0 0 180px;
 }
 .ppmp-signature-template .signature-line span{
   display:block;
@@ -1096,8 +1101,13 @@ function ppmpPrintDate($value): string{
     gap:12px;
   }
   .ppmp-signature-template .signature-line img{
-    width:180px;
-    height:70px;
+    width:180px !important;
+    height:70px !important;
+    min-width:180px !important;
+    max-width:180px !important;
+    min-height:70px !important;
+    max-height:70px !important;
+    object-fit:contain;
   }
 }
 </style>
