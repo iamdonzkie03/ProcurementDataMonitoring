@@ -204,17 +204,17 @@ document.addEventListener('DOMContentLoaded',function(){
 <style>
 .masterlist-toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
 .masterlist-toolbar h2{margin:0}
-.masterlist-form-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:16px;align-items:start}
+.masterlist-form-grid{display:grid;grid-template-columns:minmax(0,20fr) minmax(0,45fr) minmax(0,15fr) minmax(0,20fr) auto;gap:16px;align-items:start}
 .masterlist-form-grid .field{margin:0}
-.masterlist-form-grid .masterlist-field-group{display:flex;flex-direction:column;gap:10px}
-.masterlist-form-grid .masterlist-field-group .field{width:100%}
+.masterlist-form-grid .masterlist-field{width:100%}
+.masterlist-form-grid .masterlist-field .input{width:100%}
 .masterlist-form-grid .masterlist-submit{display:flex;align-items:center;justify-content:center;height:100%;min-width:105px;padding-top:22px}
 .masterlist-form-grid .masterlist-submit .btn{white-space:nowrap}
 .masterlist-actions{display:flex;gap:6px;align-items:center;white-space:nowrap}
 .masterlist-actions form{margin:0}
 .masterlist-table th,.masterlist-table td{vertical-align:middle}
 .masterlist-cost{text-align:right;white-space:nowrap}
-@media(max-width:1100px){.masterlist-form-grid{grid-template-columns:1fr 1fr}.masterlist-form-grid .masterlist-submit{grid-column:1/-1;justify-content:flex-start;height:auto;padding-top:0}}
+@media(max-width:1100px){.masterlist-form-grid{grid-template-columns:minmax(0,20fr) minmax(0,45fr) minmax(0,15fr) minmax(0,20fr) auto;gap:10px}.masterlist-form-grid .masterlist-submit{min-width:90px;padding-top:22px}}
 
 
 @media(max-width:600px){.masterlist-form-grid{grid-template-columns:1fr}}
@@ -238,14 +238,10 @@ document.addEventListener('DOMContentLoaded',function(){
     <?php if($editing): ?><input type="hidden" name="id" value="<?=e((string)$editing['id'])?>"><?php endif; ?>
     <div id="masterlistRows">
       <div class="masterlist-row masterlist-form-grid">
-        <div class="masterlist-field-group">
-          <div class="field"><label>Item Name *</label><input class="input" type="text" name="item_name[]" required maxlength="255" value="<?=e($editing['item_name']??'')?>" placeholder="Enter item name"></div>
-          <div class="field"><label>Technical Specifications</label><textarea class="input" name="technical_specifications[]" rows="3" maxlength="5000" placeholder="Enter technical specifications"><?=e($editing['technical_specifications']??'')?></textarea></div>
-        </div>
-        <div class="masterlist-field-group">
-          <div class="field"><label>Unit of Measurement *</label><select class="input" name="unit_of_measurement[]" required><option value="">Select Unit</option><?php foreach($uomRows as $uomRow): ?><option value="<?=e($uomRow['name'])?>" <?=($editing['unit_of_measurement']??'')===$uomRow['name']?'selected':''?>><?=e($uomRow['name'])?></option><?php endforeach; ?></select></div>
-          <div class="field"><label>Unit Cost *</label><input class="input masterlist-unit-cost" type="text" name="unit_cost[]" required inputmode="decimal" autocomplete="off" maxlength="21" value="<?= $editing ? e(number_format((float)$editing['unit_cost'],2,'.',',')) : '' ?>" placeholder="0.00"></div>
-        </div>
+        <div class="field masterlist-field"><label>Item Name *</label><input class="input" type="text" name="item_name[]" required maxlength="255" value="<?=e($editing['item_name']??'')?>" placeholder="Enter item name"></div>
+        <div class="field masterlist-field"><label>Technical Specifications</label><textarea class="input" name="technical_specifications[]" rows="3" maxlength="5000" placeholder="Enter technical specifications"><?=e($editing['technical_specifications']??'')?></textarea></div>
+        <div class="field masterlist-field"><label>Unit of Measurement *</label><select class="input" name="unit_of_measurement[]" required><option value="">Select Unit</option><?php foreach($uomRows as $uomRow): ?><option value="<?=e($uomRow['name'])?>" <?=($editing['unit_of_measurement']??'')===$uomRow['name']?'selected':''?>><?=e($uomRow['name'])?></option><?php endforeach; ?></select></div>
+        <div class="field masterlist-field"><label>Unit Cost *</label><input class="input masterlist-unit-cost" type="text" name="unit_cost[]" required inputmode="decimal" autocomplete="off" maxlength="21" value="<?= $editing ? e(number_format((float)$editing['unit_cost'],2,'.',',')) : '' ?>" placeholder="0.00"></div>
         <div class="masterlist-submit">
 <?php if($editing): ?>
   <button class="btn" type="submit">Update Item</button>
