@@ -540,6 +540,21 @@ $st=$pdo->prepare($sql);$st->execute($args);$rows=$st->fetchAll();
 // Keep all items available for page metadata, but declined items are excluded
 // from the official printed PPMP Form.
 $allPpmpRows=$rows;
+
+// Calculate the ABC totals by the current item-level review status so the
+// Saved PPMP Items workspace shows the value of items at each review stage.
+$ppmpStatusAbc=array(
+  'Pending for Review'=>0.0,
+  'Pending for Approval'=>0.0,
+  'Declined'=>0.0,
+  'Approved'=>0.0
+);
+foreach($rows as $ppmpStatusRow){
+  $ppmpStatus=(string)($ppmpStatusRow['review_status']??'');
+  if(array_key_exists($ppmpStatus,$ppmpStatusAbc)){
+    $ppmpStatusAbc[$ppmpStatus]+=(float)$ppmpStatusRow['quantity']*(float)$ppmpStatusRow['unit_price'];
+  }
+}
 if($print){
   $rows=array_values(array_filter($rows,function($r){
     return !in_array((string)($r['review_status']??''),['Declined','Budget Declined'],true);
@@ -646,6 +661,23 @@ pageStart('Project Procurement Management Plan');
 
 <div class="panel ppmp-records">
   <h2>Saved PPMP Items — FY <?=$year?><?= $selectedArea?' / '.e($selectedArea['name']):'' ?></h2>
+  <div class="table-wrap" style="margin-bottom:16px">
+    <table class="table">
+      <tr><th colspan="4">Total ABC by Item Review Status</th></tr>
+      <tr>
+        <th>Pending for Review</th>
+        <th>Pending for Approval</th>
+        <th>Declined</th>
+        <th>Approved</th>
+      </tr>
+      <tr>
+        <td><b>₱<?=number_format($ppmpStatusAbc['Pending for Review'],2)?></b></td>
+        <td><b>₱<?=number_format($ppmpStatusAbc['Pending for Approval'],2)?></b></td>
+        <td><b>₱<?=number_format($ppmpStatusAbc['Declined'],2)?></b></td>
+        <td><b>₱<?=number_format($ppmpStatusAbc['Approved'],2)?></b></td>
+      </tr>
+    </table>
+  </div>
   <div class="table-wrap"><table class="table"><tr><th>PPMP No.</th><th>Area/Unit</th><th>Item</th><th>Type</th><th>Qty / Unit</th><th>Mode</th><th>Unit Cost</th><th>Total Budget</th><th>Saved</th><th>Status</th><th>Actions</th></tr>
   <?php foreach($rows as $r):?><tr><td><?=e($r['ppmp_no'])?></td><td><?=e($r['area'])?></td><td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['procurement_type'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td><?=!empty($r['saved_at'])?e(date('F j, Y g:i A',strtotime($r['saved_at']))):e(date('F j, Y g:i A',strtotime($r['created_at'])))?></td><td><span class="ppmp-status-badge ppmp-status-<?=e(strtolower(str_replace(' ','-',(string)$r['review_status'])))?>"><?=e($r['review_status'])?></span><?php if($r['review_status']==='Declined' && !empty($r['review_remarks'])):?><br><small><?=e($r['review_remarks'])?></small><?php endif;?></td><td class="ppmp-actions-cell">
 <?php if(hasRole(['Administrator','Editor']) && (!$isPpmpSupervisor || (int)$r['created_by']===$currentUserId) && in_array($r['review_status'],['Draft','Pending for Review','Pending for Approval','Declined'],true)):?>
