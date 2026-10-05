@@ -103,7 +103,50 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if(!is_array($items)||!$items) ppmpSaveFormError('Add at least one PPMP item row.',$year,$areaId);
     if(!in_array($year,$entryFiscalYears,true)) ppmpSaveFormError('Fiscal Year is outside the permitted range.',$year,$areaId);
     $preparedBy=trim($_POST['prepared_by']??''); $requestedBy=''; $preparedPosition='';
-    if($requestedBy!==''){
+    $submittedByName='';
+    $submittedPosition='';
+
+    // A Division/Department Head creating their own PPMP must always save the
+    // PPMP against the dedicated Division/Department Area/Unit record and use
+    // the Division/Department Head as the End-User/Area Head. Do not rely on
+    // the browser's selected area/head values because those can be stale or
+    // altered before the POST reaches the server.
+    if($isDivisionHeadPpmpOwner && currentLoginDivisionId()>0){
+      $stOwnDivision=$pdo->prepare('SELECT id,name,division_head,head_position_designation
+        FROM divisions WHERE id=? AND ppmp_supervisor_enabled=1
+          AND LOWER(TRIM(division_head))=LOWER(TRIM(?)) LIMIT 1');
+      $stOwnDivision->execute([currentLoginDivisionId(),$currentUserName]);
+      $ownDivision=$stOwnDivision->fetch();
+      if(!$ownDivision){
+        ppmpSaveFormError('Unable to resolve your Division/Department Head assignment.',$year,$areaId);
+      }
+
+      $stOwnArea=$pdo->prepare('SELECT id FROM areas WHERE division_id=? AND name=? LIMIT 1');
+      $stOwnArea->execute([currentLoginDivisionId(),$ownDivision['name']]);
+      $ownDivisionAreaId=(int)$stOwnArea->fetchColumn();
+
+      if($ownDivisionAreaId<=0){
+        try{
+          $stCreateOwnArea=$pdo->prepare('INSERT INTO areas (division_id,name,code) VALUES (?,?,?)');
+          $stCreateOwnArea->execute([currentLoginDivisionId(),$ownDivision['name'],'DIV-'.currentLoginDivisionId()]);
+          $ownDivisionAreaId=(int)$pdo->lastInsertId();
+        }catch(PDOException $e){
+          $stOwnArea->execute([currentLoginDivisionId(),$ownDivision['name']]);
+          $ownDivisionAreaId=(int)$stOwnArea->fetchColumn();
+        }
+      }
+
+      if($ownDivisionAreaId<=0){
+        ppmpSaveFormError('Unable to create or locate the Division/Department Area/Unit record.',$year,$areaId);
+      }
+
+      $areaId=$ownDivisionAreaId;
+      $requestedBy=trim((string)$ownDivision['division_head']);
+      $preparedBy=$requestedBy;
+      $preparedPosition=trim((string)($ownDivision['head_position_designation']??''));
+      $submittedByName=$requestedBy;
+      $submittedPosition=$preparedPosition;
+    }elseif($requestedBy!==''){
       $stRequested=$pdo->prepare('SELECT position_designation FROM area_personnel WHERE area_id=? AND name=? LIMIT 1'); $stRequested->execute([$areaId,$requestedBy]); $requestedPerson=$stRequested->fetch();
       if(!$requestedPerson) ppmpSaveFormError('Requested By must be selected from personnel assigned to the selected Area/Unit.',$year,$areaId);
       $preparedPosition=trim($requestedPerson['position_designation']??'');
@@ -171,7 +214,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $insertValues=array(
           $year,$bulkPpmpNo,$areaId,$categoryId,$itemName,$description,$procurementType,$qty,$unit,$procurementMode,
           $preprocurement,$startProcurement,$endProcurement,$deliveryPeriod,$sourceOfFunds,$unitPrice,$qty*$unitPrice,
-          $docsJson,$requestedBy,$preparedBy,$preparedPosition,'','','','',null,null,null,$remarks,$createdBy
+          $docsJson,$requestedBy,$preparedBy,$preparedPosition,$submittedByName,$submittedPosition,'','',null,null,null,$remarks,$createdBy
         );
         $insert->execute($insertValues);
         $saved++;
