@@ -472,15 +472,15 @@ if(!$embedded) pageStart('Area/Unit Management');
 .management-column:first-child .management-list-content .table th,
 .management-column:first-child .management-list-content .table td{padding:8px 6px;vertical-align:middle;overflow-wrap:anywhere}
 .management-column:first-child .management-list-content .table th:nth-child(1),
-.management-column:first-child .management-list-content .table td:nth-child(1){width:25%}
+.management-column:first-child .management-list-content .table td:nth-child(1){width:24%}
 .management-column:first-child .management-list-content .table th:nth-child(2),
-.management-column:first-child .management-list-content .table td:nth-child(2){width:25%}
+.management-column:first-child .management-list-content .table td:nth-child(2){width:24%}
 .management-column:first-child .management-list-content .table th:nth-child(3),
-.management-column:first-child .management-list-content .table td:nth-child(3){width:30%}
+.management-column:first-child .management-list-content .table td:nth-child(3){width:27%}
 .management-column:first-child .management-list-content .table th:nth-child(4),
-.management-column:first-child .management-list-content .table td:nth-child(4){width:20%}
-.management-column:first-child .management-list-content .table .actions{display:flex;gap:4px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap}
-.management-column:first-child .management-list-content .table .master-action{width:60px;min-width:60px;height:32px;padding:4px 5px;font-size:12px}
+.management-column:first-child .management-list-content .table td:nth-child(4){width:25%}
+.management-column:first-child .management-list-content .table .actions{display:flex;gap:5px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap;width:max-content;max-width:100%}
+.management-column:first-child .management-list-content .table .master-action{width:58px;min-width:58px;height:30px;padding:3px 4px;font-size:11px}
 .management-column:first-child .management-list-content .table .master-action-form{margin:0;display:inline-flex;flex:0 0 auto}
 .signature-preview{margin-top:8px;padding:8px;border:1px solid #ddd;background:#fff;display:inline-block}
 .signature-preview img{display:block;max-width:240px;max-height:90px;object-fit:contain}
