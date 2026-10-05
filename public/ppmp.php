@@ -626,7 +626,7 @@ pageStart('Project Procurement Management Plan');
     <input type="hidden" name="fiscal_year" value="<?=e($year)?>">
     <input type="hidden" name="area_id" value="<?=e($areaId)?>">
     <input type="hidden" name="ppmp_no" value="<?=e($nextPpmpNo)?>">
-    <input type="hidden" name="prepared_by" id="ppmp_person" value="<?=e($formState['prepared_by']??($selectedArea['authorized_person']??''))?>">">">
+    <input type="hidden" name="prepared_by" id="ppmp_person" value="<?=e($formState['prepared_by']??($selectedArea['authorized_person']??''))?>">
     <div class="ppmp-section">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
         <h3 style="margin:0">PPMP Items</h3>
