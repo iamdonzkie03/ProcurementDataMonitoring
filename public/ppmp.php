@@ -1064,7 +1064,8 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
 .ppmp-entry .ppmp-quantity-field input{  text-align:left!important
 }
 .ppmp-entry .ppmp-total-budget{
-  font-size:25px!important
+  font-size:inherit!important;
+  font-weight:inherit!important;
 }
 @media (min-width: 900px){
   .ppmp-entry .ppmp-input-grid:has(.ppmp-quantity-field){
