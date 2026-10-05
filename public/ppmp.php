@@ -670,10 +670,6 @@ pageStart('Project Procurement Management Plan');
       </div>
       <div class="ppmp-table-total" style="text-align:right;margin-top:12px;font-weight:700">Total PPMP Budget: ₱<span id="ppmpGrandTotal">0.00</span></div>
     </div>
-    <div class="ppmp-section">
-      <h3>Supporting Documents</h3>
-      <p class="muted">Supporting documents are attached per PPMP item row below. Each row may contain multiple PDF files.</p>
-    </div>
     <div class="actions"><button class="btn" type="submit">Save PPMP Items</button></div>
   </form>
 </div>
