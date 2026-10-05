@@ -53,14 +53,28 @@ try{
 $user=currentUser();
 $userName=trim((string)($user['full_name']??''));
 
+// For PPMP supervision, the Division Head assignment is authoritative.
+// Resolve the supervisor's division directly from divisions.division_head,
+// rather than relying on users.division_id being populated correctly.
+$supervisorDivisionId=0;
+if($userName!==''){
+  $stSupervisorDivision=$pdo->prepare("SELECT id FROM divisions
+    WHERE ppmp_supervisor_enabled=1
+      AND LOWER(TRIM(division_head))=LOWER(TRIM(?))
+    ORDER BY id LIMIT 1");
+  $stSupervisorDivision->execute([$userName]);
+  $supervisorDivisionId=(int)$stSupervisorDivision->fetchColumn();
+}
+$ppmpSupervisor=($supervisorDivisionId>0);
+
 function isSupervisorForArea(PDO $pdo,int $areaId,string $userName): bool{
-  if(currentLoginDivisionId()<=0 || $userName==='') return false;
-  // A Division/Department Head supervises every Area/Unit within the same
-  // division. Do not require an Area/Unit assignment on the user account.
-  $st=$pdo->prepare("SELECT COUNT(*) FROM areas a JOIN divisions d ON d.id=a.division_id
-    WHERE a.id=? AND d.id=? AND d.ppmp_supervisor_enabled=1
-      AND LOWER(TRIM(d.division_head))=LOWER(TRIM(?))");
-  $st->execute([$areaId,currentLoginDivisionId(),$userName]);
+  global $supervisorDivisionId;
+  if($supervisorDivisionId<=0 || $userName==='') return false;
+  // A Division/Department Head supervises every Area/Unit belonging to the
+  // Division for which that person is configured as Division Head.
+  $st=$pdo->prepare("SELECT COUNT(*) FROM areas a
+    WHERE a.id=? AND a.division_id=?");
+  $st->execute([$areaId,$supervisorDivisionId]);
   return (int)$st->fetchColumn()>0;
 }
 function isBudgetOfficerForArea(PDO $pdo,int $areaId,string $userName): bool{
@@ -174,11 +188,11 @@ $stQueue=$pdo->prepare("SELECT r.*,a.name area,d.name division,u.full_name submi
       WHERE pri.review_id=r.id AND pri.status='Pending for Review'
     )
   GROUP BY r.id ORDER BY r.updated_at DESC");
-$stQueue->execute([currentLoginDivisionId()]);
+$stQueue->execute([$supervisorDivisionId]);
 foreach($stQueue->fetchAll() as $item){
   // Division Heads see every PPMP in their division that still has at least
   // one item pending supervisor review, regardless of the parent review status.
-  if((int)($item['pending_review_count']??0)>0 && isSupervisorForArea($pdo,(int)$item['area_id'],$userName)){
+  if($ppmpSupervisor && (int)($item['pending_review_count']??0)>0 && isSupervisorForArea($pdo,(int)$item['area_id'],$userName)){
     $supervisorQueue[]=$item;
   }
 }
