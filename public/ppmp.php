@@ -1049,7 +1049,19 @@ function ppmpPrintDate($value): string{
 
   <div class="ppmp-note"><b>Important Note:</b> The Market Scoping Form and its proof of documentation and activities shall be attached to this PPMP prior to approval. Failure to provide both the Market Scoping Form and proof of documentation shall result to deferment or rejection of this PPMP.</div>
 
-  <div class="ppmp-signatures ppmp-signature-template">
+  
+<style>
+/* Keep Prepared By and Submitted By electronic signatures identical in print. */
+.ppmp-signature-template .ppmp-prepared-signature img,
+.ppmp-signature-template .ppmp-submitted-signature img{
+  width:180px;
+  height:70px;
+  object-fit:contain;
+  display:block;
+  margin:0 auto 2px;
+}
+</style>
+<div class="ppmp-signatures ppmp-signature-template">
     <div class="ppmp-signature-box">
       <b>Prepared by:</b>
       <div class="signature-line ppmp-prepared-signature"><?php if($preparedSignature!==''): ?><img src="<?=e($preparedSignature)?>" alt="Prepared By electronic signature"><?php endif; ?><span><?=e($person)?></span></div>
@@ -1060,7 +1072,7 @@ function ppmpPrintDate($value): string{
     </div>
     <div class="ppmp-signature-box">
       <b>Submitted by:</b>
-      <div class="signature-line"><?php if($submittedSignature!==''): ?><img src="<?=e($submittedSignature)?>" alt="Submitted By electronic signature"><?php endif; ?><span><?=e($submitted)?></span></div>
+      <div class="signature-line ppmp-submitted-signature"><?php if($submittedSignature!==''): ?><img src="<?=e($submittedSignature)?>" alt="Submitted By electronic signature"><?php endif; ?><span><?=e($submitted)?></span></div>
       <div>Signature over Printed Name</div>
       <div><?=e($submittedPos)?></div>
       <div><i>Division/Department/Section Unit</i></div>
