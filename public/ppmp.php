@@ -653,7 +653,7 @@ pageStart('Project Procurement Management Plan');
     <?php if(in_array($r['review_status'],['Draft','Pending for Review','Pending for Approval'],true)):?>
       <a class="btn secondary ppmp-action-btn" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>&edit=<?=$r['id']?>">Edit</a>
     <?php endif;?>
-    <?php if(in_array($r['review_status'],['Draft','Pending for Approval','Declined'],true)):?>
+    <?php if(in_array($r['review_status'],['Draft','Pending for Review','Pending for Approval','Declined'],true)):?>
       <form method="post" class="ppmp-delete-form" onsubmit="return confirm('Delete this PPMP item? This action cannot be undone.');">
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="action" value="delete">
