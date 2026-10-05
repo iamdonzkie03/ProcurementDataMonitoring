@@ -97,7 +97,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $supervisorEnabled=(int)($_POST['ppmp_supervisor_enabled']??0)===1 ? 1 : 0;
     $signaturePath=null;
   
-    if($divisionId<=0 || $divisionName==='' || $head===''){
+    // A new Division/Department does not have a division_id yet.
+    // Only an update requires the existing record ID.
+    if($divisionName==='' || $head==='' || ($action==='update_division' && $divisionId<=0)){
       flash('error','Division/Department name and Division/Department Head are required.');
       header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
     }
