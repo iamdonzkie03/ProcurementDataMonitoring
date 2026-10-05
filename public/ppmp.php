@@ -1051,7 +1051,7 @@ function ppmpPrintDate($value): string{
 
   
 <style>
-/* Keep all three PPMP signature blocks on one row and use identical signature sizing. */
+/* Keep all PPMP signature sections aligned on identical vertical rows. */
 .ppmp-signature-template{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
@@ -1062,15 +1062,25 @@ function ppmpPrintDate($value): string{
 .ppmp-signature-template .ppmp-signature-box{
   min-width:0;
   text-align:center;
+  display:grid;
+  grid-template-rows:22px 76px 20px 22px 22px 22px;
+  align-items:start;
+}
+.ppmp-signature-template .ppmp-signature-box > b{
+  display:block;
+  height:22px;
+  line-height:22px;
 }
 .ppmp-signature-template .signature-line{
-  min-height:92px;
+  height:76px;
+  min-height:76px;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:flex-end;
   position:relative;
   text-align:center;
+  margin:0;
 }
 .ppmp-signature-template .signature-line img{
   width:110px !important;
@@ -1092,22 +1102,18 @@ function ppmpPrintDate($value): string{
   line-height:20px;
   font-weight:600;
 }
-.ppmp-signature-template .ppmp-budget-signature .signature-line{
-  min-height:92px;
+.ppmp-signature-template .ppmp-signature-box > div:not(.signature-line){
+  height:22px;
+  line-height:22px;
+  margin:0;
 }
 @media print{
   .ppmp-signature-template{
     grid-template-columns:repeat(3,1fr);
     gap:12px;
   }
-  .ppmp-signature-template .signature-line img{
-    width:110px !important;
-    height:50px !important;
-    min-width:110px !important;
-    max-width:110px !important;
-    min-height:50px !important;
-    max-height:50px !important;
-    object-fit:contain;
+  .ppmp-signature-template .ppmp-signature-box{
+    grid-template-rows:22px 76px 20px 22px 22px 22px;
   }
 }
 </style>
