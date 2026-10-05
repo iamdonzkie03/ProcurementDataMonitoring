@@ -111,7 +111,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if((int)$_FILES['supporting_documents']['size'][$i]>20*1024*1024) ppmpSaveFormError('Each supporting PDF must not exceed 20 MB.',$year,$areaId);
         $ext=strtolower(pathinfo($originalName,PATHINFO_EXTENSION)); $mime=(new finfo(FILEINFO_MIME_TYPE))->file($_FILES['supporting_documents']['tmp_name'][$i]);
         if($ext!=='pdf'||$mime!=='application/pdf') ppmpSaveFormError('Supporting Documents must be PDF files only.',$year,$areaId);
-        $documentName=trim((string)(($_POST['supporting_document_names']??[])[$i]??'')); if($documentName==='') ppmpSaveFormError('Please provide a Name for every supporting PDF.',$year,$areaId);
+        $documentNames=$_POST['supporting_document_names']??[]; $documentName=isset($documentNames[$i])?trim((string)$documentNames[$i]):''; if($documentName==='') ppmpSaveFormError('Please provide a Name for every supporting PDF.',$year,$areaId);
         $safeName='ppmp_'.date('YmdHis').'_'.$i.'_'.bin2hex(random_bytes(5)).'.pdf'; if(!move_uploaded_file($_FILES['supporting_documents']['tmp_name'][$i],$uploadDir.'/'.$safeName)) ppmpSaveFormError('Unable to save a supporting PDF.',$year,$areaId);
         $existingDocs[]=['name'=>$documentName,'original_name'=>basename($originalName),'path'=>'uploads/ppmp/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s')];
       }
