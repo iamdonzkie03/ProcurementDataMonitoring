@@ -213,7 +213,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
       $pdo->commit();
     }catch(Throwable $e){ if($pdo->inTransaction())$pdo->rollBack(); ppmpSaveFormError('Unable to save the PPMP items: '.$e->getMessage(),$year,$areaId); }
-    flash('success',$saved.' PPMP item(s) saved under '.$bulkPpmpNo.'.'); header('Location:ppmp.php?year='.$year.'&area_id='.$areaId); exit;
+    $stSavedDivision=$pdo->prepare('SELECT division_id FROM areas WHERE id=? LIMIT 1');
+    $stSavedDivision->execute([$areaId]);
+    $savedDivisionId=(int)$stSavedDivision->fetchColumn();
+    flash('success',$saved.' PPMP item(s) saved under '.$bulkPpmpNo.'. All saved items are now Pending for Review.');
+    header('Location:ppmp.php?year='.$year.'&division_id='.$savedDivisionId.'&area_id='.$areaId);
+    exit;
   }
 
   if($action==='submit_for_review'){
