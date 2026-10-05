@@ -865,9 +865,29 @@ if($person!=='' && !empty($h['area_id'])){
   $stPreparedSignature->execute([(int)$h['area_id'],$person]);
   $preparedSignature=trim((string)($stPreparedSignature->fetchColumn()??''));
 }
-$submitted=(((int)($selectedArea['ppmp_supervisor_enabled']??0)===1) ? ($selectedArea['authorized_person']??($h['authorized_person']??'')) : '');
-$submittedPos=(((int)($selectedArea['ppmp_supervisor_enabled']??0)===1) ? ($selectedArea['authorized_position']??($h['authorized_position']??'')) : '');
-$submittedSignature=(((int)($selectedArea['ppmp_supervisor_enabled']??0)===1) ? trim((string)($selectedArea['authorized_signature']??'')) : '');
+// Resolve the Submitted By signatory directly from the Division/Department
+// attached to the PPMP. This is authoritative for the Division Head and does
+// not depend on whether the selected Area/Unit row carried the signature value.
+$submitted='';
+$submittedPos='';
+$submittedSignature='';
+if(!empty($h['area_id'])){
+  $stSubmittedDivision=$pdo->prepare('SELECT d.division_head,d.head_position_designation,d.electronic_signature,d.ppmp_supervisor_enabled
+    FROM areas a JOIN divisions d ON d.id=a.division_id WHERE a.id=? LIMIT 1');
+  $stSubmittedDivision->execute([(int)$h['area_id']]);
+  $submittedDivision=$stSubmittedDivision->fetch();
+  if($submittedDivision && (int)$submittedDivision['ppmp_supervisor_enabled']===1){
+    $submitted=trim((string)($submittedDivision['division_head']??''));
+    $submittedPos=trim((string)($submittedDivision['head_position_designation']??''));
+    $submittedSignature=trim((string)($submittedDivision['electronic_signature']??''));
+  }
+}
+// If the PPMP was created by the Division/Department Head, also use the
+// Division Head signature for Prepared By when no Area/Unit personnel
+// signature is configured for that person.
+if($preparedSignature==='' && $submitted!=='' && strcasecmp(trim((string)$person),$submitted)===0){
+  $preparedSignature=$submittedSignature;
+}
 // Budget signatory comes from the Area/Unit master list.
 // IMPORTANT: do not inspect the selected PPMP Area/Unit personnel and do not
 // look for the word "Budget" in a person's name/position. Instead, locate the
