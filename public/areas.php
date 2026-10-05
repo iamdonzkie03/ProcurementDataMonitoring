@@ -96,9 +96,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $headPosition=trim($_POST['head_position_designation']??'');
     $supervisorEnabled=(int)($_POST['ppmp_supervisor_enabled']??0)===1 ? 1 : 0;
     $signaturePath=null;
-  
-    // A new Division/Department does not have a division_id yet.
-    // Only an update requires the existing record ID.
+
+    // New records do not have a division_id yet; updates must have one.
     if($divisionName==='' || $head==='' || ($action==='update_division' && $divisionId<=0)){
       flash('error','Division/Department name and Division/Department Head are required.');
       header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
@@ -114,23 +113,34 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
 
     try{
-      $oldSt=$pdo->prepare('SELECT electronic_signature FROM divisions WHERE id=?');
-      $oldSt->execute([$divisionId]);
-      $oldSignaturePath=(string)($oldSt->fetchColumn()??'');
-
-      if($signaturePath!==null){
-        $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=?,ppmp_supervisor_enabled=?,electronic_signature=? WHERE id=?');
-        $st->execute([$divisionName,$head,$headPosition,$supervisorEnabled,$signaturePath,$divisionId]);
+      if($action==='save_division'){
+        if($signaturePath!==null){
+          $st=$pdo->prepare('INSERT INTO divisions(name,division_head,head_position_designation,ppmp_supervisor_enabled,electronic_signature) VALUES(?,?,?,?,?)');
+          $st->execute([$divisionName,$head,$headPosition,$supervisorEnabled,$signaturePath]);
+        }else{
+          $st=$pdo->prepare('INSERT INTO divisions(name,division_head,head_position_designation,ppmp_supervisor_enabled) VALUES(?,?,?,?)');
+          $st->execute([$divisionName,$head,$headPosition,$supervisorEnabled]);
+        }
+        flash('success','Division/Department added.');
       }else{
-        $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=?,ppmp_supervisor_enabled=? WHERE id=?');
-        $st->execute([$divisionName,$head,$headPosition,$supervisorEnabled,$divisionId]);
-      }
+        $oldSt=$pdo->prepare('SELECT electronic_signature FROM divisions WHERE id=?');
+        $oldSt->execute([$divisionId]);
+        $oldSignaturePath=(string)($oldSt->fetchColumn()??'');
 
-      if($signaturePath!==null && $oldSignaturePath!=='' && $oldSignaturePath!==$signaturePath){
-        $oldFile=__DIR__.'/'.$oldSignaturePath;
-        if(is_file($oldFile)) @unlink($oldFile);
+        if($signaturePath!==null){
+          $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=?,ppmp_supervisor_enabled=?,electronic_signature=? WHERE id=?');
+          $st->execute([$divisionName,$head,$headPosition,$supervisorEnabled,$signaturePath,$divisionId]);
+        }else{
+          $st=$pdo->prepare('UPDATE divisions SET name=?,division_head=?,head_position_designation=?,ppmp_supervisor_enabled=? WHERE id=?');
+          $st->execute([$divisionName,$head,$headPosition,$supervisorEnabled,$divisionId]);
+        }
+
+        if($signaturePath!==null && $oldSignaturePath!=='' && $oldSignaturePath!==$signaturePath){
+          $oldFile=__DIR__.'/'.$oldSignaturePath;
+          if(is_file($oldFile)) @unlink($oldFile);
+        }
+        flash('success','Division/Department updated.');
       }
-      flash('success','Division/Department updated.');
     }catch(PDOException $e){
       if($signaturePath!==null){
         $newFile=__DIR__.'/'.$signaturePath;
