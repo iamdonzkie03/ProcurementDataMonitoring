@@ -204,8 +204,9 @@ document.addEventListener('DOMContentLoaded',function(){
 <style>
 .masterlist-toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
 .masterlist-toolbar h2{margin:0}
-.masterlist-form-grid{display:grid;grid-template-columns:minmax(220px,1.35fr) minmax(260px,1.25fr) minmax(180px,.8fr) minmax(160px,.7fr) auto;gap:12px;align-items:end}
+.masterlist-form-grid{display:grid;grid-template-columns:minmax(220px,1.35fr) minmax(260px,1.25fr) minmax(180px,.8fr) minmax(160px,.7fr);gap:12px;align-items:start}
 .masterlist-form-grid .field{margin:0}
+.masterlist-form-grid .masterlist-submit{grid-column:1/-1;display:flex;justify-content:flex-start;align-items:center;gap:8px;margin-top:2px}
 .masterlist-actions{display:flex;gap:6px;align-items:center;white-space:nowrap}
 .masterlist-actions form{margin:0}
 .masterlist-table th,.masterlist-table td{vertical-align:middle}
