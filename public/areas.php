@@ -319,11 +319,25 @@ if(!$embedded) pageStart('Area/Unit Management');
       <div class="management-list-content">
         <h2>Division/Department List</h2>
         <div class="table-wrap"><table class="table">
-          <tr><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized</th><th>Area/Unit Count</th><th>Actions</th></tr>
-          <?php foreach($divisions as $d): $cnt=0; foreach($rows as $r){if((int)$r['division_id']===(int)$d['id'])$cnt++;} ?>
-          <tr><td><?=e($d['name'])?></td><td><div><?=e($d['division_head'])?></div><?php if(trim((string)($d['head_position_designation']??''))!==''): ?><small class="muted"><?=e($d['head_position_designation'])?></small><?php endif; ?></td><td><?=e($cnt)?></td><td><a class="btn secondary" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a></td></tr>
+          <tr><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized</th><th>Actions</th></tr>
+          <?php foreach($divisions as $d): ?>
+          <tr>
+            <td><?=e($d['name'])?></td>
+            <td>
+              <div><?=e($d['division_head'])?></div>
+              <?php if(trim((string)($d['head_position_designation']??''))!==''): ?><small class="muted"><?=e($d['head_position_designation'])?></small><?php endif; ?>
+            </td>
+            <td>
+              <?php if((int)$d['ppmp_supervisor_enabled']===1): ?>
+                <strong>Authorized (1)</strong><br><span class="muted"><?=e($d['division_head'])?></span>
+              <?php else: ?>
+                <span class="muted">Not Authorized</span>
+              <?php endif; ?>
+            </td>
+            <td><a class="btn secondary master-action" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a></td>
+          </tr>
           <?php endforeach; ?>
-          <?php if(!$divisions): ?><tr><td colspan="5">No Division/Department records found.</td></tr><?php endif; ?>
+          <?php if(!$divisions): ?><tr><td colspan="4">No Division/Department records found.</td></tr><?php endif; ?>
         </table></div>
       </div>
     </div>
