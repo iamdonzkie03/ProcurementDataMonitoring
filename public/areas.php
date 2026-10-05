@@ -465,6 +465,23 @@ if(!$embedded) pageStart('Area/Unit Management');
 <style>
 .master-action{width:82px;min-width:82px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center}
 .master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
+
+/* Keep the Division/Department List compact enough to fit its panel. */
+.management-column:first-child .management-list-content .table-wrap{overflow-x:hidden}
+.management-column:first-child .management-list-content .table{width:100%;table-layout:fixed;font-size:13px}
+.management-column:first-child .management-list-content .table th,
+.management-column:first-child .management-list-content .table td{padding:8px 6px;vertical-align:middle;overflow-wrap:anywhere}
+.management-column:first-child .management-list-content .table th:nth-child(1),
+.management-column:first-child .management-list-content .table td:nth-child(1){width:27%}
+.management-column:first-child .management-list-content .table th:nth-child(2),
+.management-column:first-child .management-list-content .table td:nth-child(2){width:27%}
+.management-column:first-child .management-list-content .table th:nth-child(3),
+.management-column:first-child .management-list-content .table td:nth-child(3){width:25%}
+.management-column:first-child .management-list-content .table th:nth-child(4),
+.management-column:first-child .management-list-content .table td:nth-child(4){width:21%}
+.management-column:first-child .management-list-content .table .actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.management-column:first-child .management-list-content .table .master-action{width:68px;min-width:68px;height:32px;padding:4px 7px;font-size:12px}
+.management-column:first-child .management-list-content .table .master-action-form{margin:0}
 .signature-preview{margin-top:8px;padding:8px;border:1px solid #ddd;background:#fff;display:inline-block}
 .signature-preview img{display:block;max-width:240px;max-height:90px;object-fit:contain}
 </style>
