@@ -134,8 +134,8 @@ pageStart('PPMP Masterlist');
     if(parts.length>2) raw=parts[0]+'.'+parts.slice(1).join('');
     let whole=parts[0]||'';
     let decimal=parts.length>1?parts[1].slice(0,2):'';
-    whole=whole.replace(/^0+(?=\\d)/,'');
-    const formatted=whole.replace(/\\B(?=(\\d{3})+(?!\\d))/g,',');
+    whole=whole.replace(/^0+(?=\d)/,'');
+    const formatted=whole.replace(/\B(?=(\d{3})+(?!\d))/g,',');
     if(finalize) input.value=(formatted||'0')+'.'+decimal.padEnd(2,'0');
     else input.value=formatted+(parts.length>1?'.'+decimal:'');
   }
