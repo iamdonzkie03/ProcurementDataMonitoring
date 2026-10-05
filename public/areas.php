@@ -69,6 +69,26 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
   }
 
+  if($action==='delete_division'){
+    if($id<=0){ flash('error','Invalid Division/Department.'); }
+    else {
+      try{
+        $stCount=$pdo->prepare('SELECT COUNT(*) FROM areas WHERE division_id=?');
+        $stCount->execute([$id]);
+        if((int)$stCount->fetchColumn()>0){
+          flash('error','This Division/Department cannot be deleted because it still has Area/Unit records. Delete or reassign its Area/Units first.');
+        }else{
+          $st=$pdo->prepare('DELETE FROM divisions WHERE id=?');
+          $st->execute([$id]);
+          flash($st->rowCount() ? 'success' : 'error',$st->rowCount() ? 'Division/Department deleted.' : 'Division/Department not found.');
+        }
+      }catch(PDOException $e){
+        flash('error','This Division/Department cannot be deleted because it is already used by existing records.');
+      }
+    }
+    header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
+  }
+
   if($action==='save_division' || $action==='update_division'){
     $divisionId=(int)($_POST['division_id']??0);
     $divisionName=trim($_POST['division_name']??'');
@@ -334,7 +354,17 @@ if(!$embedded) pageStart('Area/Unit Management');
                 <span class="muted">Not Authorized</span>
               <?php endif; ?>
             </td>
-            <td><a class="btn secondary master-action" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a></td>
+            <td>
+              <div class="actions">
+                <a class="btn secondary master-action" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a>
+                <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Division/Department? This can only be deleted if it has no Area/Unit records.');">
+                  <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+                  <input type="hidden" name="action" value="delete_division">
+                  <input type="hidden" name="id" value="<?=e($d['id'])?>">
+                  <button class="btn danger master-action" type="submit">Delete</button>
+                </form>
+              </div>
+            </td>
           </tr>
           <?php endforeach; ?>
           <?php if(!$divisions): ?><tr><td colspan="4">No Division/Department records found.</td></tr><?php endif; ?>
