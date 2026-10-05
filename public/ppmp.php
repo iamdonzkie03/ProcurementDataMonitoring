@@ -619,13 +619,23 @@ if($print && $rows){
 }
 $supervisorPending=[];
 if(!$print && $isPpmpSupervisor && currentLoginDivisionId()>0){
+  // Build the Division Head review queue from every PPMP in the current
+  // division that has at least one item still pending supervisor review.
+  // This deliberately does not use the currently selected Area/Unit filter.
   $stSupervisorQueue=$pdo->prepare("SELECT r.id,r.fiscal_year,r.ppmp_no,r.status,r.submitted_at,a.name area,d.name division,u.full_name submitted_by_name,
     COUNT(DISTINCT p.id) item_count,
     COALESCE(SUM(CASE WHEN p.total_budget IS NULL OR p.total_budget=0 THEN p.quantity*p.unit_price ELSE p.total_budget END),0) total_abc
-    FROM ppmp_reviews r JOIN areas a ON a.id=r.area_id JOIN divisions d ON d.id=a.division_id
+    FROM ppmp_reviews r
+    JOIN areas a ON a.id=r.area_id
+    JOIN divisions d ON d.id=a.division_id
     LEFT JOIN users u ON u.id=r.submitted_by
-    LEFT JOIN ppmp_items p ON p.fiscal_year=r.fiscal_year AND p.area_id=r.area_id AND p.ppmp_no=r.ppmp_no
-    WHERE r.status='Pending for Review' AND d.id=? GROUP BY r.id ORDER BY r.updated_at DESC");
+    JOIN ppmp_review_items pri ON pri.review_id=r.id AND pri.status='Pending for Review'
+    JOIN ppmp_items p ON p.id=pri.ppmp_item_id
+      AND p.fiscal_year=r.fiscal_year AND p.area_id=r.area_id AND p.ppmp_no=r.ppmp_no
+    WHERE d.id=?
+      AND r.status IN ('Pending for Review','Pending for Approval')
+    GROUP BY r.id,r.fiscal_year,r.ppmp_no,r.status,r.submitted_at,a.name,d.name,u.full_name,r.updated_at
+    ORDER BY r.updated_at DESC");
   $stSupervisorQueue->execute([currentLoginDivisionId()]);$supervisorPending=$stSupervisorQueue->fetchAll();
 }
 pageStart('Project Procurement Management Plan');
