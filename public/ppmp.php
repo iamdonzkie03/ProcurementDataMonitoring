@@ -1074,15 +1074,16 @@ function ppmpPrintDate($value): string{
 .ppmp-signature-template .signature-line{
   height:76px;
   min-height:76px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-end;
   position:relative;
+  display:block;
   text-align:center;
   margin:0;
 }
 .ppmp-signature-template .signature-line img{
+  position:absolute;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
   width:110px !important;
   height:50px !important;
   min-width:110px !important;
@@ -1092,12 +1093,16 @@ function ppmpPrintDate($value): string{
   object-fit:contain;
   object-position:center;
   display:block;
-  margin:0 auto 2px;
-  flex:0 0 110px;
+  margin:0;
 }
 .ppmp-signature-template .signature-line span{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
   display:block;
   width:100%;
+  height:20px;
   min-height:20px;
   line-height:20px;
   font-weight:600;
