@@ -9,8 +9,16 @@ require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
 require_once __DIR__.'/../app/layout.php';
 $pdo=db();
+$currentUser=currentUser();
+$currentUserId=(int)($currentUser['id']??0);
+$currentUserName=trim((string)($currentUser['full_name']??''));
 $isPpmpSupervisor=currentUserIsPpmpSupervisor();
-$currentUserId=(int)(currentUser()['id']??0);
+$isDivisionHeadPpmpOwner=false;
+if($isPpmpSupervisor && $currentUserId>0 && currentLoginDivisionId()>0 && $currentUserName!==''){
+  $stDivisionHead=$pdo->prepare('SELECT COUNT(*) FROM divisions WHERE id=? AND ppmp_supervisor_enabled=1 AND division_head=?');
+  $stDivisionHead->execute([currentLoginDivisionId(),$currentUserName]);
+  $isDivisionHeadPpmpOwner=(int)$stDivisionHead->fetchColumn()>0;
+}
 $canManagePpmp=true;
 try{
   $col=$pdo->query("SHOW COLUMNS FROM ppmp_items LIKE 'saved_at'")->fetch();
@@ -295,10 +303,19 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
   if($isPpmpSupervisor && in_array($action,['add','edit','delete'],true)){
     if($action==='edit' && $id<=0){ http_response_code(403); exit('403 - Invalid PPMP item.'); }
-    $stOwn=$pdo->prepare("SELECT COUNT(*) FROM ppmp_items p JOIN areas a ON a.id=p.area_id WHERE p.created_by=? AND p.fiscal_year=? AND p.area_id=? AND a.division_id=?" );
-    $stOwn->execute([$currentUserId,$year,$areaId,currentLoginDivisionId()]);
-    if((int)$stOwn->fetchColumn()===0){
-      http_response_code(403); exit('403 - Supervisors may only add, edit, or delete items from a PPMP they created within their own Division/Department.');
+    // A Division/Department Head who is the assigned PPMP Supervisor may create
+    // their first own PPMP before any item exists. Existing supervisors remain
+    // limited to PPMP items they personally created within their own Division.
+    if($action==='add' && $isDivisionHeadPpmpOwner){
+      $stOwnDivision=$pdo->prepare('SELECT COUNT(*) FROM areas WHERE id=? AND division_id=?');
+      $stOwnDivision->execute([$areaId,currentLoginDivisionId()]);
+      if((int)$stOwnDivision->fetchColumn()===0){ http_response_code(403); exit('403 - Your own PPMP must belong to an Area/Unit under your Division/Department.'); }
+    }else{
+      $stOwn=$pdo->prepare("SELECT COUNT(*) FROM ppmp_items p JOIN areas a ON a.id=p.area_id WHERE p.created_by=? AND p.fiscal_year=? AND p.area_id=? AND a.division_id=?" );
+      $stOwn->execute([$currentUserId,$year,$areaId,currentLoginDivisionId()]);
+      if((int)$stOwn->fetchColumn()===0){
+        http_response_code(403); exit('403 - Supervisors may only add, edit, or delete items from a PPMP they created within their own Division/Department.');
+      }
     }
     if($action==='edit'){
       $stItemOwner=$pdo->prepare('SELECT created_by,area_id FROM ppmp_items WHERE id=? LIMIT 1'); $stItemOwner->execute([$id]); $ownerRow=$stItemOwner->fetch();
@@ -494,7 +511,8 @@ if($isPpmpSupervisor && $currentUserId>0 && currentLoginDivisionId()>0){
   if($isPpmpSupervisor){
     $areas=array_values(array_filter($areas,fn($a)=>(int)$a['division_id']===currentLoginDivisionId()));
   }
-  $canManagePpmp=$supervisorOwnPpmpExists;
+  $canManagePpmp=$supervisorOwnPpmpExists || $isDivisionHeadPpmpOwner;
+  if($isPpmpSupervisor && $divisionId<=0) $divisionId=currentLoginDivisionId();
   if($areaId>0 && $isPpmpSupervisor && !in_array($areaId,array_map('intval',array_column($areas,'id')),true)) $areaId=0;
 }
 $cats=$pdo->query("SELECT * FROM categories WHERE status='Active' ORDER BY name")->fetchAll();
@@ -653,9 +671,9 @@ pageStart('Project Procurement Management Plan');
 <?php if($divisionId>0 && $areaId>0): ?>
 <div class="panel ppmp-toolbar">
   <div class="toolbar">
-    <?php if(hasRole(['Administrator','Editor']) && (!$isPpmpSupervisor || in_array($areaId,$supervisorOwnAreaIds,true))):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn"><span class="ppmp-toolbar-label">+ Add PPMP Item</span></button><?php endif;?>
+    <?php if(hasRole(['Administrator','Editor']) && (!$isPpmpSupervisor || $isDivisionHeadPpmpOwner || in_array($areaId,$supervisorOwnAreaIds,true))):?><button class="btn ppmp-toolbar-action" type="button" id="addPpmpItemBtn"><span class="ppmp-toolbar-label">+ Add PPMP Item</span></button><?php endif;?>
     <button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button>
-    <?php if($rows && in_array(($rows[0]['review_status']??'Draft'),['Draft','Declined'],true)):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
+    <?php if(!$isPpmpSupervisor && $rows && in_array(($rows[0]['review_status']??'Draft'),['Draft','Declined'],true)):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
   </div>
 </div>
 
