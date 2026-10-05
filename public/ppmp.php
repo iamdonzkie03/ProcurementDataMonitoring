@@ -649,6 +649,7 @@ pageStart('Project Procurement Management Plan');
 </div>
 <?php endif; ?>
 <?php endif; ?>
+<?php endif; ?>
 <?php
 $h=($allPpmpRows[0]??$rows[0]??[]);
 $ppmpNo=$h['ppmp_no']??'';
