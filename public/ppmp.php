@@ -697,7 +697,7 @@ pageStart('Project Procurement Management Plan');
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
       <h2 style="margin-top:0;margin-bottom:0">Project Procurement Management Plan</h2>
       <?php if(hasRole(['Administrator','Editor'])): ?>
-        <a class="btn secondary" href="ppmp_masterlist.php">Create PPMP Masterlist</a>
+        <a class="btn" style="background:#198754;color:#fff;border-color:#198754" href="ppmp_masterlist.php">Create PPMP Masterlist</a>
       <?php endif; ?>
     </div>
     <p class="muted">Select the Calendar Year, Division/Department, Area/Unit, and Area/Unit Head, then click <b>View</b> to display the Saved PPMP Items and Data Entry sections.</p>
