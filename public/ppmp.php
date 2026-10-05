@@ -497,10 +497,40 @@ unset($_SESSION['ppmp_form_old'],$_SESSION['ppmp_form_edit_id']);
 $formState=$editing?:($formOld??[]);
 $formIsEditing=$editing!==null || ($formOld!==null && (($formOld['action']??'')==='edit'));
 $areas=$pdo->query('SELECT a.*,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,d.electronic_signature authorized_signature,d.ppmp_supervisor_enabled FROM areas a JOIN divisions d ON d.id=a.division_id ORDER BY d.name,a.name')->fetchAll();
+$divisionHeadAreaId=0;
+$divisionHeadRecord=null;
+if($isDivisionHeadPpmpOwner && currentLoginDivisionId()>0){
+  $stDivision=$pdo->prepare('SELECT id,name,division_head,head_position_designation FROM divisions WHERE id=? LIMIT 1');
+  $stDivision->execute([currentLoginDivisionId()]);
+  $divisionHeadRecord=$stDivision->fetch();
+  if($divisionHeadRecord){
+    $stDivisionArea=$pdo->prepare('SELECT id FROM areas WHERE division_id=? AND name=? LIMIT 1');
+    $stDivisionArea->execute([currentLoginDivisionId(),$divisionHeadRecord['name']]);
+    $divisionHeadAreaId=(int)$stDivisionArea->fetchColumn();
+    if($divisionHeadAreaId<=0){
+      try{
+        $stCreateDivisionArea=$pdo->prepare('INSERT INTO areas (division_id,name,code) VALUES (?,?,?)');
+        $stCreateDivisionArea->execute([currentLoginDivisionId(),$divisionHeadRecord['name'],'DIV-'.currentLoginDivisionId()]);
+        $divisionHeadAreaId=(int)$pdo->lastInsertId();
+      }catch(PDOException $e){
+        $stDivisionArea->execute([currentLoginDivisionId(),$divisionHeadRecord['name']]);
+        $divisionHeadAreaId=(int)$stDivisionArea->fetchColumn();
+      }
+    }
+    if($divisionHeadAreaId>0){
+      $divisionId=currentLoginDivisionId();
+      $areaId=$divisionHeadAreaId;
+      $areaHeadName=trim((string)$divisionHeadRecord['division_head']);
+    }
+  }
+}
 $supervisorOwnAreaIds=[];
 $supervisorOwnFiscalYears=[];
 $supervisorOwnPpmpExists=false;
 if($isPpmpSupervisor && $currentUserId>0 && currentLoginDivisionId()>0){
+  if($isDivisionHeadPpmpOwner && $divisionHeadAreaId>0){
+    $areas=array_values(array_filter($areas,fn($a)=>(int)$a['id']===$divisionHeadAreaId));
+  }
   $stOwnAreas=$pdo->prepare('SELECT DISTINCT p.area_id FROM ppmp_items p JOIN areas a ON a.id=p.area_id WHERE p.created_by=? AND a.division_id=? ORDER BY p.area_id');
   $stOwnAreas->execute([$currentUserId,currentLoginDivisionId()]);
   $supervisorOwnAreaIds=array_map('intval',$stOwnAreas->fetchAll(PDO::FETCH_COLUMN));
@@ -636,7 +666,7 @@ pageStart('Project Procurement Management Plan');
         </div>
         <div class="field">
           <label>Division / Department Head</label>
-          <input class="input" type="text" id="ppmp_division_head" value="" readonly placeholder="Automatically shown">
+          <input class="input" type="text" id="ppmp_division_head" value="<?= $isDivisionHeadPpmpOwner ? e($currentUserName) : '' ?>" readonly placeholder="Automatically shown">
         </div>
         <div class="field">
           <label>Area / Unit *</label>
@@ -651,14 +681,17 @@ pageStart('Project Procurement Management Plan');
           <label>Supervisor / Area / Unit Head *</label>
           <select class="select" name="area_head" id="ppmp_area_head" required <?=$areaId>0?'':'disabled'?>>
             <option value="">Select Supervisor / Head</option>
-            <?php foreach($personnelByArea as $personAreaId=>$people): foreach($people as $person): ?>
+            <?php if($isDivisionHeadPpmpOwner && $divisionHeadAreaId>0): ?>
+              <option value="<?=e($currentUserName)?>" data-area-id="<?=$divisionHeadAreaId?>" data-position="<?=e($divisionHeadRecord['head_position_designation']??'')?>" selected><?=e($currentUserName)?></option>
+              <?php else: ?><?php foreach($personnelByArea as $personAreaId=>$people): foreach($people as $person): ?>
               <option value="<?=e($person['name'])?>" data-area-id="<?=$personAreaId?>" data-position="<?=e($person['position_designation']??'')?>" <?=($areaHeadName!=='' && $areaHeadName===$person['name'] && $areaId===(int)$personAreaId)?'selected':''?>><?=e($person['name'])?></option>
-            <?php endforeach; endforeach; ?>
+            <?php endforeach; endforeach; ?
+              <?php endif; ?>>
           </select>
         </div>
         <div class="field">
           <label>Area / Unit Head Position / Designation</label>
-          <input class="input" type="text" id="ppmp_area_head_position" value="" readonly placeholder="Automatically shown">
+          <input class="input" type="text" id="ppmp_area_head_position" value="<?= $isDivisionHeadPpmpOwner ? e($divisionHeadRecord['head_position_designation']??'') : '' ?>" readonly placeholder="Automatically shown">
         </div>
       </div>
       <div class="actions" style="margin-top:16px">
@@ -1043,6 +1076,11 @@ function printPpmp(paper){
    selectionAreaHeadPosition.value=(o&&!o.disabled)?(o.dataset.position||''):'';
  }
  if(selectionDivision){selectionDivision.addEventListener('change',function(){if(selectionArea)selectionArea.value='';if(selectionAreaHead)selectionAreaHead.value='';syncSelectionFields();});}
+ <?php if($isDivisionHeadPpmpOwner): ?>
+ if(selectionDivision){selectionDivision.value='<?= (int)$divisionId ?>';selectionDivision.disabled=true;selectionDivision.insertAdjacentHTML('afterend','<input type="hidden" name="division_id" value="<?= (int)$divisionId ?>">');}
+ if(selectionArea){selectionArea.value='<?= (int)$areaId ?>';selectionArea.disabled=true;selectionArea.insertAdjacentHTML('afterend','<input type="hidden" name="area_id" value="<?= (int)$areaId ?>">');}
+ if(selectionAreaHead){selectionAreaHead.value='<?=e($currentUserName)?>';selectionAreaHead.disabled=true;selectionAreaHead.insertAdjacentHTML('afterend','<input type="hidden" name="area_head" value="<?=e($currentUserName)?>">');}
+ <?php endif; ?>
  if(selectionArea){selectionArea.addEventListener('change',function(){if(selectionAreaHead)selectionAreaHead.value='';syncSelectionFields();});}
  if(selectionAreaHead)selectionAreaHead.addEventListener('change',syncSelectionHeadPosition);
  syncSelectionFields();
