@@ -54,7 +54,9 @@ function currentUserIsPpmpSupervisor(): bool {
     if($divisionId<=0 || $name==='') return false;
     try{
         $pdo=db();
-        $st=$pdo->prepare("SELECT COUNT(*) FROM divisions WHERE id=? AND ppmp_supervisor_enabled=1 AND division_head=?");
+        $st=$pdo->prepare("SELECT COUNT(*) FROM divisions
+          WHERE id=? AND ppmp_supervisor_enabled=1
+            AND LOWER(TRIM(division_head))=LOWER(TRIM(?))");
         $st->execute([$divisionId,$name]);
         return (int)$st->fetchColumn()>0;
     }catch(Throwable $e){ return false; }
