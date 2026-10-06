@@ -67,25 +67,25 @@ if(!$embedded) pageStart('Units of Measurement');
 ?>
 <div class="panel">
 <div class="toolbar"><div><h2>Units of Measurement</h2><p class="hint-text">Manage the units available in Purchase Request item dropdowns.</p></div></div>
-<div style="margin-bottom:18px;padding:14px 16px;border:1px solid #dbe3ea;border-radius:6px;background:#f8fafc">
-<div style="font-weight:600;margin-bottom:5px">Add Multiple Units of Measurement</div>
-<div class="muted" style="margin-bottom:10px">Enter one or more Units of Measurement, then click <strong>Save Units</strong>.</div>
-<form method="post" id="uomBulkForm">
+<form method="post" id="uomForm" style="margin-bottom:18px">
 <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-<input type="hidden" name="action" value="save_bulk">
+<input type="hidden" name="action" value="<?= $editing ? 'save' : 'save_bulk' ?>">
+<input type="hidden" name="id" value="<?=e((string)($editing['id']??0))?>">
+<?php if($editing): ?>
+<div class="field"><label>Unit Name</label><input class="input" name="name" value="<?=e($editing['name']??'')?>" placeholder="e.g. Unit, Piece, Lot, Vial" required></div>
+<div style="display:flex;gap:8px;margin-top:8px"><button class="btn">Save Changes</button><a class="btn secondary" href="<?=e($embedded?'settings.php?tab=uom':'units.php')?>">Cancel</a></div>
+<?php else: ?>
 <div id="uomRows">
 <div class="uom-entry-row" style="display:flex;gap:8px;align-items:end;margin-bottom:8px">
 <div class="field" style="flex:1;margin:0"><label>Unit Name *</label><input class="input" name="names[]" maxlength="100" placeholder="e.g. Unit, Piece, Lot, Vial" required></div>
-<button class="btn secondary uom-remove" type="button" style="display:none">Remove</button>
+<div class="uom-row-action"><button class="btn secondary" type="button" id="addUomRow">Add Row</button></div>
 </div>
 </div>
-<div style="display:flex;gap:8px;align-items:center;margin-top:8px">
-<button class="btn secondary" type="button" id="addUomRow">Add Row</button>
-<button class="btn" type="submit" style="background:#198754;color:#fff;border-color:#198754">Save Units</button>
+<div style="margin-top:10px">
+<button class="btn" type="submit" id="saveUomItems" style="background:#198754;color:#fff;border-color:#198754">Save Unit</button>
 </div>
+<?php endif; ?>
 </form>
-</div>
-<form method="post" class="form-grid" style="margin-bottom:18px">
 <input type="hidden" name="csrf" value="<?=e(csrf())?>">
 <input type="hidden" name="action" value="save">
 <input type="hidden" name="id" value="<?=e((string)($editing['id']??0))?>">
@@ -97,6 +97,38 @@ if(!$embedded) pageStart('Units of Measurement');
 <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Unit of Measurement?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="btn danger master-action" type="submit">Delete</button></form>
 </td></tr><?php endforeach;?></table></div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const rows=document.getElementById('uomRows');
+  const add=document.getElementById('addUomRow');
+  const save=document.getElementById('saveUomItems');
+  if(!rows)return;
+  function updateSaveLabel(){
+    if(!save)return;
+    const count=rows.querySelectorAll('.uom-entry-row').length;
+    save.textContent=count>=2?'Save Units':'Save Unit';
+  }
+  if(add){
+    add.addEventListener('click',function(){
+      const first=rows.querySelector('.uom-entry-row');
+      if(!first)return;
+      const row=first.cloneNode(true);
+      row.querySelector('input').value='';
+      const action=row.querySelector('.uom-row-action');
+      if(action){
+        action.innerHTML='<button class="btn danger uom-remove" type="button">Remove</button>';
+        action.querySelector('.uom-remove').addEventListener('click',function(){
+          row.remove();
+          updateSaveLabel();
+        });
+      }
+      rows.appendChild(row);
+      updateSaveLabel();
+    });
+  }
+  updateSaveLabel();
+});
+</script>
 <style>
 .master-action{width:82px;min-width:82px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center}
 .master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
