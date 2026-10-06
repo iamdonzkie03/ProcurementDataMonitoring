@@ -16,6 +16,11 @@
 
 .ppmp-entry-table th:nth-child(4),.ppmp-entry-table td:nth-child(4){width:16%;min-width:220px}
 .ppmp-entry-table th:nth-child(5),.ppmp-entry-table td:nth-child(5){width:22%;min-width:300px}
+
+.ppmp-entry-table .ppmp-item-description.ppmp-masterlist-locked{background:#e5e7eb!important;color:#6b7280!important;border:0!important;outline:0!important;box-shadow:none!important;cursor:not-allowed;resize:none;min-width:260px;width:100%;box-sizing:border-box}
+.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked,.ppmp-entry-table .ppmp-total-budget{height:36px!important;min-height:36px!important;margin:0!important;padding:8px 10px!important;box-sizing:border-box;border:0!important;outline:0!important;box-shadow:none!important;background:#e5e7eb!important;color:#4b5563!important;text-align:right!important}
+.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked{font-weight:400!important}
+.ppmp-entry-table .ppmp-total-budget{font-weight:700!important}
 </style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
