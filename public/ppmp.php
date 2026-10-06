@@ -702,7 +702,6 @@ pageStart('Project Procurement Management Plan');
 .ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked,.ppmp-entry-table .ppmp-total-budget{margin:0!important;padding-left:7px!important;padding-right:7px!important}
 .ppmp-entry-table .ppmp-total-budget{font-weight:700!important}
 #ppmpEntryBody .ppmp-remove-row{display:none!important}
-#ppmpEntryBody.ppmp-multiple-rows .ppmp-remove-row{display:inline-flex!important}
 .ppmp-entry-table .ppmp-row-remarks{width:150px!important;min-width:150px!important;max-width:150px!important;box-sizing:border-box}
 </style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style>
 <?php if(!$print && $isPpmpSupervisor): ?>
@@ -1623,7 +1622,7 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
      const clear=row.querySelector('.ppmp-clear-row');
      const remove=ensureDeleteButton(row);
      if(clear)clear.style.setProperty('display','inline-flex','important');
-     if(remove)remove.style.removeProperty('display');
+     if(remove)remove.style.setProperty('display',multiple?'inline-flex':'none','important');
    });
  }
  function syncRowAction(row){
