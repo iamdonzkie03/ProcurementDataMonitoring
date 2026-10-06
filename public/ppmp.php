@@ -870,7 +870,7 @@ pageStart('Project Procurement Management Plan');
                 </div>
               </td>
               <td><input class="input ppmp-row-remarks" type="text" name="<?=$editing?'remarks':'items[0][remarks]'?>" value="<?=e($formState['remarks']??'')?>"></td>
-              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php else: ?><button class="btn secondary ppmp-clear-row" type="button">Clear</button><button class="btn danger ppmp-remove-row" type="button" style="display:none">Delete</button><?php endif; ?></td>
+              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php else: ?><button class="btn secondary ppmp-clear-row" type="button">Clear</button><button class="btn danger ppmp-remove-row" type="button">Delete</button><?php endif; ?></td>
             </tr>
           </tbody>
         </table>
@@ -1620,8 +1620,8 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    const remove=ensureDeleteButton(row);
    const rowCount=body.querySelectorAll('.ppmp-entry-row').length;
    const showMultipleRows=rowCount>=2;
-   if(clear)clear.style.display='inline-flex';
-   if(remove)remove.style.display=showMultipleRows?'inline-flex':'none';
+   if(clear)clear.style.setProperty('display','inline-flex','important');
+   if(remove)remove.style.setProperty('display',showMultipleRows?'inline-flex':'none','important');
  }
  function syncAllRowActions(){
    const rows=[...body.querySelectorAll('.ppmp-entry-row')];
@@ -1629,8 +1629,8 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    rows.forEach(function(row){
      const clear=row.querySelector('.ppmp-clear-row');
      const remove=ensureDeleteButton(row);
-     if(clear)clear.style.display='inline-flex';
-     if(remove)remove.style.display=showMultipleRows?'inline-flex':'none';
+     if(clear)clear.style.setProperty('display','inline-flex','important');
+     if(remove)remove.style.setProperty('display',showMultipleRows?'inline-flex':'none','important');
    });
  }
  // Use one delegated Delete handler for the entire PPMP table body.
@@ -1683,7 +1683,13 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    if(unit)unit.disabled=true;
    const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');if(unitHidden)unitHidden.value='';
    const item=row.querySelector('.ppmp-item-name');if(item)item.dataset.selectedMasterlistName='';
-   body.appendChild(row);renumber();bind(row);syncAllRowDocuments();calc();syncAllRowActions();
+   body.appendChild(row);
+   renumber();
+   bind(row);
+   syncAllRowDocuments();
+   calc();
+   syncAllRowActions();
+   requestAnimationFrame(syncAllRowActions);
  });
  bind(body.querySelector('.ppmp-entry-row'));renumber();syncAllRowDocuments();calc();syncAllRowActions();
 })();
