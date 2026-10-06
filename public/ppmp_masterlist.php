@@ -7,7 +7,119 @@ require_once __DIR__.'/../app/layout.php';
 $pdo=db();
 $action=$_POST['action']??'';
 $editId=(int)($_GET['edit']??0);
+
 $editing=null;
+
+function ppmpMasterlistReadXlsx(string $filePath): array {
+  if(!class_exists('ZipArchive')) throw new RuntimeException('PHP ZipArchive is required to import Excel files.');
+  if(!function_exists('simplexml_load_string')) throw new RuntimeException('PHP SimpleXML is required to import Excel files.');
+
+  $zip=new ZipArchive();
+  if($zip->open($filePath)!==true) throw new RuntimeException('The uploaded file is not a valid .xlsx workbook.');
+
+  $workbookXml=$zip->getFromName('xl/workbook.xml');
+  $relsXml=$zip->getFromName('xl/_rels/workbook.xml.rels');
+  if($workbookXml===false || $relsXml===false){
+    $zip->close();
+    throw new RuntimeException('The uploaded Excel workbook is missing required workbook data.');
+  }
+
+  $workbook=@simplexml_load_string($workbookXml,'SimpleXMLElement',LIBXML_NONET|LIBXML_NOCDATA);
+  $rels=@simplexml_load_string($relsXml,'SimpleXMLElement',LIBXML_NONET|LIBXML_NOCDATA);
+  if($workbook===false || $rels===false){
+    $zip->close();
+    throw new RuntimeException('The uploaded Excel workbook could not be read.');
+  }
+
+  $ns=$workbook->getDocNamespaces(true);
+  $mainNs=$ns['']??'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+  $workbook->registerXPathNamespace('x',$mainNs);
+  $sheetNodes=$workbook->xpath('//x:sheets/x:sheet');
+  if(!$sheetNodes || !isset($sheetNodes[0])){
+    $zip->close();
+    throw new RuntimeException('The Excel workbook does not contain a worksheet.');
+  }
+
+  $sheetRelId=(string)$sheetNodes[0]->attributes('http://schemas.openxmlformats.org/officeDocument/2006/relationships')->id;
+  $relsNs=$rels->getDocNamespaces(true);
+  $rels->registerXPathNamespace('r','http://schemas.openxmlformats.org/package/2006/relationships');
+  $relNodes=$rels->xpath('//r:Relationship');
+  $target='';
+  foreach($relNodes as $rel){
+    if((string)$rel['Id']===$sheetRelId){
+      $target=(string)$rel['Target'];
+      break;
+    }
+  }
+  if($target===''){
+    $zip->close();
+    throw new RuntimeException('The first Excel worksheet could not be located.');
+  }
+  $target=ltrim($target,'/');
+  if(str_starts_with($target,'xl/')) $sheetPath=$target;
+  else $sheetPath='xl/'.$target;
+
+  $sheetXml=$zip->getFromName($sheetPath);
+  if($sheetXml===false){
+    $zip->close();
+    throw new RuntimeException('The first Excel worksheet could not be read.');
+  }
+
+  $sharedStrings=[];
+  $sharedXml=$zip->getFromName('xl/sharedStrings.xml');
+  if($sharedXml!==false){
+    $shared=@simplexml_load_string($sharedXml,'SimpleXMLElement',LIBXML_NONET|LIBXML_NOCDATA);
+    if($shared!==false){
+      $sharedNs=$shared->getDocNamespaces(true);
+      $shared->registerXPathNamespace('x',$sharedNs['']??$mainNs);
+      foreach(($shared->xpath('//x:si')?:[]) as $si){
+        $texts=$si->xpath('.//x:t');
+        $value='';
+        foreach(($texts?:[]) as $t) $value.=(string)$t;
+        $sharedStrings[]=$value;
+      }
+    }
+  }
+
+  $sheet=@simplexml_load_string($sheetXml,'SimpleXMLElement',LIBXML_NONET|LIBXML_NOCDATA);
+  if($sheet===false){
+    $zip->close();
+    throw new RuntimeException('The first Excel worksheet could not be parsed.');
+  }
+  $sheetNs=$sheet->getDocNamespaces(true);
+  $sheet->registerXPathNamespace('x',$sheetNs['']??$mainNs);
+  $rows=$sheet->xpath('//x:sheetData/x:row')?:[];
+
+  $result=[];
+  foreach($rows as $row){
+    $values=[];
+    foreach(($row->xpath('./x:c')?:[]) as $cell){
+      $ref=(string)$cell['r'];
+      if($ref==='' || !preg_match('/^([A-Z]+)\d+$/i',$ref,$m)) continue;
+      $letters=strtoupper($m[1]);
+      $col=0;
+      for($j=0,$len=strlen($letters);$j<$len;$j++) $col=$col*26+(ord($letters[$j])-64);
+      $col--;
+      $type=(string)$cell['t'];
+      $value='';
+      if($type==='inlineStr'){
+        $texts=$cell->xpath('./x:is//x:t');
+        foreach(($texts?:[]) as $t) $value.=(string)$t;
+      }else{
+        $v=$cell->xpath('./x:v');
+        $value=isset($v[0])?(string)$v[0]:'';
+        if($type==='s' && $value!=='' && isset($sharedStrings[(int)$value])) $value=$sharedStrings[(int)$value];
+        if($type==='b') $value=$value==='1'?'TRUE':'FALSE';
+      }
+      $values[$col]=$value;
+    }
+    if($values) $result[]=$values;
+  }
+  $zip->close();
+
+  if(!$result) throw new RuntimeException('The Excel workbook contains no data.');
+  return $result;
+}
 
 try{
   $pdo->exec("CREATE TABLE IF NOT EXISTS ppmp_masterlist (
@@ -42,6 +154,73 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $unitCostRaw=str_replace(',','',trim((string)($unitCosts[0]??'')));
   $unitCost=is_numeric($unitCostRaw)?(float)$unitCostRaw:-1;
   $userId=(int)(currentUser()['id']??0);
+
+
+  if($action==='import_excel'){
+    $upload=$_FILES['masterlist_excel']??null;
+    if(!$upload || !isset($upload['error']) || $upload['error']!==UPLOAD_ERR_OK){
+      flash('error','Please select a valid Excel (.xlsx) file to upload.');
+      header('Location:ppmp_masterlist.php'); exit;
+    }
+    if(($upload['size']??0)>10*1024*1024){
+      flash('error','The Excel file is too large. Maximum file size is 10 MB.');
+      header('Location:ppmp_masterlist.php'); exit;
+    }
+    $originalName=(string)($upload['name']??'');
+    if(strtolower(pathinfo($originalName,PATHINFO_EXTENSION))!=='xlsx'){
+      flash('error','Only Excel .xlsx files are accepted.');
+      header('Location:ppmp_masterlist.php'); exit;
+    }
+
+    try{
+      $rowsFromExcel=ppmpMasterlistReadXlsx((string)$upload['tmp_name']);
+      $expectedHeaders=['Item Name','Technical Specifications','Unit of Measurement','Unit Cost'];
+      $header=array_slice($rowsFromExcel[0],0,4);
+      if(count($rowsFromExcel[0])!==4 || $header!==$expectedHeaders){
+        throw new RuntimeException('The Excel columns must exactly match: Item Name, Technical Specifications, Unit of Measurement, Unit Cost.');
+      }
+
+      $activeUoms=[];
+      $uomCheck=$pdo->query("SELECT name FROM units_of_measure WHERE status='Active'");
+      foreach($uomCheck->fetchAll(PDO::FETCH_COLUMN) as $name) $activeUoms[mb_strtolower(trim((string)$name),'UTF-8')]=true;
+
+      $importRows=[];
+      foreach(array_slice($rowsFromExcel,1) as $excelIndex=>$row){
+        $excelRow=$excelIndex+2;
+        $row=array_pad($row,4,'');
+        $itemName=trim((string)($row[0]??''));
+        $spec=trim((string)($row[1]??''));
+        $uom=trim((string)($row[2]??''));
+        $costRaw=str_replace([',','₱',' '],'',trim((string)($row[3]??'')));
+
+        if($itemName==='' && $spec==='' && $uom==='' && $costRaw==='') continue;
+        if($itemName==='' || $uom==='' || $costRaw===''){
+          throw new RuntimeException("Excel row {$excelRow}: Item Name, Unit of Measurement, and Unit Cost are required.");
+        }
+        if(!is_numeric($costRaw) || (float)$costRaw<0){
+          throw new RuntimeException("Excel row {$excelRow}: Unit Cost must be a valid non-negative number.");
+        }
+        if(!isset($activeUoms[mb_strtolower($uom,'UTF-8')])){
+          throw new RuntimeException("Excel row {$excelRow}: Unit of Measurement \"{$uom}\" is not an active UOM in the system.");
+        }
+        if(mb_strlen($itemName,'UTF-8')>255) throw new RuntimeException("Excel row {$excelRow}: Item Name exceeds 255 characters.");
+        if(mb_strlen($spec,'UTF-8')>5000) throw new RuntimeException("Excel row {$excelRow}: Technical Specifications exceeds 5000 characters.");
+        $importRows[]=[$itemName,$spec,$uom,(float)$costRaw];
+      }
+
+      if(!$importRows) throw new RuntimeException('The Excel workbook contains no masterlist items to import.');
+
+      $pdo->beginTransaction();
+      $st=$pdo->prepare('INSERT INTO ppmp_masterlist (item_name,technical_specifications,unit_of_measurement,unit_cost,created_by,updated_by) VALUES (?,?,?,?,?,?)');
+      foreach($importRows as $row) $st->execute([$row[0],$row[1],$row[2],$row[3],$userId,$userId]);
+      $pdo->commit();
+      flash('success',count($importRows).' PPMP Masterlist item(s) imported successfully.');
+    }catch(Throwable $e){
+      if($pdo->inTransaction()) $pdo->rollBack();
+      flash('error',$e->getMessage());
+    }
+    header('Location:ppmp_masterlist.php'); exit;
+  }
 
   if($action==='delete'){
     if($id<=0){
@@ -232,6 +411,18 @@ document.addEventListener('DOMContentLoaded',function(){
 
 <div class="panel">
   <h2><?= $editing ? 'Edit Masterlist Item' : 'Add Masterlist Item' ?></h2>
+
+  <div style="margin-bottom:18px;padding:14px 16px;border:1px solid #dbe3ea;border-radius:6px;background:#f8fafc">
+    <div style="font-weight:600;margin-bottom:5px">Option 1: Upload Excel File</div>
+    <div class="muted" style="margin-bottom:10px">Upload an <strong>.xlsx</strong> file with exactly these columns, in this exact order: <strong>Item Name</strong>, <strong>Technical Specifications</strong>, <strong>Unit of Measurement</strong>, <strong>Unit Cost</strong>.</div>
+    <form method="post" enctype="multipart/form-data" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+      <input type="hidden" name="action" value="import_excel">
+      <input class="input" type="file" name="masterlist_excel" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required style="max-width:420px">
+      <button class="btn secondary" type="submit">Upload Excel</button>
+    </form>
+  </div>
+  <div style="font-weight:600;margin-bottom:8px">Option 2: Add Manually</div>
   <form method="post">
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="<?= $editing ? 'update' : 'save' ?>">
