@@ -138,29 +138,34 @@ document.addEventListener('DOMContentLoaded',function(){
       const count=rows.querySelectorAll('.category-entry-row').length;
       save.textContent=count>=2?'Save Categories':'Save Category';
     }
-    if(add){
+
+    // Bind exactly one click handler even when this page is embedded in Settings.
+    if(add && add.dataset.bound!=='1'){
+      add.dataset.bound='1';
       add.addEventListener('click',function(){
-        const first=rows.querySelector('.category-entry-row');
-        if(!first)return;
-        const row=first.cloneNode(true);
-        row.querySelector('input').value='';
-        const action=row.querySelector('.category-add-row, .category-row-action');
-        if(action){
-          action.outerHTML='<button class="btn danger category-row-remove" type="button">Remove</button>';
-        }
+        const row=document.createElement('div');
+        row.className='category-entry-row';
+        row.innerHTML='<div class="field category-name-field"><label>Category</label><input class="input category-name-input" name="names[]" maxlength="120" required></div><button class="btn danger category-row-remove" type="button">Remove</button>';
         rows.appendChild(row);
-        const remove=row.querySelector('.category-row-remove');
-        if(remove){
-          remove.addEventListener('click',function(){
-            row.remove();
-            updateSaveLabel();
-          });
-        }
         updateSaveLabel();
-        const input=row.querySelector('input');
+        const input=row.querySelector('.category-name-input');
         if(input)input.focus();
       });
     }
+
+    if(rows.dataset.removeBound!=='1'){
+      rows.dataset.removeBound='1';
+      rows.addEventListener('click',function(e){
+        const remove=e.target.closest('.category-row-remove');
+        if(!remove)return;
+        const row=remove.closest('.category-entry-row');
+        if(row && rows.querySelectorAll('.category-entry-row').length>1){
+          row.remove();
+          updateSaveLabel();
+        }
+      });
+    }
+
     updateSaveLabel();
   }
 
