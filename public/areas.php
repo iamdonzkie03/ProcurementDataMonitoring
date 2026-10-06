@@ -583,6 +583,7 @@ if(!$embedded) pageStart('Area/Unit Management');
 .management-column:first-child .management-list-content .table{width:100%;table-layout:fixed;font-size:13px}
 .management-column:first-child .management-list-content .table th,
 .management-column:first-child .management-list-content .table td{padding:8px 6px;vertical-align:middle;overflow-wrap:anywhere}
+.management-column:first-child .management-list-content .table th{text-align:center}
 .management-column:first-child .management-list-content .table th:nth-child(1),
 .management-column:first-child .management-list-content .table td:nth-child(1){width:24%}
 .management-column:first-child .management-list-content .table th:nth-child(2),
@@ -599,6 +600,7 @@ if(!$embedded) pageStart('Area/Unit Management');
 .management-column:nth-child(2) .management-list-content .table{width:100%;table-layout:fixed;font-size:11.5px}
 .management-column:nth-child(2) .management-list-content .table th,
 .management-column:nth-child(2) .management-list-content .table td{padding:7px 4px;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word}
+.management-column:nth-child(2) .management-list-content .table th{text-align:center}
 .management-column:nth-child(2) .management-list-content .table th:nth-child(1),
 .management-column:nth-child(2) .management-list-content .table td:nth-child(1){width:17%}
 .management-column:nth-child(2) .management-list-content .table th:nth-child(2),
