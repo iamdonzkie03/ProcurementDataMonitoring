@@ -66,7 +66,13 @@ $rows=$pdo->query('SELECT * FROM units_of_measure ORDER BY status DESC,name')->f
 if(!$embedded) pageStart('Units of Measurement');
 ?>
 <div class="panel">
-<div class="toolbar"><div><h2>Units of Measurement</h2><p class="hint-text">Manage the units available in Purchase Request item dropdowns.</p></div></div>
+<div class="toolbar uom-page-header">
+  <div class="uom-page-title"><h2>Units of Measurement</h2><p class="hint-text">Manage the units available in Purchase Request item dropdowns.</p></div>
+  <div class="uom-search uom-header-search" id="uomSearchBox">
+    <input class="input" type="text" id="uomSearchInput" autocomplete="off" placeholder="Search Unit..." aria-label="Search Unit of Measurement">
+    <div class="uom-search-suggestions" id="uomSearchSuggestions" role="listbox"></div>
+  </div>
+</div>
 <form method="post" id="uomForm" style="margin-bottom:18px">
 <input type="hidden" name="csrf" value="<?=e(csrf())?>">
 <input type="hidden" name="action" value="<?= $editing ? 'save' : 'save_bulk' ?>">
@@ -86,10 +92,6 @@ if(!$embedded) pageStart('Units of Measurement');
 </div>
 <?php endif; ?>
 </form>
-<div class="uom-search" id="uomSearchBox">
-<input class="input" type="text" id="uomSearchInput" autocomplete="off" placeholder="Search Unit of Measurement..." aria-label="Search Unit of Measurement">
-<div class="uom-search-suggestions" id="uomSearchSuggestions" role="listbox"></div>
-</div>
 <div class="table-wrap"><table class="table" id="uomTable"><tr><th>Unit</th><th>Action</th></tr><?php foreach($rows as $r):?><tr data-uom-id="<?=e((string)$r['id'])?>" data-uom-name="<?=e($r['name'])?>"><td><b><?=e($r['name'])?></b></td><td>
 <a class="btn secondary master-action" href="<?=e(($embedded?'settings.php?tab=uom':'units.php').'?edit='.(int)$r['id'])?>">Edit</a>
 <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Unit of Measurement?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="btn danger master-action" type="submit">Delete</button></form>
@@ -241,8 +243,13 @@ document.addEventListener('DOMContentLoaded',function(){
 .master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
 
 <style>
-.uom-search{position:relative;max-width:520px;margin:0 0 14px}
-.uom-search .input{width:100%;box-sizing:border-box}
+.uom-page-header{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.uom-page-title{min-width:0}
+.uom-page-title h2{margin:0}
+.uom-page-title .hint-text{margin:4px 0 0}
+.uom-search{position:relative}
+.uom-header-search{width:200px;min-width:200px;margin:0 0 0 auto}
+.uom-search .input{width:200px;box-sizing:border-box}
 .uom-search-suggestions{
   position:absolute;left:0;right:0;top:100%;z-index:1000;
   background:#fff;border:1px solid #cfd6df;border-radius:4px;
