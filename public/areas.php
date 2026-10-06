@@ -344,7 +344,7 @@ if(!$embedded) pageStart('Area/Unit Management');
           </div>
           <div class="field full"><label>Electronic Signature</label><input class="input" type="file" name="electronic_signature" accept="image/png,image/jpeg"><small class="muted">Upload PNG or JPG signature image, maximum 2 MB.</small><?php if(!empty($divisionEditing['electronic_signature'])): ?><div class="signature-preview"><img src="<?=e($divisionEditing['electronic_signature'])?>" alt="Division/Department electronic signature"></div><?php endif; ?></div>
         </div>
-        <div class="actions"><button class="btn" type="submit"><?= $divisionEditing ? 'Save Division/Department' : '+ Add Division/Department' ?></button><?php if($divisionEditing): ?><a class="btn secondary" href="areas.php">Cancel</a><?php endif; ?></div>
+        <div class="actions"><button class="btn" type="submit"><?= $divisionEditing ? 'Save Division/Department' : '+ Add Division/Department' ?></button><?php if($divisionEditing): ?><a class="btn secondary" href="<?=e($embedded?'settings.php?tab=area-unit':'areas.php')?>">Cancel</a><?php endif; ?></div>
       </form>
     </div>
     <div class="management-inner-list">
@@ -368,7 +368,7 @@ if(!$embedded) pageStart('Area/Unit Management');
             </td>
             <td>
               <div class="actions">
-                <a class="btn secondary master-action" href="areas.php?edit_division=<?=e($d['id'])?>">Edit</a>
+                <a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=area-unit&edit_division='.(int)$d['id'] : 'areas.php?edit_division='.(int)$d['id'])?>">Edit</a>
                 <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Division/Department? This can only be deleted if it has no Area/Unit records.');">
                   <input type="hidden" name="csrf" value="<?=e(csrf())?>">
                   <input type="hidden" name="action" value="delete_division">
@@ -426,7 +426,7 @@ if(!$embedded) pageStart('Area/Unit Management');
         <div class="table-wrap"><table class="table">
           <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
           <?php foreach($rows as $r): ?><?php $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id'])); ?>
-          <tr><td><?=e($r['division_name'])?></td><td><?=e($r['division_head'])?></td><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?><?php if(!empty($p['position_designation'])): ?> — <span class="muted"><?=e($p['position_designation'])?></span><?php endif; ?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td><td><?=e($r['created_at'])?></td><td><div class="actions"><a class="btn secondary master-action" href="areas.php?edit=<?=e($r['id'])?>">Edit</a><form method="post" class="master-action-form" onsubmit="return confirm('Delete this Area/Unit? This can only be deleted if it is not used by existing records.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><button class="btn danger master-action" type="submit">Delete</button></form></div></td></tr>
+          <tr><td><?=e($r['division_name'])?></td><td><?=e($r['division_head'])?></td><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?><?php if(!empty($p['position_designation'])): ?> — <span class="muted"><?=e($p['position_designation'])?></span><?php endif; ?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td><td><?=e($r['created_at'])?></td><td><div class="actions"><a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=area-unit&edit='.(int)$r['id'] : 'areas.php?edit='.(int)$r['id'])?>">Edit</a><form method="post" class="master-action-form" onsubmit="return confirm('Delete this Area/Unit? This can only be deleted if it is not used by existing records.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><button class="btn danger master-action" type="submit">Delete</button></form></div></td></tr>
           <?php endforeach; ?><?php if(!$rows): ?><tr><td colspan="7">No Area/Unit records found.</td></tr><?php endif; ?>
         </table></div>
       </div>
