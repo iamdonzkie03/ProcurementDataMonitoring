@@ -105,7 +105,7 @@ if(!$embedded) pageStart('Category');
   </form>
 
   <div class="table-wrap" style="margin-top:22px">
-  <div class="category-pagination" id="categoryPagination" aria-label="Category pagination"><div class="category-page-size"><label for="categoryPageSize">Show</label><select class="input" id="categoryPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>records</span></div><div class="category-pagination-info" id="categoryPaginationInfo"></div><div class="category-pagination-buttons" id="categoryPaginationButtons"></div></div>
+  <div class="category-pagination" id="categoryPagination" aria-label="Category pagination"><div class="category-page-size"><label for="categoryPageSize">Show</label><select class="input" id="categoryPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="categoryPageSize">records</label></span></div><div class="category-pagination-info" id="categoryPaginationInfo"></div><div class="category-pagination-buttons" id="categoryPaginationButtons"></div></div>
     <table class="table" id="categoryTable">
       <thead><tr><th>Category</th><th>Actions</th></tr></thead>
       <tbody>
