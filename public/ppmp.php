@@ -13,6 +13,9 @@
 .ppmp-entry-table .ppmp-item-description{min-width:0;width:100%;box-sizing:border-box}
 .ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-total-budget{text-align:right!important}
 .ppmp-entry-table .ppmp-total-budget{font-weight:700!important}
+
+.ppmp-entry-table th:nth-child(4),.ppmp-entry-table td:nth-child(4){width:16%;min-width:220px}
+.ppmp-entry-table th:nth-child(5),.ppmp-entry-table td:nth-child(5){width:22%;min-width:300px}
 </style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
