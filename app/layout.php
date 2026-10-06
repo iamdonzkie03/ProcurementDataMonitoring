@@ -32,4 +32,4 @@ function pageStart(string $title): void { $u=currentUser(); touchCurrentUserActi
 </nav><div class="side-foot"><small>Fiscal year</small><strong><?=date('Y')?></strong></div></aside>
 <main class="main"><section class="page-heading"><div><h1><?=e($title)?></h1><p>Procurement planning and monitoring</p></div></section><section class="content"><?php foreach(flashes() as $f): ?><div class="alert <?=$f['type']?>"><?=e($f['message'])?></div><?php endforeach; ?>
 <?php }
-function pageEnd(): void { ?></section></main></div><script src="assets/app.js?v=20261004-ppmpmenu2?v=20261004-ppmpmenu"></script></body></html><?php }
+function pageEnd(): void { ?></section></main></div><script src="assets/app.js?v=20261004-ppmpmenu2?v=20261004-ppmpmenu"></script><script>(function(){if(window.__procurementHeartbeat)return;window.__procurementHeartbeat=true;const beat=function(){fetch('session_heartbeat.php',{method:'GET',credentials:'same-origin',cache:'no-store'}).catch(function(){});};beat();setInterval(beat,60000);})();</script></body></html><?php }
