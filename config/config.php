@@ -1,6 +1,7 @@
 <?php
-if(ob_get_level()===0){ob_start();}
 declare(strict_types=1);
+
+if(ob_get_level()===0){ob_start();}
 
 session_start();
 
