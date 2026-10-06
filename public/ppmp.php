@@ -8,6 +8,11 @@
 .ppmp-entry-table .ppmp-masterlist-locked{background:#e5e7eb!important;color:#6b7280!important;border:0!important;outline:0!important;box-shadow:none!important;cursor:not-allowed}
 .ppmp-entry-table textarea.ppmp-masterlist-locked{resize:none;border:0!important;outline:0!important;box-shadow:none!important}
 .ppmp-entry-table .ppmp-total-budget{background:#e5e7eb!important;color:#4b5563!important;border:0!important;outline:0!important;box-shadow:none!important;font-weight:800!important}
+
+.ppmp-entry-table .ppmp-item-name{min-width:0}
+.ppmp-entry-table .ppmp-item-description{min-width:0;width:100%;box-sizing:border-box}
+.ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-total-budget{text-align:right!important}
+.ppmp-entry-table .ppmp-total-budget{font-weight:700!important}
 </style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
