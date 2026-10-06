@@ -54,7 +54,7 @@ try{
 
 $ppmpMasterlistRows=[];
 try{
-  $ppmpMasterlistRows=$pdo->query("SELECT id,item_name,technical_specifications,unit_cost FROM ppmp_masterlist WHERE TRIM(item_name)<>'' ORDER BY item_name ASC,id ASC")->fetchAll();
+  $ppmpMasterlistRows=$pdo->query("SELECT id,item_name,technical_specifications,unit_of_measurement,unit_cost FROM ppmp_masterlist WHERE TRIM(item_name)<>'' ORDER BY item_name ASC,id ASC")->fetchAll();
 }catch(PDOException $e){ $ppmpMasterlistRows=[]; }
 
 $currentFiscalYear=(int)date('Y');
@@ -684,7 +684,9 @@ if(!$print && $isPpmpSupervisor && currentLoginDivisionId()>0){
   $stSupervisorQueue->execute([currentLoginDivisionId()]);$supervisorPending=$stSupervisorQueue->fetchAll();
 }
 pageStart('Project Procurement Management Plan');
-?>\n<style>\n.ppmp-status-badge{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:#eef2f7;color:#374151}.ppmp-status-pending-for-review{background:#fff3cd;color:#856404}.ppmp-status-pending-for-approval{background:#cff4fc;color:#055160}.ppmp-status-approved{background:#d1e7dd;color:#0f5132}.ppmp-status-declined{background:#f8d7da;color:#842029}.ppmp-status-draft{background:#e9ecef;color:#495057}.ppmp-submit-review{background:#d9f7df!important;color:#166534!important;border:1px solid #b7e4c0!important;}\n.ppmp-submit-review:hover,.ppmp-submit-review:focus,.ppmp-submit-review:active{background:#d9f7df!important;color:#166534!important;}\n.ppmp-entry-table-wrap{overflow-x:auto}
+?>
+<style>
+.ppmp-status-badge{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:#eef2f7;color:#374151}.ppmp-status-pending-for-review{background:#fff3cd;color:#856404}.ppmp-status-pending-for-approval{background:#cff4fc;color:#055160}.ppmp-status-approved{background:#d1e7dd;color:#0f5132}.ppmp-status-declined{background:#f8d7da;color:#842029}.ppmp-status-draft{background:#e9ecef;color:#495057}.ppmp-submit-review{background:#d9f7df!important;color:#166534!important;border:1px solid #b7e4c0!important;}\n.ppmp-submit-review:hover,.ppmp-submit-review:focus,.ppmp-submit-review:active{background:#d9f7df!important;color:#166534!important;}\n.ppmp-entry-table-wrap{overflow-x:auto}
 .ppmp-entry-table{min-width:2400px}.ppmp-entry-table th,.ppmp-entry-table td{vertical-align:top;padding:7px}.ppmp-entry-table th{white-space:nowrap}.ppmp-entry-table .input,.ppmp-entry-table .select{min-width:120px}.ppmp-entry-table textarea{min-width:180px;resize:vertical}.ppmp-entry-table .ppmp-row-date{min-width:135px}.ppmp-entry-table .ppmp-row-qty,.ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{min-width:110px}.ppmp-row-documents{min-width:280px}
 .ppmp-row-documents .ppmp-document-row{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:5px;align-items:center}
 .ppmp-row-documents .input{min-width:0}
@@ -1209,6 +1211,7 @@ function ppmpPrintDate($value): string{
       button.dataset.itemId=item.id;
       button.dataset.itemName=item.item_name||'';
       button.dataset.specifications=item.technical_specifications||'';
+      button.dataset.unit=item.unit_of_measurement||'';
       button.dataset.unitCost=item.unit_cost??'';
       button.innerHTML='<strong>'+escapeHtml(item.item_name||'')+'</strong>'+(item.technical_specifications?'<small>'+escapeHtml(item.technical_specifications)+'</small>':'');
       list.appendChild(button);
@@ -1235,6 +1238,12 @@ function ppmpPrintDate($value): string{
       input.value=button.dataset.itemName||'';
       const description=row.querySelector('.ppmp-item-description');
       if(description)description.value=button.dataset.specifications||'';
+      const unitSelect=row.querySelector('select[name$="[unit]"]')||row.querySelector('select[name="unit"]');
+      if(unitSelect){
+        const masterUnit=String(button.dataset.unit||'').trim();
+        Array.from(unitSelect.options).forEach(function(option){ option.selected=masterUnit!=='' && String(option.value).trim().toLowerCase()===masterUnit.toLowerCase(); });
+        unitSelect.dispatchEvent(new Event('change',{bubbles:true}));
+      }
       const unitPrice=row.querySelector('.ppmp-row-unit-price');
       if(unitPrice){
         const rawCost=String(button.dataset.unitCost??'').replace(/,/g,'').trim();
