@@ -43,11 +43,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         }elseif($action==='save'){
             $id=(int)($_POST['id']??0);
             $name=trim((string)($_POST['procurement_method']??''));
-            $details=trim((string)($_POST['details']??''));
             if($name==='') throw new RuntimeException('Procurement Method is required.');
             if(mb_strlen($name,'UTF-8')>255) throw new RuntimeException('Procurement Method must not exceed 120 characters.');
-            $st=$pdo->prepare('UPDATE procurement_methods SET procurement_method=?,details=? WHERE id=?');
-            $st->execute([$name,$details!==''?$details:null,$id]);
+            $st=$pdo->prepare('UPDATE procurement_methods SET procurement_method=? WHERE id=?');
+            $st->execute([$name,$id]);
             flash('success','Procurement Method updated.');
         }
     }catch(Throwable $e){
@@ -59,11 +58,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
 $editing=null;
 if(isset($_GET['edit'])){
-    $st=$pdo->prepare('SELECT id,procurement_method,details FROM procurement_methods WHERE id=?');
+    $st=$pdo->prepare('SELECT id,procurement_method FROM procurement_methods WHERE id=?');
     $st->execute([(int)$_GET['edit']]);
     $editing=$st->fetch() ?: null;
 }
-$rows=$pdo->query('SELECT id,procurement_method,details FROM procurement_methods ORDER BY procurement_method')->fetchAll();
+$rows=$pdo->query('SELECT id,procurement_method FROM procurement_methods ORDER BY procurement_method')->fetchAll();
 if(!$embedded) pageStart('Procurement Method');
 ?>
 <div class="panel">
@@ -88,7 +87,6 @@ if(!$embedded) pageStart('Procurement Method');
           <label>Method Name*</label>
           <input class="input procurement-method-name-input" name="procurement_method" value="<?=e($editing['procurement_method']??'')?>" maxlength="255" required>
         </div>
-        <div class="field procurement-method-details-field"><label>Details</label><input class="input" name="details" value="<?=e($editing['details']??'')?>"></div>
         <div class="procurement_method-form-actions">
           <button class="btn" type="submit">Save Changes</button>
           <a class="btn secondary" href="<?=e($embedded?'settings.php?tab=procurement-method':'procurement_methods.php')?>">Cancel</a>
@@ -112,12 +110,11 @@ if(!$embedded) pageStart('Procurement Method');
 
   <div class="table-wrap" style="margin-top:22px">
     <table class="table" id="procurement_methodTable">
-      <thead><tr><th>Procurement Method</th><th>Details</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Procurement Method</th><th>Actions</th></tr></thead>
       <tbody>
       <?php foreach($rows as $r): ?>
         <tr data-procurement_method-id="<?=e((string)$r['id'])?>" data-procurement_method-name="<?=e($r['procurement_method'])?>">
           <td><b><?=e($r['procurement_method'])?></b></td>
-          <td><?=nl2br(e($r['details']??''))?></td>
           <td>
             <a class="btn secondary master-action" href="<?=e($embedded?'settings.php?tab=procurement-method&edit='.(int)$r['id']:'procurement_methods.php?edit='.(int)$r['id'])?>">Edit</a>
             <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Procurement Method?');">
@@ -129,7 +126,7 @@ if(!$embedded) pageStart('Procurement Method');
           </td>
         </tr>
       <?php endforeach; ?>
-      <?php if(!$rows): ?><tr><td colspan="3" class="empty">No Procurement Methods have been added yet.</td></tr><?php endif; ?>
+      <?php if(!$rows): ?><tr><td colspan="2" class="empty">No Procurement Methods have been added yet.</td></tr><?php endif; ?>
       </tbody>
     </table>
   </div>
