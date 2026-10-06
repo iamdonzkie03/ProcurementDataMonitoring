@@ -45,7 +45,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             $name=trim((string)($_POST['procurement_method']??''));
             $details=trim((string)($_POST['details']??''));
             if($name==='') throw new RuntimeException('Procurement Method is required.');
-            if(mb_strlen($name,'UTF-8')>120) throw new RuntimeException('Procurement Method must not exceed 120 characters.');
+            if(mb_strlen($name,'UTF-8')>255) throw new RuntimeException('Procurement Method must not exceed 120 characters.');
             $st=$pdo->prepare('UPDATE procurement_methods SET procurement_method=?,details=? WHERE id=?');
             $st->execute([$name,$details!==''?$details:null,$id]);
             flash('success','Procurement Method updated.');
@@ -54,7 +54,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if($pdo->inTransaction()) $pdo->rollBack();
         flash('error',$e->getMessage());
     }
-    header('Location:'.($embedded?'settings.php?tab=procurement_method':'procurement_method.php'));exit;
+    header('Location:'.($embedded?'settings.php?tab=procurement-method':'procurement_methods.php'));exit;
 }
 
 $editing=null;
@@ -88,9 +88,10 @@ if(!$embedded) pageStart('Procurement Method');
           <label>Method Name*</label>
           <input class="input procurement-method-name-input" name="procurement_method" value="<?=e($editing['procurement_method']??'')?>" maxlength="255" required>
         </div>
+        <div class="field procurement-method-details-field"><label>Details</label><input class="input" name="details" value="<?=e($editing['details']??'')?>"></div>
         <div class="procurement_method-form-actions">
           <button class="btn" type="submit">Save Changes</button>
-          <a class="btn secondary" href="<?=e($embedded?'settings.php?tab=procurement_method':'procurement_method.php')?>">Cancel</a>
+          <a class="btn secondary" href="<?=e($embedded?'settings.php?tab=procurement-method':'procurement_methods.php')?>">Cancel</a>
         </div>
       </div>
     <?php else: ?>
@@ -98,13 +99,13 @@ if(!$embedded) pageStart('Procurement Method');
         <div class="procurement_method-entry-row">
           <div class="field procurement_method-name-field">
             <label>Method Name*</label>
-            <input class="input procurement_method-name-input" name="procurement_methods[]" maxlength="255" required>
+            <input class="input procurement_method-name-input" name="names[]" maxlength="255" required>
           </div>
-          <div class="procurement_method-row-action"><button class="btn secondary procurement_method-add-row" type="button" id="addProcurement MethodRow">Add Row</button></div>
+          <div class="procurement_method-row-action"><button class="btn secondary procurement_method-add-row" type="button" id="addProcurementMethodRow">Add Row</button></div>
         </div>
       </div>
       <div class="procurement_method-save-actions">
-        <button class="btn" type="submit" id="saveProcurement MethodItems" style="background:#198754;color:#fff;border-color:#198754">Save Procurement Method</button>
+        <button class="btn" type="submit" id="saveProcurementMethodItems" style="background:#198754;color:#fff;border-color:#198754">Save Method</button>
       </div>
     <?php endif; ?>
   </form>
@@ -118,7 +119,7 @@ if(!$embedded) pageStart('Procurement Method');
           <td><b><?=e($r['procurement_method'])?></b></td>
           <td><?=nl2br(e($r['details']??''))?></td>
           <td>
-            <a class="btn secondary master-action" href="<?=e($embedded?'settings.php?tab=procurement_method&edit='.(int)$r['id']:'procurement_method.php?edit='.(int)$r['id'])?>">Edit</a>
+            <a class="btn secondary master-action" href="<?=e($embedded?'settings.php?tab=procurement-method&edit='.(int)$r['id']:'procurement_methods.php?edit='.(int)$r['id'])?>">Edit</a>
             <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Procurement Method?');">
               <input type="hidden" name="csrf" value="<?=e(csrf())?>">
               <input type="hidden" name="action" value="delete">
@@ -137,13 +138,13 @@ if(!$embedded) pageStart('Procurement Method');
 <script>
 document.addEventListener('DOMContentLoaded',function(){
   const rows=document.getElementById('procurement_methodRows');
-  const add=document.getElementById('addProcurement MethodRow');
-  const save=document.getElementById('saveProcurement MethodItems');
+  const add=document.getElementById('addProcurementMethodRow');
+  const save=document.getElementById('saveProcurementMethodItems');
   if(!rows)return;
   function updateSaveLabel(){
     if(!save)return;
     const count=rows.querySelectorAll('.procurement_method-entry-row').length;
-    save.textContent=count>=2?'Save Procurement Methods':'Save Procurement Method';
+    save.textContent=count>=2?'Save Methods':'Save Method';
   }
   if(add){
     add.addEventListener('click',function(){
