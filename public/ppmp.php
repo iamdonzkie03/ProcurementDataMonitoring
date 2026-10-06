@@ -60,7 +60,7 @@ try{
 
 $ppmpMasterlistRows=[];
 try{
-  $ppmpMasterlistRows=$pdo->query("SELECT id,item_name,technical_specifications FROM ppmp_masterlist WHERE TRIM(item_name)<>'' ORDER BY item_name ASC,id ASC")->fetchAll();
+  $ppmpMasterlistRows=$pdo->query("SELECT id,item_name,technical_specifications,unit_cost FROM ppmp_masterlist WHERE TRIM(item_name)<>'' ORDER BY item_name ASC,id ASC")->fetchAll();
 }catch(PDOException $e){ $ppmpMasterlistRows=[]; }
 
 $currentFiscalYear=(int)date('Y');
@@ -1209,6 +1209,7 @@ function ppmpPrintDate($value): string{
       button.dataset.itemId=item.id;
       button.dataset.itemName=item.item_name||'';
       button.dataset.specifications=item.technical_specifications||'';
+      button.dataset.unitCost=item.unit_cost??'';
       button.innerHTML='<strong>'+escapeHtml(item.item_name||'')+'</strong>'+(item.technical_specifications?'<small>'+escapeHtml(item.technical_specifications)+'</small>':'');
       list.appendChild(button);
     });
@@ -1234,6 +1235,16 @@ function ppmpPrintDate($value): string{
       input.value=button.dataset.itemName||'';
       const description=row.querySelector('.ppmp-item-description');
       if(description)description.value=button.dataset.specifications||'';
+      const unitPrice=row.querySelector('.ppmp-row-unit-price');
+      if(unitPrice){
+        const rawCost=String(button.dataset.unitCost??'').replace(/,/g,'').trim();
+        const cost=parseFloat(rawCost);
+        if(Number.isFinite(cost)){
+          unitPrice.value=cost.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+          unitPrice.dispatchEvent(new Event('input',{bubbles:true}));
+          unitPrice.dispatchEvent(new Event('blur',{bubbles:true}));
+        }
+      }
       closeSuggestions(box);input.focus();
     });
   }
