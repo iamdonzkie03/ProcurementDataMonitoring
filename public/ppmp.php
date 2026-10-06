@@ -701,7 +701,7 @@ pageStart('Project Procurement Management Plan');
 .ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{width:110px!important;min-width:110px!important;max-width:110px!important;box-sizing:border-box;text-align:right!important}
 .ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked,.ppmp-entry-table .ppmp-total-budget{margin:0!important;padding-left:7px!important;padding-right:7px!important}
 .ppmp-entry-table .ppmp-total-budget{font-weight:700!important}
-#ppmpEntryBody .ppmp-remove-row{display:none!important}
+/* PPMP row Delete visibility is controlled by syncAllRowActions(). */
 .ppmp-entry-table .ppmp-row-remarks{width:150px!important;min-width:150px!important;max-width:150px!important;box-sizing:border-box}
 </style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style>
 <?php if(!$print && $isPpmpSupervisor): ?>
@@ -1616,13 +1616,37 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
  function syncAllRowActions(){
    const rows=[...body.querySelectorAll('.ppmp-entry-row')];
    const multiple=rows.length>=2;
-   body.classList.toggle('ppmp-multiple-rows',multiple);
+
+   // The action state is determined ONLY by the current number of rows:
+   // 1 row  = Clear only
+   // 2+ rows = Clear + Delete on every row.
    body.dataset.ppmpRowCount=String(rows.length);
+
    rows.forEach(function(row){
-     const clear=row.querySelector('.ppmp-clear-row');
-     const remove=ensureDeleteButton(row);
-     if(clear)clear.style.setProperty('display','inline-flex','important');
-     if(remove)remove.style.setProperty('display',multiple?'inline-flex':'none','important');
+     const actionCell=row.querySelector('td:last-child');
+     if(!actionCell)return;
+
+     let clear=row.querySelector('.ppmp-clear-row');
+     if(!clear){
+       clear=document.createElement('button');
+       clear.type='button';
+       clear.className='btn secondary ppmp-clear-row';
+       clear.textContent='Clear';
+       actionCell.insertBefore(clear,actionCell.firstChild);
+     }
+
+     let remove=row.querySelector('.ppmp-remove-row');
+     if(!remove){
+       remove=document.createElement('button');
+       remove.type='button';
+       remove.className='btn danger ppmp-remove-row';
+       remove.textContent='Delete';
+       actionCell.appendChild(remove);
+     }
+
+     // Do not depend on a CSS class/rule for this state.
+     clear.style.setProperty('display','inline-flex','important');
+     remove.style.setProperty('display',multiple?'inline-flex':'none','important');
    });
  }
  function syncRowAction(row){
@@ -1683,7 +1707,11 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    calc();
    syncAllRowActions();
  });
- bind(body.querySelector('.ppmp-entry-row'));renumber();syncAllRowDocuments();calc();syncAllRowActions();
+ bind(body.querySelector('.ppmp-entry-row'));
+renumber();
+syncAllRowDocuments();
+calc();
+syncAllRowActions();
 })();
 /* Remove any legacy PPMP add-item control injected into the toolbar.
    This affects only the toolbar control and never the Data Entry "+ Add Row" control. */
