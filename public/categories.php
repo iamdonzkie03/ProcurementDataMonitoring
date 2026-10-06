@@ -80,7 +80,7 @@ if(!$embedded) pageStart('Category');
     <?php if($editing): ?>
       <div class="category-form-row">
         <div class="field category-name-field">
-          <label>Category</label>
+          <label>Category Name*</label>
           <input class="input category-name-input" name="name" value="<?=e($editing['name']??'')?>" maxlength="120" required>
         </div>
         <div class="category-form-actions">
@@ -92,7 +92,7 @@ if(!$embedded) pageStart('Category');
       <div id="categoryRows">
         <div class="category-entry-row">
           <div class="field category-name-field">
-            <label>Category</label>
+            <label>Category Name*</label>
             <input class="input category-name-input" name="names[]" maxlength="120" required>
           </div>
           <div class="category-row-action"><button class="btn secondary category-add-row" type="button" id="addCategoryRow">Add Row</button></div>
