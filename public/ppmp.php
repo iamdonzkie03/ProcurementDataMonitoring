@@ -1,4 +1,5 @@
 <?php
+if(ob_get_level()===0){ob_start();}
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
 require_once __DIR__.'/../app/layout.php';
@@ -698,8 +699,9 @@ pageStart('Project Procurement Management Plan');
 .ppmp-entry-table .ppmp-item-description{width:180px!important;min-width:180px!important;max-width:180px!important;box-sizing:border-box}
 .ppmp-entry-table .ppmp-row-qty{width:60px!important;min-width:60px!important;max-width:60px!important;box-sizing:border-box}
 .ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{width:110px!important;min-width:110px!important;max-width:110px!important;box-sizing:border-box;text-align:right!important}
-.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked,.ppmp-entry-table .ppmp-total-budget{margin:0!important}
+.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked,.ppmp-entry-table .ppmp-total-budget{margin:0!important;padding-left:7px!important;padding-right:7px!important}
 .ppmp-entry-table .ppmp-total-budget{font-weight:700!important}
+.ppmp-entry-table .ppmp-row-remarks{width:150px!important;min-width:150px!important;max-width:150px!important;box-sizing:border-box}
 </style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style>
 <?php if(!$print && $isPpmpSupervisor): ?>
 <div class="panel" style="margin-bottom:16px"><h2>PPMPs Pending for Review</h2><p class="muted">Review PPMP submissions from all Areas/Units under your Division/Department.</p>
@@ -846,7 +848,7 @@ pageStart('Project Procurement Management Plan');
               <td><select class="select" name="<?=$editing?'category_id':'items[0][category_id]'?>" required><option value="">Select</option><?php foreach($cats as $c):?><option value="<?=$c['id']?>" <?=((int)($formState['category_id']??0)===(int)$c['id'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select></td>
               <td><select class="select" name="<?=$editing?'procurement_type':'items[0][procurement_type]'?>" required><option value="">Select</option><?php foreach($classifications as $c):?><option value="<?=e($c['name'])?>" <?=((string)($formState['procurement_type']??'')===(string)$c['name'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select></td>
               <td><div class="ppmp-item-autocomplete"><input class="input ppmp-item-name" name="<?=$editing?'item_name':'items[0][item_name]'?>" required autocomplete="off" value="<?=e($formState['item_name']??'')?>"><div class="ppmp-item-suggestions" role="listbox"></div></div></td>
-              <td><input class="input ppmp-item-description ppmp-masterlist-locked" type="text" name="<?=$editing?'description':'items[0][description]'?>" readonly required value=""></td>>
+              <td><input class="input ppmp-item-description ppmp-masterlist-locked" type="text" name="<?=$editing?'description':'items[0][description]'?>" readonly required value="<?=e($formState['description']??'')?>"></td>
               <td><input class="input ppmp-row-qty" name="<?=$editing?'quantity':'items[0][quantity]'?>" inputmode="decimal" required value="<?=isset($formState['quantity'])?e(number_format((float)$formState['quantity'],2,'.','')):''?>"></td>
               <td><select class="select ppmp-masterlist-locked" name="<?=$editing?'unit':'items[0][unit]'?>" required disabled><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>" <?=((string)($formState['unit']??'')===(string)$u['name'])?'selected':''?>><?=e($u['name'])?></option><?php endforeach;?></select><input type="hidden" class="ppmp-masterlist-unit-value" name="<?=$editing?'unit':'items[0][unit]'?>" value="<?=e($formState['unit']??'')?>"></td>
               <td><input class="input ppmp-row-unit-price ppmp-masterlist-locked" name="<?=$editing?'unit_price':'items[0][unit_price]'?>" inputmode="decimal" readonly required value="<?=isset($formState['unit_price'])?e(number_format((float)$formState['unit_price'],2,'.',',')):''?>"></td>
@@ -867,7 +869,7 @@ pageStart('Project Procurement Management Plan');
                   <button class="btn secondary ppmp-add-document" type="button">+ Add PDF</button>
                 </div>
               </td>
-              <td><textarea class="input" name="<?=$editing?'remarks':'items[0][remarks]'?>" rows="2"><?=e($formState['remarks']??'')?></textarea></td>
+              <td><input class="input ppmp-row-remarks" type="text" name="<?=$editing?'remarks':'items[0][remarks]'?>" value="<?=e($formState['remarks']??'')?>"></td>
               <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php else: ?><button class="btn danger ppmp-remove-row" type="button">Remove</button><?php endif; ?></td>
             </tr>
           </tbody>
