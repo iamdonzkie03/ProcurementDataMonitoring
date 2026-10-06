@@ -109,7 +109,7 @@ if(!$embedded) pageStart('Procurement Method');
   </form>
 
   <div class="table-wrap" style="margin-top:22px">
-  <div class="procurement_method-pagination" id="procurement_methodPagination" aria-label="Procurement Method pagination"><div class="procurement_method-page-size"><label for="procurement_methodPageSize">Show</label><select class="input" id="procurement_methodPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>records</span></div><div class="procurement_method-pagination-info" id="procurement_methodPaginationInfo"></div><div class="procurement_method-pagination-buttons" id="procurement_methodPaginationButtons"></div></div>
+  <div class="procurement_method-pagination" id="procurement_methodPagination" aria-label="Procurement Method pagination"><div class="procurement_method-page-size"><label for="procurement_methodPageSize">Show</label><select class="input" id="procurement_methodPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="procurement_methodPageSize">records</label></span></div><div class="procurement_method-pagination-info" id="procurement_methodPaginationInfo"></div><div class="procurement_method-pagination-buttons" id="procurement_methodPaginationButtons"></div></div>
     <table class="table" id="procurement_methodTable">
       <thead><tr><th>Procurement Method</th><th>Actions</th></tr></thead>
       <tbody>
