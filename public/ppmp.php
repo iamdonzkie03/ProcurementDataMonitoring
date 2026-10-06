@@ -1504,22 +1504,36 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
  add.addEventListener('click',()=>{let row=body.querySelector('.ppmp-entry-row').cloneNode(true);row.querySelectorAll('input,textarea').forEach(x=>x.value='');row.querySelectorAll('select').forEach(x=>x.selectedIndex=0);body.appendChild(row);renumber();bind(row);calc();});
  bind(body.querySelector('.ppmp-entry-row'));renumber();calc();
 })();
-/* Defensive removal of the legacy "+ Add PPMP Item" control.
-   This intentionally does not affect the "+ Add Row" control. */
+/* Remove any legacy PPMP add-item control injected into the toolbar.
+   This affects only the toolbar control and never the Data Entry "+ Add Row" control. */
 (function(){
-  function removeLegacyAddPpmpItem(){
-    document.querySelectorAll('#addPpmpItemBtn').forEach(function(el){el.remove();});
-    document.querySelectorAll('button,a').forEach(function(el){
-      const label=String(el.textContent||'').replace(/\s+/g,' ').trim();
-      if(label==='+ Add PPMP Item' || label==='Add PPMP Item'){
+  function removeLegacyToolbarControl(root){
+    const scope=root||document;
+    scope.querySelectorAll('.ppmp-toolbar button, .ppmp-toolbar a, #addPpmpItemBtn').forEach(function(el){
+      const label=String(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+      const id=String(el.id||'').toLowerCase();
+      if(id==='addppmpitembtn' || label==='+ add ppmp item' || label==='add ppmp item'){
         el.remove();
       }
     });
   }
+  function startLegacyToolbarGuard(){
+    removeLegacyToolbarControl(document);
+    if(window.MutationObserver){
+      const observer=new MutationObserver(function(mutations){
+        mutations.forEach(function(mutation){
+          mutation.addedNodes.forEach(function(node){
+            if(node.nodeType===1) removeLegacyToolbarControl(node);
+          });
+        });
+      });
+      observer.observe(document.body,{childList:true,subtree:true});
+    }
+  }
   if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',removeLegacyAddPpmpItem);
+    document.addEventListener('DOMContentLoaded',startLegacyToolbarGuard);
   }else{
-    removeLegacyAddPpmpItem();
+    startLegacyToolbarGuard();
   }
 })();
 
