@@ -78,8 +78,7 @@ if(!$embedded) pageStart('Units of Measurement');
 <input type="hidden" name="action" value="<?= $editing ? 'save' : 'save_bulk' ?>">
 <input type="hidden" name="id" value="<?=e((string)($editing['id']??0))?>">
 <?php if($editing): ?>
-<div class="field"><label>Unit Name</label><input class="input" name="name" value="<?=e($editing['name']??'')?>" placeholder="e.g. Unit, Piece, Lot, Vial" required></div>
-<div style="display:flex;gap:8px;margin-top:8px"><button class="btn">Save Changes</button><a class="btn secondary" href="<?=e($embedded?'settings.php?tab=uom':'units.php')?>">Cancel</a></div>
+<div class="uom-edit-row"><div class="field uom-edit-field"><label>Unit Name</label><input class="input" name="name" value="<?=e($editing['name']??'')?>" placeholder="e.g. Unit, Piece, Lot, Vial" required></div><div class="uom-edit-actions"><button class="btn" type="submit">Save Changes</button><a class="btn secondary" href="<?=e($embedded?'settings.php?tab=uom':'units.php')?>">Cancel</a></div></div>
 <?php else: ?>
 <div id="uomRows">
 <div class="uom-entry-row" style="display:flex;gap:8px;align-items:end;margin-bottom:8px">
@@ -239,6 +238,9 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 </script>
 <style>
+.uom-edit-row{display:flex;align-items:flex-end;gap:8px;width:100%}
+.uom-edit-field{flex:1;margin:0}
+.uom-edit-actions{display:flex;align-items:center;gap:8px;white-space:nowrap}
 .master-action{width:82px;min-width:82px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center}
 .master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
 
