@@ -91,11 +91,11 @@ if(!$embedded) pageStart('Units of Measurement');
 </div>
 <?php endif; ?>
 </form>
+<div class="uom-pagination" id="uomPagination" aria-label="Units of Measurement pagination"><div class="uom-page-size"><label for="uomPageSize">Show</label><select class="input" id="uomPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>records</span></div><div class="uom-pagination-info" id="uomPaginationInfo"></div><div class="uom-pagination-buttons" id="uomPaginationButtons"></div></div>
 <div class="table-wrap"><table class="table" id="uomTable"><tr><th>Unit</th><th>Action</th></tr><?php foreach($rows as $r):?><tr data-uom-id="<?=e((string)$r['id'])?>" data-uom-name="<?=e($r['name'])?>"><td><b><?=e($r['name'])?></b></td><td>
 <a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=uom&edit='.(int)$r['id'] : 'units.php?edit='.(int)$r['id'])?>">Edit</a>
 <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Unit of Measurement?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="btn danger master-action" type="submit">Delete</button></form>
 </td></tr><?php endforeach;?></table></div>
-<div class="uom-pagination" id="uomPagination" aria-label="Units of Measurement pagination"><div class="uom-page-size"><label for="uomPageSize">Show</label><select class="input" id="uomPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>records</span></div><div class="uom-pagination-info" id="uomPaginationInfo"></div><div class="uom-pagination-buttons" id="uomPaginationButtons"></div></div>
 </div>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
@@ -314,10 +314,10 @@ document.addEventListener('DOMContentLoaded',function(){
 .uom-search-suggestion:hover,.uom-search-suggestion:focus{background:#eef5ff}
 .uom-search-empty{padding:9px 12px;color:#6b7280;font-size:13px}
 #uomTable tr.uom-search-selected td{background:#eef5ff}
-.uom-pagination{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;width:100%;clear:both;position:static;float:none;margin:12px 0 0;padding:0;box-sizing:border-box;flex-wrap:nowrap}
-.uom-pagination .uom-page-size{justify-self:start}
-.uom-pagination .uom-pagination-info{justify-self:center}
-.uom-pagination .uom-pagination-buttons{justify-self:end}
+.uom-pagination{display:flex;align-items:center;justify-content:flex-end;gap:12px;width:100%;clear:both;position:static;float:none;margin:0 0 10px;padding:0;box-sizing:border-box}
+.uom-pagination .uom-page-size{justify-self:auto}
+.uom-pagination .uom-pagination-info{flex:0 0 auto;justify-self:auto;text-align:right}
+.uom-pagination .uom-pagination-buttons{justify-self:auto}
 .uom-page-size{display:flex;align-items:center;gap:6px;font-size:14px;color:#4b5563}
 .uom-page-size .input{width:78px;min-width:78px;height:36px}
 .uom-pagination-info{font-size:13px;color:#6b7280;flex:1;text-align:center}
@@ -325,10 +325,8 @@ document.addEventListener('DOMContentLoaded',function(){
 .uom-page-button{min-width:38px;height:36px;padding:0 10px}
 .uom-page-button.active{font-weight:700;pointer-events:none;background:#e9ecef}
 @media(max-width:700px){
-  .uom-pagination{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
-  .uom-pagination .uom-page-size{justify-self:auto}
-  .uom-pagination .uom-pagination-info{order:3;flex-basis:100%;text-align:left;justify-self:auto}
-  .uom-pagination .uom-pagination-buttons{justify-self:auto}
+  .uom-pagination{align-items:flex-start;justify-content:flex-end;flex-wrap:wrap}
+  .uom-pagination .uom-pagination-info{order:3;flex-basis:100%;text-align:right}
 }
 </style>
 </style>
