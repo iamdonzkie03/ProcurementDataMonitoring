@@ -95,6 +95,7 @@ if(!$embedded) pageStart('Units of Measurement');
 <a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=uom&edit='.(int)$r['id'] : 'units.php?edit='.(int)$r['id'])?>">Edit</a>
 <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Unit of Measurement?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="btn danger master-action" type="submit">Delete</button></form>
 </td></tr><?php endforeach;?></table></div>
+<div class="uom-pagination" id="uomPagination" aria-label="Units of Measurement pagination"><div class="uom-page-size"><label for="uomPageSize">Show</label><select class="input" id="uomPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>records</span></div><div class="uom-pagination-info" id="uomPaginationInfo"></div><div class="uom-pagination-buttons" id="uomPaginationButtons"></div></div>
 </div>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
@@ -133,9 +134,15 @@ document.addEventListener('DOMContentLoaded',function(){
   const input=document.getElementById('uomSearchInput');
   const suggestions=document.getElementById('uomSearchSuggestions');
   const table=document.getElementById('uomTable');
-  if(!input||!suggestions||!table)return;
+  const pageSizeSelect=document.getElementById('uomPageSize');
+  const paginationInfo=document.getElementById('uomPaginationInfo');
+  const paginationButtons=document.getElementById('uomPaginationButtons');
+  if(!input||!suggestions||!table||!pageSizeSelect||!paginationInfo||!paginationButtons)return;
 
   const tableRows=Array.from(table.querySelectorAll('tr[data-uom-id]'));
+  let filteredRows=tableRows.slice();
+  let currentPage=1;
+  let pageSize=Number(pageSizeSelect.value)||10;
 
   function escapeHtml(value){
     return String(value??'').replace(/[&<>"']/g,function(ch){
@@ -148,26 +155,66 @@ document.addEventListener('DOMContentLoaded',function(){
     suggestions.style.display='none';
   }
 
-  function showAllRows(){
-    tableRows.forEach(function(row){
-      row.style.display='';
-      row.classList.remove('uom-search-selected');
+  function getFilteredRows(term,selectedName){
+    const value=String(term||'').trim().toLowerCase();
+    return tableRows.filter(function(row){
+      const name=String(row.dataset.uomName||'');
+      return selectedName
+        ? name.toLowerCase()===selectedName.toLowerCase()
+        : (!value || name.toLowerCase().includes(value));
     });
   }
 
-  function filterRows(term,selectedName){
-    const value=String(term||'').trim().toLowerCase();
-    let visible=0;
-    tableRows.forEach(function(row){
-      const name=String(row.dataset.uomName||'');
-      const match=selectedName
-        ? name.toLowerCase()===selectedName.toLowerCase()
-        : (!value || name.toLowerCase().includes(value));
-      row.style.display=match?'':'none';
-      row.classList.toggle('uom-search-selected',!!selectedName && match);
-      if(match)visible++;
+  function renderPagination(){
+    const total=filteredRows.length;
+    const totalPages=Math.max(1,Math.ceil(total/pageSize));
+    if(currentPage>totalPages)currentPage=totalPages;
+
+    tableRows.forEach(function(row){row.style.display='none';});
+    const start=(currentPage-1)*pageSize;
+    filteredRows.slice(start,start+pageSize).forEach(function(row){
+      row.style.display='';
     });
-    return visible;
+
+    if(!total){
+      paginationInfo.textContent='0 records';
+    }else{
+      paginationInfo.textContent='Showing '+(start+1)+'-'+Math.min(start+pageSize,total)+' of '+total+' records';
+    }
+
+    paginationButtons.innerHTML='';
+    function addButton(label,page,disabled,active){
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='btn secondary uom-page-button'+(active?' active':'');
+      button.textContent=label;
+      button.disabled=!!disabled;
+      button.addEventListener('click',function(){
+        currentPage=page;
+        renderPagination();
+        const firstVisible=filteredRows[(currentPage-1)*pageSize];
+        if(firstVisible)firstVisible.scrollIntoView({behavior:'smooth',block:'nearest'});
+      });
+      paginationButtons.appendChild(button);
+    }
+
+    addButton('Previous',currentPage-1,currentPage===1,false);
+    const maxButtons=7;
+    let first=Math.max(1,currentPage-3);
+    let last=Math.min(totalPages,first+maxButtons-1);
+    first=Math.max(1,last-maxButtons+1);
+    for(let page=first;page<=last;page++)addButton(String(page),page,false,page===currentPage);
+    addButton('Next',currentPage+1,currentPage===totalPages,false);
+  }
+
+  function applyFilter(term,selectedName,resetPage){
+    filteredRows=getFilteredRows(term,selectedName);
+    if(resetPage)currentPage=1;
+    tableRows.forEach(function(row){row.classList.remove('uom-search-selected');});
+    if(selectedName){
+      filteredRows.forEach(function(row){row.classList.add('uom-search-selected');});
+    }
+    renderPagination();
   }
 
   function showSuggestions(){
@@ -175,7 +222,7 @@ document.addEventListener('DOMContentLoaded',function(){
     suggestions.innerHTML='';
     if(!term){
       closeSuggestions();
-      showAllRows();
+      applyFilter('',null,true);
       return;
     }
     const matches=tableRows
@@ -186,7 +233,7 @@ document.addEventListener('DOMContentLoaded',function(){
     if(!matches.length){
       suggestions.innerHTML='<div class="uom-search-empty">No matching unit found.</div>';
       suggestions.style.display='block';
-      filterRows(term,null);
+      applyFilter(term,null,true);
       return;
     }
 
@@ -201,7 +248,7 @@ document.addEventListener('DOMContentLoaded',function(){
       suggestions.appendChild(button);
     });
     suggestions.style.display='block';
-    filterRows(term,null);
+    applyFilter(term,null,true);
   }
 
   input.addEventListener('input',showSuggestions);
@@ -212,7 +259,7 @@ document.addEventListener('DOMContentLoaded',function(){
     if(e.key==='Escape'){
       input.value='';
       closeSuggestions();
-      showAllRows();
+      applyFilter('',null,true);
     }
   });
 
@@ -222,19 +269,21 @@ document.addEventListener('DOMContentLoaded',function(){
     const name=button.dataset.uomName||'';
     input.value=name;
     closeSuggestions();
-    filterRows(name,name);
-    const selected=tableRows.find(function(row){
-      return String(row.dataset.uomName||'').toLowerCase()===name.toLowerCase();
-    });
-    if(selected){
-      selected.scrollIntoView({behavior:'smooth',block:'center'});
-    }
+    applyFilter(name,name,true);
+  });
+
+  pageSizeSelect.addEventListener('change',function(){
+    pageSize=Number(pageSizeSelect.value)||10;
+    currentPage=1;
+    renderPagination();
   });
 
   document.addEventListener('click',function(e){
     const box=document.getElementById('uomSearchBox');
     if(box&&!box.contains(e.target))closeSuggestions();
   });
+
+  renderPagination();
 });
 </script>
 <style>
@@ -265,6 +314,17 @@ document.addEventListener('DOMContentLoaded',function(){
 .uom-search-suggestion:hover,.uom-search-suggestion:focus{background:#eef5ff}
 .uom-search-empty{padding:9px 12px;color:#6b7280;font-size:13px}
 #uomTable tr.uom-search-selected td{background:#eef5ff}
+.uom-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
+.uom-page-size{display:flex;align-items:center;gap:6px;font-size:14px;color:#4b5563}
+.uom-page-size .input{width:78px;min-width:78px;height:36px}
+.uom-pagination-info{font-size:13px;color:#6b7280;flex:1;text-align:center}
+.uom-pagination-buttons{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.uom-page-button{min-width:38px;height:36px;padding:0 10px}
+.uom-page-button.active{font-weight:700;pointer-events:none;background:#e9ecef}
+@media(max-width:700px){
+  .uom-pagination{align-items:flex-start}
+  .uom-pagination-info{order:3;flex-basis:100%;text-align:left}
+}
 </style>
 </style>
 <?php if(!$embedded) pageEnd();
