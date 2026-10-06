@@ -1609,9 +1609,9 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
      remove.className='btn danger ppmp-remove-row';
      remove.textContent='Delete';
      actionCell.appendChild(remove);
-     remove.dataset.ppmpDeleteBound='1';
-     remove.addEventListener('click',function(){deleteRow(row);});
    }
+   // Event listeners are attached by bind(row), not here.
+   // This is important because cloneNode() copies attributes but does not copy listeners.
    return remove;
  }
  function syncRowAction(row){
@@ -1658,8 +1658,7 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
      calc();syncAllRowDocuments();syncRowAction(row);
    });
    const removeButton=ensureDeleteButton(row);
-   if(removeButton && !removeButton.dataset.ppmpDeleteBound){
-     removeButton.dataset.ppmpDeleteBound='1';
+   if(removeButton){
      removeButton.addEventListener('click',function(){deleteRow(row);});
    }
    syncRowAction(row);
@@ -1667,6 +1666,9 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
  add.addEventListener('click',function(){
    let row=body.querySelector('.ppmp-entry-row').cloneNode(true);
    row.dataset.ppmpNewRow='1';
+   // cloneNode() copies the button's HTML attributes but not its event listeners.
+   // Never carry a runtime binding marker into a new row.
+   row.querySelectorAll('.ppmp-remove-row').forEach(function(btn){btn.removeAttribute('data-ppmp-delete-bound');});
    row.querySelectorAll('input,textarea').forEach(x=>{if(x.type==='file')x.value='';else x.value='';});
    row.querySelectorAll('select').forEach(x=>x.selectedIndex=0);
    const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
