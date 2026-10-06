@@ -1,4 +1,24 @@
 <?php require_once __DIR__.'/../config/config.php';
+if(!function_exists('ensureUserActivitySchema')){
+function ensureUserActivitySchema(PDO $pdo): void {
+    try{
+        $cols=$pdo->query("SHOW COLUMNS FROM users LIKE 'last_activity_at'")->fetch();
+        if(!$cols) $pdo->exec("ALTER TABLE users ADD COLUMN last_activity_at DATETIME NULL AFTER status");
+    }catch(Throwable $e){}
+}
+}
+if(!function_exists('touchCurrentUserActivity')){
+function touchCurrentUserActivity(): void {
+    $u=function_exists('currentUser') ? currentUser() : ($_SESSION['user'] ?? null);
+    if(!$u || empty($u['id'])) return;
+    try{
+        $pdo=db();
+        ensureUserActivitySchema($pdo);
+        $st=$pdo->prepare("UPDATE users SET last_activity_at=NOW() WHERE id=?");
+        $st->execute([(int)$u['id']]);
+    }catch(Throwable $e){}
+}
+}
 function pageStart(string $title): void { $u=currentUser(); touchCurrentUserActivity(); ?>
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?=e($title)?> | Procurement Data Monitoring</title><link rel="stylesheet" href="assets/style.css?v=20261004-ppmpmenu"><style id="app-typography-fix">.sidebar .sidebar-nav,.sidebar .sidebar-nav a,.sidebar .sidebar-nav summary,.sidebar .sidebar-nav span{font-size:12px !important;line-height:1.2 !important}.sidebar .sidebar-nav a[href*="ppmp_review.php"]{display:none !important}</style></head><body>
 <div class="app"><header class="site-header"><div class="site-brand"><span class="brand-mark">P</span><div><b>Procurement Data Monitoring</b><small>Procurement Planning and Monitoring System</small></div></div><div class="site-user"><span class="avatar"><?=strtoupper(substr($u['full_name']??'G',0,1))?></span><div><b><?=e($u['full_name']??'Guest')?></b><small><?=e($u['role']??'Guest')?></small></div><a href="logout.php">Logout</a></div></header><aside class="sidebar"><div class="brand"><span class="brand-mark">P</span><div><b>Procurement</b><small>Data Monitoring</small></div></div><nav class="sidebar-nav" aria-label="Primary navigation">
