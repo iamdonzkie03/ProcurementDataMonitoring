@@ -864,13 +864,13 @@ pageStart('Project Procurement Management Plan');
                   <div class="ppmp-document-row">
                     <input class="input" type="file" name="items[0][supporting_documents][]" accept="application/pdf,.pdf">
                     <input class="input" type="text" name="items[0][supporting_document_names][]" placeholder="Document name">
-                    <button class="btn secondary ppmp-remove-document" type="button">Remove</button>
+                    <button class="btn secondary ppmp-remove-document" type="button" style="display:none">Remove</button>
                   </div>
                   <button class="btn secondary ppmp-add-document" type="button">+ Add PDF</button>
                 </div>
               </td>
               <td><input class="input ppmp-row-remarks" type="text" name="<?=$editing?'remarks':'items[0][remarks]'?>" value="<?=e($formState['remarks']??'')?>"></td>
-              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php else: ?><button class="btn danger ppmp-remove-row" type="button">Remove</button><?php endif; ?></td>
+              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php else: ?><button class="btn secondary ppmp-clear-row" type="button">Clear</button><button class="btn danger ppmp-remove-row" type="button" style="display:none">Remove</button><?php endif; ?></td>
             </tr>
           </tbody>
         </table>
@@ -1246,9 +1246,12 @@ function ppmpPrintDate($value): string{
         const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');
         if(unitHidden)unitHidden.value='';
         const unitPrice=row.querySelector('.ppmp-row-unit-price');
+      if(unitPrice){unitPrice.readOnly=true;unitPrice.classList.add('ppmp-masterlist-locked');}
         if(unitPrice)unitPrice.value='';
         const total=row.querySelector('.ppmp-row-total');
         if(total)total.value='';
+        const itemUnit=row.querySelector('.ppmp-masterlist-unit-value');
+        if(itemUnit)itemUnit.value='';
       }
       showSuggestions(this);
     });
@@ -1265,7 +1268,7 @@ function ppmpPrintDate($value): string{
       input.value=button.dataset.itemName||'';
       input.dataset.selectedMasterlistName=button.dataset.itemName||'';
       const description=row.querySelector('.ppmp-item-description');
-      if(description)description.value=button.dataset.specifications||'';
+      if(description){description.value=button.dataset.specifications||'';description.readOnly=true;description.classList.add('ppmp-masterlist-locked');}
       const unitSelect=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
       if(unitSelect){
         const masterUnit=String(button.dataset.unit||'').trim();
@@ -1369,9 +1372,10 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    if(!row)return;
    row.querySelectorAll('.ppmp-document-row').forEach(function(docRow,docIndex){
      const remove=docRow.querySelector('.ppmp-remove-document');
-     if(remove)remove.style.display=docIndex===0?'none':'inline-flex';
      const file=docRow.querySelector('input[type="file"]');
      const name=docRow.querySelector('input[type="text"]');
+     const hasFile=!!(file&&file.files&&file.files.length);
+     if(remove)remove.style.display=hasFile?'inline-flex':'none';
      if(file)file.name='items['+index+'][supporting_documents][]';
      if(name)name.name='items['+index+'][supporting_document_names][]';
    });
@@ -1379,6 +1383,12 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
  function syncAllRowDocuments(){
    document.querySelectorAll('#ppmpEntryBody .ppmp-entry-row').forEach(function(row,index){syncRowDocuments(row,index);});
  }
+ document.addEventListener('change',function(e){
+   if(e.target.matches('#ppmpEntryBody input[type="file"]')){
+     const row=e.target.closest('.ppmp-entry-row');
+     if(row)syncAllRowDocuments();
+   }
+ });
  document.addEventListener('click',function(e){
    if(e.target.classList.contains('ppmp-add-document')){
      const wrap=e.target.closest('.ppmp-row-documents');
@@ -1546,15 +1556,71 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    field.value=value;
  }
  function calc(){let g=0;body.querySelectorAll('.ppmp-entry-row').forEach(row=>{let q=parseFloat((row.querySelector('.ppmp-row-qty')?.value||'').replace(/,/g,''))||0,p=parseFloat((row.querySelector('.ppmp-row-unit-price')?.value||'').replace(/,/g,''))||0,t=q*p;g+=t;row.querySelector('.ppmp-row-total').value=t?t.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'';});if(grand)grand.textContent=g.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+ function rowHasAllRequiredData(row){
+   const required=row.querySelectorAll('select[required],input[required],textarea[required]');
+   for(const field of required){
+     if(field.disabled)continue;
+     if(String(field.value||'').trim()==='')return false;
+   }
+   return true;
+ }
+ function syncRowAction(row){
+   if(!row)return;
+   const clear=row.querySelector('.ppmp-clear-row');
+   const remove=row.querySelector('.ppmp-remove-row');
+   const isNew=row.dataset.ppmpNewRow==='1';
+   const complete=rowHasAllRequiredData(row);
+   if(clear)clear.style.display=(!isNew&&!complete)?'inline-flex':'none';
+   if(remove)remove.style.display=(isNew||complete)?'inline-flex':'none';
+ }
  function bind(row){
    row.querySelectorAll('.ppmp-row-qty,.ppmp-row-unit-price').forEach(x=>{
-     x.addEventListener('input',function(){formatNumberInput(this,false);calc();});
-     x.addEventListener('blur',function(){formatNumberInput(this,true);calc();});
+     x.addEventListener('input',function(){formatNumberInput(this,false);calc();syncRowAction(row);});
+     x.addEventListener('blur',function(){formatNumberInput(this,true);calc();syncRowAction(row);});
    });
-   row.querySelector('.ppmp-remove-row')?.addEventListener('click',()=>{if(body.querySelectorAll('.ppmp-entry-row').length===1){row.querySelectorAll('input,textarea,select').forEach(x=>{if(x.type!=='hidden')x.value=''});calc();return;}row.remove();renumber();calc();});
+   row.querySelectorAll('input,select,textarea').forEach(function(field){
+     field.addEventListener('input',function(){syncRowAction(row);});
+     field.addEventListener('change',function(){syncRowAction(row);});
+   });
+   row.querySelector('.ppmp-clear-row')?.addEventListener('click',function(){
+     row.querySelectorAll('input,textarea,select').forEach(function(x){
+       if(x.type==='hidden')return;
+       if(x.type==='file')x.value='';
+       else if(x.tagName==='SELECT')x.selectedIndex=0;
+       else x.value='';
+     });
+     const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');
+     if(unitHidden)unitHidden.value='';
+     const item=row.querySelector('.ppmp-item-name');
+     if(item)item.dataset.selectedMasterlistName='';
+     const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
+     if(unit){unit.value='';unit.disabled=true;}
+     calc();syncAllRowDocuments();syncRowAction(row);
+   });
+   row.querySelector('.ppmp-remove-row')?.addEventListener('click',function(){
+     if(body.querySelectorAll('.ppmp-entry-row').length===1){
+       row.querySelectorAll('input,textarea,select').forEach(x=>{if(x.type!=='hidden'&&x.type!=='file')x.value='';});
+       const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');if(unitHidden)unitHidden.value='';
+       const item=row.querySelector('.ppmp-item-name');if(item)item.dataset.selectedMasterlistName='';
+       const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');if(unit){unit.value='';unit.disabled=true;}
+       calc();syncAllRowDocuments();syncRowAction(row);return;
+     }
+     row.remove();renumber();calc();syncAllRowDocuments();
+   });
+   syncRowAction(row);
  }
- add.addEventListener('click',()=>{let row=body.querySelector('.ppmp-entry-row').cloneNode(true);row.querySelectorAll('input,textarea').forEach(x=>x.value='');row.querySelectorAll('select').forEach(x=>x.selectedIndex=0);body.appendChild(row);renumber();bind(row);calc();});
- bind(body.querySelector('.ppmp-entry-row'));renumber();calc();
+ add.addEventListener('click',function(){
+   let row=body.querySelector('.ppmp-entry-row').cloneNode(true);
+   row.dataset.ppmpNewRow='1';
+   row.querySelectorAll('input,textarea').forEach(x=>{if(x.type==='file')x.value='';else x.value='';});
+   row.querySelectorAll('select').forEach(x=>x.selectedIndex=0);
+   const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
+   if(unit)unit.disabled=true;
+   const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');if(unitHidden)unitHidden.value='';
+   const item=row.querySelector('.ppmp-item-name');if(item)item.dataset.selectedMasterlistName='';
+   body.appendChild(row);renumber();bind(row);syncAllRowDocuments();calc();
+ });
+ bind(body.querySelector('.ppmp-entry-row'));renumber();syncAllRowDocuments();calc();
 })();
 /* Remove any legacy PPMP add-item control injected into the toolbar.
    This affects only the toolbar control and never the Data Entry "+ Add Row" control. */
