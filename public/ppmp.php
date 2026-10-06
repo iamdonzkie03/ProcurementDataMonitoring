@@ -1150,6 +1150,25 @@ function ppmpPrintDate($value): string{
 .ppmp-entry-table .ppmp-masterlist-locked{background:#e5e7eb!important;color:#6b7280!important;border:0!important;outline:0!important;box-shadow:none!important;cursor:not-allowed}
 .ppmp-entry-table textarea.ppmp-masterlist-locked{resize:none;border:0!important;outline:0!important;box-shadow:none!important}
 .ppmp-entry-table .ppmp-total-budget{background:#e5e7eb!important;color:#4b5563!important;border:0!important;outline:0!important;box-shadow:none!important;font-weight:700!important;text-align:right!important}
+
+/* Masterlist-controlled PPMP fields: preserve existing sizing/spacing, only lock appearance. */
+.ppmp-entry-table .ppmp-item-description.ppmp-masterlist-locked,
+.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked,
+.ppmp-entry-table .ppmp-total-budget{
+  background:#e5e7eb!important;
+  color:#6b7280!important;
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+}
+.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked,
+.ppmp-entry-table .ppmp-total-budget{
+  text-align:right!important;
+  font-weight:700!important;
+}
+.ppmp-entry-table .ppmp-item-description.ppmp-masterlist-locked{
+  min-width:260px;
+}
 </style>
 <div class="ppmp-signatures ppmp-signature-template">
     <div class="ppmp-signature-box">
