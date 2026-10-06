@@ -1633,6 +1633,17 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
      if(remove)remove.style.display=showMultipleRows?'inline-flex':'none';
    });
  }
+ // Use one delegated Delete handler for the entire PPMP table body.
+ // This works for the original row and every cloned/added row because the
+ // listener belongs to the tbody, not to an individual button.
+ body.addEventListener('click',function(e){
+   const button=e.target.closest('.ppmp-remove-row');
+   if(!button || !body.contains(button))return;
+   e.preventDefault();
+   e.stopPropagation();
+   const row=button.closest('.ppmp-entry-row');
+   if(row)deleteRow(row);
+ });
  function bind(row){
    row.querySelectorAll('.ppmp-row-qty,.ppmp-row-unit-price').forEach(x=>{
      x.addEventListener('input',function(){formatNumberInput(this,false);calc();syncRowAction(row);});
@@ -1657,10 +1668,7 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
      if(unit){unit.value='';unit.disabled=true;}
      calc();syncAllRowDocuments();syncRowAction(row);
    });
-   const removeButton=ensureDeleteButton(row);
-   if(removeButton){
-     removeButton.addEventListener('click',function(){deleteRow(row);});
-   }
+   ensureDeleteButton(row);
    syncRowAction(row);
  }
  add.addEventListener('click',function(){
