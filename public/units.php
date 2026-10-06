@@ -322,8 +322,14 @@ document.addEventListener('DOMContentLoaded',function(){
 .uom-page-size .input{width:78px;min-width:78px;height:36px}
 .uom-pagination-info{font-size:13px;color:#6b7280;flex:1;text-align:center}
 .uom-pagination-buttons{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
-.uom-page-button{min-width:38px;height:36px;padding:0 10px}
-.uom-page-button.active{font-weight:700;pointer-events:none;background:#e9ecef}
+.uom-page-button{min-width:38px;height:36px;padding:0 10px;background:#cfe8ff;color:#1f5f85;border-color:#b7d9f5}
+.uom-page-button:hover:not(:disabled):not(.active){background:#b9dcfa;color:#174a69}
+.uom-page-button.active{font-weight:700;pointer-events:none;background:#0d6efd;color:#fff;border-color:#0d6efd}
+.uom-pagination-buttons .uom-page-button:first-child,
+.uom-pagination-buttons .uom-page-button:last-child{background:#495057;color:#fff;border-color:#495057}
+.uom-pagination-buttons .uom-page-button:first-child:hover:not(:disabled),
+.uom-pagination-buttons .uom-page-button:last-child:hover:not(:disabled){background:#343a40;color:#fff;border-color:#343a40}
+.uom-pagination-buttons .uom-page-button:disabled{opacity:.7;cursor:not-allowed}
 @media(max-width:700px){
   .uom-pagination{align-items:flex-start;justify-content:flex-end;flex-wrap:wrap}
   .uom-pagination .uom-pagination-info{order:3;flex-basis:100%;text-align:right}
