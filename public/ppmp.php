@@ -1577,10 +1577,12 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    if(!row)return;
    const clear=row.querySelector('.ppmp-clear-row');
    const remove=row.querySelector('.ppmp-remove-row');
-   const isNew=row.dataset.ppmpNewRow==='1';
-   const complete=rowHasAllRequiredData(row);
+   const anyNewRow=!!body.querySelector('.ppmp-entry-row[data-ppmp-new-row="1"]');
    if(clear)clear.style.display='inline-flex';
-   if(remove)remove.style.display=(isNew||complete)?'inline-flex':'none';
+   if(remove)remove.style.display=anyNewRow?'inline-flex':'none';
+ }
+ function syncAllRowActions(){
+   body.querySelectorAll('.ppmp-entry-row').forEach(syncRowAction);
  }
  function bind(row){
    row.querySelectorAll('.ppmp-row-qty,.ppmp-row-unit-price').forEach(x=>{
@@ -1614,7 +1616,7 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
        const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');if(unit){unit.value='';unit.disabled=true;}
        calc();syncAllRowDocuments();syncRowAction(row);return;
      }
-     row.remove();renumber();calc();syncAllRowDocuments();
+     row.remove();renumber();calc();syncAllRowDocuments();syncAllRowActions();
    });
    syncRowAction(row);
  }
@@ -1627,9 +1629,9 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    if(unit)unit.disabled=true;
    const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');if(unitHidden)unitHidden.value='';
    const item=row.querySelector('.ppmp-item-name');if(item)item.dataset.selectedMasterlistName='';
-   body.appendChild(row);renumber();bind(row);syncAllRowDocuments();calc();
+   body.appendChild(row);renumber();bind(row);syncAllRowDocuments();calc();syncAllRowActions();
  });
- bind(body.querySelector('.ppmp-entry-row'));renumber();syncAllRowDocuments();calc();
+ bind(body.querySelector('.ppmp-entry-row'));renumber();syncAllRowDocuments();calc();syncAllRowActions();
 })();
 /* Remove any legacy PPMP add-item control injected into the toolbar.
    This affects only the toolbar control and never the Data Entry "+ Add Row" control. */
