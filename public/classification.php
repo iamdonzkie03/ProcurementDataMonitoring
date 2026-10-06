@@ -109,7 +109,7 @@ if(!$embedded) pageStart('Classification');
   </form>
 
   <div class="table-wrap" style="margin-top:22px">
-  <div class="classification-pagination" id="classificationPagination" aria-label="Classification pagination"><div class="classification-page-size"><label for="classificationPageSize">Show</label><select class="input" id="classificationPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>records</span></div><div class="classification-pagination-info" id="classificationPaginationInfo"></div><div class="classification-pagination-buttons" id="classificationPaginationButtons"></div></div>
+  <div class="classification-pagination" id="classificationPagination" aria-label="Classification pagination"><div class="classification-page-size"><label for="classificationPageSize">Show</label><select class="input" id="classificationPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="classificationPageSize">records</label></span></div><div class="classification-pagination-info" id="classificationPaginationInfo"></div><div class="classification-pagination-buttons" id="classificationPaginationButtons"></div></div>
     <table class="table" id="classificationTable">
       <thead><tr><th>Classification</th><th>Actions</th></tr></thead>
       <tbody>
