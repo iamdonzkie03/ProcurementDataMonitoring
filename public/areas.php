@@ -435,7 +435,7 @@ if(!$embedded) pageStart('Area/Unit Management');
             <div class="management-search-suggestions" id="areaSearchSuggestions" role="listbox"></div>
           </div>
         </div>
-        <div class="area-pagination" id="areaPagination" aria-label="Area/Unit pagination"><div class="area-page-size"><label for="areaPageSize">Show</label><select class="input" id="areaPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>records</span></div><div class="area-pagination-info" id="areaPaginationInfo"></div><div class="area-pagination-buttons" id="areaPaginationButtons"></div></div>
+        <div class="area-pagination" id="areaPagination" aria-label="Area/Unit pagination"><div class="area-page-size"><label for="areaPageSize">Show</label><select class="input" id="areaPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="areaPageSize">records</label></span></div><div class="area-pagination-info" id="areaPaginationInfo"></div><div class="area-pagination-buttons" id="areaPaginationButtons"></div></div>
         <div class="table-wrap"><table class="table" id="areaTable">
           <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
           <?php foreach($rows as $r): ?><?php $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id'])); ?>
