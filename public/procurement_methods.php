@@ -294,8 +294,11 @@ document.addEventListener('DOMContentLoaded',function(){
 .procurement_method-add-row,.procurement_method-row-remove{height:36px;white-space:nowrap}
 .procurement_method-save-actions{margin-top:10px;display:flex;justify-content:flex-start;text-align:left}
 .procurement_method-save-actions .btn{margin-left:0}
-.procurement_method-form-row{display:flex;align-items:flex-end;gap:12px}
-.procurement_method-form-actions{display:flex;gap:8px;align-items:center}
+.procurement_method-form-row{display:flex;align-items:flex-end;gap:12px;width:100%;box-sizing:border-box}
+.procurement_method-form-row .procurement-method-name-field{flex:1 1 auto;min-width:0;margin:0}
+.procurement_method-form-row .procurement-method-name-input{width:100%;box-sizing:border-box}
+.procurement_method-form-actions{display:flex;gap:8px;align-items:center;flex:0 0 auto;white-space:nowrap}
+.procurement_method-form-actions .btn{white-space:nowrap}
 .master-action{width:82px;min-width:82px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center}
 .master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
 </style>
