@@ -86,7 +86,11 @@ if(!$embedded) pageStart('Units of Measurement');
 </div>
 <?php endif; ?>
 </form>
-<div class="table-wrap"><table class="table"><tr><th>Unit</th><th>Action</th></tr><?php foreach($rows as $r):?><tr><td><b><?=e($r['name'])?></b></td><td>
+<div class="uom-search" id="uomSearchBox">
+<input class="input" type="text" id="uomSearchInput" autocomplete="off" placeholder="Search Unit of Measurement..." aria-label="Search Unit of Measurement">
+<div class="uom-search-suggestions" id="uomSearchSuggestions" role="listbox"></div>
+</div>
+<div class="table-wrap"><table class="table" id="uomTable"><tr><th>Unit</th><th>Action</th></tr><?php foreach($rows as $r):?><tr data-uom-id="<?=e((string)$r['id'])?>" data-uom-name="<?=e($r['name'])?>"><td><b><?=e($r['name'])?></b></td><td>
 <a class="btn secondary master-action" href="<?=e(($embedded?'settings.php?tab=uom':'units.php').'?edit='.(int)$r['id'])?>">Edit</a>
 <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Unit of Measurement?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="btn danger master-action" type="submit">Delete</button></form>
 </td></tr><?php endforeach;?></table></div>
@@ -123,9 +127,135 @@ document.addEventListener('DOMContentLoaded',function(){
   updateSaveLabel();
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const input=document.getElementById('uomSearchInput');
+  const suggestions=document.getElementById('uomSearchSuggestions');
+  const table=document.getElementById('uomTable');
+  if(!input||!suggestions||!table)return;
+
+  const tableRows=Array.from(table.querySelectorAll('tr[data-uom-id]'));
+
+  function escapeHtml(value){
+    return String(value??'').replace(/[&<>"']/g,function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];
+    });
+  }
+
+  function closeSuggestions(){
+    suggestions.innerHTML='';
+    suggestions.style.display='none';
+  }
+
+  function showAllRows(){
+    tableRows.forEach(function(row){
+      row.style.display='';
+      row.classList.remove('uom-search-selected');
+    });
+  }
+
+  function filterRows(term,selectedName){
+    const value=String(term||'').trim().toLowerCase();
+    let visible=0;
+    tableRows.forEach(function(row){
+      const name=String(row.dataset.uomName||'');
+      const match=selectedName
+        ? name.toLowerCase()===selectedName.toLowerCase()
+        : (!value || name.toLowerCase().includes(value));
+      row.style.display=match?'':'none';
+      row.classList.toggle('uom-search-selected',!!selectedName && match);
+      if(match)visible++;
+    });
+    return visible;
+  }
+
+  function showSuggestions(){
+    const term=String(input.value||'').trim().toLowerCase();
+    suggestions.innerHTML='';
+    if(!term){
+      closeSuggestions();
+      showAllRows();
+      return;
+    }
+    const matches=tableRows
+      .map(function(row){return {row:row,name:String(row.dataset.uomName||'')};})
+      .filter(function(item){return item.name.toLowerCase().includes(term);})
+      .slice(0,10);
+
+    if(!matches.length){
+      suggestions.innerHTML='<div class="uom-search-empty">No matching unit found.</div>';
+      suggestions.style.display='block';
+      filterRows(term,null);
+      return;
+    }
+
+    matches.forEach(function(item){
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='uom-search-suggestion';
+      button.setAttribute('role','option');
+      button.dataset.uomId=item.row.dataset.uomId||'';
+      button.dataset.uomName=item.name;
+      button.innerHTML=escapeHtml(item.name);
+      suggestions.appendChild(button);
+    });
+    suggestions.style.display='block';
+    filterRows(term,null);
+  }
+
+  input.addEventListener('input',showSuggestions);
+  input.addEventListener('focus',function(){
+    if(input.value.trim())showSuggestions();
+  });
+  input.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){
+      input.value='';
+      closeSuggestions();
+      showAllRows();
+    }
+  });
+
+  suggestions.addEventListener('click',function(e){
+    const button=e.target.closest('.uom-search-suggestion');
+    if(!button)return;
+    const name=button.dataset.uomName||'';
+    input.value=name;
+    closeSuggestions();
+    filterRows(name,name);
+    const selected=tableRows.find(function(row){
+      return String(row.dataset.uomName||'').toLowerCase()===name.toLowerCase();
+    });
+    if(selected){
+      selected.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  });
+
+  document.addEventListener('click',function(e){
+    const box=document.getElementById('uomSearchBox');
+    if(box&&!box.contains(e.target))closeSuggestions();
+  });
+});
+</script>
 <style>
 .master-action{width:82px;min-width:82px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center}
 .master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
 
+<style>
+.uom-search{position:relative;max-width:520px;margin:0 0 14px}
+.uom-search .input{width:100%;box-sizing:border-box}
+.uom-search-suggestions{
+  position:absolute;left:0;right:0;top:100%;z-index:1000;
+  background:#fff;border:1px solid #cfd6df;border-radius:4px;
+  box-shadow:0 4px 12px rgba(0,0,0,.12);
+  max-height:240px;overflow-y:auto;display:none
+}
+.uom-search-suggestion{
+  display:block;width:100%;padding:9px 12px;border:0;
+  background:#fff;text-align:left;cursor:pointer;font-size:14px
+}
+.uom-search-suggestion:hover,.uom-search-suggestion:focus{background:#eef5ff}
+.uom-search-empty{padding:9px 12px;color:#6b7280;font-size:13px}
+#uomTable tr.uom-search-selected td{background:#eef5ff}
+</style>
 </style>
 <?php if(!$embedded) pageEnd();
