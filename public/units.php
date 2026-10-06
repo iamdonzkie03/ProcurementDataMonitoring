@@ -93,7 +93,7 @@ if(!$embedded) pageStart('Units of Measurement');
 <?php endif; ?>
 </form>
 <div class="table-wrap"><table class="table" id="uomTable"><tr><th>Unit</th><th>Action</th></tr><?php foreach($rows as $r):?><tr data-uom-id="<?=e((string)$r['id'])?>" data-uom-name="<?=e($r['name'])?>"><td><b><?=e($r['name'])?></b></td><td>
-<a class="btn secondary master-action" href="<?=e(($embedded?'settings.php?tab=uom':'units.php').'?edit='.(int)$r['id'])?>">Edit</a>
+<a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=uom&edit='.(int)$r['id'] : 'units.php?edit='.(int)$r['id'])?>">Edit</a>
 <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Unit of Measurement?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="btn danger master-action" type="submit">Delete</button></form>
 </td></tr><?php endforeach;?></table></div>
 </div>
