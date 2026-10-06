@@ -870,7 +870,7 @@ pageStart('Project Procurement Management Plan');
                 </div>
               </td>
               <td><input class="input ppmp-row-remarks" type="text" name="<?=$editing?'remarks':'items[0][remarks]'?>" value="<?=e($formState['remarks']??'')?>"></td>
-              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php else: ?><button class="btn secondary ppmp-clear-row" type="button">Clear</button><button class="btn danger ppmp-remove-row" type="button" style="display:none">Remove</button><?php endif; ?></td>
+              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php else: ?><button class="btn secondary ppmp-clear-row" type="button">Clear</button><button class="btn danger ppmp-remove-row" type="button" style="display:none">Delete</button><?php endif; ?></td>
             </tr>
           </tbody>
         </table>
@@ -1578,7 +1578,7 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    const clear=row.querySelector('.ppmp-clear-row');
    const remove=row.querySelector('.ppmp-remove-row');
    const rowCount=body.querySelectorAll('.ppmp-entry-row').length;
-   const showMultipleRows=rowCount>=2;
+   const showMultipleRows=rowCount>1;
    // Clear is always available on every row.
    // Remove is available only when at least 2 rows exist, including the original row.
    if(clear)clear.style.display='inline-flex';
