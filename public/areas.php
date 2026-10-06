@@ -435,6 +435,7 @@ if(!$embedded) pageStart('Area/Unit Management');
             <div class="management-search-suggestions" id="areaSearchSuggestions" role="listbox"></div>
           </div>
         </div>
+        <div class="area-pagination" id="areaPagination" aria-label="Area/Unit pagination"><div class="area-page-size"><label for="areaPageSize">Show</label><select class="input" id="areaPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>records</span></div><div class="area-pagination-info" id="areaPaginationInfo"></div><div class="area-pagination-buttons" id="areaPaginationButtons"></div></div>
         <div class="table-wrap"><table class="table" id="areaTable">
           <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
           <?php foreach($rows as $r): ?><?php $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id'])); ?>
@@ -513,53 +514,156 @@ if(!$embedded) pageStart('Area/Unit Management');
     const suggestions=document.getElementById(cfg.suggestions);
     const table=document.getElementById(cfg.table);
     const box=document.getElementById(cfg.box);
+    const pageSizeSelect=document.getElementById(cfg.pageSize);
+    const paginationInfo=document.getElementById(cfg.paginationInfo);
+    const paginationButtons=document.getElementById(cfg.paginationButtons);
     if(!input||!suggestions||!table||!box)return;
+
     const rows=Array.from(table.querySelectorAll('tr[data-management-search-id]'));
-    function close(){suggestions.innerHTML='';suggestions.style.display='none';}
-    function showAll(){rows.forEach(r=>{r.style.display='';r.classList.remove('management-search-selected');});}
-    function filter(term,selected){
-      const value=String(term||'').trim().toLowerCase();
-      rows.forEach(r=>{
-        const hay=[r.dataset.managementSearchName,r.dataset.managementSearchHead,r.dataset.managementSearchDivision].filter(Boolean).join(' ').toLowerCase();
-        const match=selected ? r.dataset.managementSearchId===selected : (!value||hay.includes(value));
-        r.style.display=match?'':'none';
-        r.classList.toggle('management-search-selected',!!selected&&match);
-      });
+    if(!pageSizeSelect||!paginationInfo||!paginationButtons){
+      return;
     }
+
+    let filteredRows=rows.slice();
+    let currentPage=1;
+    let pageSize=Number(pageSizeSelect.value)||10;
+
+    function close(){suggestions.innerHTML='';suggestions.style.display='none';}
+
+    function rowMatches(row,term,selected){
+      const hay=[row.dataset.managementSearchName,row.dataset.managementSearchHead,row.dataset.managementSearchDivision].filter(Boolean).join(' ').toLowerCase();
+      return selected ? row.dataset.managementSearchId===selected : (!term||hay.includes(term));
+    }
+
+    function renderPagination(){
+      const total=filteredRows.length;
+      const totalPages=Math.max(1,Math.ceil(total/pageSize));
+      if(currentPage>totalPages)currentPage=totalPages;
+
+      rows.forEach(r=>{
+        r.style.display='none';
+        r.classList.remove('management-search-selected');
+      });
+
+      const startIndex=(currentPage-1)*pageSize;
+      filteredRows.slice(startIndex,startIndex+pageSize).forEach(r=>r.style.display='');
+
+      if(!total){
+        paginationInfo.textContent='0 records';
+      }else{
+        paginationInfo.textContent='Showing '+(startIndex+1)+'-'+Math.min(startIndex+pageSize,total)+' of '+total+' records';
+      }
+
+      paginationButtons.innerHTML='';
+      function addButton(label,page,disabled,active){
+        const b=document.createElement('button');
+        b.type='button';
+        b.className='btn secondary area-page-button'+(active?' active':'');
+        b.textContent=label;
+        b.disabled=!!disabled;
+        b.addEventListener('click',function(){
+          currentPage=page;
+          renderPagination();
+        });
+        paginationButtons.appendChild(b);
+      }
+
+      addButton('Previous',currentPage-1,currentPage===1,false);
+      const maxButtons=7;
+      let first=Math.max(1,currentPage-3);
+      let last=Math.min(totalPages,first+maxButtons-1);
+      first=Math.max(1,last-maxButtons+1);
+      for(let page=first;page<=last;page++)addButton(String(page),page,false,page===currentPage);
+      addButton('Next',currentPage+1,currentPage===totalPages,false);
+    }
+
+    function filter(term,selected,resetPage){
+      const value=String(term||'').trim().toLowerCase();
+      filteredRows=rows.filter(r=>rowMatches(r,value,selected));
+      if(resetPage)currentPage=1;
+      renderPagination();
+      if(selected){
+        filteredRows.forEach(r=>r.classList.add('management-search-selected'));
+      }
+    }
+
     function render(){
       const term=input.value.trim().toLowerCase();
       suggestions.innerHTML='';
-      if(!term){close();showAll();return;}
-      const matches=rows.filter(r=>{
-        const hay=[r.dataset.managementSearchName,r.dataset.managementSearchHead,r.dataset.managementSearchDivision].filter(Boolean).join(' ').toLowerCase();
-        return hay.includes(term);
-      }).slice(0,10);
+      if(!term){
+        close();
+        filter('',null,true);
+        return;
+      }
+
+      const matches=rows.filter(r=>rowMatches(r,term,null)).slice(0,10);
       if(!matches.length){
         suggestions.innerHTML='<div class="management-search-empty">No matching record found.</div>';
-        suggestions.style.display='block'; filter(term,null); return;
+        suggestions.style.display='block';
+        filter(term,null,true);
+        return;
       }
+
       matches.forEach(r=>{
         const b=document.createElement('button');
-        b.type='button'; b.className='management-search-suggestion'; b.setAttribute('role','option');
+        b.type='button';
+        b.className='management-search-suggestion';
+        b.setAttribute('role','option');
         b.dataset.id=r.dataset.managementSearchId;
         b.textContent=r.dataset.managementSearchName||'';
         suggestions.appendChild(b);
       });
-      suggestions.style.display='block'; filter(term,null);
+      suggestions.style.display='block';
+      filter(term,null,true);
     }
+
     input.addEventListener('input',render);
     input.addEventListener('focus',()=>{if(input.value.trim())render();});
-    input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';close();showAll();}});
-    suggestions.addEventListener('click',e=>{
-      const b=e.target.closest('.management-search-suggestion'); if(!b)return;
-      const row=rows.find(r=>r.dataset.managementSearchId===b.dataset.id); if(!row)return;
-      input.value=row.dataset.managementSearchName||'';
-      close(); filter('',b.dataset.id); row.scrollIntoView({behavior:'smooth',block:'center'});
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Escape'){
+        input.value='';
+        close();
+        filter('',null,true);
+      }
     });
+
+    suggestions.addEventListener('click',e=>{
+      const b=e.target.closest('.management-search-suggestion');
+      if(!b)return;
+      const row=rows.find(r=>r.dataset.managementSearchId===b.dataset.id);
+      if(!row)return;
+      input.value=row.dataset.managementSearchName||'';
+      close();
+      filter('',b.dataset.id,true);
+      row.scrollIntoView({behavior:'smooth',block:'center'});
+    });
+
+    pageSizeSelect.addEventListener('change',function(){
+      pageSize=Number(pageSizeSelect.value)||10;
+      currentPage=1;
+      renderPagination();
+    });
+
     document.addEventListener('click',e=>{if(!box.contains(e.target))close();});
+    renderPagination();
   }
-  setupManagementSearch({box:'divisionSearchBox',input:'divisionSearchInput',suggestions:'divisionSearchSuggestions',table:'divisionTable'});
-  setupManagementSearch({box:'areaSearchBox',input:'areaSearchInput',suggestions:'areaSearchSuggestions',table:'areaTable'});
+
+  setupManagementSearch({
+    box:'divisionSearchBox',
+    input:'divisionSearchInput',
+    suggestions:'divisionSearchSuggestions',
+    table:'divisionTable'
+  });
+
+  setupManagementSearch({
+    box:'areaSearchBox',
+    input:'areaSearchInput',
+    suggestions:'areaSearchSuggestions',
+    table:'areaTable',
+    pageSize:'areaPageSize',
+    paginationInfo:'areaPaginationInfo',
+    paginationButtons:'areaPaginationButtons'
+  });
 })();
 </script>
 </script>
@@ -575,6 +679,24 @@ if(!$embedded) pageStart('Area/Unit Management');
 .management-search-suggestion:hover,.management-search-suggestion:focus{background:#eef5ff}
 .management-search-empty{padding:9px 12px;color:#6b7280;font-size:13px}
 .management-search-selected td{background:#eef5ff!important}
+.area-pagination{display:flex;align-items:center;justify-content:flex-end;gap:12px;width:100%;clear:both;position:static;float:none;margin:0 0 10px;padding:0;box-sizing:border-box}
+.area-pagination .area-page-size{justify-self:auto}
+.area-pagination .area-pagination-info{flex:0 0 auto;justify-self:auto;text-align:right;font-size:13px;color:#6b7280}
+.area-pagination-buttons{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.area-page-size{display:flex;align-items:center;gap:6px;font-size:14px;color:#4b5563}
+.area-page-size .input{width:78px;min-width:78px;height:36px}
+.area-page-button{min-width:38px;height:36px;padding:0 10px;background:#cfe8ff;color:#1f5f85;border-color:#b7d9f5}
+.area-page-button:hover:not(:disabled):not(.active){background:#b9dcfa;color:#174a69}
+.area-page-button.active{font-weight:700;pointer-events:none;background:#0d6efd;color:#fff;border-color:#0d6efd}
+.area-pagination-buttons .area-page-button:first-child,
+.area-pagination-buttons .area-page-button:last-child{background:#495057;color:#fff;border-color:#495057}
+.area-pagination-buttons .area-page-button:first-child:hover:not(:disabled),
+.area-pagination-buttons .area-page-button:last-child:hover:not(:disabled){background:#343a40;color:#fff;border-color:#343a40}
+.area-pagination-buttons .area-page-button:disabled{opacity:.7;cursor:not-allowed}
+@media(max-width:700px){
+  .area-pagination{align-items:flex-start;justify-content:flex-end;flex-wrap:wrap}
+  .area-pagination .area-pagination-info{order:3;flex-basis:100%;text-align:right}
+}
 .master-action{width:82px;min-width:82px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center}
 .master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
 
