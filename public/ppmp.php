@@ -701,6 +701,8 @@ pageStart('Project Procurement Management Plan');
 .ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{width:110px!important;min-width:110px!important;max-width:110px!important;box-sizing:border-box;text-align:right!important}
 .ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked,.ppmp-entry-table .ppmp-total-budget{margin:0!important;padding-left:7px!important;padding-right:7px!important}
 .ppmp-entry-table .ppmp-total-budget{font-weight:700!important}
+#ppmpEntryBody .ppmp-remove-row{display:none!important}
+#ppmpEntryBody.ppmp-multiple-rows .ppmp-remove-row{display:inline-flex!important}
 .ppmp-entry-table .ppmp-row-remarks{width:150px!important;min-width:150px!important;max-width:150px!important;box-sizing:border-box}
 </style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style>
 <?php if(!$print && $isPpmpSupervisor): ?>
@@ -1610,32 +1612,25 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
      remove.textContent='Delete';
      actionCell.appendChild(remove);
    }
-   // Event listeners are attached by bind(row), not here.
-   // This is important because cloneNode() copies attributes but does not copy listeners.
    return remove;
- }
- function syncRowAction(row){
-   if(!row)return;
-   const clear=row.querySelector('.ppmp-clear-row');
-   const remove=ensureDeleteButton(row);
-   const rowCount=body.querySelectorAll('.ppmp-entry-row').length;
-   const showMultipleRows=rowCount>=2;
-   if(clear)clear.style.setProperty('display','inline-flex','important');
-   if(remove)remove.style.setProperty('display',showMultipleRows?'inline-flex':'none','important');
  }
  function syncAllRowActions(){
    const rows=[...body.querySelectorAll('.ppmp-entry-row')];
-   const showMultipleRows=rows.length>=2;
+   const multiple=rows.length>=2;
+   body.classList.toggle('ppmp-multiple-rows',multiple);
+   body.dataset.ppmpRowCount=String(rows.length);
    rows.forEach(function(row){
      const clear=row.querySelector('.ppmp-clear-row');
      const remove=ensureDeleteButton(row);
      if(clear)clear.style.setProperty('display','inline-flex','important');
-     if(remove)remove.style.setProperty('display',showMultipleRows?'inline-flex':'none','important');
+     if(remove)remove.style.removeProperty('display');
    });
  }
- // Use one delegated Delete handler for the entire PPMP table body.
- // This works for the original row and every cloned/added row because the
- // listener belongs to the tbody, not to an individual button.
+ function syncRowAction(row){
+   syncAllRowActions();
+ }
+ // One delegated handler means Delete works for both the original row and
+ // every row created by + Add Row, including rows created by cloneNode().
  body.addEventListener('click',function(e){
    const button=e.target.closest('.ppmp-remove-row');
    if(!button || !body.contains(button))return;
@@ -1646,12 +1641,8 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
  });
  function bind(row){
    row.querySelectorAll('.ppmp-row-qty,.ppmp-row-unit-price').forEach(x=>{
-     x.addEventListener('input',function(){formatNumberInput(this,false);calc();syncRowAction(row);});
-     x.addEventListener('blur',function(){formatNumberInput(this,true);calc();syncRowAction(row);});
-   });
-   row.querySelectorAll('input,select,textarea').forEach(function(field){
-     field.addEventListener('input',function(){syncRowAction(row);});
-     field.addEventListener('change',function(){syncRowAction(row);});
+     x.addEventListener('input',function(){formatNumberInput(this,false);calc();syncAllRowActions();});
+     x.addEventListener('blur',function(){formatNumberInput(this,true);calc();syncAllRowActions();});
    });
    row.querySelector('.ppmp-clear-row')?.addEventListener('click',function(){
      row.querySelectorAll('input,textarea,select').forEach(function(x){
@@ -1666,30 +1657,32 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
      if(item)item.dataset.selectedMasterlistName='';
      const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
      if(unit){unit.value='';unit.disabled=true;}
-     calc();syncAllRowDocuments();syncRowAction(row);
+     calc();syncAllRowDocuments();syncAllRowActions();
    });
    ensureDeleteButton(row);
-   syncRowAction(row);
  }
  add.addEventListener('click',function(){
-   let row=body.querySelector('.ppmp-entry-row').cloneNode(true);
+   const original=body.querySelector('.ppmp-entry-row');
+   if(!original)return;
+   const row=original.cloneNode(true);
    row.dataset.ppmpNewRow='1';
-   // cloneNode() copies the button's HTML attributes but not its event listeners.
-   // Never carry a runtime binding marker into a new row.
-   row.querySelectorAll('.ppmp-remove-row').forEach(function(btn){btn.removeAttribute('data-ppmp-delete-bound');});
-   row.querySelectorAll('input,textarea').forEach(x=>{if(x.type==='file')x.value='';else x.value='';});
-   row.querySelectorAll('select').forEach(x=>x.selectedIndex=0);
+   row.querySelectorAll('input,textarea').forEach(function(x){
+     if(x.type==='file')x.value='';
+     else x.value='';
+   });
+   row.querySelectorAll('select').forEach(function(x){x.selectedIndex=0;});
    const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
    if(unit)unit.disabled=true;
-   const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');if(unitHidden)unitHidden.value='';
-   const item=row.querySelector('.ppmp-item-name');if(item)item.dataset.selectedMasterlistName='';
+   const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');
+   if(unitHidden)unitHidden.value='';
+   const item=row.querySelector('.ppmp-item-name');
+   if(item)item.dataset.selectedMasterlistName='';
    body.appendChild(row);
    renumber();
    bind(row);
    syncAllRowDocuments();
    calc();
    syncAllRowActions();
-   requestAnimationFrame(syncAllRowActions);
  });
  bind(body.querySelector('.ppmp-entry-row'));renumber();syncAllRowDocuments();calc();syncAllRowActions();
 })();
