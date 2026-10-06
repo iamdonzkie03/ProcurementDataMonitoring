@@ -86,12 +86,6 @@ if(!$embedded) pageStart('Units of Measurement');
 </div>
 <?php endif; ?>
 </form>
-<input type="hidden" name="csrf" value="<?=e(csrf())?>">
-<input type="hidden" name="action" value="save">
-<input type="hidden" name="id" value="<?=e((string)($editing['id']??0))?>">
-<div class="field"><label>Unit Name</label><input class="input" name="name" value="<?=e($editing['name']??'')?>" placeholder="e.g. Unit, Piece, Lot, Vial" required></div>
-<div class="field" style="display:flex;align-items:end;gap:8px"><button class="btn"><?= $editing ? 'Save Changes' : '+ Add Unit' ?></button><?php if($editing): ?><a class="btn secondary" href="<?=e($embedded?'settings.php?tab=uom':'units.php')?>">Cancel</a><?php endif; ?></div>
-</form>
 <div class="table-wrap"><table class="table"><tr><th>Unit</th><th>Status</th><th>Action</th></tr><?php foreach($rows as $r):?><tr><td><b><?=e($r['name'])?></b></td><td><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="status-toggle <?=$r['status']==='Active'?'status-active':'status-inactive'?>" type="submit" title="Click to change status"><?=e($r['status'])?></button></form></td><td>
 <a class="btn secondary master-action" href="<?=e(($embedded?'settings.php?tab=uom':'units.php').'?edit='.(int)$r['id'])?>">Edit</a>
 <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Unit of Measurement?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="btn danger master-action" type="submit">Delete</button></form>
