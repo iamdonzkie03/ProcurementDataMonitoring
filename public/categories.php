@@ -162,6 +162,116 @@ document.addEventListener('DOMContentLoaded',function(){
   updateSaveLabel();
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const input=document.getElementById('categorySearchInput');
+  const suggestions=document.getElementById('categorySearchSuggestions');
+  const table=document.getElementById('categoryTable');
+  if(!input||!suggestions||!table)return;
+
+  const tableRows=Array.from(table.querySelectorAll('tr[data-category-id]'));
+
+  function escapeHtml(value){
+    return String(value??'').replace(/[&<>"']/g,function(ch){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];
+    });
+  }
+
+  function closeSuggestions(){
+    suggestions.innerHTML='';
+    suggestions.style.display='none';
+  }
+
+  function showAllRows(){
+    tableRows.forEach(function(row){
+      row.style.display='';
+      row.classList.remove('category-search-selected');
+    });
+  }
+
+  function filterRows(term,selectedName){
+    const value=String(term||'').trim().toLowerCase();
+    let visible=0;
+    tableRows.forEach(function(row){
+      const name=String(row.dataset.categoryName||'');
+      const match=selectedName
+        ? name.toLowerCase()===selectedName.toLowerCase()
+        : (!value || name.toLowerCase().includes(value));
+      row.style.display=match?'':'none';
+      row.classList.toggle('category-search-selected',!!selectedName && match);
+      if(match)visible++;
+    });
+    return visible;
+  }
+
+  function showSuggestions(){
+    const term=String(input.value||'').trim().toLowerCase();
+    suggestions.innerHTML='';
+    if(!term){
+      closeSuggestions();
+      showAllRows();
+      return;
+    }
+
+    const matches=tableRows
+      .map(function(row){return {row:row,name:String(row.dataset.categoryName||'')};})
+      .filter(function(item){return item.name.toLowerCase().includes(term);})
+      .slice(0,10);
+
+    if(!matches.length){
+      suggestions.innerHTML='<div class="category-search-empty">No matching category found.</div>';
+      suggestions.style.display='block';
+      filterRows(term,null);
+      return;
+    }
+
+    matches.forEach(function(item){
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='category-search-suggestion';
+      button.setAttribute('role','option');
+      button.dataset.categoryId=item.row.dataset.categoryId||'';
+      button.dataset.categoryName=item.name;
+      button.innerHTML=escapeHtml(item.name);
+      suggestions.appendChild(button);
+    });
+    suggestions.style.display='block';
+    filterRows(term,null);
+  }
+
+  input.addEventListener('input',showSuggestions);
+  input.addEventListener('focus',function(){
+    if(input.value.trim())showSuggestions();
+  });
+  input.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){
+      input.value='';
+      closeSuggestions();
+      showAllRows();
+    }
+  });
+
+  suggestions.addEventListener('click',function(e){
+    const button=e.target.closest('.category-search-suggestion');
+    if(!button)return;
+    const name=button.dataset.categoryName||'';
+    input.value=name;
+    closeSuggestions();
+    filterRows(name,name);
+    const selected=tableRows.find(function(row){
+      return String(row.dataset.categoryName||'').toLowerCase()===name.toLowerCase();
+    });
+    if(selected){
+      selected.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  });
+
+  document.addEventListener('click',function(e){
+    const box=document.getElementById('categorySearchBox');
+    if(box&&!box.contains(e.target))closeSuggestions();
+  });
+});
+</script>
 <style>
 .category-page-header{display:flex;align-items:center;justify-content:space-between;gap:18px}
 .category-page-title{min-width:0}
