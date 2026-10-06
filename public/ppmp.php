@@ -1503,5 +1503,24 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
  add.addEventListener('click',()=>{let row=body.querySelector('.ppmp-entry-row').cloneNode(true);row.querySelectorAll('input,textarea').forEach(x=>x.value='');row.querySelectorAll('select').forEach(x=>x.selectedIndex=0);body.appendChild(row);renumber();bind(row);calc();});
  bind(body.querySelector('.ppmp-entry-row'));renumber();calc();
 })();
+/* Defensive removal of the legacy "+ Add PPMP Item" control.
+   This intentionally does not affect the "+ Add Row" control. */
+(function(){
+  function removeLegacyAddPpmpItem(){
+    document.querySelectorAll('#addPpmpItemBtn').forEach(function(el){el.remove();});
+    document.querySelectorAll('button,a').forEach(function(el){
+      const label=String(el.textContent||'').replace(/\s+/g,' ').trim();
+      if(label==='+ Add PPMP Item' || label==='Add PPMP Item'){
+        el.remove();
+      }
+    });
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',removeLegacyAddPpmpItem);
+  }else{
+    removeLegacyAddPpmpItem();
+  }
+})();
+
 </script>
 
