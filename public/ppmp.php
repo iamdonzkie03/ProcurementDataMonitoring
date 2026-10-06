@@ -1578,9 +1578,11 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    const clear=row.querySelector('.ppmp-clear-row');
    const remove=row.querySelector('.ppmp-remove-row');
    const rowCount=body.querySelectorAll('.ppmp-entry-row').length;
-   const showRowActions=rowCount>=2;
-   if(clear)clear.style.display=showRowActions?'inline-flex':'none';
-   if(remove)remove.style.display=showRowActions?'inline-flex':'none';
+   const showMultipleRows=rowCount>=2;
+   // Clear is always available on every row.
+   // Remove is available only when at least 2 rows exist, including the original row.
+   if(clear)clear.style.display='inline-flex';
+   if(remove)remove.style.display=showMultipleRows?'inline-flex':'none';
  }
  function syncAllRowActions(){
    body.querySelectorAll('.ppmp-entry-row').forEach(syncRowAction);
