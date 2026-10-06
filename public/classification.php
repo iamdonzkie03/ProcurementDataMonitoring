@@ -109,6 +109,7 @@ if(!$embedded) pageStart('Classification');
   </form>
 
   <div class="table-wrap" style="margin-top:22px">
+  <div class="classification-pagination" id="classificationPagination" aria-label="Classification pagination"><div class="classification-page-size"><label for="classificationPageSize">Show</label><select class="input" id="classificationPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>records</span></div><div class="classification-pagination-info" id="classificationPaginationInfo"></div><div class="classification-pagination-buttons" id="classificationPaginationButtons"></div></div>
     <table class="table" id="classificationTable">
       <thead><tr><th>Classification</th><th>Actions</th></tr></thead>
       <tbody>
@@ -171,109 +172,67 @@ document.addEventListener('DOMContentLoaded',function(){
   const input=document.getElementById('classificationSearchInput');
   const suggestions=document.getElementById('classificationSearchSuggestions');
   const table=document.getElementById('classificationTable');
-  if(!input||!suggestions||!table)return;
-
+  const pageSizeSelect=document.getElementById('classificationPageSize');
+  const paginationInfo=document.getElementById('classificationPaginationInfo');
+  const paginationButtons=document.getElementById('classificationPaginationButtons');
+  if(!input||!suggestions||!table||!pageSizeSelect||!paginationInfo||!paginationButtons)return;
   const tableRows=Array.from(table.querySelectorAll('tr[data-classification-id]'));
-
-  function escapeHtml(value){
-    return String(value??'').replace(/[&<>"']/g,function(ch){
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];
-    });
-  }
-
-  function closeSuggestions(){
-    suggestions.innerHTML='';
-    suggestions.style.display='none';
-  }
-
-  function showAllRows(){
-    tableRows.forEach(function(row){
-      row.style.display='';
-      row.classList.remove('classification-search-selected');
-    });
-  }
-
-  function filterRows(term,selectedName){
-    const value=String(term||'').trim().toLowerCase();
-    let visible=0;
-    tableRows.forEach(function(row){
-      const name=String(row.dataset.classificationName||'');
-      const match=selectedName
-        ? name.toLowerCase()===selectedName.toLowerCase()
-        : (!value || name.toLowerCase().includes(value));
-      row.style.display=match?'':'none';
-      row.classList.toggle('classification-search-selected',!!selectedName && match);
-      if(match)visible++;
-    });
-    return visible;
-  }
-
-  function showSuggestions(){
-    const term=String(input.value||'').trim().toLowerCase();
-    suggestions.innerHTML='';
-    if(!term){
-      closeSuggestions();
-      showAllRows();
-      return;
+  let filteredRows=tableRows.slice(),currentPage=1,pageSize=Number(pageSizeSelect.value)||10;
+  function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
+  function closeSuggestions(){suggestions.innerHTML='';suggestions.style.display='none';}
+  function getName(row){return String(row.dataset.classificationName||'');}
+  function renderPagination(){
+    const total=filteredRows.length,totalPages=Math.max(1,Math.ceil(total/pageSize));
+    if(currentPage>totalPages)currentPage=totalPages;
+    tableRows.forEach(function(row){row.style.display='none';row.classList.remove('classification-search-selected');});
+    const start=(currentPage-1)*pageSize;
+    filteredRows.slice(start,start+pageSize).forEach(function(row){row.style.display='';});
+    paginationInfo.textContent=total?'Showing '+(start+1)+'-'+Math.min(start+pageSize,total)+' of '+total+' records':'0 records';
+    paginationButtons.innerHTML='';
+    function addButton(label,page,disabled,active){
+      const b=document.createElement('button');b.type='button';b.className='btn secondary classification-page-button'+(active?' active':'');
+      b.textContent=label;b.disabled=!!disabled;b.addEventListener('click',function(){currentPage=page;renderPagination();});
+      paginationButtons.appendChild(b);
     }
-
-    const matches=tableRows
-      .map(function(row){return {row:row,name:String(row.dataset.classificationName||'')};})
-      .filter(function(item){return item.name.toLowerCase().includes(term);})
-      .slice(0,10);
-
+    addButton('Previous',currentPage-1,currentPage===1,false);
+    const max=7;let first=Math.max(1,currentPage-3),last=Math.min(totalPages,first+max-1);first=Math.max(1,last-max+1);
+    for(let page=first;page<=last;page++)addButton(String(page),page,false,page===currentPage);
+    addButton('Next',currentPage+1,currentPage===totalPages,false);
+  }
+  function applyFilter(term,selected,reset){
+    const value=String(term||'').trim().toLowerCase();
+    filteredRows=tableRows.filter(function(row){
+      const name=getName(row).toLowerCase();
+      return selected?name===selected.toLowerCase():(!value||name.includes(value));
+    });
+    if(reset)currentPage=1;
+    renderPagination();
+    if(selected)filteredRows.forEach(function(row){row.classList.add('classification-search-selected');});
+  }
+  function showSuggestions(){
+    const term=String(input.value||'').trim().toLowerCase();suggestions.innerHTML='';
+    if(!term){closeSuggestions();applyFilter('',null,true);return;}
+    const matches=tableRows.filter(function(row){return getName(row).toLowerCase().includes(term);}).slice(0,10);
     if(!matches.length){
       suggestions.innerHTML='<div class="classification-search-empty">No matching classification found.</div>';
-      suggestions.style.display='block';
-      filterRows(term,null);
-      return;
+      suggestions.style.display='block';applyFilter(term,null,true);return;
     }
-
-    matches.forEach(function(item){
-      const button=document.createElement('button');
-      button.type='button';
-      button.className='classification-search-suggestion';
-      button.setAttribute('role','option');
-      button.dataset.classificationId=item.row.dataset.classificationId||'';
-      button.dataset.classificationName=item.name;
-      button.innerHTML=escapeHtml(item.name);
-      suggestions.appendChild(button);
+    matches.forEach(function(row){
+      const button=document.createElement('button');button.type='button';button.className='classification-search-suggestion';
+      button.setAttribute('role','option');button.dataset.name=getName(row);button.innerHTML=escapeHtml(getName(row));suggestions.appendChild(button);
     });
-    suggestions.style.display='block';
-    filterRows(term,null);
+    suggestions.style.display='block';applyFilter(term,null,true);
   }
-
   input.addEventListener('input',showSuggestions);
-  input.addEventListener('focus',function(){
-    if(input.value.trim())showSuggestions();
-  });
-  input.addEventListener('keydown',function(e){
-    if(e.key==='Escape'){
-      input.value='';
-      closeSuggestions();
-      showAllRows();
-    }
-  });
-
+  input.addEventListener('focus',function(){if(input.value.trim())showSuggestions();});
+  input.addEventListener('keydown',function(e){if(e.key==='Escape'){input.value='';closeSuggestions();applyFilter('',null,true);}});
   suggestions.addEventListener('click',function(e){
-    const button=e.target.closest('.classification-search-suggestion');
-    if(!button)return;
-    const name=button.dataset.classificationName||'';
-    input.value=name;
-    closeSuggestions();
-    filterRows(name,name);
-    const selected=tableRows.find(function(row){
-      return String(row.dataset.classificationName||'').toLowerCase()===name.toLowerCase();
-    });
-    if(selected){
-      selected.scrollIntoView({behavior:'smooth',block:'center'});
-    }
+    const button=e.target.closest('.classification-search-suggestion');if(!button)return;
+    const name=button.dataset.name||'';input.value=name;closeSuggestions();applyFilter(name,name,true);
   });
-
-  document.addEventListener('click',function(e){
-    const box=document.getElementById('classificationSearchBox');
-    if(box&&!box.contains(e.target))closeSuggestions();
-  });
+  pageSizeSelect.addEventListener('change',function(){pageSize=Number(pageSizeSelect.value)||10;currentPage=1;renderPagination();});
+  document.addEventListener('click',function(e){const box=document.getElementById('classificationSearchBox');if(box&&!box.contains(e.target))closeSuggestions();});
+  renderPagination();
 });
 </script>
 <style>
@@ -288,6 +247,18 @@ document.addEventListener('DOMContentLoaded',function(){
 .classification-search-suggestion:hover,.classification-search-suggestion:focus{background:#eef5ff}
 .classification-search-empty{padding:9px 12px;color:#6b7280;font-size:13px}
 #classificationTable tr.classification-search-selected td{background:#eef5ff}
+.classification-pagination{display:flex;align-items:center;justify-content:flex-end;gap:12px;width:100%;clear:both;position:static;float:none;margin:0 0 10px;padding:0;box-sizing:border-box}
+.classification-pagination-info{flex:0 0 auto;text-align:right;font-size:13px;color:#6b7280}
+.classification-page-size{display:flex;align-items:center;gap:6px;font-size:14px;color:#4b5563}
+.classification-page-size .input{width:78px;min-width:78px;height:36px}
+.classification-pagination-buttons{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.classification-page-button{min-width:38px;height:36px;padding:0 10px;background:#cfe8ff;color:#1f5f85;border-color:#b7d9f5}
+.classification-page-button:hover:not(:disabled):not(.active){background:#b9dcfa;color:#174a69}
+.classification-page-button.active{font-weight:700;pointer-events:none;background:#0d6efd;color:#fff;border-color:#0d6efd}
+.classification-pagination-buttons .classification-page-button:first-child,.classification-pagination-buttons .classification-page-button:last-child{background:#495057;color:#fff;border-color:#495057}
+.classification-pagination-buttons .classification-page-button:first-child:hover:not(:disabled),.classification-pagination-buttons .classification-page-button:last-child:hover:not(:disabled){background:#343a40;color:#fff;border-color:#343a40}
+.classification-pagination-buttons .classification-page-button:disabled{opacity:.7;cursor:not-allowed}
+@media(max-width:700px){.classification-pagination{align-items:flex-start;justify-content:flex-end;flex-wrap:wrap}.classification-pagination-info{order:3;flex-basis:100%;text-align:right}}
 .classification-entry-row{display:flex;gap:8px;align-items:end;margin-bottom:8px}
 .classification-name-field{flex:1;margin:0}
 .classification-row-action{height:36px;display:flex;align-items:center}
