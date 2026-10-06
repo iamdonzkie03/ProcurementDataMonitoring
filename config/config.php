@@ -126,6 +126,24 @@ function buildLoginContext(PDO $pdo, array $u): array {
     return ['division_id'=>0,'area_id'=>0,'division_name'=>'','area_name'=>'','is_ppmp_supervisor'=>false];
 }
 
+function touchCurrentUserActivity(): void {
+    $u=currentUser();
+    if(!$u || empty($u['id'])) return;
+    try{
+        $pdo=db();
+        ensureUserActivitySchema($pdo);
+        $st=$pdo->prepare("UPDATE users SET last_activity_at=NOW() WHERE id=?");
+        $st->execute([(int)$u['id']]);
+    }catch(Throwable $e){}
+}
+
+function ensureUserActivitySchema(PDO $pdo): void {
+    try{
+        $cols=$pdo->query("SHOW COLUMNS FROM users LIKE 'last_activity_at'")->fetch();
+        if(!$cols) $pdo->exec("ALTER TABLE users ADD COLUMN last_activity_at DATETIME NULL AFTER status");
+    }catch(Throwable $e){}
+}
+
 function isLoggedIn(): bool {
     return currentUser() !== null;
 }
