@@ -1,27 +1,4 @@
-\n<style>.ppmp-entry-table .ppmp-masterlist-locked{background:#e5e7eb!important;color:#6b7280!important;border:0!important;outline:0!important;box-shadow:none!important;cursor:not-allowed}.ppmp-entry-table textarea.ppmp-masterlist-locked{resize:none;border:0!important;outline:0!important;box-shadow:none!important}\n.ppmp-status-badge{display:inline-flex;align-items:center;justify-content:center;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;background:#eef2f7;color:#374151}.ppmp-status-pending-for-review{background:#fff3cd;color:#856404}.ppmp-status-pending-for-approval{background:#cff4fc;color:#055160}.ppmp-status-approved{background:#d1e7dd;color:#0f5132}.ppmp-status-declined{background:#f8d7da;color:#842029}.ppmp-status-draft{background:#e9ecef;color:#495057}.ppmp-submit-review{background:#d9f7df!important;color:#166534!important;border:1px solid #b7e4c0!important;}\n.ppmp-submit-review:hover,.ppmp-submit-review:focus,.ppmp-submit-review:active{background:#d9f7df!important;color:#166534!important;}\n.ppmp-entry-table-wrap{overflow-x:auto}
-.ppmp-entry-table{min-width:2400px}.ppmp-entry-table th,.ppmp-entry-table td{vertical-align:top;padding:7px}.ppmp-entry-table th{white-space:nowrap}.ppmp-entry-table .input,.ppmp-entry-table .select{min-width:120px}.ppmp-entry-table textarea{min-width:180px;resize:vertical}.ppmp-entry-table .ppmp-row-date{min-width:135px}.ppmp-entry-table .ppmp-row-qty,.ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{min-width:110px}.ppmp-row-documents{min-width:280px}
-.ppmp-row-documents .ppmp-document-row{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:5px;align-items:center}
-.ppmp-row-documents .input{min-width:0}
-.ppmp-row-documents .ppmp-add-document{white-space:nowrap}
-.ppmp-entry-table .ppmp-row-number{font-weight:700;text-align:center}.ppmp-item-autocomplete{position:relative;min-width:240px}.ppmp-item-suggestions{position:absolute;left:0;right:0;top:100%;z-index:1000;background:#fff;border:1px solid #cfd6df;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;display:none}.ppmp-item-suggestion{display:block;width:100%;padding:8px 10px;border:0;background:#fff;text-align:left;cursor:pointer;font-size:13px}.ppmp-item-suggestion:hover,.ppmp-item-suggestion:focus{background:#eef5ff}.ppmp-item-suggestion small{display:block;color:#6b7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ppmp-entry-table .ppmp-total-budget{border:0;background:transparent;font-weight:700;font-size:12px!important}.ppmp-entry-table .ppmp-remove-row{white-space:nowrap}
-
-.ppmp-entry-table .ppmp-masterlist-locked{background:#e5e7eb!important;color:#6b7280!important;border:0!important;outline:0!important;box-shadow:none!important;cursor:not-allowed}
-.ppmp-entry-table textarea.ppmp-masterlist-locked{resize:none;border:0!important;outline:0!important;box-shadow:none!important}
-.ppmp-entry-table .ppmp-total-budget{background:#e5e7eb!important;color:#4b5563!important;border:0!important;outline:0!important;box-shadow:none!important;font-weight:700!important;cursor:not-allowed;text-align:right!important}
-
-.ppmp-entry-table .ppmp-item-name{min-width:0}
-.ppmp-entry-table .ppmp-item-description{min-width:0;width:100%;box-sizing:border-box}
-.ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-total-budget{text-align:right!important}
-.ppmp-entry-table .ppmp-total-budget{font-weight:700!important}
-
-.ppmp-entry-table th:nth-child(4),.ppmp-entry-table td:nth-child(4){width:16%;min-width:220px}
-.ppmp-entry-table th:nth-child(5),.ppmp-entry-table td:nth-child(5){width:22%;min-width:300px}
-
-.ppmp-entry-table .ppmp-item-description.ppmp-masterlist-locked{background:#e5e7eb!important;color:#6b7280!important;border:0!important;outline:0!important;box-shadow:none!important;cursor:not-allowed;resize:none;min-width:260px;width:100%;box-sizing:border-box}
-.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked,.ppmp-entry-table .ppmp-total-budget{height:36px!important;min-height:36px!important;margin:0!important;padding:8px 10px!important;box-sizing:border-box;border:0!important;outline:0!important;box-shadow:none!important;background:#e5e7eb!important;color:#4b5563!important;text-align:right!important}
-.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked{font-weight:400!important}
-.ppmp-entry-table .ppmp-total-budget{font-weight:700!important}
-</style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style><?php
+<?php
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor','Viewer','Guest']);
 require_once __DIR__.'/../app/layout.php';
@@ -1167,6 +1144,12 @@ function ppmpPrintDate($value): string{
     grid-template-rows:22px 50px 20px 8px 22px 22px 22px;
   }
 }
+
+.ppmp-entry-table .ppmp-item-description{min-width:360px!important;width:360px!important;box-sizing:border-box}
+.ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{min-width:110px!important;width:110px!important;box-sizing:border-box;text-align:right}
+.ppmp-entry-table .ppmp-masterlist-locked{background:#e5e7eb!important;color:#6b7280!important;border:0!important;outline:0!important;box-shadow:none!important;cursor:not-allowed}
+.ppmp-entry-table textarea.ppmp-masterlist-locked{resize:none;border:0!important;outline:0!important;box-shadow:none!important}
+.ppmp-entry-table .ppmp-total-budget{background:#e5e7eb!important;color:#4b5563!important;border:0!important;outline:0!important;box-shadow:none!important;font-weight:700!important;text-align:right!important}
 </style>
 <div class="ppmp-signatures ppmp-signature-template">
     <div class="ppmp-signature-box">
