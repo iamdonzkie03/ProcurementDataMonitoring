@@ -7,7 +7,7 @@
 
 .ppmp-entry-table .ppmp-masterlist-locked{background:#e5e7eb!important;color:#6b7280!important;border:0!important;outline:0!important;box-shadow:none!important;cursor:not-allowed}
 .ppmp-entry-table textarea.ppmp-masterlist-locked{resize:none;border:0!important;outline:0!important;box-shadow:none!important}
-.ppmp-entry-table .ppmp-total-budget{background:#e5e7eb!important;color:#4b5563!important;border:0!important;outline:0!important;box-shadow:none!important;font-weight:800!important}
+.ppmp-entry-table .ppmp-total-budget{background:#e5e7eb!important;color:#4b5563!important;border:0!important;outline:0!important;box-shadow:none!important;font-weight:700!important;cursor:not-allowed;text-align:right!important}
 
 .ppmp-entry-table .ppmp-item-name{min-width:0}
 .ppmp-entry-table .ppmp-item-description{min-width:0;width:100%;box-sizing:border-box}
