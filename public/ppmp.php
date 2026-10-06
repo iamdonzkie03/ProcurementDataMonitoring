@@ -692,7 +692,7 @@ pageStart('Project Procurement Management Plan');
 .ppmp-row-documents .ppmp-document-row{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:5px;align-items:center}
 .ppmp-row-documents .input{min-width:0}
 .ppmp-row-documents .ppmp-add-document{white-space:nowrap}
-.ppmp-entry-table .ppmp-row-number{font-weight:700;text-align:center}.ppmp-item-autocomplete{position:relative;min-width:240px}.ppmp-item-suggestions{position:absolute;left:0;right:0;top:100%;z-index:1000;background:#fff;border:1px solid #cfd6df;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;display:none}.ppmp-item-suggestion{display:block;width:100%;padding:8px 10px;border:0;background:#fff;text-align:left;cursor:pointer;font-size:13px}.ppmp-item-suggestion:hover,.ppmp-item-suggestion:focus{background:#eef5ff}.ppmp-item-suggestion small{display:block;color:#6b7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ppmp-entry-table .ppmp-masterlist-locked{border:0!important;background:#e5e7eb!important;color:#6b7280!important;box-shadow:none!important;outline:0!important;cursor:not-allowed}.ppmp-entry-table .ppmp-masterlist-unit-value{border:0!important;background:#e5e7eb!important;color:#6b7280!important;box-shadow:none!important;outline:0!important}.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked{text-align:right}.ppmp-entry-table .ppmp-total-budget{border:0!important;background:#e5e7eb!important;color:#4b5563!important;font-weight:700!important;text-align:right;box-shadow:none!important;outline:0!important;font-size:12px!important}.ppmp-entry-table .ppmp-item-description{min-width:360px!important}.ppmp-entry-table .ppmp-remove-row{white-space:nowrap}.ppmp-entry-table #ppmpEntryBody:not(:has(.ppmp-entry-row:nth-of-type(2))) .ppmp-remove-row{display:none!important}.ppmp-entry-table #ppmpEntryBody:has(.ppmp-entry-row:nth-of-type(2)) .ppmp-remove-row{display:inline-flex!important}
+.ppmp-entry-table .ppmp-row-number{font-weight:700;text-align:center}.ppmp-item-autocomplete{position:relative;min-width:240px}.ppmp-item-suggestions{position:absolute;left:0;right:0;top:100%;z-index:1000;background:#fff;border:1px solid #cfd6df;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;display:none}.ppmp-item-suggestion{display:block;width:100%;padding:8px 10px;border:0;background:#fff;text-align:left;cursor:pointer;font-size:13px}.ppmp-item-suggestion:hover,.ppmp-item-suggestion:focus{background:#eef5ff}.ppmp-item-suggestion small{display:block;color:#6b7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ppmp-entry-table .ppmp-masterlist-locked{border:0!important;background:#e5e7eb!important;color:#6b7280!important;box-shadow:none!important;outline:0!important;cursor:not-allowed}.ppmp-entry-table .ppmp-masterlist-unit-value{border:0!important;background:#e5e7eb!important;color:#6b7280!important;box-shadow:none!important;outline:0!important}.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked{text-align:right}.ppmp-entry-table .ppmp-total-budget{border:0!important;background:#e5e7eb!important;color:#4b5563!important;font-weight:700!important;text-align:right;box-shadow:none!important;outline:0!important;font-size:12px!important}.ppmp-entry-table .ppmp-item-description{min-width:360px!important}.ppmp-entry-table .ppmp-remove-row{white-space:nowrap}
 
 .ppmp-entry-table .ppmp-item-autocomplete{min-width:100px!important;width:100px!important}
 .ppmp-entry-table .ppmp-item-name{width:100px!important;min-width:100px!important;max-width:100px!important;box-sizing:border-box}
@@ -1573,25 +1573,63 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    }
    return true;
  }
+ function deleteRow(row){
+   if(!row)return;
+   const rows=body.querySelectorAll('.ppmp-entry-row');
+   if(rows.length===1){
+     row.querySelectorAll('input,textarea,select').forEach(function(x){
+       if(x.type!=='hidden'&&x.type!=='file'){
+         if(x.tagName==='SELECT')x.selectedIndex=0;
+         else x.value='';
+       }
+     });
+     const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');
+     if(unitHidden)unitHidden.value='';
+     const item=row.querySelector('.ppmp-item-name');
+     if(item)item.dataset.selectedMasterlistName='';
+     const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
+     if(unit){unit.value='';unit.disabled=true;}
+     calc();syncAllRowDocuments();syncAllRowActions();
+     return;
+   }
+   row.remove();
+   renumber();
+   calc();
+   syncAllRowDocuments();
+   syncAllRowActions();
+ }
+ function ensureDeleteButton(row){
+   if(!row)return null;
+   let remove=row.querySelector('.ppmp-remove-row');
+   if(!remove){
+     const actionCell=row.querySelector('td:last-child');
+     if(!actionCell)return null;
+     remove=document.createElement('button');
+     remove.type='button';
+     remove.className='btn danger ppmp-remove-row';
+     remove.textContent='Delete';
+     actionCell.appendChild(remove);
+     remove.addEventListener('click',function(){deleteRow(row);});
+   }
+   return remove;
+ }
  function syncRowAction(row){
    if(!row)return;
    const clear=row.querySelector('.ppmp-clear-row');
-   const remove=row.querySelector('.ppmp-remove-row');
+   const remove=ensureDeleteButton(row);
    const rowCount=body.querySelectorAll('.ppmp-entry-row').length;
    const showMultipleRows=rowCount>=2;
-   // Clear is always available on every row.
-   // Delete is available on every row whenever 2 or more PPMP rows exist.
-   if(clear)clear.style.setProperty('display','inline-flex','important');
-   if(remove)remove.style.setProperty('display',showMultipleRows?'inline-flex':'none','important');
+   if(clear)clear.style.display='inline-flex';
+   if(remove)remove.style.display=showMultipleRows?'inline-flex':'none';
  }
  function syncAllRowActions(){
    const rows=[...body.querySelectorAll('.ppmp-entry-row')];
    const showMultipleRows=rows.length>=2;
    rows.forEach(function(row){
      const clear=row.querySelector('.ppmp-clear-row');
-     const remove=row.querySelector('.ppmp-remove-row');
-     if(clear)clear.style.setProperty('display','inline-flex','important');
-     if(remove)remove.style.setProperty('display',showMultipleRows?'inline-flex':'none','important');
+     const remove=ensureDeleteButton(row);
+     if(clear)clear.style.display='inline-flex';
+     if(remove)remove.style.display=showMultipleRows?'inline-flex':'none';
    });
  }
  function bind(row){
@@ -1618,16 +1656,11 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
      if(unit){unit.value='';unit.disabled=true;}
      calc();syncAllRowDocuments();syncRowAction(row);
    });
-   row.querySelector('.ppmp-remove-row')?.addEventListener('click',function(){
-     if(body.querySelectorAll('.ppmp-entry-row').length===1){
-       row.querySelectorAll('input,textarea,select').forEach(x=>{if(x.type!=='hidden'&&x.type!=='file')x.value='';});
-       const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');if(unitHidden)unitHidden.value='';
-       const item=row.querySelector('.ppmp-item-name');if(item)item.dataset.selectedMasterlistName='';
-       const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');if(unit){unit.value='';unit.disabled=true;}
-       calc();syncAllRowDocuments();syncRowAction(row);return;
-     }
-     row.remove();renumber();calc();syncAllRowDocuments();syncAllRowActions();
-   });
+   const removeButton=ensureDeleteButton(row);
+   if(removeButton && !removeButton.dataset.ppmpDeleteBound){
+     removeButton.dataset.ppmpDeleteBound='1';
+     removeButton.addEventListener('click',function(){deleteRow(row);});
+   }
    syncRowAction(row);
  }
  add.addEventListener('click',function(){
