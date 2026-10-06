@@ -1499,6 +1499,15 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
   .ppmp-entry .ppmp-unit-cost-field,
   .ppmp-entry .ppmp-total-field{grid-column:1/-1}
 }
+
+/* PPMP item field formatting — preserves the existing table layout while enforcing the requested field sizes and locked appearance. */
+.ppmp-entry-table .ppmp-item-name{width:100px!important;min-width:100px!important;max-width:100px!important;box-sizing:border-box}
+.ppmp-entry-table .ppmp-item-description{width:180px!important;min-width:180px!important;max-width:180px!important;box-sizing:border-box;border:0!important;outline:0!important;box-shadow:none!important;background:#e5e7eb!important;color:#6b7280!important}
+.ppmp-entry-table .ppmp-row-qty{width:60px!important;min-width:60px!important;max-width:60px!important;box-sizing:border-box}
+.ppmp-entry-table .ppmp-row-unit-price{width:110px!important;min-width:110px!important;max-width:110px!important;box-sizing:border-box;margin:0!important;padding-left:7px!important;padding-right:7px!important;text-align:right!important;border:0!important;outline:0!important;box-shadow:none!important;background:#e5e7eb!important;color:#6b7280!important}
+.ppmp-entry-table .ppmp-row-total{width:110px!important;min-width:110px!important;max-width:110px!important;box-sizing:border-box;margin:0!important;padding-left:7px!important;padding-right:7px!important;text-align:right!important;border:0!important;outline:0!important;box-shadow:none!important;background:#e5e7eb!important;color:#4b5563!important;font-weight:700!important}
+.ppmp-entry-table .ppmp-masterlist-locked{border:0!important;outline:0!important;box-shadow:none!important;background:#e5e7eb!important;color:#6b7280!important}
+.ppmp-entry-table .ppmp-row-remarks{width:150px!important;min-width:150px!important;max-width:150px!important;box-sizing:border-box}
 </style>
 <script>
 (function(){
@@ -1570,7 +1579,7 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    const remove=row.querySelector('.ppmp-remove-row');
    const isNew=row.dataset.ppmpNewRow==='1';
    const complete=rowHasAllRequiredData(row);
-   if(clear)clear.style.display=(!isNew&&!complete)?'inline-flex':'none';
+   if(clear)clear.style.display='inline-flex';
    if(remove)remove.style.display=(isNew||complete)?'inline-flex':'none';
  }
  function bind(row){
