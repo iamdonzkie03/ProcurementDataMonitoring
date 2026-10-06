@@ -349,11 +349,17 @@ if(!$embedded) pageStart('Area/Unit Management');
     </div>
     <div class="management-inner-list">
       <div class="management-list-content">
-        <h2>Division/Department List</h2>
-        <div class="table-wrap"><table class="table">
+        <div class="management-list-header">
+          <h2>Division/Department List</h2>
+          <div class="management-list-search" id="divisionSearchBox">
+            <input class="input" type="text" id="divisionSearchInput" autocomplete="off" placeholder="Search Division..." aria-label="Search Division/Department">
+            <div class="management-search-suggestions" id="divisionSearchSuggestions" role="listbox"></div>
+          </div>
+        </div>
+        <div class="table-wrap"><table class="table" id="divisionTable">
           <tr><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized Person</th><th>Actions</th></tr>
           <?php foreach($divisions as $d): ?>
-          <tr>
+          <tr data-management-search-id="<?=e((string)$d['id'])?>" data-management-search-name="<?=e($d['name'])?>" data-management-search-head="<?=e($d['division_head'])?>">
             <td><?=e($d['name'])?></td>
             <td>
               <div><?=e($d['division_head'])?></div>
@@ -422,11 +428,17 @@ if(!$embedded) pageStart('Area/Unit Management');
     </div>
     <div class="management-inner-list">
       <div class="management-list-content area-unit-list-panel">
-        <h2>Area/Unit List</h2>
-        <div class="table-wrap"><table class="table">
+        <div class="management-list-header">
+          <h2>Area/Unit List</h2>
+          <div class="management-list-search" id="areaSearchBox">
+            <input class="input" type="text" id="areaSearchInput" autocomplete="off" placeholder="Search Area/Unit..." aria-label="Search Area/Unit">
+            <div class="management-search-suggestions" id="areaSearchSuggestions" role="listbox"></div>
+          </div>
+        </div>
+        <div class="table-wrap"><table class="table" id="areaTable">
           <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
           <?php foreach($rows as $r): ?><?php $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id'])); ?>
-          <tr><td><?=e($r['division_name'])?></td><td><?=e($r['division_head'])?></td><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?><?php if(!empty($p['position_designation'])): ?> — <span class="muted"><?=e($p['position_designation'])?></span><?php endif; ?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td><td><?=e($r['created_at'])?></td><td><div class="actions"><a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=area-unit&edit='.(int)$r['id'] : 'areas.php?edit='.(int)$r['id'])?>">Edit</a><form method="post" class="master-action-form" onsubmit="return confirm('Delete this Area/Unit? This can only be deleted if it is not used by existing records.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><button class="btn danger master-action" type="submit">Delete</button></form></div></td></tr>
+          <tr data-management-search-id="<?=e((string)$r['id'])?>" data-management-search-name="<?=e($r['name'])?>" data-management-search-division="<?=e($r['division_name'])?>"><?=e($r['division_name'])?></td><td><?=e($r['division_head'])?></td><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?><?php if(!empty($p['position_designation'])): ?> — <span class="muted"><?=e($p['position_designation'])?></span><?php endif; ?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td><td><?=e($r['created_at'])?></td><td><div class="actions"><a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=area-unit&edit='.(int)$r['id'] : 'areas.php?edit='.(int)$r['id'])?>">Edit</a><form method="post" class="master-action-form" onsubmit="return confirm('Delete this Area/Unit? This can only be deleted if it is not used by existing records.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><button class="btn danger master-action" type="submit">Delete</button></form></div></td></tr>
           <?php endforeach; ?><?php if(!$rows): ?><tr><td colspan="7">No Area/Unit records found.</td></tr><?php endif; ?>
         </table></div>
       </div>
@@ -494,7 +506,73 @@ if(!$embedded) pageStart('Area/Unit Management');
   });
 })();
 </script>
+<script>
+(function(){
+  function setupManagementSearch(cfg){
+    const input=document.getElementById(cfg.input);
+    const suggestions=document.getElementById(cfg.suggestions);
+    const table=document.getElementById(cfg.table);
+    const box=document.getElementById(cfg.box);
+    if(!input||!suggestions||!table||!box)return;
+    const rows=Array.from(table.querySelectorAll('tr[data-management-search-id]'));
+    function close(){suggestions.innerHTML='';suggestions.style.display='none';}
+    function showAll(){rows.forEach(r=>{r.style.display='';r.classList.remove('management-search-selected');});}
+    function filter(term,selected){
+      const value=String(term||'').trim().toLowerCase();
+      rows.forEach(r=>{
+        const hay=[r.dataset.managementSearchName,r.dataset.managementSearchHead,r.dataset.managementSearchDivision].filter(Boolean).join(' ').toLowerCase();
+        const match=selected ? r.dataset.managementSearchId===selected : (!value||hay.includes(value));
+        r.style.display=match?'':'none';
+        r.classList.toggle('management-search-selected',!!selected&&match);
+      });
+    }
+    function render(){
+      const term=input.value.trim().toLowerCase();
+      suggestions.innerHTML='';
+      if(!term){close();showAll();return;}
+      const matches=rows.filter(r=>{
+        const hay=[r.dataset.managementSearchName,r.dataset.managementSearchHead,r.dataset.managementSearchDivision].filter(Boolean).join(' ').toLowerCase();
+        return hay.includes(term);
+      }).slice(0,10);
+      if(!matches.length){
+        suggestions.innerHTML='<div class="management-search-empty">No matching record found.</div>';
+        suggestions.style.display='block'; filter(term,null); return;
+      }
+      matches.forEach(r=>{
+        const b=document.createElement('button');
+        b.type='button'; b.className='management-search-suggestion'; b.setAttribute('role','option');
+        b.dataset.id=r.dataset.managementSearchId;
+        b.textContent=r.dataset.managementSearchName||'';
+        suggestions.appendChild(b);
+      });
+      suggestions.style.display='block'; filter(term,null);
+    }
+    input.addEventListener('input',render);
+    input.addEventListener('focus',()=>{if(input.value.trim())render();});
+    input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';close();showAll();}});
+    suggestions.addEventListener('click',e=>{
+      const b=e.target.closest('.management-search-suggestion'); if(!b)return;
+      const row=rows.find(r=>r.dataset.managementSearchId===b.dataset.id); if(!row)return;
+      input.value=row.dataset.managementSearchName||'';
+      close(); filter('',b.dataset.id); row.scrollIntoView({behavior:'smooth',block:'center'});
+    });
+    document.addEventListener('click',e=>{if(!box.contains(e.target))close();});
+  }
+  setupManagementSearch({box:'divisionSearchBox',input:'divisionSearchInput',suggestions:'divisionSearchSuggestions',table:'divisionTable'});
+  setupManagementSearch({box:'areaSearchBox',input:'areaSearchInput',suggestions:'areaSearchSuggestions',table:'areaTable'});
+})();
+</script>
+</script>
 <style>
+.management-list-header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px}
+.management-list-header h2{margin:0}
+.management-list-search{position:relative;width:200px;min-width:200px;margin-left:auto}
+.management-list-search .input{width:200px;box-sizing:border-box}
+.management-search-suggestions{position:absolute;left:0;right:0;top:100%;z-index:1000;background:#fff;border:1px solid #cfd6df;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:240px;overflow-y:auto;display:none}
+.management-search-suggestion{display:block;width:100%;padding:9px 12px;border:0;background:#fff;text-align:left;cursor:pointer;font-size:14px}
+.management-search-suggestion:hover,.management-search-suggestion:focus{background:#eef5ff}
+.management-search-empty{padding:9px 12px;color:#6b7280;font-size:13px}
+.management-search-selected td{background:#eef5ff!important}
 .master-action{width:82px;min-width:82px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center}
 .master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
 
