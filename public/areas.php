@@ -564,9 +564,9 @@ if(!$embedded) pageStart('Area/Unit Management');
 </script>
 </script>
 <style>
-.management-inner-list{border-top:1px solid #d9dee5;margin-top:18px;padding-top:14px;width:100%;box-sizing:border-box}\n.management-list-content{width:100%;box-sizing:border-box}\n.management-list-header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px}
-.management-list-header h2{margin:0}
-.management-list-search{position:relative;width:200px;min-width:200px;margin-left:auto}
+.management-inner-list{border-top:1px solid #d9dee5;margin-top:18px;padding-top:14px;width:100%;box-sizing:border-box}\n.management-list-content{width:100%;box-sizing:border-box}\n.management-list-header{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:36px;margin-bottom:10px;box-sizing:border-box}
+.management-list-header h2{margin:0;flex:1 1 auto;min-width:0;line-height:36px;white-space:nowrap}
+.management-list-search{position:relative;flex:0 0 200px;width:200px;min-width:200px;margin:0 0 0 auto}
 .management-list-search .input{width:200px;box-sizing:border-box}
 .management-search-suggestions{position:absolute;left:0;right:0;top:100%;z-index:1000;background:#fff;border:1px solid #cfd6df;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:240px;overflow-y:auto;display:none}
 .management-search-suggestion{display:block;width:100%;padding:9px 12px;border:0;background:#fff;text-align:left;cursor:pointer;font-size:14px}
