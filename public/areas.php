@@ -564,7 +564,7 @@ if(!$embedded) pageStart('Area/Unit Management');
 </script>
 </script>
 <style>
-.management-list-header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px}
+.management-inner-list{border-top:1px solid #d9dee5;margin-top:18px;padding-top:14px;width:100%;box-sizing:border-box}\n.management-list-content{width:100%;box-sizing:border-box}\n.management-list-header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px}
 .management-list-header h2{margin:0}
 .management-list-search{position:relative;width:200px;min-width:200px;margin-left:auto}
 .management-list-search .input{width:200px;box-sizing:border-box}
