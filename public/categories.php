@@ -95,7 +95,7 @@ if(!$embedded) pageStart('Category');
             <label>Category</label>
             <input class="input category-name-input" name="names[]" maxlength="120" required>
           </div>
-          <button class="btn secondary category-add-row" type="button" id="addCategoryRow">Add Row</button>
+          <button class="btn secondary category-add-row" type="button" id="addCategoryRow" onclick="return categoryAddRow();">Add Row</button>
         </div>
       </div>
       <div class="category-save-actions">
@@ -129,43 +129,43 @@ if(!$embedded) pageStart('Category');
 </div>
 
 <script>
+function categoryAddRow(){
+  const rows=document.getElementById('categoryRows');
+  const save=document.getElementById('saveCategoryItems');
+  if(!rows)return false;
+
+  const row=document.createElement('div');
+  row.className='category-entry-row';
+  row.innerHTML='<div class="field category-name-field"><label>Category</label><input class="input category-name-input" name="names[]" maxlength="120" required></div><button class="btn danger category-row-remove" type="button">Remove</button>';
+  rows.appendChild(row);
+
+  if(save){
+    const count=rows.querySelectorAll('.category-entry-row').length;
+    save.textContent=count>=2?'Save Categories':'Save Category';
+  }
+
+  const input=row.querySelector('.category-name-input');
+  if(input)input.focus();
+  return false;
+}
+
 document.addEventListener('DOMContentLoaded',function(){
   const rows=document.getElementById('categoryRows');
-  const add=document.getElementById('addCategoryRow');
   const save=document.getElementById('saveCategoryItems');
   if(rows && save){
-    function updateSaveLabel(){
+    const updateSaveLabel=function(){
       const count=rows.querySelectorAll('.category-entry-row').length;
       save.textContent=count>=2?'Save Categories':'Save Category';
-    }
-
-    // Bind exactly one click handler even when this page is embedded in Settings.
-    if(add && add.dataset.bound!=='1'){
-      add.dataset.bound='1';
-      add.addEventListener('click',function(){
-        const row=document.createElement('div');
-        row.className='category-entry-row';
-        row.innerHTML='<div class="field category-name-field"><label>Category</label><input class="input category-name-input" name="names[]" maxlength="120" required></div><button class="btn danger category-row-remove" type="button">Remove</button>';
-        rows.appendChild(row);
+    };
+    rows.addEventListener('click',function(e){
+      const remove=e.target.closest('.category-row-remove');
+      if(!remove)return;
+      const row=remove.closest('.category-entry-row');
+      if(row && rows.querySelectorAll('.category-entry-row').length>1){
+        row.remove();
         updateSaveLabel();
-        const input=row.querySelector('.category-name-input');
-        if(input)input.focus();
-      });
-    }
-
-    if(rows.dataset.removeBound!=='1'){
-      rows.dataset.removeBound='1';
-      rows.addEventListener('click',function(e){
-        const remove=e.target.closest('.category-row-remove');
-        if(!remove)return;
-        const row=remove.closest('.category-entry-row');
-        if(row && rows.querySelectorAll('.category-entry-row').length>1){
-          row.remove();
-          updateSaveLabel();
-        }
-      });
-    }
-
+      }
+    });
     updateSaveLabel();
   }
 
