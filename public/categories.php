@@ -95,7 +95,7 @@ if(!$embedded) pageStart('Category');
             <label>Category</label>
             <input class="input category-name-input" name="names[]" maxlength="120" required>
           </div>
-          <button class="btn secondary category-add-row" type="button" id="addCategoryRow" onclick="return categoryAddRow();">Add Row</button>
+          <div class="category-row-action"><button class="btn secondary category-add-row" type="button" id="addCategoryRow">Add Row</button></div>
         </div>
       </div>
       <div class="category-save-actions">
@@ -129,114 +129,37 @@ if(!$embedded) pageStart('Category');
 </div>
 
 <script>
-function categoryAddRow(){
+document.addEventListener('DOMContentLoaded',function(){
   const rows=document.getElementById('categoryRows');
+  const add=document.getElementById('addCategoryRow');
   const save=document.getElementById('saveCategoryItems');
-  if(!rows)return false;
-
-  const row=document.createElement('div');
-  row.className='category-entry-row';
-  row.innerHTML='<div class="field category-name-field"><label>Category</label><input class="input category-name-input" name="names[]" maxlength="120" required></div><button class="btn danger category-row-remove" type="button">Remove</button>';
-  rows.appendChild(row);
-
-  if(save){
+  if(!rows)return;
+  function updateSaveLabel(){
+    if(!save)return;
     const count=rows.querySelectorAll('.category-entry-row').length;
     save.textContent=count>=2?'Save Categories':'Save Category';
   }
-
-  const input=row.querySelector('.category-name-input');
-  if(input)input.focus();
-  return false;
-}
-
-document.addEventListener('DOMContentLoaded',function(){
-  const rows=document.getElementById('categoryRows');
-  const save=document.getElementById('saveCategoryItems');
-  if(rows && save){
-    const updateSaveLabel=function(){
-      const count=rows.querySelectorAll('.category-entry-row').length;
-      save.textContent=count>=2?'Save Categories':'Save Category';
-    };
-    rows.addEventListener('click',function(e){
-      const remove=e.target.closest('.category-row-remove');
-      if(!remove)return;
-      const row=remove.closest('.category-entry-row');
-      if(row && rows.querySelectorAll('.category-entry-row').length>1){
-        row.remove();
-        updateSaveLabel();
+  if(add){
+    add.addEventListener('click',function(){
+      const first=rows.querySelector('.category-entry-row');
+      if(!first)return;
+      const row=first.cloneNode(true);
+      row.querySelector('input').value='';
+      const action=row.querySelector('.category-row-action');
+      if(action){
+        action.innerHTML='<button class="btn danger category-row-remove" type="button">Remove</button>';
+        action.querySelector('.category-row-remove').addEventListener('click',function(){
+          row.remove();
+          updateSaveLabel();
+        });
       }
-    });
-    updateSaveLabel();
-  }
-
-  const input=document.getElementById('categorySearchInput');
-  const suggestions=document.getElementById('categorySearchSuggestions');
-  const table=document.getElementById('categoryTable');
-  if(!input||!suggestions||!table)return;
-  const tableRows=Array.from(table.querySelectorAll('tr[data-category-id]'));
-
-  function closeSuggestions(){
-    suggestions.innerHTML='';
-    suggestions.style.display='none';
-  }
-  function showAllRows(){
-    tableRows.forEach(function(row){
-      row.style.display='';
-      row.classList.remove('category-search-selected');
+      rows.appendChild(row);
+      updateSaveLabel();
+      const input=row.querySelector('.category-name-input');
+      if(input)input.focus();
     });
   }
-  function filterRows(term,selectedName){
-    const value=String(term||'').trim().toLowerCase();
-    tableRows.forEach(function(row){
-      const name=String(row.dataset.categoryName||'');
-      const match=selectedName ? name.toLowerCase()===selectedName.toLowerCase() : (!value||name.toLowerCase().includes(value));
-      row.style.display=match?'':'none';
-      row.classList.toggle('category-search-selected',!!selectedName&&match);
-    });
-  }
-  function showSuggestions(){
-    const term=String(input.value||'').trim().toLowerCase();
-    suggestions.innerHTML='';
-    if(!term){closeSuggestions();showAllRows();return;}
-    const matches=tableRows.map(function(row){return {row:row,name:String(row.dataset.categoryName||'')}})
-      .filter(function(item){return item.name.toLowerCase().includes(term);}).slice(0,10);
-    if(!matches.length){
-      suggestions.innerHTML='<div class="category-search-empty">No matching category found.</div>';
-      suggestions.style.display='block';
-      filterRows(term,null);
-      return;
-    }
-    matches.forEach(function(item){
-      const button=document.createElement('button');
-      button.type='button';
-      button.className='category-search-suggestion';
-      button.setAttribute('role','option');
-      button.dataset.categoryName=item.name;
-      button.textContent=item.name;
-      suggestions.appendChild(button);
-    });
-    suggestions.style.display='block';
-    filterRows(term,null);
-  }
-  input.addEventListener('input',showSuggestions);
-  input.addEventListener('focus',function(){if(input.value.trim())showSuggestions();});
-  input.addEventListener('keydown',function(e){
-    if(e.key==='Escape'){input.value='';closeSuggestions();showAllRows();}
-  });
-  suggestions.addEventListener('click',function(e){
-    const button=e.target.closest('.category-search-suggestion');
-    if(!button)return;
-    const name=button.dataset.categoryName||'';
-    input.value=name;
-    closeSuggestions();
-    filterRows(name,name);
-    const selected=tableRows.find(function(row){return String(row.dataset.categoryName||'').toLowerCase()===name.toLowerCase();});
-    if(selected)selected.scrollIntoView({behavior:'smooth',block:'center'});
-  });
-  document.addEventListener('click',function(e){
-    const box=document.getElementById('categorySearchBox');
-    if(box&&!box.contains(e.target))closeSuggestions();
-  });
+  updateSaveLabel();
 });
 </script>
 <style>
@@ -253,6 +176,7 @@ document.addEventListener('DOMContentLoaded',function(){
 #categoryTable tr.category-search-selected td{background:#eef5ff}
 .category-entry-row{display:flex;gap:8px;align-items:end;margin-bottom:8px}
 .category-name-field{flex:1;margin:0}
+.category-row-action{height:36px;display:flex;align-items:center}
 .category-add-row,.category-row-remove{height:36px;white-space:nowrap}
 .category-save-actions{margin-top:10px;display:flex;justify-content:flex-start;text-align:left}
 .category-save-actions .btn{margin-left:0}
