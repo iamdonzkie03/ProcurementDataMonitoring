@@ -53,7 +53,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if($pdo->inTransaction()) $pdo->rollBack();
         flash('error',$e->getMessage());
     }
-    header('Location:'.($embedded?'settings.php?tab=classification':'classifications.php'));exit;
+    header('Location:'.($embedded?'settings.php?tab=classification':'classification.php'));exit;
 }
 
 $editing=null;
@@ -89,7 +89,7 @@ if(!$embedded) pageStart('Classification');
         </div>
         <div class="classification-form-actions">
           <button class="btn" type="submit">Save Changes</button>
-          <a class="btn secondary" href="<?=e($embedded?'settings.php?tab=classification':'classifications.php')?>">Cancel</a>
+          <a class="btn secondary" href="<?=e($embedded?'settings.php?tab=classification':'classification.php')?>">Cancel</a>
         </div>
       </div>
     <?php else: ?>
@@ -116,7 +116,7 @@ if(!$embedded) pageStart('Classification');
         <tr data-classification-id="<?=e((string)$r['id'])?>" data-classification-name="<?=e($r['name'])?>">
           <td><b><?=e($r['name'])?></b></td>
           <td>
-            <a class="btn secondary master-action" href="<?=e($embedded?'settings.php?tab=classification&edit='.(int)$r['id']:'classifications.php?edit='.(int)$r['id'])?>">Edit</a>
+            <a class="btn secondary master-action" href="<?=e($embedded?'settings.php?tab=classification&edit='.(int)$r['id']:'classification.php?edit='.(int)$r['id'])?>">Edit</a>
             <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Classification?');">
               <input type="hidden" name="csrf" value="<?=e(csrf())?>">
               <input type="hidden" name="action" value="delete">
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded',function(){
   function updateSaveLabel(){
     if(!save)return;
     const count=rows.querySelectorAll('.classification-entry-row').length;
-    save.textContent=count>=2?'Save Categories':'Save Classification';
+    save.textContent=count>=2?'Save Classifications':'Save Classification';
   }
   if(add){
     add.addEventListener('click',function(){
