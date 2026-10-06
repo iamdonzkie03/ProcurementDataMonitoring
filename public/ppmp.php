@@ -1577,9 +1577,10 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    if(!row)return;
    const clear=row.querySelector('.ppmp-clear-row');
    const remove=row.querySelector('.ppmp-remove-row');
-   const anyNewRow=!!body.querySelector('.ppmp-entry-row[data-ppmp-new-row="1"]');
-   if(clear)clear.style.display='inline-flex';
-   if(remove)remove.style.display=anyNewRow?'inline-flex':'none';
+   const rowCount=body.querySelectorAll('.ppmp-entry-row').length;
+   const showRowActions=rowCount>=2;
+   if(clear)clear.style.display=showRowActions?'inline-flex':'none';
+   if(remove)remove.style.display=showRowActions?'inline-flex':'none';
  }
  function syncAllRowActions(){
    body.querySelectorAll('.ppmp-entry-row').forEach(syncRowAction);
