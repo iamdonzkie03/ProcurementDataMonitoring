@@ -1609,6 +1609,7 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
      remove.className='btn danger ppmp-remove-row';
      remove.textContent='Delete';
      actionCell.appendChild(remove);
+     remove.dataset.ppmpDeleteBound='1';
      remove.addEventListener('click',function(){deleteRow(row);});
    }
    return remove;
