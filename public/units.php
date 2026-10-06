@@ -314,7 +314,10 @@ document.addEventListener('DOMContentLoaded',function(){
 .uom-search-suggestion:hover,.uom-search-suggestion:focus{background:#eef5ff}
 .uom-search-empty{padding:9px 12px;color:#6b7280;font-size:13px}
 #uomTable tr.uom-search-selected td{background:#eef5ff}
-.uom-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
+.uom-pagination{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;width:100%;clear:both;position:static;float:none;margin:12px 0 0;padding:0;box-sizing:border-box;flex-wrap:nowrap}
+.uom-pagination .uom-page-size{justify-self:start}
+.uom-pagination .uom-pagination-info{justify-self:center}
+.uom-pagination .uom-pagination-buttons{justify-self:end}
 .uom-page-size{display:flex;align-items:center;gap:6px;font-size:14px;color:#4b5563}
 .uom-page-size .input{width:78px;min-width:78px;height:36px}
 .uom-pagination-info{font-size:13px;color:#6b7280;flex:1;text-align:center}
@@ -322,8 +325,10 @@ document.addEventListener('DOMContentLoaded',function(){
 .uom-page-button{min-width:38px;height:36px;padding:0 10px}
 .uom-page-button.active{font-weight:700;pointer-events:none;background:#e9ecef}
 @media(max-width:700px){
-  .uom-pagination{align-items:flex-start}
-  .uom-pagination-info{order:3;flex-basis:100%;text-align:left}
+  .uom-pagination{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+  .uom-pagination .uom-page-size{justify-self:auto}
+  .uom-pagination .uom-pagination-info{order:3;flex-basis:100%;text-align:left;justify-self:auto}
+  .uom-pagination .uom-pagination-buttons{justify-self:auto}
 }
 </style>
 </style>
