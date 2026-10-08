@@ -656,3 +656,81 @@ body{font-size:11px!important}
     grid-template-columns:145px 125px 90px 125px 100px 120px 90px 120px 90px 120px 90px 75px 70px!important;
   }
 }
+
+
+/* Supplier Registry - match Settings header/search layout */
+.supplier-content-panel .supplier-toolbar{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:18px!important;
+  flex-wrap:nowrap!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  padding:0 0 18px!important;
+  margin:0!important;
+}
+.supplier-content-panel .supplier-toolbar>div:first-child{
+  min-width:0!important;
+  flex:1 1 auto!important;
+}
+.supplier-content-panel .supplier-toolbar h2{
+  font-size:15px!important;
+  line-height:1.2!important;
+  margin:0!important;
+}
+.supplier-content-panel .supplier-toolbar .hint-text{
+  font-size:11px!important;
+  margin-top:4px!important;
+}
+.supplier-content-panel .supplier-header-search{
+  flex:0 0 250px!important;
+  width:250px!important;
+  min-width:250px!important;
+  margin-left:auto!important;
+  align-self:flex-start!important;
+}
+.supplier-content-panel .supplier-header-search .input{
+  width:250px!important;
+  height:42px!important;
+  min-height:42px!important;
+  padding:10px 13px!important;
+  border:1px solid #d1d5db!important;
+  border-radius:10px!important;
+  font-size:11px!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-row-form{
+  width:100%!important;
+  margin:0 0 16px!important;
+}
+.supplier-content-panel .supplier-entry-panel{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  padding:0!important;
+  box-shadow:none!important;
+}
+.supplier-content-panel .supplier-entry-panel .supplier-panel-title{
+  display:none!important;
+}
+.supplier-content-panel .supplier-rows-single-line{
+  width:100%!important;
+}
+.supplier-content-panel .supplier-entry-row{
+  margin:0!important;
+}
+@media(max-width:700px){
+  .supplier-content-panel .supplier-toolbar{
+    flex-wrap:wrap!important;
+  }
+  .supplier-content-panel .supplier-header-search{
+    flex:1 1 100%!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  .supplier-content-panel .supplier-header-search .input{
+    width:100%!important;
+  }
+}
