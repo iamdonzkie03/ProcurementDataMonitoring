@@ -1438,3 +1438,53 @@ body{font-size:11px!important}
   min-height:40px!important;
   box-sizing:border-box!important;
 }
+
+
+/* Supplier Registry - keep Search Supplier on the same top line as the Supplier Registry heading */
+.supplier-content-panel .supplier-toolbar{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 200px!important;
+  align-items:start!important;
+  column-gap:18px!important;
+  width:100%!important;
+}
+.supplier-content-panel .supplier-toolbar>div:first-child{
+  grid-column:1!important;
+  grid-row:1!important;
+  align-self:start!important;
+}
+.supplier-content-panel .supplier-header-search{
+  grid-column:2!important;
+  grid-row:1!important;
+  align-self:start!important;
+  justify-self:end!important;
+  width:200px!important;
+  min-width:200px!important;
+  max-width:200px!important;
+  margin:0!important;
+}
+.supplier-content-panel .supplier-header-search .input{
+  width:200px!important;
+  min-width:200px!important;
+  max-width:200px!important;
+  box-sizing:border-box!important;
+}
+@media(max-width:700px){
+  .supplier-content-panel .supplier-toolbar{
+    grid-template-columns:1fr!important;
+    row-gap:10px!important;
+  }
+  .supplier-content-panel .supplier-header-search{
+    grid-column:1!important;
+    grid-row:2!important;
+    justify-self:stretch!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+  .supplier-content-panel .supplier-header-search .input{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+}
