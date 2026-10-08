@@ -116,7 +116,8 @@ $like='%'.$search.'%';$list->execute([$like,$like,$like,$like]);$rows=$list->fet
 pageStart('Supplier Registry');
 ?>
 <div class="supplier-registry-page">
-  <div class="panel supplier-toolbar">
+  <div class="panel supplier-content-panel">
+  <div class="supplier-toolbar">
     <div>
       <h2 style="margin:0">Supplier Registry</h2>
       <p class="hint-text">Maintain the official registry of suppliers and their accreditation documents.</p>
@@ -170,7 +171,7 @@ pageStart('Supplier Registry');
   </form>
   <?php endif; ?>
 
-  <div class="panel supplier-list-panel">
+  <div class="supplier-list-panel">
     <div class="toolbar"><div><h2 style="margin:0">Registered Suppliers</h2><p class="hint-text"><?=number_format(count($rows))?> supplier<?=count($rows)===1?'':'s'?> found</p></div></div>
     <div class="table-wrap"><table class="table supplier-table">
       <tr><th>#</th><th>Supplier/Company Name</th><th>Address</th><th>Owner</th><th>Authorized Representative</th><th>Business Type</th><th>Registration</th><th>Documents</th><?php if($isEditor): ?><th>Action</th><?php endif; ?></tr>
@@ -182,6 +183,7 @@ pageStart('Supplier Registry');
       </tr>
       <?php endforeach; if(!$rows): ?><tr><td colspan="<?=$isEditor?9:8?>" class="empty">No suppliers found.</td></tr><?php endif; ?>
     </table></div>
+  </div>
   </div>
 </div>
 <?php pageEnd(); ?>
