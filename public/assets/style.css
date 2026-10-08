@@ -1870,3 +1870,141 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-entry-row .supplier-registration-under-tax>span{font-size:8px!important;white-space:nowrap!important;}
 .supplier-content-panel .supplier-entry-row .supplier-registration-under-tax .select{width:58px!important;min-width:58px!important;height:28px!important;font-size:9px!important;}
 .supplier-content-panel .supplier-entry-row .supplier-row-action .btn{width:100%!important;min-width:0!important;font-size:9px!important;padding:4px 1px!important;}
+
+
+/* Supplier Registry - final exact 9-column single-line layout */
+.supplier-content-panel .supplier-form-scroll{
+  width:100%!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  overflow-x:hidden!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row{
+  display:grid!important;
+  grid-template-columns:
+    minmax(0,1.05fr)
+    minmax(0,1.05fr)
+    minmax(0,.85fr)
+    minmax(0,1fr)
+    minmax(0,1.15fr)
+    minmax(0,1.15fr)
+    minmax(0,1.15fr)
+    minmax(0,1.15fr)
+    minmax(52px,.45fr)!important;
+  gap:4px!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  align-items:start!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row>input[type="hidden"]{
+  display:none!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field{
+  display:flex!important;
+  flex-direction:column!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field>label{
+  width:100%!important;
+  height:28px!important;
+  min-height:28px!important;
+  margin:0 0 4px!important;
+  padding:0!important;
+  font-size:10px!important;
+  line-height:1.05!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field .input,
+.supplier-content-panel .supplier-entry-row>.supplier-field textarea.input,
+.supplier-content-panel .supplier-entry-row>.supplier-field select.select,
+.supplier-content-panel .supplier-entry-row>.supplier-field input[type="file"]{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  font-size:10px!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field input[type="file"]{
+  height:30px!important;
+  padding:5px 2px!important;
+  overflow:hidden!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field textarea.input{
+  height:34px!important;
+  min-height:34px!important;
+  max-height:34px!important;
+  resize:none!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-validity{
+  display:flex!important;
+  align-items:center!important;
+  width:100%!important;
+  min-width:0!important;
+  gap:2px!important;
+  margin-top:3px!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-validity>span{
+  flex:0 0 auto!important;
+  font-size:8px!important;
+  white-space:nowrap!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-validity .supplier-date-picker{
+  flex:1 1 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:30px!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-validity .supplier-date-picker .supplier-date-display,
+.supplier-content-panel .supplier-entry-row .supplier-validity .supplier-date-picker .supplier-date-native{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:30px!important;
+  box-sizing:border-box!important;
+  font-size:9px!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax{
+  display:flex!important;
+  align-items:center!important;
+  width:100%!important;
+  min-width:0!important;
+  gap:2px!important;
+  margin-top:3px!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax>span{
+  flex:0 0 auto!important;
+  font-size:8px!important;
+  white-space:nowrap!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax .select{
+  flex:1 1 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:100%!important;
+  height:28px!important;
+  font-size:9px!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-row-action{
+  overflow:visible!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  padding:4px 2px!important;
+  font-size:9px!important;
+  box-sizing:border-box!important;
+}
