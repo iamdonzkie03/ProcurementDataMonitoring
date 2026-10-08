@@ -1702,3 +1702,35 @@ body{font-size:11px!important}
     max-width:none!important;
   }
 }
+
+
+/* Supplier Registry - content font size 12px */
+.supplier-content-panel,
+.supplier-content-panel input,
+.supplier-content-panel select,
+.supplier-content-panel textarea,
+.supplier-content-panel button,
+.supplier-content-panel label,
+.supplier-content-panel .hint-text,
+.supplier-content-panel .supplier-field,
+.supplier-content-panel .supplier-field .input,
+.supplier-content-panel .supplier-field .select,
+.supplier-content-panel .supplier-field input[type=file],
+.supplier-content-panel .supplier-row-action .btn,
+.supplier-content-panel .supplier-add-row-wrap .btn,
+.supplier-content-panel .supplier-save-wrap .btn,
+.supplier-content-panel .supplier-table,
+.supplier-content-panel .supplier-table th,
+.supplier-content-panel .supplier-table td,
+.supplier-content-panel .supplier-header-search .input,
+.supplier-content-panel .supplier-search-suggestion,
+.supplier-content-panel .supplier-search-empty{
+  font-size:12px!important;
+}
+.supplier-content-panel .supplier-field label{
+  font-size:12px!important;
+}
+.supplier-content-panel .supplier-field input[type=file]{font-size:12px!important}
+.supplier-content-panel .supplier-field input[type=date]{font-size:12px!important}
+.supplier-content-panel .supplier-row-action .btn{font-size:12px!important}
+.supplier-content-panel .supplier-list-header h2{font-size:12px!important}
