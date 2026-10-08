@@ -2302,3 +2302,27 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-entry-row .supplier-row-action button.danger:hover{
   opacity:.9!important;
 }
+
+
+/* Supplier Registry - use the system-wide Delete/Danger button styling without local overrides */
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn.danger,
+.supplier-content-panel .supplier-entry-row .supplier-row-action button.danger{
+  background:var(--danger)!important;
+  color:#fff!important;
+  border:0!important;
+  border-radius:8px!important;
+  padding:10px 14px!important;
+  font-family:inherit!important;
+  font-size:inherit!important;
+  font-weight:inherit!important;
+  line-height:normal!important;
+  text-decoration:none!important;
+  cursor:pointer!important;
+  display:inline-block!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn.danger:hover,
+.supplier-content-panel .supplier-entry-row .supplier-row-action button.danger:hover{
+  opacity:1!important;
+  background:#b42318!important;
+}
