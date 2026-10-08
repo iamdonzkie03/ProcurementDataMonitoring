@@ -2090,3 +2090,39 @@ body{font-size:11px!important}
   padding-left:2px!important;
   padding-right:2px!important;
 }
+
+
+/* Supplier Registry - updated exact column widths */
+.supplier-content-panel .supplier-form-scroll{
+  width:100%!important;
+  overflow-x:auto!important;
+  overflow-y:visible!important;
+}
+.supplier-content-panel .supplier-entry-row{
+  display:grid!important;
+  grid-template-columns:300px 350px 250px 250px 250px 250px 250px 250px 150px!important;
+  gap:5px!important;
+  width:max-content!important;
+  min-width:2450px!important;
+  max-width:none!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field .input,
+.supplier-content-panel .supplier-entry-row>.supplier-field textarea.input,
+.supplier-content-panel .supplier-entry-row>.supplier-field select.select,
+.supplier-content-panel .supplier-entry-row>.supplier-field input[type=file]{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn{
+  width:150px!important;
+  min-width:150px!important;
+  max-width:150px!important;
+  box-sizing:border-box!important;
+}
