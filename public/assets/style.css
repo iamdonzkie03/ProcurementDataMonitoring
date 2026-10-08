@@ -1734,3 +1734,19 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-field input[type=date]{font-size:12px!important}
 .supplier-content-panel .supplier-row-action .btn{font-size:12px!important}
 .supplier-content-panel .supplier-list-header h2{font-size:12px!important}
+
+
+/* Supplier Registry - 12px supplier text, fields and placeholders */
+.supplier-content-panel .supplier-entry-row .supplier-field input.input,
+.supplier-content-panel .supplier-entry-row .supplier-field textarea.input,
+.supplier-content-panel .supplier-entry-row .supplier-field select.select,
+.supplier-content-panel .supplier-entry-row .supplier-field input[type="file"],
+.supplier-content-panel .supplier-entry-row .supplier-field input[type="date"]{
+  font-size:12px!important;
+  line-height:1.2!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-field input.input::placeholder,
+.supplier-content-panel .supplier-entry-row .supplier-field textarea.input::placeholder{
+  font-size:12px!important;
+  opacity:1!important;
+}
