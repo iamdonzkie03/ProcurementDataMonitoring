@@ -29,7 +29,7 @@ function pageStart(string $title): void { $u=currentUser(); touchCurrentUserActi
 <a href="ppmp.php">▤ <span>Project Procurement Management Plan</span></a>
 <a href="pr.php">▰ <span>Purchase Requests</span></a>
 <a href="po.php">▱ <span>Purchase Orders</span></a>
-<a href="reports.php">◫ <span>Reports</span></a>
+<a href="supplier_registry.php">◫ <span>Supplier Registry</span></a>
 
 <?php else: ?>
 <a href="app.php">▥ <span>Annual Procurement Plan</span></a>
