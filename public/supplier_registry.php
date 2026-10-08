@@ -194,7 +194,7 @@ pageStart('Supplier Registry');
 document.addEventListener('DOMContentLoaded',function(){
  const datePickerRoot=document.querySelector('.supplier-form-scroll');
  function formatSupplierDate(value){if(!value)return '';const d=new Date(value+'T00:00:00');return isNaN(d)?value:d.toLocaleDateString('en-US',{month:'long',day:'2-digit',year:'numeric'});}
- function syncDatePicker(p){const native=p.querySelector('.supplier-date-native'),display=p.querySelector('.supplier-date-display');if(native&&display){display.value=formatSupplierDate(native.value);display.addEventListener('click',function(){try{if(typeof native.showPicker==='function')native.showPicker();else native.click();}catch(e){native.focus();}});native.addEventListener('change',function(){display.value=formatSupplierDate(native.value);});}}
+ function syncDatePicker(p){const native=p.querySelector('.supplier-date-native'),display=p.querySelector('.supplier-date-display');if(native&&display){display.value=formatSupplierDate(native.value);display.addEventListener('click',function(e){e.preventDefault();try{native.focus();if(typeof native.showPicker==='function')native.showPicker();}catch(err){native.click();}});native.addEventListener('change',function(){display.value=formatSupplierDate(native.value);});}}
  if(datePickerRoot){datePickerRoot.querySelectorAll('.supplier-date-picker').forEach(syncDatePicker);}
 
  const rows=document.querySelector('.supplier-form-scroll'),add=document.getElementById('addSupplierRow');
