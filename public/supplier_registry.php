@@ -128,7 +128,7 @@ pageStart('Supplier Registry');
         <div id="supplierRows" class="supplier-rows-single-line">
           <div class="supplier-entry-row">
             <input type="hidden" name="supplier_id[]" value="<?=e((string)$editing['id'])?>">
-            <div class="supplier-field"><label>Supplier/Company Name</label><input class="input" name="supplier_company_name[]" value="<?=e($editing['supplier_company_name'])?>" placeholder="Supplier/Company Name" required></div>
+            <div class="supplier-field"><label>Supplier/Company</label><input class="input" name="supplier_company_name[]" value="<?=e($editing['supplier_company_name'])?>" placeholder="Supplier/Company Name" required></div>
             <div class="supplier-field"><label>Address</label><input class="input" name="address[]" value="<?=e($editing['address'])?>" placeholder="Address"></div>
             <div class="supplier-field"><label>Owner</label><input class="input" name="owner[]" value="<?=e($editing['owner'])?>" placeholder="Owner"></div>
             <div class="supplier-field"><label>Authorized Representative</label><input class="input" name="authorized_representative[]" value="<?=e($editing['authorized_representative'])?>" placeholder="Authorized Representative"></div>
@@ -137,16 +137,14 @@ pageStart('Supplier Registry');
             <div class="supplier-field"><label>PhilGEPS Valid Until</label><input class="input" type="date" name="philgeps_valid_until[]" value="<?=e($editing['philgeps_valid_until']??'')?>"></div>
             <div class="supplier-field"><label>Mayor's/Business Permit</label><input type="file" name="business_permit[]" accept=".pdf,.jpg,.jpeg,.png"></div>
             <div class="supplier-field"><label>Permit Valid Until</label><input class="input" type="date" name="business_permit_valid_until[]" value="<?=e($editing['business_permit_valid_until']??'')?>"></div>
-            <div class="supplier-field"><label>Tax Clearance Certificate</label><input type="file" name="tax_clearance_certificate[]" accept=".pdf,.jpg,.jpeg,.png"></div>
+            <div class="supplier-field"><label>Tax Clearance</label><input type="file" name="tax_clearance_certificate[]" accept=".pdf,.jpg,.jpeg,.png"></div>
             <div class="supplier-field"><label>Tax Valid Until</label><input class="input" type="date" name="tax_clearance_valid_until[]" value="<?=e($editing['tax_clearance_valid_until']??'')?>"></div>
             <div class="supplier-field"><label>Registration Type</label><select class="select" name="registration_type[]"><option value="">Select</option><option value="SEC" <?=$editing['registration_type']==='SEC'?'selected':''?>>SEC</option><option value="DTI" <?=$editing['registration_type']==='DTI'?'selected':''?>>DTI</option><option value="CDA" <?=$editing['registration_type']==='CDA'?'selected':''?>>CDA</option></select></div>
             <div class="supplier-field supplier-row-action"><label>Action</label><button type="button" class="btn secondary supplier-remove-row">Remove</button></div>
           </div>
         </div>
-        <div class="supplier-inline-add">
-          <label>&nbsp;</label>
-          <button type="button" class="btn secondary" id="addSupplierRow">+ Add Row</button>
-        </div>
+      </div>
+      <div class="supplier-add-row-wrap"><button type="button" class="btn secondary" id="addSupplierRow">+ Add Row</button></div>
       </div>
       <div class="supplier-save-wrap"><a class="btn secondary" href="supplier_registry.php">Clear</a><button class="btn" type="submit">Save Supplier</button></div>
     </div>
