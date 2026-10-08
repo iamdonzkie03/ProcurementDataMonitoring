@@ -122,12 +122,11 @@ pageStart('Supplier Registry');
       <h2 style="margin:0">Supplier Registry</h2>
       <p class="hint-text">Maintain the official registry of suppliers and their accreditation documents.</p>
     </div>
-    <form class="supplier-search" method="get">
-      <input class="input" type="search" name="search" value="<?=e($search)?>" placeholder="Search supplier, owner, representative...">
-      <button class="btn secondary" type="submit">Search</button>
-      <?php if($search!==''): ?><a class="btn secondary" href="supplier_registry.php">Clear</a><?php endif; ?>
-      <?php if($isEditor): ?><a class="btn" href="supplier_registry.php">+ Add Supplier</a><?php endif; ?>
-    </form>
+    <div class="supplier-header-search" id="supplierSearchBox">
+      <input class="input" type="search" id="supplierSearchInput" name="search" value="<?=e($search)?>" placeholder="Search Supplier..." autocomplete="off" aria-label="Search Supplier">
+      <div class="supplier-search-suggestions" id="supplierSearchSuggestions"></div>
+    </div>
+    <?php if($isEditor): ?><a class="btn supplier-add-btn" href="supplier_registry.php">+ Add Supplier</a><?php endif; ?>
   </div>
 
   <?php if($isEditor): ?>
@@ -173,7 +172,7 @@ pageStart('Supplier Registry');
 
   <div class="supplier-list-panel">
     <div class="toolbar"><div><h2 style="margin:0">Registered Suppliers</h2><p class="hint-text"><?=number_format(count($rows))?> supplier<?=count($rows)===1?'':'s'?> found</p></div></div>
-    <div class="table-wrap"><table class="table supplier-table">
+    <div class="table-wrap"><table class="table supplier-table" id="supplierTable">
       <tr><th>#</th><th>Supplier/Company Name</th><th>Address</th><th>Owner</th><th>Authorized Representative</th><th>Business Type</th><th>Registration</th><th>Documents</th><?php if($isEditor): ?><th>Action</th><?php endif; ?></tr>
       <?php $i=1;foreach($rows as $r): ?>
       <tr>
@@ -186,4 +185,27 @@ pageStart('Supplier Registry');
   </div>
   </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+ const input=document.getElementById('supplierSearchInput'),box=document.getElementById('supplierSearchBox'),suggestions=document.getElementById('supplierSearchSuggestions'),table=document.getElementById('supplierTable');
+ if(!input||!suggestions||!table)return;
+ const rows=Array.from(table.querySelectorAll('tr')).slice(1);
+ function filter(term){term=String(term||'').trim().toLowerCase();rows.forEach(r=>{r.style.display=!term||r.textContent.toLowerCase().includes(term)?'':'none';});}
+ function close(){suggestions.innerHTML='';suggestions.style.display='none';}
+ function suggest(){
+   const term=input.value.trim().toLowerCase();suggestions.innerHTML='';
+   if(!term){close();filter('');return;}
+   const matches=rows.filter(r=>r.textContent.toLowerCase().includes(term)).slice(0,10);
+   matches.forEach(r=>{
+     const name=(r.cells[1]?.textContent||'').trim(),b=document.createElement('button');
+     b.type='button';b.className='supplier-search-suggestion';b.textContent=name;b.addEventListener('click',()=>{input.value=name;close();filter(name);});
+     suggestions.appendChild(b);
+   });
+   if(!matches.length){const e=document.createElement('div');e.className='supplier-search-empty';e.textContent='No matching supplier found.';suggestions.appendChild(e);}
+   suggestions.style.display='block';filter(term);
+ }
+ input.addEventListener('input',suggest);input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';close();filter('');}});
+ document.addEventListener('click',e=>{if(box&&!box.contains(e.target))close();});
+});
+</script>
 <?php pageEnd(); ?>
