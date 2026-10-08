@@ -2183,3 +2183,10 @@ body{font-size:11px!important}
   min-width:0!important;
   max-width:none!important;
 }
+
+/* Supplier Registry - horizontal separator for every added supplier row */
+.supplier-content-panel .supplier-entry-row + .supplier-entry-row{
+  border-top:1px solid var(--border)!important;
+  padding-top:10px!important;
+  margin-top:10px!important;
+}
