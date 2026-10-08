@@ -1810,3 +1810,20 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-validity{display:flex!important;align-items:center!important;gap:6px!important;margin-top:5px!important;width:200px!important;}
 .supplier-content-panel .supplier-validity>span{font-size:11px!important;white-space:nowrap!important;line-height:34px!important;}
 .supplier-content-panel .supplier-validity .supplier-date-picker{flex:1 1 auto!important;width:125px!important;min-width:125px!important;max-width:125px!important;}
+
+/* Supplier Registry - compact all-column single-row layout */
+.supplier-content-panel .supplier-form-scroll{width:100%!important;overflow-x:auto!important;overflow-y:visible!important;}
+.supplier-content-panel .supplier-entry-row{grid-template-columns:145px 145px 145px 145px 145px 145px 145px 145px 145px 145px 145px 145px 110px 110px 65px!important;gap:4px!important;min-width:0!important;width:max-content!important;}
+.supplier-content-panel .supplier-entry-row .supplier-field,
+.supplier-content-panel .supplier-entry-row .supplier-document-field{width:auto!important;min-width:0!important;max-width:none!important;}
+.supplier-content-panel .supplier-entry-row .supplier-field .input,
+.supplier-content-panel .supplier-entry-row .supplier-field textarea.input,
+.supplier-content-panel .supplier-entry-row .supplier-field select.select,
+.supplier-content-panel .supplier-entry-row .supplier-field input[type=file]{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;}
+.supplier-content-panel .supplier-entry-row .supplier-document-field>input[type=file]{width:100%!important;min-width:0!important;max-width:100%!important;}
+.supplier-content-panel .supplier-validity{width:100%!important;gap:3px!important;}
+.supplier-content-panel .supplier-validity>span{font-size:10px!important;}
+.supplier-content-panel .supplier-validity .supplier-date-picker{width:95px!important;min-width:95px!important;max-width:95px!important;}
+.supplier-content-panel .supplier-validity .supplier-date-picker .supplier-date-display,
+.supplier-content-panel .supplier-validity .supplier-date-picker .supplier-date-native{width:95px!important;min-width:95px!important;max-width:95px!important;}
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn{width:65px!important;min-width:65px!important;padding-left:5px!important;padding-right:5px!important;font-size:10px!important;}
