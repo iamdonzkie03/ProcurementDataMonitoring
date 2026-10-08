@@ -49,8 +49,8 @@ function supplierUpload(string $field,string $uploadDir,string $uploadWeb,?strin
   if((int)($_FILES[$field]['size'][$index]??0)>8*1024*1024) throw new RuntimeException('Each supplier certificate/permit file must not exceed 8 MB.');
   $original=(string)($_FILES[$field]['name'][$index]??'');
   $ext=strtolower(pathinfo($original,PATHINFO_EXTENSION));
-  $allowed=['pdf','jpg','jpeg','png'];
-  if(!in_array($ext,$allowed,true)) throw new RuntimeException('Only PDF, JPG, JPEG and PNG files are allowed.');
+  $allowed=['pdf'];
+  if(!in_array($ext,$allowed,true)) throw new RuntimeException('Only PDF files are allowed.');
   $safe=preg_replace('/[^a-zA-Z0-9_-]/','-',pathinfo($original,PATHINFO_FILENAME));
   $name=$safe.'-'.bin2hex(random_bytes(8)).'.'.$ext;
   $target=rtrim($uploadDir,'/\\').DIRECTORY_SEPARATOR.$name;
@@ -133,11 +133,11 @@ pageStart('Supplier Registry');
           <div class="supplier-field"><label>Owner</label><input class="input" name="owner[]" value="<?=e($editing['owner'])?>" placeholder="Owner"></div>
           <div class="supplier-field"><label>Authorized Representative</label><input class="input" name="authorized_representative[]" value="<?=e($editing['authorized_representative'])?>" placeholder="Authorized Representative"></div>
           <div class="supplier-field"><label>Business Type</label><input class="input" name="business_type[]" value="<?=e($editing['business_type'])?>" placeholder="Business Type"></div>
-          <div class="supplier-field"><label>PhilGEPS Certificate</label><input type="file" name="philgeps_certificate[]" accept=".pdf,.jpg,.jpeg,.png"></div>
+          <div class="supplier-field"><label>PhilGEPS Certificate</label><input type="file" name="philgeps_certificate[]" accept=".pdf"></div>
           <div class="supplier-field"><label>PhilGEPS Valid Until</label><input class="input" type="date" name="philgeps_valid_until[]" value="<?=e($editing['philgeps_valid_until']??'')?>"></div>
-          <div class="supplier-field"><label>Mayor's/Business Permit</label><input type="file" name="business_permit[]" accept=".pdf,.jpg,.jpeg,.png"></div>
+          <div class="supplier-field"><label>Mayor's/Business Permit</label><input type="file" name="business_permit[]" accept=".pdf"></div>
           <div class="supplier-field"><label>Permit Valid Until</label><input class="input" type="date" name="business_permit_valid_until[]" value="<?=e($editing['business_permit_valid_until']??'')?>"></div>
-          <div class="supplier-field"><label>Tax Clearance</label><input type="file" name="tax_clearance_certificate[]" accept=".pdf,.jpg,.jpeg,.png"></div>
+          <div class="supplier-field"><label>Tax Clearance</label><input type="file" name="tax_clearance_certificate[]" accept=".pdf"></div>
           <div class="supplier-field"><label>Tax Valid Until</label><input class="input" type="date" name="tax_clearance_valid_until[]" value="<?=e($editing['tax_clearance_valid_until']??'')?>"></div>
           <div class="supplier-field"><label>Registration Type</label><select class="select" name="registration_type[]"><option value="">Select</option><option value="SEC" <?=$editing['registration_type']==='SEC'?'selected':''?>>SEC</option><option value="DTI" <?=$editing['registration_type']==='DTI'?'selected':''?>>DTI</option><option value="CDA" <?=$editing['registration_type']==='CDA'?'selected':''?>>CDA</option></select></div>
           <div class="supplier-field supplier-row-action"><label>Action</label><button type="button" class="btn secondary supplier-remove-row">Remove</button></div>
