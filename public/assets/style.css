@@ -2279,3 +2279,26 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-entry-row .supplier-row-action button:hover{
   opacity:.9!important;
 }
+
+
+/* Supplier Registry - Remove button matches existing Remove/danger button style */
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn.danger,
+.supplier-content-panel .supplier-entry-row .supplier-row-action button.danger{
+  background:var(--danger)!important;
+  color:#fff!important;
+  border:0!important;
+  border-radius:8px!important;
+  padding:10px 14px!important;
+  font-family:inherit!important;
+  font-size:12px!important;
+  font-weight:400!important;
+  line-height:normal!important;
+  text-decoration:none!important;
+  cursor:pointer!important;
+  display:inline-block!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn.danger:hover,
+.supplier-content-panel .supplier-entry-row .supplier-row-action button.danger:hover{
+  opacity:.9!important;
+}
