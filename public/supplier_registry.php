@@ -94,7 +94,8 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
         if($id){$st=$pdo->prepare("UPDATE suppliers SET supplier_company_name=?,address=?,owner=?,authorized_representative=?,business_type=?,philgeps_certificate_path=?,philgeps_valid_until=?,business_permit_path=?,business_permit_valid_until=?,tax_clearance_certificate_path=?,tax_clearance_valid_until=?,registration_type=?,updated_by=? WHERE id=?");$st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$reg,(int)currentUser()['id'],$id]);}
         else{$st=$pdo->prepare("INSERT INTO suppliers(supplier_company_name,address,owner,authorized_representative,business_type,philgeps_certificate_path,philgeps_valid_until,business_permit_path,business_permit_valid_until,tax_clearance_certificate_path,tax_clearance_valid_until,registration_type,created_by,updated_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)");$st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$reg,(int)currentUser()['id'],(int)currentUser()['id']]);}
       }
-      flash('success','Supplier information saved successfully.');header('Location:supplier_registry.php');exit;    }
+      flash('success','Supplier information saved successfully.');header('Location:supplier_registry.php');exit;
+    }
   } catch(Throwable $e) { flash('error',$e->getMessage()); }
 }
 
@@ -142,11 +143,8 @@ pageStart('Supplier Registry');
           <div class="supplier-field supplier-row-action"><label>Action</label><button type="button" class="btn secondary supplier-remove-row">Remove</button></div>
         </div>
       </div>
-      <div class="supplier-add-row-wrap">
+      <div class="supplier-form-actions">
         <button type="button" class="btn secondary" id="addSupplierRow">+ Add Row</button>
-      </div>
-      <div class="supplier-save-wrap">
-        <a class="btn secondary" href="supplier_registry.php">Clear</a>
         <button class="btn" type="submit">Save Supplier</button>
       </div>
     </form>
@@ -182,7 +180,7 @@ pageStart('Supplier Registry');
 </div>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
- const rows=document.getElementById('supplierRows'),add=document.getElementById('addSupplierRow');
+ const rows=document.querySelector('.supplier-form-scroll'),add=document.getElementById('addSupplierRow');
  if(add&&rows){add.addEventListener('click',function(){const r=rows.querySelector('.supplier-entry-row').cloneNode(true);r.querySelectorAll('input').forEach(i=>{if(i.type!=='hidden')i.value='';});r.querySelectorAll('textarea').forEach(t=>t.value='');r.querySelectorAll('select').forEach(s=>s.selectedIndex=0);r.querySelectorAll('input[type=file]').forEach(i=>i.value='');rows.appendChild(r);});
  rows.addEventListener('click',function(e){if(e.target.classList.contains('supplier-remove-row')){const all=rows.querySelectorAll('.supplier-entry-row');if(all.length>1)e.target.closest('.supplier-entry-row').remove();else e.target.closest('.supplier-entry-row').querySelectorAll('input').forEach(i=>{if(i.type!=='hidden')i.value='';});}});
  }
