@@ -1197,3 +1197,26 @@ body{font-size:11px!important}
     min-width:1180px!important;
   }
 }
+
+
+/* Supplier Registry - 200px textboxes and Address textarea */
+.supplier-content-panel .supplier-entry-row .supplier-field .input:not([type="date"]):not([type="file"]),
+.supplier-content-panel .supplier-entry-row .supplier-field textarea.input{
+  width:200px!important;
+  min-width:200px!important;
+  max-width:200px!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-field textarea.input{
+  height:28px!important;
+  min-height:28px!important;
+  max-height:28px!important;
+  resize:none!important;
+  overflow:hidden!important;
+  padding:4px!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-field.supplier-address-field{
+  flex:0 0 200px!important;
+  width:200px!important;
+  min-width:200px!important;
+}
