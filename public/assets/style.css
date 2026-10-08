@@ -1827,3 +1827,17 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-validity .supplier-date-picker .supplier-date-display,
 .supplier-content-panel .supplier-validity .supplier-date-picker .supplier-date-native{width:95px!important;min-width:95px!important;max-width:95px!important;}
 .supplier-content-panel .supplier-entry-row .supplier-row-action .btn{width:65px!important;min-width:65px!important;padding-left:5px!important;padding-right:5px!important;font-size:10px!important;}
+
+/* Supplier Registry - requested 9-column layout */
+.supplier-content-panel .supplier-entry-row{grid-template-columns:150px 150px 130px 160px 170px 170px 170px 170px 70px!important;gap:5px!important;width:100%!important;min-width:0!important;}
+.supplier-content-panel .supplier-entry-row .supplier-field{min-width:0!important;width:100%!important;}
+.supplier-content-panel .supplier-entry-row .supplier-document-field{width:100%!important;min-width:0!important;max-width:none!important;}
+.supplier-content-panel .supplier-entry-row .supplier-document-field>input[type=file]{width:100%!important;min-width:0!important;max-width:100%!important;}
+.supplier-content-panel .supplier-registration-under-tax{display:flex!important;align-items:center!important;gap:4px!important;margin-top:4px!important;width:100%!important;}
+.supplier-content-panel .supplier-registration-under-tax>span{font-size:10px!important;white-space:nowrap!important;}
+.supplier-content-panel .supplier-registration-under-tax .select{width:70px!important;min-width:70px!important;height:30px!important;font-size:10px!important;}
+.supplier-content-panel .supplier-document-field .supplier-validity{width:100%!important;}
+.supplier-content-panel .supplier-document-field .supplier-validity .supplier-date-picker{width:105px!important;min-width:105px!important;max-width:105px!important;}
+.supplier-content-panel .supplier-document-field .supplier-validity .supplier-date-picker .supplier-date-display,
+.supplier-content-panel .supplier-document-field .supplier-validity .supplier-date-picker .supplier-date-native{width:105px!important;min-width:105px!important;max-width:105px!important;}
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn{width:70px!important;min-width:70px!important;padding:5px!important;}
