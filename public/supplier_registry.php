@@ -43,18 +43,18 @@ function supplierDate(?string $v): ?string {
   $d=DateTime::createFromFormat('Y-m-d',$v);
   return ($d && $d->format('Y-m-d')===$v) ? $v : null;
 }
-function supplierUpload(string $field,string $uploadDir,string $uploadWeb,?string $oldPath=null): ?string {
-  if(empty($_FILES[$field]) || ($_FILES[$field]['error']??UPLOAD_ERR_NO_FILE)===UPLOAD_ERR_NO_FILE) return $oldPath;
-  if(($_FILES[$field]['error']??UPLOAD_ERR_OK)!==UPLOAD_ERR_OK) throw new RuntimeException('The uploaded file could not be processed.');
-  if((int)($_FILES[$field]['size']??0)>8*1024*1024) throw new RuntimeException('Each supplier certificate/permit file must not exceed 8 MB.');
-  $original=(string)($_FILES[$field]['name']??'');
+function supplierUpload(string $field,string $uploadDir,string $uploadWeb,?string $oldPath=null,int $index=0): ?string {
+  if(empty($_FILES[$field]) || !isset($_FILES[$field]['error'][$index]) || $_FILES[$field]['error'][$index]===UPLOAD_ERR_NO_FILE) return $oldPath;
+  if($_FILES[$field]['error'][$index]!==UPLOAD_ERR_OK) throw new RuntimeException('The uploaded file could not be processed.');
+  if((int)($_FILES[$field]['size'][$index]??0)>8*1024*1024) throw new RuntimeException('Each supplier certificate/permit file must not exceed 8 MB.');
+  $original=(string)($_FILES[$field]['name'][$index]??'');
   $ext=strtolower(pathinfo($original,PATHINFO_EXTENSION));
   $allowed=['pdf','jpg','jpeg','png'];
   if(!in_array($ext,$allowed,true)) throw new RuntimeException('Only PDF, JPG, JPEG and PNG files are allowed.');
   $safe=preg_replace('/[^a-zA-Z0-9_-]/','-',pathinfo($original,PATHINFO_FILENAME));
   $name=$safe.'-'.bin2hex(random_bytes(8)).'.'.$ext;
   $target=rtrim($uploadDir,'/\\').DIRECTORY_SEPARATOR.$name;
-  if(!move_uploaded_file($_FILES[$field]['tmp_name'],$target)) throw new RuntimeException('Unable to save the uploaded file.');
+  if(!move_uploaded_file($_FILES[$field]['tmp_name'][$index],$target)) throw new RuntimeException('Unable to save the uploaded file.');
   if($oldPath){
     $oldFile=__DIR__.'/'.ltrim(str_replace(['uploads/','/'],'',$oldPath),'/');
     if(is_file($oldFile)) @unlink($oldFile);
@@ -81,28 +81,20 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
       $pdo->prepare("DELETE FROM suppliers WHERE id=?")->execute([$id]);
       flash('success','Supplier deleted successfully.');
     } elseif($action==='save'){
-      $id=(int)($_POST['id']??0);
-      $name=trim((string)($_POST['supplier_company_name']??''));
-      if($name==='') throw new RuntimeException('Supplier/Company Name is required.');
-      $address=trim((string)($_POST['address']??''));$owner=trim((string)($_POST['owner']??''));
-      $rep=trim((string)($_POST['authorized_representative']??''));$business=trim((string)($_POST['business_type']??''));
-      $reg=in_array($_POST['registration_type']??'', ['SEC','DTI','CDA'], true)?$_POST['registration_type']:null;
-      $phDate=supplierDate($_POST['philgeps_valid_until']??null);$bpDate=supplierDate($_POST['business_permit_valid_until']??null);$taxDate=supplierDate($_POST['tax_clearance_valid_until']??null);
-      $old=null;if($id){$q=$pdo->prepare("SELECT * FROM suppliers WHERE id=?");$q->execute([$id]);$old=$q->fetch();if(!$old)throw new RuntimeException('Supplier record was not found.');}
-      $ph=supplierUpload('philgeps_certificate',$uploadDir,$uploadWeb,$old['philgeps_certificate_path']??null);
-      $bp=supplierUpload('business_permit',$uploadDir,$uploadWeb,$old['business_permit_path']??null);
-      $tax=supplierUpload('tax_clearance_certificate',$uploadDir,$uploadWeb,$old['tax_clearance_certificate_path']??null);
-      if($id){
-        $st=$pdo->prepare("UPDATE suppliers SET supplier_company_name=?,address=?,owner=?,authorized_representative=?,business_type=?,philgeps_certificate_path=?,philgeps_valid_until=?,business_permit_path=?,business_permit_valid_until=?,tax_clearance_certificate_path=?,tax_clearance_valid_until=?,registration_type=?,updated_by=? WHERE id=?");
-        $st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$reg,(int)currentUser()['id'],$id]);
-        flash('success','Supplier information updated successfully.');
-      } else {
-        $st=$pdo->prepare("INSERT INTO suppliers(supplier_company_name,address,owner,authorized_representative,business_type,philgeps_certificate_path,philgeps_valid_until,business_permit_path,business_permit_valid_until,tax_clearance_certificate_path,tax_clearance_valid_until,registration_type,created_by,updated_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-        $st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$reg,(int)currentUser()['id'],(int)currentUser()['id']]);
-        flash('success','Supplier added successfully.');
+      $ids=$_POST['supplier_id']??[];$names=$_POST['supplier_company_name']??[];$addresses=$_POST['address']??[];$owners=$_POST['owner']??[];$reps=$_POST['authorized_representative']??[];$businesses=$_POST['business_type']??[];$regs=$_POST['registration_type']??[];$phDates=$_POST['philgeps_valid_until']??[];$bpDates=$_POST['business_permit_valid_until']??[];$taxDates=$_POST['tax_clearance_valid_until']??[];
+      $count=max(count($names),count($ids));
+      for($i=0;$i<$count;$i++){
+        $id=(int)($ids[$i]??0);$name=trim((string)($names[$i]??''));if($name==='')continue;
+        $address=trim((string)($addresses[$i]??''));$owner=trim((string)($owners[$i]??''));$rep=trim((string)($reps[$i]??''));$business=trim((string)($businesses[$i]??''));$reg=in_array($regs[$i]??'', ['SEC','DTI','CDA'], true)?$regs[$i]:null;
+        $phDate=supplierDate($phDates[$i]??null);$bpDate=supplierDate($bpDates[$i]??null);$taxDate=supplierDate($taxDates[$i]??null);$old=null;
+        if($id){$q=$pdo->prepare("SELECT * FROM suppliers WHERE id=?");$q->execute([$id]);$old=$q->fetch();if(!$old)continue;}
+        $ph=supplierUpload('philgeps_certificate',$uploadDir,$uploadWeb,$old['philgeps_certificate_path']??null,$i);
+        $bp=supplierUpload('business_permit',$uploadDir,$uploadWeb,$old['business_permit_path']??null,$i);
+        $tax=supplierUpload('tax_clearance_certificate',$uploadDir,$uploadWeb,$old['tax_clearance_certificate_path']??null,$i);
+        if($id){$st=$pdo->prepare("UPDATE suppliers SET supplier_company_name=?,address=?,owner=?,authorized_representative=?,business_type=?,philgeps_certificate_path=?,philgeps_valid_until=?,business_permit_path=?,business_permit_valid_until=?,tax_clearance_certificate_path=?,tax_clearance_valid_until=?,registration_type=?,updated_by=? WHERE id=?");$st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$reg,(int)currentUser()['id'],$id]);}
+        else{$st=$pdo->prepare("INSERT INTO suppliers(supplier_company_name,address,owner,authorized_representative,business_type,philgeps_certificate_path,philgeps_valid_until,business_permit_path,business_permit_valid_until,tax_clearance_certificate_path,tax_clearance_valid_until,registration_type,created_by,updated_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)");$st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$reg,(int)currentUser()['id'],(int)currentUser()['id']]);}
       }
-      header('Location:supplier_registry.php');exit;
-    }
+      flash('success','Supplier information saved successfully.');header('Location:supplier_registry.php');exit;    }
   } catch(Throwable $e) { flash('error',$e->getMessage()); }
 }
 
@@ -126,46 +118,35 @@ pageStart('Supplier Registry');
       <input class="input" type="search" id="supplierSearchInput" name="search" value="<?=e($search)?>" placeholder="Search Supplier..." autocomplete="off" aria-label="Search Supplier">
       <div class="supplier-search-suggestions" id="supplierSearchSuggestions"></div>
     </div>
-    <?php if($isEditor): ?><a class="btn supplier-add-btn" href="supplier_registry.php">+ Add Supplier</a><?php endif; ?>
-  </div>
-
-  <?php if($isEditor): ?>
-  <form method="post" enctype="multipart/form-data" class="supplier-form">
+    <?php if($isEditor): ?>
+  <form method="post" enctype="multipart/form-data" class="supplier-form supplier-row-form" id="supplierForm">
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="save">
-    <input type="hidden" name="id" value="<?=e((string)$editing['id'])?>">
-    <div class="supplier-panel">
-      <div class="supplier-panel-title"><span>1</span><div><b>Supplier Information</b><small>Basic company and representative details</small></div></div>
-      <div class="supplier-fields">
-        <div class="field supplier-wide"><label>Supplier/Company Name <span>*</span></label><input class="input" name="supplier_company_name" required value="<?=e($editing['supplier_company_name'])?>"></div>
-        <div class="field supplier-wide"><label>Address</label><textarea class="input supplier-textarea" name="address" rows="3"><?=e($editing['address'])?></textarea></div>
-        <div class="field"><label>Owner</label><input class="input" name="owner" value="<?=e($editing['owner'])?>"></div>
-        <div class="field"><label>Authorized Representative</label><input class="input" name="authorized_representative" value="<?=e($editing['authorized_representative'])?>"></div>
-        <div class="field"><label>Business Type</label><input class="input" name="business_type" value="<?=e($editing['business_type'])?>" placeholder="e.g. Sole Proprietorship, Corporation"></div>
+    <div class="supplier-entry-panel">
+      <div class="supplier-panel-title"><span>1</span><div><b>Supplier Information &amp; Registration</b><small>Enter supplier details and compliance documents in one row.</small></div></div>
+      <div class="supplier-row-header">
+        <div>Supplier/Company Name</div><div>Address</div><div>Owner</div><div>Authorized Representative</div><div>Business Type</div><div>PhilGEPS Certificate</div><div>PhilGEPS Valid Until</div><div>Mayor's/Business Permit</div><div>Permit Valid Until</div><div>Tax Clearance Certificate</div><div>Tax Valid Until</div><div>Registration Type</div><div>Action</div>
       </div>
-    </div>
-
-    <div class="supplier-panel">
-      <div class="supplier-panel-title"><span>2</span><div><b>Registration &amp; Compliance Documents</b><small>Upload certificates/permits and record their validity</small></div></div>
-      <div class="supplier-document-grid">
-        <div class="supplier-document-card">
-          <div class="field"><label>PhilGEPS Membership Certificate</label><input type="file" name="philgeps_certificate" accept=".pdf,.jpg,.jpeg,.png"></div>
-          <?php if(!empty($editing['philgeps_certificate_path'])): ?><div class="supplier-file"><a href="<?=e($editing['philgeps_certificate_path'])?>" target="_blank">View current certificate</a></div><?php endif; ?>
-          <div class="field"><label>Valid Until</label><input class="input" type="date" name="philgeps_valid_until" value="<?=e($editing['philgeps_valid_until']??'')?>"></div>
-        </div>
-        <div class="supplier-document-card">
-          <div class="field"><label>Mayor's/Business Permit</label><input type="file" name="business_permit" accept=".pdf,.jpg,.jpeg,.png"></div>
-          <?php if(!empty($editing['business_permit_path'])): ?><div class="supplier-file"><a href="<?=e($editing['business_permit_path'])?>" target="_blank">View current permit</a></div><?php endif; ?>
-          <div class="field"><label>Valid Until</label><input class="input" type="date" name="business_permit_valid_until" value="<?=e($editing['business_permit_valid_until']??'')?>"></div>
-        </div>
-        <div class="supplier-document-card">
-          <div class="field"><label>Tax Clearance Certificate</label><input type="file" name="tax_clearance_certificate" accept=".pdf,.jpg,.jpeg,.png"></div>
-          <?php if(!empty($editing['tax_clearance_certificate_path'])): ?><div class="supplier-file"><a href="<?=e($editing['tax_clearance_certificate_path'])?>" target="_blank">View current certificate</a></div><?php endif; ?>
-          <div class="field"><label>Valid Until</label><input class="input" type="date" name="tax_clearance_valid_until" value="<?=e($editing['tax_clearance_valid_until']??'')?>"></div>
+      <div id="supplierRows">
+        <div class="supplier-entry-row">
+          <input type="hidden" name="supplier_id[]" value="<?=e((string)$editing['id'])?>">
+          <div><input class="input" name="supplier_company_name[]" value="<?=e($editing['supplier_company_name'])?>" placeholder="Supplier/Company Name" required></div>
+          <div><input class="input" name="address[]" value="<?=e($editing['address'])?>" placeholder="Address"></div>
+          <div><input class="input" name="owner[]" value="<?=e($editing['owner'])?>" placeholder="Owner"></div>
+          <div><input class="input" name="authorized_representative[]" value="<?=e($editing['authorized_representative'])?>" placeholder="Authorized Representative"></div>
+          <div><input class="input" name="business_type[]" value="<?=e($editing['business_type'])?>" placeholder="Business Type"></div>
+          <div><input type="file" name="philgeps_certificate[]" accept=".pdf,.jpg,.jpeg,.png"></div>
+          <div><input class="input" type="date" name="philgeps_valid_until[]" value="<?=e($editing['philgeps_valid_until']??'')?>"></div>
+          <div><input type="file" name="business_permit[]" accept=".pdf,.jpg,.jpeg,.png"></div>
+          <div><input class="input" type="date" name="business_permit_valid_until[]" value="<?=e($editing['business_permit_valid_until']??'')?>"></div>
+          <div><input type="file" name="tax_clearance_certificate[]" accept=".pdf,.jpg,.jpeg,.png"></div>
+          <div><input class="input" type="date" name="tax_clearance_valid_until[]" value="<?=e($editing['tax_clearance_valid_until']??'')?>"></div>
+          <div><select class="select" name="registration_type[]"><option value="">Select</option><option value="SEC" <?=$editing['registration_type']==='SEC'?'selected':''?>>SEC</option><option value="DTI" <?=$editing['registration_type']==='DTI'?'selected':''?>>DTI</option><option value="CDA" <?=$editing['registration_type']==='CDA'?'selected':''?>>CDA</option></select></div>
+          <div class="supplier-row-action"><button type="button" class="btn secondary supplier-remove-row">Remove</button></div>
         </div>
       </div>
-      <div class="field supplier-registration"><label>Registration Type</label><select class="select" name="registration_type"><option value="">Select Registration Type</option><option value="SEC" <?=$editing['registration_type']==='SEC'?'selected':''?>>SEC — Security Exchange Commission</option><option value="DTI" <?=$editing['registration_type']==='DTI'?'selected':''?>>DTI — Department of Trade and Industry</option><option value="CDA" <?=$editing['registration_type']==='CDA'?'selected':''?>>CDA — Cooperative Development Authority</option></select></div>
-      <div class="supplier-form-actions"><a class="btn secondary" href="supplier_registry.php">Clear</a><button class="btn" type="submit"><?=$editing['id']?'Update Supplier':'Save Supplier'?></button></div>
+      <div class="supplier-add-row-wrap"><button type="button" class="btn secondary" id="addSupplierRow">+ Add Row</button></div>
+      <div class="supplier-save-wrap"><a class="btn secondary" href="supplier_registry.php">Clear</a><button class="btn" type="submit">Save Supplier</button></div>
     </div>
   </form>
   <?php endif; ?>
@@ -187,25 +168,17 @@ pageStart('Supplier Registry');
 </div>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
- const input=document.getElementById('supplierSearchInput'),box=document.getElementById('supplierSearchBox'),suggestions=document.getElementById('supplierSearchSuggestions'),table=document.getElementById('supplierTable');
- if(!input||!suggestions||!table)return;
- const rows=Array.from(table.querySelectorAll('tr')).slice(1);
- function filter(term){term=String(term||'').trim().toLowerCase();rows.forEach(r=>{r.style.display=!term||r.textContent.toLowerCase().includes(term)?'':'none';});}
- function close(){suggestions.innerHTML='';suggestions.style.display='none';}
- function suggest(){
-   const term=input.value.trim().toLowerCase();suggestions.innerHTML='';
-   if(!term){close();filter('');return;}
-   const matches=rows.filter(r=>r.textContent.toLowerCase().includes(term)).slice(0,10);
-   matches.forEach(r=>{
-     const name=(r.cells[1]?.textContent||'').trim(),b=document.createElement('button');
-     b.type='button';b.className='supplier-search-suggestion';b.textContent=name;b.addEventListener('click',()=>{input.value=name;close();filter(name);});
-     suggestions.appendChild(b);
-   });
-   if(!matches.length){const e=document.createElement('div');e.className='supplier-search-empty';e.textContent='No matching supplier found.';suggestions.appendChild(e);}
-   suggestions.style.display='block';filter(term);
+ const rows=document.getElementById('supplierRows'),add=document.getElementById('addSupplierRow');
+ if(add&&rows){add.addEventListener('click',function(){const r=rows.querySelector('.supplier-entry-row').cloneNode(true);r.querySelectorAll('input').forEach(i=>{if(i.type==='hidden'||i.type==='text'||i.type==='date'||i.type==='file')i.value='';});r.querySelectorAll('select').forEach(s=>s.selectedIndex=0);rows.appendChild(r);});
+ rows.addEventListener('click',function(e){if(e.target.classList.contains('supplier-remove-row')){const all=rows.querySelectorAll('.supplier-entry-row');if(all.length>1)e.target.closest('.supplier-entry-row').remove();else e.target.closest('.supplier-entry-row').querySelectorAll('input').forEach(i=>{if(i.type!=='hidden')i.value='';});}});
  }
- input.addEventListener('input',suggest);input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';close();filter('');}});
- document.addEventListener('click',e=>{if(box&&!box.contains(e.target))close();});
+ const input=document.getElementById('supplierSearchInput'),box=document.getElementById('supplierSearchBox'),suggestions=document.getElementById('supplierSearchSuggestions'),table=document.getElementById('supplierTable');
+ if(!input||!suggestions||!table)return;const tableRows=Array.from(table.querySelectorAll('tr')).slice(1);
+ function filter(term){term=String(term||'').trim().toLowerCase();tableRows.forEach(r=>r.style.display=!term||r.textContent.toLowerCase().includes(term)?'':'none');}
+ function close(){suggestions.innerHTML='';suggestions.style.display='none';}
+ input.addEventListener('input',function(){const term=input.value.trim().toLowerCase();suggestions.innerHTML='';if(!term){close();filter('');return;}const m=tableRows.filter(r=>r.textContent.toLowerCase().includes(term)).slice(0,10);m.forEach(r=>{const b=document.createElement('button');b.type='button';b.className='supplier-search-suggestion';b.textContent=(r.cells[1]?.textContent||'').trim();b.onclick=()=>{input.value=b.textContent;close();filter(b.textContent)};suggestions.appendChild(b)});if(!m.length){const e=document.createElement('div');e.className='supplier-search-empty';e.textContent='No matching supplier found.';suggestions.appendChild(e)}suggestions.style.display='block';filter(term)});
+ input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';close();filter('')}});document.addEventListener('click',e=>{if(box&&!box.contains(e.target))close()});
 });
 </script>
+
 <?php pageEnd(); ?>
