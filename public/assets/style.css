@@ -1760,3 +1760,20 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-entry-row .supplier-field input[type="file"]{
   font-size:12px!important;
 }
+
+
+/* Supplier Registry - Add Row and Save Supplier side by side; Clear removed */
+.supplier-content-panel .supplier-form-actions{
+  display:flex!important;
+  justify-content:flex-end!important;
+  align-items:center!important;
+  gap:7px!important;
+  margin:9px 0 0!important;
+  padding:0!important;
+}
+.supplier-content-panel .supplier-form-actions .btn{
+  height:34px!important;
+  min-width:105px!important;
+  padding:7px 12px!important;
+  font-size:12px!important;
+}
