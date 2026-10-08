@@ -2345,3 +2345,9 @@ body{font-size:11px!important}
   background-color:#b42318!important;
   color:#fff!important;
 }
+
+
+/* Supplier Registry - Choose File upload button text at 12px */
+.supplier-content-panel .supplier-entry-row .supplier-field input[type="file"]{
+  font-size:12px!important;
+}
