@@ -298,7 +298,6 @@ CREATE TABLE IF NOT EXISTS suppliers (
   business_permit_path VARCHAR(500) NULL,
   business_permit_valid_until DATE NULL,
   tax_clearance_certificate_path VARCHAR(500) NULL,
-  tax_clearance_type VARCHAR(120) NULL,
   tax_clearance_valid_until DATE NULL,
   pcab_license_path VARCHAR(500) NULL,
   pcab_license_valid_until DATE NULL,
