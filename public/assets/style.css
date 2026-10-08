@@ -2218,3 +2218,16 @@ body{font-size:11px!important}
   max-width:100%!important;
   box-sizing:border-box!important;
 }
+
+
+/* Supplier Registry - requested 12px font size */
+.supplier-content-panel .supplier-entry-row,
+.supplier-content-panel .supplier-entry-row label,
+.supplier-content-panel .supplier-entry-row input,
+.supplier-content-panel .supplier-entry-row textarea,
+.supplier-content-panel .supplier-entry-row select,
+.supplier-content-panel .supplier-entry-row button,
+.supplier-content-panel .supplier-entry-row .supplier-validity>span,
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax>span{
+  font-size:12px!important;
+}
