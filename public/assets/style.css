@@ -1802,3 +1802,11 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-entry-row .supplier-field>input[type=file]{height:34px!important;min-height:34px!important;max-height:34px!important;box-sizing:border-box!important;margin:0!important;}
 .supplier-content-panel .supplier-entry-row .supplier-date-picker{margin:0!important;align-self:start!important;}
 .supplier-content-panel .supplier-entry-row .supplier-row-action .btn{height:34px!important;margin:0!important;}
+
+/* Supplier Registry - validity date directly under each document field */
+.supplier-content-panel .supplier-entry-row{grid-template-columns:200px 200px 200px 200px 200px 200px 200px 200px 200px 200px 200px 200px 125px 125px 80px!important;}
+.supplier-content-panel .supplier-entry-row .supplier-document-field{width:200px!important;min-width:200px!important;max-width:200px!important;}
+.supplier-content-panel .supplier-entry-row .supplier-document-field>input[type=file]{width:200px!important;min-width:200px!important;max-width:200px!important;}
+.supplier-content-panel .supplier-validity{display:flex!important;align-items:center!important;gap:6px!important;margin-top:5px!important;width:200px!important;}
+.supplier-content-panel .supplier-validity>span{font-size:11px!important;white-space:nowrap!important;line-height:34px!important;}
+.supplier-content-panel .supplier-validity .supplier-date-picker{flex:1 1 auto!important;width:125px!important;min-width:125px!important;max-width:125px!important;}
