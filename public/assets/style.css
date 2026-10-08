@@ -1750,3 +1750,13 @@ body{font-size:11px!important}
   font-size:12px!important;
   opacity:1!important;
 }
+
+
+/* Supplier Registry - field labels and entered text are 12px */
+.supplier-content-panel .supplier-entry-row .supplier-field label,
+.supplier-content-panel .supplier-entry-row .supplier-field input,
+.supplier-content-panel .supplier-entry-row .supplier-field textarea,
+.supplier-content-panel .supplier-entry-row .supplier-field select,
+.supplier-content-panel .supplier-entry-row .supplier-field input[type="file"]{
+  font-size:12px!important;
+}
