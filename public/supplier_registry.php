@@ -63,7 +63,7 @@ function supplierUpload(string $field,string $uploadDir,string $uploadWeb,?strin
 }
 function supplierRemoveFile(?string $path): void {
   if(!$path) return;
-  $file=__DIR__.'/'.ltrim(str_replace(['uploads/','/'],'',$path),'/');
+  $file=__DIR__.'/'.ltrim(str_replace(['\\','/'],DIRECTORY_SEPARATOR,$path),DIRECTORY_SEPARATOR);
   if(is_file($file)) @unlink($file);
 }
 
