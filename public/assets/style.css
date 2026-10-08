@@ -2140,3 +2140,46 @@ body{font-size:11px!important}
   max-width:120px!important;
   box-sizing:border-box!important;
 }
+
+
+/* Supplier Registry - stack validity date and registration labels above controls */
+.supplier-content-panel .supplier-entry-row .supplier-validity{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:3px!important;
+  margin-top:5px!important;
+  width:100%!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-validity>span{
+  display:block!important;
+  width:100%!important;
+  font-size:9px!important;
+  line-height:1.15!important;
+  white-space:nowrap!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-validity .supplier-date-picker{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:3px!important;
+  margin-top:5px!important;
+  width:100%!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax>span{
+  display:block!important;
+  width:100%!important;
+  font-size:9px!important;
+  line-height:1.15!important;
+  white-space:nowrap!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax .select{
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+}
