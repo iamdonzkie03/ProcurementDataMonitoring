@@ -283,3 +283,29 @@ CREATE TABLE IF NOT EXISTS system_settings (
 INSERT INTO system_settings(setting_key,setting_value) VALUES
 ('login_background','philippine-blue')
 ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value);
+
+
+
+CREATE TABLE IF NOT EXISTS suppliers (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  supplier_company_name VARCHAR(255) NOT NULL,
+  address TEXT NULL,
+  owner VARCHAR(150) NULL,
+  authorized_representative VARCHAR(150) NULL,
+  business_type VARCHAR(120) NULL,
+  philgeps_certificate_path VARCHAR(500) NULL,
+  philgeps_valid_until DATE NULL,
+  business_permit_path VARCHAR(500) NULL,
+  business_permit_valid_until DATE NULL,
+  tax_clearance_certificate_path VARCHAR(500) NULL,
+  tax_clearance_valid_until DATE NULL,
+  registration_type ENUM('SEC','DTI','CDA') NULL,
+  created_by INT UNSIGNED NULL,
+  updated_by INT UNSIGNED NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_supplier_name (supplier_company_name),
+  INDEX idx_supplier_registration (registration_type),
+  CONSTRAINT fk_supplier_created_by FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_supplier_updated_by FOREIGN KEY(updated_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
