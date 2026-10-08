@@ -2252,3 +2252,30 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-entry-row > .supplier-field > label{
   font-size:12px!important;
 }
+
+
+/* Supplier Registry - Remove button uses the same button styling */
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn,
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn.danger,
+.supplier-content-panel .supplier-entry-row .supplier-row-action button{
+  border:0!important;
+  border-radius:8px!important;
+  padding:10px 14px!important;
+  background:var(--blue)!important;
+  color:#fff!important;
+  font-family:inherit!important;
+  font-size:12px!important;
+  font-weight:400!important;
+  line-height:normal!important;
+  text-decoration:none!important;
+  cursor:pointer!important;
+  display:inline-block!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn:hover,
+.supplier-content-panel .supplier-entry-row .supplier-row-action button:hover{
+  opacity:.9!important;
+}
