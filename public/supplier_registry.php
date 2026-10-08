@@ -34,6 +34,15 @@ CREATE TABLE IF NOT EXISTS suppliers (
 ) ENGINE=InnoDB
 SQL);
 } catch(Throwable $e) {}
+try {
+  $pdo->exec("ALTER TABLE suppliers ADD COLUMN tax_clearance_type VARCHAR(120) NULL AFTER tax_clearance_certificate_path");
+} catch(Throwable $e) {}
+try {
+  $pdo->exec("ALTER TABLE suppliers ADD COLUMN pcab_license_path VARCHAR(500) NULL AFTER tax_clearance_valid_until");
+} catch(Throwable $e) {}
+try {
+  $pdo->exec("ALTER TABLE suppliers ADD COLUMN pcab_license_valid_until DATE NULL AFTER pcab_license_path");
+} catch(Throwable $e) {}
 
 $isEditor=hasRole(['Administrator','Editor']);
 $uploadDir=__DIR__.'/uploads/suppliers';
