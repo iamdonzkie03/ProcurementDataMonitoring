@@ -1,197 +1,35 @@
 <?php
 declare(strict_types=1);
-
 if(ob_get_level()===0){ob_start();}
-
-session_start();
-
-const DB_HOST = '127.0.0.1';
-const DB_NAME = 'procurement';
-const DB_USER = 'root';
-const DB_PASS = '';
-
-function db(): PDO {
-    static $pdo = null;
-    if ($pdo instanceof PDO) return $pdo;
-
-    $pdo = new PDO(
-        'mysql:host=' . DB_HOST . ';dbname=' . DB_NAME . ';charset=utf8mb4',
-        DB_USER,
-        DB_PASS,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]
-    );
-
-    return $pdo;
+if(session_status() !== PHP_SESSION_ACTIVE){session_start();}
+const DB_HOST='127.0.0.1'; const DB_NAME='procurement'; const DB_USER='root'; const DB_PASS='';
+function db():PDO{static $pdo=null;if($pdo instanceof PDO)return $pdo;$pdo=new PDO('mysql:host='.DB_HOST.';dbname='.DB_NAME.';charset=utf8mb4',DB_USER,DB_PASS,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC,PDO::ATTR_EMULATE_PREPARES=>false]);return $pdo;}
+function e(?string $v):string{return htmlspecialchars($v??'',ENT_QUOTES,'UTF-8');}
+function currentUser():?array{return $_SESSION['user']??null;} function loginContext():array{return $_SESSION['login_context']??[];}
+function currentLoginDivisionId():int{return(int)(loginContext()['division_id']??0);} function currentLoginAreaId():int{return(int)(loginContext()['area_id']??0);}
+function ensureAuthSchema(PDO $pdo):void{
+ foreach(['agency_id'=>"ALTER TABLE users ADD COLUMN agency_id VARCHAR(100) NULL AFTER username",'must_change_password'=>"ALTER TABLE users ADD COLUMN must_change_password TINYINT(1) NOT NULL DEFAULT 0 AFTER status",'remember_token_hash'=>"ALTER TABLE users ADD COLUMN remember_token_hash VARCHAR(128) NULL AFTER must_change_password",'remember_token_expires_at'=>"ALTER TABLE users ADD COLUMN remember_token_expires_at DATETIME NULL AFTER remember_token_hash"] as $c=>$sql){try{$x=$pdo->query("SHOW COLUMNS FROM users LIKE ".$pdo->quote($c))->fetch();if(!$x)$pdo->exec($sql);}catch(Throwable $e){}}
+ try{$x=$pdo->query("SHOW INDEX FROM users WHERE Key_name='uq_users_agency_id'")->fetch();if(!$x)$pdo->exec("CREATE UNIQUE INDEX uq_users_agency_id ON users(agency_id)");}catch(Throwable $e){}
+ try{$pdo->exec("CREATE TABLE IF NOT EXISTS password_reset_tokens(id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,user_id INT UNSIGNED NOT NULL,token_hash CHAR(64) NOT NULL UNIQUE,expires_at DATETIME NOT NULL,used_at DATETIME NULL,created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,INDEX idx_prt_user(user_id),CONSTRAINT fk_prt_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB");}catch(Throwable $e){}
+ try{$pdo->exec("CREATE TABLE IF NOT EXISTS system_settings(setting_key VARCHAR(100) PRIMARY KEY,setting_value TEXT NULL,updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB");$pdo->prepare("INSERT IGNORE INTO system_settings(setting_key,setting_value) VALUES('login_background','philippine-blue')")->execute();}catch(Throwable $e){}
 }
-
-function e(?string $value): string {
-    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-function currentUser(): ?array {
-    return $_SESSION['user'] ?? null;
-}
-
-function loginContext(): array {
-    return $_SESSION['login_context'] ?? [];
-}
-
-function currentLoginDivisionId(): int {
-    return (int)(loginContext()['division_id'] ?? 0);
-}
-
-function currentLoginAreaId(): int {
-    return (int)(loginContext()['area_id'] ?? 0);
-}
-
-function currentUserIsPpmpSupervisor(): bool {
-    $u=currentUser();
-    if(!$u) return false;
-    $divisionId=(int)($u['division_id']??currentLoginDivisionId());
-    $name=trim((string)($u['full_name']??''));
-    if($divisionId<=0 || $name==='') return false;
-    try{
-        $pdo=db();
-        $st=$pdo->prepare("SELECT COUNT(*) FROM divisions
-          WHERE id=? AND ppmp_supervisor_enabled=1
-            AND LOWER(TRIM(division_head))=LOWER(TRIM(?))");
-        $st->execute([$divisionId,$name]);
-        return (int)$st->fetchColumn()>0;
-    }catch(Throwable $e){ return false; }
-}
-
-function currentUserIsBudgetOfficer(): bool {
-    $u=currentUser(); $ctx=loginContext();
-    if(!$u || empty($ctx['area_id'])) return false;
-    try{
-        $pdo=db();
-        $st=$pdo->prepare("SELECT COUNT(*) FROM area_personnel ap JOIN areas a ON a.id=ap.area_id
-          WHERE ap.area_id=? AND ap.name=? AND LOWER(COALESCE(ap.position_designation,'')) LIKE '%budget officer%'
-            AND LOWER(a.name) LIKE '%budget%'");
-        $st->execute([(int)$ctx['area_id'],trim((string)($u['full_name']??''))]);
-        return (int)$st->fetchColumn()>0;
-    }catch(Throwable $e){ return false; }
-}
-
-function ensureUserAccessSchema(PDO $pdo): void {
-    try {
-        $cols=$pdo->query("SHOW COLUMNS FROM users LIKE 'division_id'")->fetch();
-        if(!$cols) $pdo->exec("ALTER TABLE users ADD COLUMN division_id INT UNSIGNED NULL AFTER status");
-        $cols=$pdo->query("SHOW COLUMNS FROM users LIKE 'area_id'")->fetch();
-        if(!$cols) $pdo->exec("ALTER TABLE users ADD COLUMN area_id INT UNSIGNED NULL AFTER division_id");
-    } catch(Throwable $e) {}
-}
-
-function buildLoginContext(PDO $pdo, array $u): array {
-    ensureUserAccessSchema($pdo);
-    $divisionId=(int)($u['division_id']??0);
-    $areaId=(int)($u['area_id']??0);
-
-    // A Division Head / Supervisor must be recognized even when no Area/Unit
-    // is assigned to the user account. Supervisor access is division-wide.
-    if($divisionId>0){
-        $st=$pdo->prepare("SELECT id division_id,name division_name,division_head,head_position_designation,
-          ppmp_supervisor_enabled
-          FROM divisions
-          WHERE id=? LIMIT 1");
-        $st->execute([$divisionId]);
-        $division=$st->fetch();
-        if($division){
-            $isSupervisor=((int)$division['ppmp_supervisor_enabled']===1 &&
-              strcasecmp(trim((string)$division['division_head']),trim((string)($u['full_name']??'')))===0);
-
-            $areaName='';$resolvedAreaId=0;
-            if($areaId>0){
-                $a=$pdo->prepare("SELECT id,name FROM areas WHERE id=? AND division_id=? LIMIT 1");
-                $a->execute([$areaId,$divisionId]);
-                $area=$a->fetch();
-                if($area){$resolvedAreaId=(int)$area['id'];$areaName=(string)$area['name'];}
-            }
-
-            return [
-              'division_id'=>(int)$division['division_id'],
-              'area_id'=>$resolvedAreaId,
-              'division_name'=>(string)$division['division_name'],
-              'area_name'=>$areaName,
-              'division_head'=>(string)$division['division_head'],
-              'head_position_designation'=>(string)($division['head_position_designation']??''),
-              'ppmp_supervisor_enabled'=>(int)$division['ppmp_supervisor_enabled'],
-              'is_ppmp_supervisor'=>$isSupervisor
-            ];
-        }
-    }
-
-    return ['division_id'=>0,'area_id'=>0,'division_name'=>'','area_name'=>'','is_ppmp_supervisor'=>false];
-}
-
-function touchCurrentUserActivity(): void {
-    $u=currentUser();
-    if(!$u || empty($u['id'])) return;
-    try{
-        $pdo=db();
-        ensureUserActivitySchema($pdo);
-        $st=$pdo->prepare("UPDATE users SET last_activity_at=NOW() WHERE id=?");
-        $st->execute([(int)$u['id']]);
-    }catch(Throwable $e){}
-}
-
-function ensureUserActivitySchema(PDO $pdo): void {
-    try{
-        $cols=$pdo->query("SHOW COLUMNS FROM users LIKE 'last_activity_at'")->fetch();
-        if(!$cols) $pdo->exec("ALTER TABLE users ADD COLUMN last_activity_at DATETIME NULL AFTER status");
-    }catch(Throwable $e){}
-}
-
-function isLoggedIn(): bool {
-    return currentUser() !== null;
-}
-
-function requireLogin(): void {
-    if (!isLoggedIn()) {
-        header('Location: login.php');
-        exit;
-    }
-}
-
-function hasRole(array $roles): bool {
-    $u = currentUser();
-    return $u !== null && in_array($u['role'] ?? '', $roles, true);
-}
-
-function requireRole(array $roles): void {
-    requireLogin();
-
-    if (!hasRole($roles)) {
-        http_response_code(403);
-        exit('403 - Access denied');
-    }
-}
-
-function flash(string $type, string $message): void {
-    $_SESSION['flash'][] = ['type' => $type, 'message' => $message];
-}
-
-function flashes(): array {
-    $items = $_SESSION['flash'] ?? [];
-    unset($_SESSION['flash']);
-    return $items;
-}
-
-function csrf(): string {
-    if (empty($_SESSION['csrf'])) {
-        $_SESSION['csrf'] = bin2hex(random_bytes(32));
-    }
-
-    return $_SESSION['csrf'];
-}
-
-function checkCsrf(): void {
-    if (!hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '')) {
-        http_response_code(419);
-        exit('Invalid CSRF token');
-    }
-}
+function getSetting(string $key,string $default=''):string{try{$pdo=db();ensureAuthSchema($pdo);$s=$pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key=? LIMIT 1");$s->execute([$key]);$v=$s->fetchColumn();return $v===false?$default:(string)$v;}catch(Throwable $e){return $default;}}
+function setSetting(string $key,string $value):void{$pdo=db();ensureAuthSchema($pdo);$pdo->prepare("INSERT INTO system_settings(setting_key,setting_value) VALUES(?,?) ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)")->execute([$key,$value]);}
+function clearRememberCookie():void{setcookie('pdm_remember','',['expires'=>time()-3600,'path'=>'/','httponly'=>true,'samesite'=>'Lax','secure'=>!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off']);unset($_COOKIE['pdm_remember']);}
+function createRememberToken(PDO $pdo,int $id):void{ensureAuthSchema($pdo);$raw=bin2hex(random_bytes(32));$h=hash('sha256',$raw);$exp=time()+2592000;$pdo->prepare("UPDATE users SET remember_token_hash=?,remember_token_expires_at=FROM_UNIXTIME(?) WHERE id=?")->execute([$h,$exp,$id]);setcookie('pdm_remember',$raw,['expires'=>$exp,'path'=>'/','httponly'=>true,'samesite'=>'Lax','secure'=>!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off']);}
+function restoreRememberedUser(PDO $pdo):void{if(isLoggedIn()||empty($_COOKIE['pdm_remember']))return;ensureAuthSchema($pdo);$h=hash('sha256',(string)$_COOKIE['pdm_remember']);$s=$pdo->prepare("SELECT * FROM users WHERE remember_token_hash=? AND remember_token_expires_at>NOW() AND status='Active' LIMIT 1");$s->execute([$h]);$u=$s->fetch();if($u){$_SESSION['user']=$u;$_SESSION['login_context']=buildLoginContext($pdo,$u);if((int)($u['must_change_password']??0)===1)$_SESSION['force_password_change']=true;}else clearRememberCookie();}
+function currentUserIsPpmpSupervisor():bool{$u=currentUser();if(!$u)return false;$d=(int)($u['division_id']??currentLoginDivisionId());$n=trim((string)($u['full_name']??''));if($d<=0||$n==='')return false;try{$p=db();$s=$p->prepare("SELECT COUNT(*) FROM divisions WHERE id=? AND ppmp_supervisor_enabled=1 AND LOWER(TRIM(division_head))=LOWER(TRIM(?))");$s->execute([$d,$n]);return(int)$s->fetchColumn()>0;}catch(Throwable $e){return false;}}
+function currentUserIsBudgetOfficer():bool{$u=currentUser();$c=loginContext();if(!$u||empty($c['area_id']))return false;try{$p=db();$s=$p->prepare("SELECT COUNT(*) FROM area_personnel ap JOIN areas a ON a.id=ap.area_id WHERE ap.area_id=? AND ap.name=? AND LOWER(COALESCE(ap.position_designation,'')) LIKE '%budget officer%' AND LOWER(a.name) LIKE '%budget%'");$s->execute([(int)$c['area_id'],trim((string)$u['full_name'])]);return(int)$s->fetchColumn()>0;}catch(Throwable $e){return false;}}
+function ensureUserAccessSchema(PDO $pdo):void{try{$x=$pdo->query("SHOW COLUMNS FROM users LIKE 'division_id'")->fetch();if(!$x)$pdo->exec("ALTER TABLE users ADD COLUMN division_id INT UNSIGNED NULL AFTER status");$x=$pdo->query("SHOW COLUMNS FROM users LIKE 'area_id'")->fetch();if(!$x)$pdo->exec("ALTER TABLE users ADD COLUMN area_id INT UNSIGNED NULL AFTER division_id");}catch(Throwable $e){}ensureAuthSchema($pdo);}
+function buildLoginContext(PDO $pdo,array $u):array{ensureUserAccessSchema($pdo);$d=(int)($u['division_id']??0);$a=(int)($u['area_id']??0);if($d>0){$s=$pdo->prepare("SELECT id division_id,name division_name,division_head,head_position_designation,ppmp_supervisor_enabled FROM divisions WHERE id=? LIMIT 1");$s->execute([$d]);$v=$s->fetch();if($v){$sup=(int)$v['ppmp_supervisor_enabled']===1&&strcasecmp(trim((string)$v['division_head']),trim((string)($u['full_name']??'')))===0;$an='';$aid=0;if($a>0){$q=$pdo->prepare("SELECT id,name FROM areas WHERE id=? AND division_id=? LIMIT 1");$q->execute([$a,$d]);$ar=$q->fetch();if($ar){$aid=(int)$ar['id'];$an=(string)$ar['name'];}}return['division_id'=>(int)$v['division_id'],'area_id'=>$aid,'division_name'=>(string)$v['division_name'],'area_name'=>$an,'division_head'=>(string)$v['division_head'],'head_position_designation'=>(string)($v['head_position_designation']??''),'ppmp_supervisor_enabled'=>(int)$v['ppmp_supervisor_enabled'],'is_ppmp_supervisor'=>$sup];}}return['division_id'=>0,'area_id'=>0,'division_name'=>'','area_name'=>'','is_ppmp_supervisor'=>false];}
+function touchCurrentUserActivity():void{$u=currentUser();if(!$u||empty($u['id']))return;try{$p=db();ensureUserActivitySchema($p);$p->prepare("UPDATE users SET last_activity_at=NOW() WHERE id=?")->execute([(int)$u['id']]);}catch(Throwable $e){}}
+function ensureUserActivitySchema(PDO $pdo):void{try{$x=$pdo->query("SHOW COLUMNS FROM users LIKE 'last_activity_at'")->fetch();if(!$x)$pdo->exec("ALTER TABLE users ADD COLUMN last_activity_at DATETIME NULL AFTER status");}catch(Throwable $e){}}
+function isLoggedIn():bool{return currentUser()!==null;}
+function requireLogin():void{if(!isLoggedIn()){header('Location: login.php');exit;}$p=basename(parse_url($_SERVER['REQUEST_URI']??'',PHP_URL_PATH));if(!empty($_SESSION['force_password_change'])&&!in_array($p,['change_password.php','logout.php'],true)){header('Location: change_password.php');exit;}}
+function hasRole(array $roles):bool{$u=currentUser();return$u!==null&&in_array($u['role']??'',$roles,true);}
+function requireRole(array $roles):void{requireLogin();if(!hasRole($roles)){http_response_code(403);exit('403 - Access denied');}}
+function flash(string $type,string $message):void{$_SESSION['flash'][]=['type'=>$type,'message'=>$message];}
+function flashes():array{$x=$_SESSION['flash']??[];unset($_SESSION['flash']);return$x;}
+function csrf():string{if(empty($_SESSION['csrf']))$_SESSION['csrf']=bin2hex(random_bytes(32));return$_SESSION['csrf'];}
+function checkCsrf():void{if(!hash_equals($_SESSION['csrf']??'',$_POST['csrf']??'')){http_response_code(419);exit('Invalid CSRF token');}}
+?>
