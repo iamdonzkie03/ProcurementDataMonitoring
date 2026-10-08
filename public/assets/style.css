@@ -2351,3 +2351,9 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-entry-row .supplier-field input[type="file"]{
   font-size:12px!important;
 }
+
+
+/* Supplier Registry - Address placeholder left aligned */
+.supplier-content-panel .supplier-entry-row .supplier-field:nth-of-type(2) textarea.input::placeholder{
+  text-align:left!important;
+}
