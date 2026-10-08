@@ -2092,30 +2092,31 @@ body{font-size:11px!important}
 }
 
 
-/* Supplier Registry - content-fit columns */
+/* Supplier Registry - content-fit columns with horizontal scrolling */
 .supplier-content-panel .supplier-form-scroll{
   width:100%!important;
   max-width:100%!important;
   overflow-x:auto!important;
   overflow-y:visible!important;
   box-sizing:border-box!important;
+  -webkit-overflow-scrolling:touch!important;
 }
 .supplier-content-panel .supplier-entry-row{
   display:grid!important;
   grid-template-columns:
-    minmax(150px,1.15fr)
-    minmax(180px,1.35fr)
-    minmax(120px,.9fr)
-    minmax(150px,1.05fr)
-    minmax(170px,1.15fr)
-    minmax(170px,1.15fr)
-    minmax(170px,1.15fr)
-    minmax(170px,1.15fr)
-    minmax(80px,.6fr)!important;
+    250px
+    300px
+    200px
+    200px
+    200px
+    200px
+    200px
+    200px
+    120px!important;
   gap:5px!important;
-  width:100%!important;
-  min-width:0!important;
-  max-width:100%!important;
+  width:max-content!important;
+  min-width:1880px!important;
+  max-width:none!important;
   box-sizing:border-box!important;
 }
 .supplier-content-panel .supplier-entry-row>.supplier-field{
@@ -2134,10 +2135,8 @@ body{font-size:11px!important}
   box-sizing:border-box!important;
 }
 .supplier-content-panel .supplier-entry-row .supplier-row-action .btn{
-  width:100%!important;
-  min-width:0!important;
-  max-width:100%!important;
+  width:120px!important;
+  min-width:120px!important;
+  max-width:120px!important;
   box-sizing:border-box!important;
-  padding-left:4px!important;
-  padding-right:4px!important;
 }
