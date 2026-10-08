@@ -45,6 +45,7 @@ function pageStart(string $title): void { $u=currentUser(); touchCurrentUserActi
 <a class="<?=($currentPage==='settings.php' && ($tab??'')==='category')?'active':''?>" href="settings.php?tab=category">↳ <span>Category</span></a>
 <a class="<?=($currentPage==='settings.php' && ($tab??'')==='area-unit')?'active':''?>" href="settings.php?tab=area-unit">↳ <span>Area/Unit Management</span></a>
 <a class="<?=($currentPage==='settings.php' && ($tab??'')==='uom')?'active':''?>" href="settings.php?tab=uom">↳ <span>UOM</span></a>
+<?php if(hasRole(['Administrator'])): ?><a class="<?=($currentPage==='settings.php' && ($tab??'')==='login-background')?'active':''?>" href="settings.php?tab=login-background">↳ <span>Login Background</span></a><?php endif; ?>
 </div></details>
 <?php endif; ?>
 <div class="sidebar-divider"></div>
