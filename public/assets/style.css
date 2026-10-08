@@ -2357,3 +2357,10 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-entry-row .supplier-field:nth-of-type(2) textarea.input::placeholder{
   text-align:left!important;
 }
+
+
+/* Supplier Registry - date picker text at 12px */
+.supplier-content-panel .supplier-entry-row .supplier-date-picker input.supplier-date-display,
+.supplier-content-panel .supplier-entry-row .supplier-date-picker input.supplier-date-native{
+  font-size:12px!important;
+}
