@@ -1488,3 +1488,72 @@ body{font-size:11px!important}
     max-width:none!important;
   }
 }
+
+
+/* Supplier Registry - exact vertical alignment of Search Supplier with the title */
+.supplier-content-panel .supplier-toolbar{
+  position:relative!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  width:100%!important;
+  min-height:40px!important;
+  padding-top:0!important;
+}
+.supplier-content-panel .supplier-toolbar>div:first-child{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+}
+.supplier-content-panel .supplier-toolbar>div:first-child h2{
+  height:40px!important;
+  min-height:40px!important;
+  display:flex!important;
+  align-items:center!important;
+  margin:0!important;
+  padding:0!important;
+  line-height:1!important;
+}
+.supplier-content-panel .supplier-toolbar .supplier-header-search{
+  position:absolute!important;
+  top:0!important;
+  right:0!important;
+  width:200px!important;
+  min-width:200px!important;
+  max-width:200px!important;
+  height:40px!important;
+  margin:0!important;
+  padding:0!important;
+  flex:none!important;
+}
+.supplier-content-panel .supplier-toolbar .supplier-header-search .input{
+  display:block!important;
+  width:200px!important;
+  min-width:200px!important;
+  max-width:200px!important;
+  height:40px!important;
+  min-height:40px!important;
+  margin:0!important;
+  padding:9px 12px!important;
+  box-sizing:border-box!important;
+}
+@media(max-width:700px){
+  .supplier-content-panel .supplier-toolbar{
+    display:block!important;
+    min-height:0!important;
+  }
+  .supplier-content-panel .supplier-toolbar .supplier-header-search{
+    position:static!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:auto!important;
+    margin-top:10px!important;
+  }
+  .supplier-content-panel .supplier-toolbar .supplier-header-search .input{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+}
