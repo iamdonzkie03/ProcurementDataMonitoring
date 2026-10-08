@@ -2364,3 +2364,13 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-entry-row .supplier-date-picker input.supplier-date-native{
   font-size:12px!important;
 }
+
+
+/* Supplier Registry - selected date display must remain 12px */
+.supplier-content-panel .supplier-entry-row .supplier-date-display{
+  font-size:12px!important;
+  line-height:1.2!important;
+  height:30px!important;
+  font-family:'Raleway',monospace!important;
+  font-weight:400!important;
+}
