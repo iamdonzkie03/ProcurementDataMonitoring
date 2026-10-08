@@ -1784,3 +1784,9 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-date-picker .supplier-date-display{width:125px!important;min-width:125px!important;max-width:125px!important;height:34px!important;cursor:pointer!important;font-size:12px!important;background:#fff!important;padding:7px 28px 7px 5px!important}
 .supplier-content-panel .supplier-date-picker .supplier-date-native{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;opacity:0!important;cursor:pointer!important;z-index:2!important}
 .supplier-content-panel .supplier-date-picker:after{content:'▾';position:absolute;right:8px;top:8px;z-index:1;font-size:11px;color:#6b7280;pointer-events:none}
+
+/* Supplier Registry - keep date picker inside its grid field */
+.supplier-content-panel .supplier-entry-row .supplier-field{position:relative;overflow:visible!important;min-width:0!important;}
+.supplier-content-panel .supplier-date-picker{position:relative!important;width:125px!important;min-width:125px!important;max-width:125px!important;height:34px!important;overflow:hidden!important;box-sizing:border-box!important;}
+.supplier-content-panel .supplier-date-picker .supplier-date-display{position:absolute!important;inset:0!important;width:125px!important;min-width:125px!important;max-width:125px!important;height:34px!important;box-sizing:border-box!important;z-index:1!important;}
+.supplier-content-panel .supplier-date-picker .supplier-date-native{position:absolute!important;inset:0!important;width:125px!important;min-width:125px!important;max-width:125px!important;height:34px!important;box-sizing:border-box!important;opacity:0!important;z-index:2!important;cursor:pointer!important;}
