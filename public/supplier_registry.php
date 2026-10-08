@@ -18,7 +18,10 @@ CREATE TABLE IF NOT EXISTS suppliers (
   business_permit_path VARCHAR(500) NULL,
   business_permit_valid_until DATE NULL,
   tax_clearance_certificate_path VARCHAR(500) NULL,
+  tax_clearance_type VARCHAR(120) NULL,
   tax_clearance_valid_until DATE NULL,
+  pcab_license_path VARCHAR(500) NULL,
+  pcab_license_valid_until DATE NULL,
   registration_type ENUM('SEC','DTI','CDA') NULL,
   created_by INT UNSIGNED NULL,
   updated_by INT UNSIGNED NULL,
@@ -78,21 +81,23 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
       supplierRemoveFile($old['philgeps_certificate_path']??null);
       supplierRemoveFile($old['business_permit_path']??null);
       supplierRemoveFile($old['tax_clearance_certificate_path']??null);
+      supplierRemoveFile($old['pcab_license_path']??null);
       $pdo->prepare("DELETE FROM suppliers WHERE id=?")->execute([$id]);
       flash('success','Supplier deleted successfully.');
     } elseif($action==='save'){
-      $ids=$_POST['supplier_id']??[];$names=$_POST['supplier_company_name']??[];$addresses=$_POST['address']??[];$owners=$_POST['owner']??[];$reps=$_POST['authorized_representative']??[];$businesses=$_POST['business_type']??[];$regs=$_POST['registration_type']??[];$phDates=$_POST['philgeps_valid_until']??[];$bpDates=$_POST['business_permit_valid_until']??[];$taxDates=$_POST['tax_clearance_valid_until']??[];
+      $ids=$_POST['supplier_id']??[];$names=$_POST['supplier_company_name']??[];$addresses=$_POST['address']??[];$owners=$_POST['owner']??[];$reps=$_POST['authorized_representative']??[];$businesses=$_POST['business_type']??[];$regs=$_POST['registration_type']??[];$phDates=$_POST['philgeps_valid_until']??[];$bpDates=$_POST['business_permit_valid_until']??[];$taxTypes=$_POST['tax_clearance_type']??[];$taxDates=$_POST['tax_clearance_valid_until']??[];$pcabDates=$_POST['pcab_license_valid_until']??[];
       $count=max(count($names),count($ids));
       for($i=0;$i<$count;$i++){
         $id=(int)($ids[$i]??0);$name=trim((string)($names[$i]??''));if($name==='')continue;
         $address=trim((string)($addresses[$i]??''));$owner=trim((string)($owners[$i]??''));$rep=trim((string)($reps[$i]??''));$business=trim((string)($businesses[$i]??''));$reg=in_array($regs[$i]??'', ['SEC','DTI','CDA'], true)?$regs[$i]:null;
-        $phDate=supplierDate($phDates[$i]??null);$bpDate=supplierDate($bpDates[$i]??null);$taxDate=supplierDate($taxDates[$i]??null);$old=null;
+        $phDate=supplierDate($phDates[$i]??null);$bpDate=supplierDate($bpDates[$i]??null);$taxType=trim((string)($taxTypes[$i]??''));$taxDate=supplierDate($taxDates[$i]??null);$pcabDate=supplierDate($pcabDates[$i]??null);$old=null;
         if($id){$q=$pdo->prepare("SELECT * FROM suppliers WHERE id=?");$q->execute([$id]);$old=$q->fetch();if(!$old)continue;}
         $ph=supplierUpload('philgeps_certificate',$uploadDir,$uploadWeb,$old['philgeps_certificate_path']??null,$i);
         $bp=supplierUpload('business_permit',$uploadDir,$uploadWeb,$old['business_permit_path']??null,$i);
         $tax=supplierUpload('tax_clearance_certificate',$uploadDir,$uploadWeb,$old['tax_clearance_certificate_path']??null,$i);
-        if($id){$st=$pdo->prepare("UPDATE suppliers SET supplier_company_name=?,address=?,owner=?,authorized_representative=?,business_type=?,philgeps_certificate_path=?,philgeps_valid_until=?,business_permit_path=?,business_permit_valid_until=?,tax_clearance_certificate_path=?,tax_clearance_valid_until=?,registration_type=?,updated_by=? WHERE id=?");$st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$reg,(int)currentUser()['id'],$id]);}
-        else{$st=$pdo->prepare("INSERT INTO suppliers(supplier_company_name,address,owner,authorized_representative,business_type,philgeps_certificate_path,philgeps_valid_until,business_permit_path,business_permit_valid_until,tax_clearance_certificate_path,tax_clearance_valid_until,registration_type,created_by,updated_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)");$st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$reg,(int)currentUser()['id'],(int)currentUser()['id']]);}
+        $pcab=supplierUpload('pcab_license',$uploadDir,$uploadWeb,$old['pcab_license_path']??null,$i);
+        if($id){$st=$pdo->prepare("UPDATE suppliers SET supplier_company_name=?,address=?,owner=?,authorized_representative=?,business_type=?,philgeps_certificate_path=?,philgeps_valid_until=?,business_permit_path=?,business_permit_valid_until=?,tax_clearance_certificate_path=?,tax_clearance_type=?,tax_clearance_valid_until=?,pcab_license_path=?,pcab_license_valid_until=?,registration_type=?,updated_by=? WHERE id=?");$st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxType,$taxDate,$pcab,$pcabDate,$reg,(int)currentUser()['id'],$id]);}
+        else{$st=$pdo->prepare("INSERT INTO suppliers(supplier_company_name,address,owner,authorized_representative,business_type,philgeps_certificate_path,philgeps_valid_until,business_permit_path,business_permit_valid_until,tax_clearance_certificate_path,tax_clearance_type,tax_clearance_valid_until,pcab_license_path,pcab_license_valid_until,registration_type,created_by,updated_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");$st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxType,$taxDate,$pcab,$pcabDate,$reg,(int)currentUser()['id'],(int)currentUser()['id']]);}
       }
       flash('success','Supplier information saved successfully.');header('Location:supplier_registry.php');exit;
     }
@@ -103,7 +108,7 @@ $search=trim((string)($_GET['search']??''));
 $editId=(int)($_GET['edit']??0);
 $editing=null;
 if($editId>0){$st=$pdo->prepare("SELECT * FROM suppliers WHERE id=?");$st->execute([$editId]);$editing=$st->fetch()?:null;}
-if(!$editing)$editing=['id'=>0,'supplier_company_name'=>'','address'=>'','owner'=>'','authorized_representative'=>'','business_type'=>'','philgeps_certificate_path'=>null,'philgeps_valid_until'=>null,'business_permit_path'=>null,'business_permit_valid_until'=>null,'tax_clearance_certificate_path'=>null,'tax_clearance_valid_until'=>null,'registration_type'=>''];
+if(!$editing)$editing=['id'=>0,'supplier_company_name'=>'','address'=>'','owner'=>'','authorized_representative'=>'','business_type'=>'','philgeps_certificate_path'=>null,'philgeps_valid_until'=>null,'business_permit_path'=>null,'business_permit_valid_until'=>null,'tax_clearance_certificate_path'=>null,'tax_clearance_type'=>'','tax_clearance_valid_until'=>null,'pcab_license_path'=>null,'pcab_license_valid_until'=>null,'registration_type'=>''];
 $list=$pdo->prepare("SELECT * FROM suppliers WHERE supplier_company_name LIKE ? OR owner LIKE ? OR authorized_representative LIKE ? OR business_type LIKE ? ORDER BY supplier_company_name");
 $like='%'.$search.'%';$list->execute([$like,$like,$like,$like]);$rows=$list->fetchAll();
 pageStart('Supplier Registry');
@@ -133,12 +138,15 @@ pageStart('Supplier Registry');
           <div class="supplier-field"><label>Owner</label><input class="input" name="owner[]" value="<?=e($editing['owner'])?>" placeholder="Owner"></div>
           <div class="supplier-field"><label>Authorized Representative</label><input class="input" name="authorized_representative[]" value="<?=e($editing['authorized_representative'])?>" placeholder="Authorized Representative"></div>
           <div class="supplier-field"><label>Business Type</label><input class="input" name="business_type[]" value="<?=e($editing['business_type'])?>" placeholder="Business Type"></div>
-          <div class="supplier-field"><label>PhilGEPS Certificate</label><input type="file" name="philgeps_certificate[]" accept=".pdf"></div>
-          <div class="supplier-field"><label>PhilGEPS Valid Until</label><input class="input" type="date" name="philgeps_valid_until[]" value="<?=e($editing['philgeps_valid_until']??'')?>"></div>
-          <div class="supplier-field"><label>Mayor's/Business Permit</label><input type="file" name="business_permit[]" accept=".pdf"></div>
-          <div class="supplier-field"><label>Permit Valid Until</label><input class="input" type="date" name="business_permit_valid_until[]" value="<?=e($editing['business_permit_valid_until']??'')?>"></div>
+          <div class="supplier-field"><label>PhilGEPS Membership Certificate</label><input type="file" name="philgeps_certificate[]" accept=".pdf"></div>
+          <div class="supplier-field"><label>Validity Date</label><input class="input" type="date" name="philgeps_valid_until[]" value="<?=e($editing['philgeps_valid_until']??'')?>"></div>
+          <div class="supplier-field"><label>Business/Mayor's Permit</label><input type="file" name="business_permit[]" accept=".pdf"></div>
+          <div class="supplier-field"><label>Validity Date</label><input class="input" type="date" name="business_permit_valid_until[]" value="<?=e($editing['business_permit_valid_until']??'')?>"></div>
           <div class="supplier-field"><label>Tax Clearance</label><input type="file" name="tax_clearance_certificate[]" accept=".pdf"></div>
-          <div class="supplier-field"><label>Tax Valid Until</label><input class="input" type="date" name="tax_clearance_valid_until[]" value="<?=e($editing['tax_clearance_valid_until']??'')?>"></div>
+          <div class="supplier-field"><label>Type</label><input class="input" name="tax_clearance_type[]" value="<?=e($editing['tax_clearance_type']??'')?>" placeholder="Type"></div>
+          <div class="supplier-field"><label>Validity Date</label><input class="input" type="date" name="tax_clearance_valid_until[]" value="<?=e($editing['tax_clearance_valid_until']??'')?>"></div>
+          <div class="supplier-field"><label>PCAB License</label><input type="file" name="pcab_license[]" accept=".pdf"></div>
+          <div class="supplier-field"><label>Validity Date</label><input class="input" type="date" name="pcab_license_valid_until[]" value="<?=e($editing['pcab_license_valid_until']??'')?>"></div>
           <div class="supplier-field"><label>Registration Type</label><select class="select" name="registration_type[]"><option value="">Select</option><option value="SEC" <?=$editing['registration_type']==='SEC'?'selected':''?>>SEC</option><option value="DTI" <?=$editing['registration_type']==='DTI'?'selected':''?>>DTI</option><option value="CDA" <?=$editing['registration_type']==='CDA'?'selected':''?>>CDA</option></select></div>
           <div class="supplier-field supplier-row-action"><label>Action</label><button type="button" class="btn secondary supplier-remove-row">Remove</button></div>
         </div>
@@ -169,7 +177,7 @@ pageStart('Supplier Registry');
             <td><?=e($r['authorized_representative'])?></td>
             <td><?=e($r['business_type'])?></td>
             <td><?=e($r['registration_type']?:'—')?></td>
-            <td class="supplier-doc-links"><?php if($r['philgeps_certificate_path']): ?><a href="<?=e($r['philgeps_certificate_path'])?>" target="_blank">PhilGEPS</a> <small><?=e($r['philgeps_valid_until']?:'No date')?></small><br><?php endif;?><?php if($r['business_permit_path']): ?><a href="<?=e($r['business_permit_path'])?>" target="_blank">Permit</a> <small><?=e($r['business_permit_valid_until']?:'No date')?></small><br><?php endif;?><?php if($r['tax_clearance_certificate_path']): ?><a href="<?=e($r['tax_clearance_certificate_path'])?>" target="_blank">Tax Clearance</a> <small><?=e($r['tax_clearance_valid_until']?:'No date')?></small><?php endif;?><?php if(!$r['philgeps_certificate_path']&&!$r['business_permit_path']&&!$r['tax_clearance_certificate_path']): ?>—<?php endif;?></td>
+            <td class="supplier-doc-links"><?php if($r['philgeps_certificate_path']): ?><a href="<?=e($r['philgeps_certificate_path'])?>" target="_blank">PhilGEPS</a> <small><?=e($r['philgeps_valid_until']?:'No date')?></small><br><?php endif;?><?php if($r['business_permit_path']): ?><a href="<?=e($r['business_permit_path'])?>" target="_blank">Permit</a> <small><?=e($r['business_permit_valid_until']?:'No date')?></small><br><?php endif;?><?php if($r['tax_clearance_certificate_path']): ?><a href="<?=e($r['tax_clearance_certificate_path'])?>" target="_blank">Tax Clearance</a> <small><?=e($r['tax_clearance_type']?:'No type')?> / <?=e($r['tax_clearance_valid_until']?:'No date')?></small><br><?php endif;?><?php if($r['pcab_license_path']): ?><a href="<?=e($r['pcab_license_path'])?>" target="_blank">PCAB License</a> <small><?=e($r['pcab_license_valid_until']?:'No date')?></small><?php endif;?><?php if(!$r['philgeps_certificate_path']&&!$r['business_permit_path']&&!$r['tax_clearance_certificate_path']&&!$r['pcab_license_path']): ?>—<?php endif;?></td>
             <?php if($isEditor): ?><td><div class="supplier-actions"><a class="btn secondary" href="supplier_registry.php?edit=<?=(int)$r['id']?>">Edit</a><form method="post" onsubmit="return confirm('Delete this supplier and its uploaded documents?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=(int)$r['id']?>"><button class="btn danger" type="submit">Delete</button></form></div></td><?php endif; ?>
           </tr>
           <?php endforeach; if(!$rows): ?><tr><td colspan="<?=$isEditor?9:8?>" class="empty">No suppliers found.</td></tr><?php endif; ?>
