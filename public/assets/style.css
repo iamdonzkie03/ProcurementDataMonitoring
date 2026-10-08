@@ -655,7 +655,7 @@ body{font-size:11px!important}
   font-size:6px!important;
   overflow:hidden!important;
 }
-.supplier-field input[type=date{
+.supplier-field input[type=date]{
   font-size:7px!important;
 }
 .supplier-row-action{
