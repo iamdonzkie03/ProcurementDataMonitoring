@@ -2008,3 +2008,48 @@ body{font-size:11px!important}
   font-size:9px!important;
   box-sizing:border-box!important;
 }
+
+
+/* Supplier Registry - resize each field proportionally within the single row */
+.supplier-content-panel .supplier-entry-row{
+  grid-template-columns:
+    minmax(0,1fr)
+    minmax(0,1fr)
+    minmax(0,.82fr)
+    minmax(0,1.05fr)
+    minmax(0,1.18fr)
+    minmax(0,1.18fr)
+    minmax(0,1.18fr)
+    minmax(0,1.18fr)
+    minmax(54px,.48fr)!important;
+  gap:5px!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field{
+  min-width:0!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field .input,
+.supplier-content-panel .supplier-entry-row>.supplier-field textarea.input,
+.supplier-content-panel .supplier-entry-row>.supplier-field select.select,
+.supplier-content-panel .supplier-entry-row>.supplier-field input[type="file"]{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field input[type="file"]{
+  font-size:9px!important;
+  padding:4px 2px!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-validity .supplier-date-picker{
+  min-width:0!important;
+  width:100%!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-validity .supplier-date-picker .supplier-date-display{
+  font-size:9px!important;
+  padding-left:4px!important;
+  padding-right:18px!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax .select{
+  min-width:0!important;
+  width:100%!important;
+}
