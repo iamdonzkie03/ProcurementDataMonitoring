@@ -1628,3 +1628,77 @@ body{font-size:11px!important}
     max-width:none!important;
   }
 }
+
+
+/* Supplier Registry - fixed top-right search position */
+.supplier-content-panel{
+  position:relative!important;
+}
+.supplier-content-panel .supplier-registry-heading-row{
+  position:relative!important;
+  display:block!important;
+  width:100%!important;
+  min-height:40px!important;
+  margin:0 0 14px!important;
+  padding:0 218px 16px 0!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-registry-heading-row .supplier-heading-block{
+  display:block!important;
+  width:auto!important;
+  margin:0!important;
+  padding:0!important;
+}
+.supplier-content-panel .supplier-registry-heading-row .supplier-heading-block h2{
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  height:20px!important;
+  line-height:20px!important;
+  font-size:17px!important;
+}
+.supplier-content-panel .supplier-registry-heading-row .supplier-heading-block .hint-text{
+  margin:5px 0 0!important;
+  line-height:14px!important;
+}
+.supplier-content-panel .supplier-registry-heading-row .supplier-header-search{
+  position:absolute!important;
+  top:0!important;
+  right:0!important;
+  display:block!important;
+  width:200px!important;
+  min-width:200px!important;
+  max-width:200px!important;
+  height:40px!important;
+  margin:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-registry-heading-row .supplier-header-search .input{
+  display:block!important;
+  width:200px!important;
+  min-width:200px!important;
+  max-width:200px!important;
+  height:40px!important;
+  min-height:40px!important;
+  margin:0!important;
+  padding:9px 12px!important;
+  box-sizing:border-box!important;
+}
+@media(max-width:700px){
+  .supplier-content-panel .supplier-registry-heading-row{
+    padding:0 0 16px!important;
+  }
+  .supplier-content-panel .supplier-registry-heading-row .supplier-header-search{
+    position:static!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin-top:10px!important;
+  }
+  .supplier-content-panel .supplier-registry-heading-row .supplier-header-search .input{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+}
