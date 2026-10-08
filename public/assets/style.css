@@ -2092,7 +2092,7 @@ body{font-size:11px!important}
 }
 
 
-/* Supplier Registry - updated exact column widths */
+/* Supplier Registry - exact requested column widths */
 .supplier-content-panel .supplier-form-scroll{
   width:100%!important;
   overflow-x:auto!important;
@@ -2100,10 +2100,10 @@ body{font-size:11px!important}
 }
 .supplier-content-panel .supplier-entry-row{
   display:grid!important;
-  grid-template-columns:300px 350px 250px 250px 250px 250px 250px 250px 150px!important;
+  grid-template-columns:250px 300px 200px 200px 200px 200px 200px 200px 120px!important;
   gap:5px!important;
   width:max-content!important;
-  min-width:2450px!important;
+  min-width:1880px!important;
   max-width:none!important;
 }
 .supplier-content-panel .supplier-entry-row>.supplier-field{
@@ -2121,8 +2121,8 @@ body{font-size:11px!important}
   box-sizing:border-box!important;
 }
 .supplier-content-panel .supplier-entry-row .supplier-row-action .btn{
-  width:150px!important;
-  min-width:150px!important;
-  max-width:150px!important;
+  width:120px!important;
+  min-width:120px!important;
+  max-width:120px!important;
   box-sizing:border-box!important;
 }
