@@ -109,13 +109,13 @@ pageStart('Supplier Registry');
 ?>
 <div class="supplier-registry-page">
   <div class="panel supplier-content-panel">
-    <div class="supplier-toolbar">
-      <div>
+    <div class="supplier-toolbar supplier-registry-heading-row">
+      <div class="supplier-heading-block">
         <h2 style="margin:0">Supplier Registry</h2>
         <p class="hint-text">Maintain the official registry of suppliers and their accreditation documents.</p>
       </div>
-      <div class="supplier-header-search" id="supplierSearchBox" style="width:200px;min-width:200px;max-width:200px;flex:0 0 200px;margin-left:auto;">
-        <input class="input" type="search" id="supplierSearchInput" name="search" value="<?=e($search)?>" placeholder="Search Supplier..." autocomplete="off" aria-label="Search Supplier" style="width:200px;min-width:200px;max-width:200px;box-sizing:border-box;">
+      <div class="supplier-header-search" id="supplierSearchBox">
+        <input class="input" type="search" id="supplierSearchInput" name="search" value="<?=e($search)?>" placeholder="Search Supplier..." autocomplete="off" aria-label="Search Supplier">
         <div class="supplier-search-suggestions" id="supplierSearchSuggestions"></div>
       </div>
     </div>
