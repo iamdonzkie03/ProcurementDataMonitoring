@@ -139,7 +139,7 @@ pageStart('Supplier Registry');
         <div class="supplier-entry-row">
           <input type="hidden" name="supplier_id[]" value="<?=e((string)$editing['id'])?>">
           <div class="supplier-field"><label>Supplier/Company</label><input class="input" name="supplier_company_name[]" value="<?=e($editing['supplier_company_name'])?>" placeholder="Supplier/Company Name" required></div>
-          <div class="supplier-field supplier-address-field"><label>Address</label><textarea class="input" name="address[]" placeholder="Address" rows="1"><?=e($editing['address'])?></textarea></div>
+          <div class="supplier-field supplier-address-field"><label>Address</label><input class="input" type="text" name="address[]" value="<?=e($editing['address'])?>" placeholder="Address"></div>
           <div class="supplier-field"><label>Owner</label><input class="input" name="owner[]" value="<?=e($editing['owner'])?>" placeholder="Owner"></div>
           <div class="supplier-field"><label>Authorized Representative</label><input class="input" name="authorized_representative[]" value="<?=e($editing['authorized_representative'])?>" placeholder="Authorized Representative"></div>
           <div class="supplier-field supplier-document-field"><label>PhilGEPS Membership Certificate</label><input type="file" name="philgeps_certificate[]" accept=".pdf"><div class="supplier-validity"><span>Validity Date</span><div class="supplier-date-picker"><input class="input supplier-date-display" type="text" value="<?=e($editing['philgeps_valid_until']??'')?>" placeholder="Select date" readonly><input class="supplier-date-native" type="date" name="philgeps_valid_until[]" value="<?=e($editing['philgeps_valid_until']??'')?>"></div></div></div>
