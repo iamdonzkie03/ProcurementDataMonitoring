@@ -1410,3 +1410,31 @@ body{font-size:11px!important}
   }
   .supplier-content-panel .supplier-header-search .input{width:100%!important}
 }
+
+
+/* Supplier Registry - 200px upper-right search */
+.supplier-content-panel .supplier-toolbar{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  flex-wrap:nowrap!important;
+  width:100%!important;
+}
+.supplier-content-panel .supplier-header-search{
+  flex:0 0 200px!important;
+  width:200px!important;
+  min-width:200px!important;
+  max-width:200px!important;
+  margin-left:auto!important;
+  margin-right:0!important;
+  align-self:flex-start!important;
+}
+.supplier-content-panel .supplier-header-search .input{
+  width:200px!important;
+  min-width:200px!important;
+  max-width:200px!important;
+  height:40px!important;
+  min-height:40px!important;
+  box-sizing:border-box!important;
+}
