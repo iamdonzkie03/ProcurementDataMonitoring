@@ -1790,3 +1790,15 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-date-picker{position:relative!important;width:125px!important;min-width:125px!important;max-width:125px!important;height:34px!important;overflow:hidden!important;box-sizing:border-box!important;}
 .supplier-content-panel .supplier-date-picker .supplier-date-display{position:absolute!important;inset:0!important;width:125px!important;min-width:125px!important;max-width:125px!important;height:34px!important;box-sizing:border-box!important;z-index:1!important;}
 .supplier-content-panel .supplier-date-picker .supplier-date-native{position:absolute!important;inset:0!important;width:125px!important;min-width:125px!important;max-width:125px!important;height:34px!important;box-sizing:border-box!important;opacity:0!important;z-index:2!important;cursor:pointer!important;}
+
+/* Supplier Registry - force every entry field onto one aligned horizontal row */
+.supplier-content-panel .supplier-form-scroll{width:100%!important;overflow-x:auto!important;overflow-y:visible!important;}
+.supplier-content-panel .supplier-entry-row{display:grid!important;grid-template-columns:200px 200px 200px 200px 200px 200px 125px 200px 125px 200px 125px 200px 125px 125px 80px!important;align-items:start!important;justify-content:start!important;gap:7px!important;min-width:max-content!important;}
+.supplier-content-panel .supplier-entry-row .supplier-field{display:flex!important;flex-direction:column!important;align-items:stretch!important;align-self:start!important;height:auto!important;margin:0!important;padding:0!important;}
+.supplier-content-panel .supplier-entry-row .supplier-field>label{display:block!important;height:30px!important;min-height:30px!important;margin:0 0 4px!important;line-height:1.15!important;}
+.supplier-content-panel .supplier-entry-row .supplier-field>.input,
+.supplier-content-panel .supplier-entry-row .supplier-field>textarea,
+.supplier-content-panel .supplier-entry-row .supplier-field>select,
+.supplier-content-panel .supplier-entry-row .supplier-field>input[type=file]{height:34px!important;min-height:34px!important;max-height:34px!important;box-sizing:border-box!important;margin:0!important;}
+.supplier-content-panel .supplier-entry-row .supplier-date-picker{margin:0!important;align-self:start!important;}
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn{height:34px!important;margin:0!important;}
