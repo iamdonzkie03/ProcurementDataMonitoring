@@ -109,61 +109,75 @@ pageStart('Supplier Registry');
 ?>
 <div class="supplier-registry-page">
   <div class="panel supplier-content-panel">
-  <div class="supplier-toolbar">
-    <div>
-      <h2 style="margin:0">Supplier Registry</h2>
-      <p class="hint-text">Maintain the official registry of suppliers and their accreditation documents.</p>
+    <div class="supplier-toolbar">
+      <div>
+        <h2 style="margin:0">Supplier Registry</h2>
+        <p class="hint-text">Maintain the official registry of suppliers and their accreditation documents.</p>
+      </div>
+      <div class="supplier-header-search" id="supplierSearchBox">
+        <input class="input" type="search" id="supplierSearchInput" name="search" value="<?=e($search)?>" placeholder="Search Supplier..." autocomplete="off" aria-label="Search Supplier">
+        <div class="supplier-search-suggestions" id="supplierSearchSuggestions"></div>
+      </div>
     </div>
-    <div class="supplier-header-search" id="supplierSearchBox">
-      <input class="input" type="search" id="supplierSearchInput" name="search" value="<?=e($search)?>" placeholder="Search Supplier..." autocomplete="off" aria-label="Search Supplier">
-      <div class="supplier-search-suggestions" id="supplierSearchSuggestions"></div>
-    </div>
+
     <?php if($isEditor): ?>
-  <form method="post" enctype="multipart/form-data" class="supplier-form supplier-row-form" id="supplierForm">
-    <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-    <input type="hidden" name="action" value="save">
-    <div class="supplier-entry-panel">
-      <div class="supplier-panel-title"><span>1</span><div><b>Supplier Information &amp; Registration</b><small>Enter supplier details and compliance documents in one row.</small></div></div>
-      <div class="supplier-entry-line">
-        <div id="supplierRows" class="supplier-rows-single-line">
-          <div class="supplier-entry-row">
-            <input type="hidden" name="supplier_id[]" value="<?=e((string)$editing['id'])?>">
-            <div class="supplier-field"><label>Supplier/Company</label><input class="input" name="supplier_company_name[]" value="<?=e($editing['supplier_company_name'])?>" placeholder="Supplier/Company Name" required></div>
-            <div class="supplier-field supplier-address-field"><label>Address</label><textarea class="input" name="address[]" placeholder="Address" rows="1"><?=e($editing['address'])?></textarea></div>
-            <div class="supplier-field"><label>Owner</label><input class="input" name="owner[]" value="<?=e($editing['owner'])?>" placeholder="Owner"></div>
-            <div class="supplier-field"><label>Authorized Representative</label><input class="input" name="authorized_representative[]" value="<?=e($editing['authorized_representative'])?>" placeholder="Authorized Representative"></div>
-            <div class="supplier-field"><label>Business Type</label><input class="input" name="business_type[]" value="<?=e($editing['business_type'])?>" placeholder="Business Type"></div>
-            <div class="supplier-field"><label>PhilGEPS Certificate</label><input type="file" name="philgeps_certificate[]" accept=".pdf,.jpg,.jpeg,.png"></div>
-            <div class="supplier-field"><label>PhilGEPS Valid Until</label><input class="input" type="date" name="philgeps_valid_until[]" value="<?=e($editing['philgeps_valid_until']??'')?>"></div>
-            <div class="supplier-field"><label>Mayor's/Business Permit</label><input type="file" name="business_permit[]" accept=".pdf,.jpg,.jpeg,.png"></div>
-            <div class="supplier-field"><label>Permit Valid Until</label><input class="input" type="date" name="business_permit_valid_until[]" value="<?=e($editing['business_permit_valid_until']??'')?>"></div>
-            <div class="supplier-field"><label>Tax Clearance</label><input type="file" name="tax_clearance_certificate[]" accept=".pdf,.jpg,.jpeg,.png"></div>
-            <div class="supplier-field"><label>Tax Valid Until</label><input class="input" type="date" name="tax_clearance_valid_until[]" value="<?=e($editing['tax_clearance_valid_until']??'')?>"></div>
-            <div class="supplier-field"><label>Registration Type</label><select class="select" name="registration_type[]"><option value="">Select</option><option value="SEC" <?=$editing['registration_type']==='SEC'?'selected':''?>>SEC</option><option value="DTI" <?=$editing['registration_type']==='DTI'?'selected':''?>>DTI</option><option value="CDA" <?=$editing['registration_type']==='CDA'?'selected':''?>>CDA</option></select></div>
-            <div class="supplier-field supplier-row-action"><label>Action</label><button type="button" class="btn secondary supplier-remove-row">Remove</button></div>
-          </div>
+    <form method="post" enctype="multipart/form-data" class="supplier-form supplier-row-form" id="supplierForm">
+      <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+      <input type="hidden" name="action" value="save">
+      <div class="supplier-form-scroll">
+        <div class="supplier-entry-row">
+          <input type="hidden" name="supplier_id[]" value="<?=e((string)$editing['id'])?>">
+          <div class="supplier-field"><label>Supplier/Company</label><input class="input" name="supplier_company_name[]" value="<?=e($editing['supplier_company_name'])?>" placeholder="Supplier/Company Name" required></div>
+          <div class="supplier-field supplier-address-field"><label>Address</label><textarea class="input" name="address[]" placeholder="Address" rows="1"><?=e($editing['address'])?></textarea></div>
+          <div class="supplier-field"><label>Owner</label><input class="input" name="owner[]" value="<?=e($editing['owner'])?>" placeholder="Owner"></div>
+          <div class="supplier-field"><label>Authorized Representative</label><input class="input" name="authorized_representative[]" value="<?=e($editing['authorized_representative'])?>" placeholder="Authorized Representative"></div>
+          <div class="supplier-field"><label>Business Type</label><input class="input" name="business_type[]" value="<?=e($editing['business_type'])?>" placeholder="Business Type"></div>
+          <div class="supplier-field"><label>PhilGEPS Certificate</label><input type="file" name="philgeps_certificate[]" accept=".pdf,.jpg,.jpeg,.png"></div>
+          <div class="supplier-field"><label>PhilGEPS Valid Until</label><input class="input" type="date" name="philgeps_valid_until[]" value="<?=e($editing['philgeps_valid_until']??'')?>"></div>
+          <div class="supplier-field"><label>Mayor's/Business Permit</label><input type="file" name="business_permit[]" accept=".pdf,.jpg,.jpeg,.png"></div>
+          <div class="supplier-field"><label>Permit Valid Until</label><input class="input" type="date" name="business_permit_valid_until[]" value="<?=e($editing['business_permit_valid_until']??'')?>"></div>
+          <div class="supplier-field"><label>Tax Clearance</label><input type="file" name="tax_clearance_certificate[]" accept=".pdf,.jpg,.jpeg,.png"></div>
+          <div class="supplier-field"><label>Tax Valid Until</label><input class="input" type="date" name="tax_clearance_valid_until[]" value="<?=e($editing['tax_clearance_valid_until']??'')?>"></div>
+          <div class="supplier-field"><label>Registration Type</label><select class="select" name="registration_type[]"><option value="">Select</option><option value="SEC" <?=$editing['registration_type']==='SEC'?'selected':''?>>SEC</option><option value="DTI" <?=$editing['registration_type']==='DTI'?'selected':''?>>DTI</option><option value="CDA" <?=$editing['registration_type']==='CDA'?'selected':''?>>CDA</option></select></div>
+          <div class="supplier-field supplier-row-action"><label>Action</label><button type="button" class="btn secondary supplier-remove-row">Remove</button></div>
         </div>
       </div>
-      <div class="supplier-add-row-wrap"><button type="button" class="btn secondary" id="addSupplierRow">+ Add Row</button></div>
+      <div class="supplier-add-row-wrap">
+        <button type="button" class="btn secondary" id="addSupplierRow">+ Add Row</button>
       </div>
-      <div class="supplier-save-wrap"><a class="btn secondary" href="supplier_registry.php">Clear</a><button class="btn" type="submit">Save Supplier</button></div>
-    </div>
-  </form>
-  <?php endif; ?>
+      <div class="supplier-save-wrap">
+        <a class="btn secondary" href="supplier_registry.php">Clear</a>
+        <button class="btn" type="submit">Save Supplier</button>
+      </div>
+    </form>
+    <?php endif; ?>
 
-  <div class="supplier-list-panel">
-    <div class="toolbar"><div><h2 style="margin:0">Registered Suppliers</h2><p class="hint-text"><?=number_format(count($rows))?> supplier<?=count($rows)===1?'':'s'?> found</p></div></div>
-    <div class="table-wrap"><table class="table supplier-table" id="supplierTable">
-      <tr><th>#</th><th>Supplier/Company Name</th><th>Address</th><th>Owner</th><th>Authorized Representative</th><th>Business Type</th><th>Registration</th><th>Documents</th><?php if($isEditor): ?><th>Action</th><?php endif; ?></tr>
-      <?php $i=1;foreach($rows as $r): ?>
-      <tr>
-        <td><?=$i++?></td><td><b><?=e($r['supplier_company_name'])?></b></td><td><?=nl2br(e($r['address']))?></td><td><?=e($r['owner'])?></td><td><?=e($r['authorized_representative'])?></td><td><?=e($r['business_type'])?></td><td><?=e($r['registration_type']?:'—')?></td>
-        <td class="supplier-doc-links"><?php if($r['philgeps_certificate_path']): ?><a href="<?=e($r['philgeps_certificate_path'])?>" target="_blank">PhilGEPS</a> <small><?=e($r['philgeps_valid_until']?:'No date')?></small><br><?php endif;?><?php if($r['business_permit_path']): ?><a href="<?=e($r['business_permit_path'])?>" target="_blank">Permit</a> <small><?=e($r['business_permit_valid_until']?:'No date')?></small><br><?php endif;?><?php if($r['tax_clearance_certificate_path']): ?><a href="<?=e($r['tax_clearance_certificate_path'])?>" target="_blank">Tax Clearance</a> <small><?=e($r['tax_clearance_valid_until']?:'No date')?></small><?php endif;?><?php if(!$r['philgeps_certificate_path']&&!$r['business_permit_path']&&!$r['tax_clearance_certificate_path']): ?>—<?php endif;?></td>
-        <?php if($isEditor): ?><td><div class="supplier-actions"><a class="btn secondary" href="supplier_registry.php?edit=<?=(int)$r['id']?>">Edit</a><form method="post" onsubmit="return confirm('Delete this supplier and its uploaded documents?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=(int)$r['id']?>"><button class="btn danger" type="submit">Delete</button></form></div></td><?php endif; ?>
-      </tr>
-      <?php endforeach; if(!$rows): ?><tr><td colspan="<?=$isEditor?9:8?>" class="empty">No suppliers found.</td></tr><?php endif; ?>
-    </table></div>
-  </div>
+    <div class="supplier-list-section">
+      <div class="supplier-list-header">
+        <div>
+          <h2 style="margin:0">Registered Suppliers</h2>
+          <p class="hint-text"><?=number_format(count($rows))?> supplier<?=count($rows)===1?'':'s'?> found</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="table supplier-table" id="supplierTable">
+          <tr><th>#</th><th>Supplier/Company Name</th><th>Address</th><th>Owner</th><th>Authorized Representative</th><th>Business Type</th><th>Registration</th><th>Documents</th><?php if($isEditor): ?><th>Action</th><?php endif; ?></tr>
+          <?php $i=1;foreach($rows as $r): ?>
+          <tr>
+            <td><?=$i++?></td>
+            <td><b><?=e($r['supplier_company_name'])?></b></td>
+            <td><?=nl2br(e($r['address']))?></td>
+            <td><?=e($r['owner'])?></td>
+            <td><?=e($r['authorized_representative'])?></td>
+            <td><?=e($r['business_type'])?></td>
+            <td><?=e($r['registration_type']?:'—')?></td>
+            <td class="supplier-doc-links"><?php if($r['philgeps_certificate_path']): ?><a href="<?=e($r['philgeps_certificate_path'])?>" target="_blank">PhilGEPS</a> <small><?=e($r['philgeps_valid_until']?:'No date')?></small><br><?php endif;?><?php if($r['business_permit_path']): ?><a href="<?=e($r['business_permit_path'])?>" target="_blank">Permit</a> <small><?=e($r['business_permit_valid_until']?:'No date')?></small><br><?php endif;?><?php if($r['tax_clearance_certificate_path']): ?><a href="<?=e($r['tax_clearance_certificate_path'])?>" target="_blank">Tax Clearance</a> <small><?=e($r['tax_clearance_valid_until']?:'No date')?></small><?php endif;?><?php if(!$r['philgeps_certificate_path']&&!$r['business_permit_path']&&!$r['tax_clearance_certificate_path']): ?>—<?php endif;?></td>
+            <?php if($isEditor): ?><td><div class="supplier-actions"><a class="btn secondary" href="supplier_registry.php?edit=<?=(int)$r['id']?>">Edit</a><form method="post" onsubmit="return confirm('Delete this supplier and its uploaded documents?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=(int)$r['id']?>"><button class="btn danger" type="submit">Delete</button></form></div></td><?php endif; ?>
+          </tr>
+          <?php endforeach; if(!$rows): ?><tr><td colspan="<?=$isEditor?9:8?>" class="empty">No suppliers found.</td></tr><?php endif; ?>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 <script>
