@@ -63,8 +63,7 @@ function supplierUpload(string $field,string $uploadDir,string $uploadWeb,?strin
   if((int)($_FILES[$field]['size'][$index]??0)>8*1024*1024) throw new RuntimeException('Each supplier certificate/permit file must not exceed 8 MB.');
   $original=(string)($_FILES[$field]['name'][$index]??'');
   $ext=strtolower(pathinfo($original,PATHINFO_EXTENSION));
-  $allowed=['pdf'];
-  if(!in_array($ext,$allowed,true)) throw new RuntimeException('Only PDF files are allowed.');
+  if(!in_array($ext,['pdf'],true)) throw new RuntimeException('Only PDF files are allowed.');
   $safe=preg_replace('/[^a-zA-Z0-9_-]/','-',pathinfo($original,PATHINFO_FILENAME));
   $name=$safe.'-'.bin2hex(random_bytes(8)).'.'.$ext;
   $target=rtrim($uploadDir,'/\\').DIRECTORY_SEPARATOR.$name;
@@ -107,8 +106,13 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
         $bp=supplierUpload('business_permit',$uploadDir,$uploadWeb,$old['business_permit_path']??null,$i);
         $tax=supplierUpload('tax_clearance_certificate',$uploadDir,$uploadWeb,$old['tax_clearance_certificate_path']??null,$i);
         $pcab=supplierUpload('pcab_license',$uploadDir,$uploadWeb,$old['pcab_license_path']??null,$i);
-        if($id){$st=$pdo->prepare("UPDATE suppliers SET supplier_company_name=?,address=?,owner=?,authorized_representative=?,business_type=?,philgeps_certificate_path=?,philgeps_valid_until=?,business_permit_path=?,business_permit_valid_until=?,tax_clearance_certificate_path=?,tax_clearance_valid_until=?,pcab_license_path=?,pcab_license_valid_until=?,registration_type=?,updated_by=? WHERE id=?");$st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$pcab,$pcabDate,$reg,(int)currentUser()['id'],$id]);}
-        else{$st=$pdo->prepare("INSERT INTO suppliers(supplier_company_name,address,owner,authorized_representative,business_type,philgeps_certificate_path,philgeps_valid_until,business_permit_path,business_permit_valid_until,tax_clearance_certificate_path,tax_clearance_valid_until,pcab_license_path,pcab_license_valid_until,registration_type,created_by,updated_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");$st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$pcab,$pcabDate,$reg,(int)currentUser()['id'],(int)currentUser()['id']]);}
+        if($id){
+          $st=$pdo->prepare("UPDATE suppliers SET supplier_company_name=?,address=?,owner=?,authorized_representative=?,business_type=?,philgeps_certificate_path=?,philgeps_valid_until=?,business_permit_path=?,business_permit_valid_until=?,tax_clearance_certificate_path=?,tax_clearance_valid_until=?,pcab_license_path=?,pcab_license_valid_until=?,registration_type=?,updated_by=? WHERE id=?");
+          $st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$pcab,$pcabDate,$reg,(int)currentUser()['id'],$id]);
+        } else {
+          $st=$pdo->prepare("INSERT INTO suppliers(supplier_company_name,address,owner,authorized_representative,business_type,philgeps_certificate_path,philgeps_valid_until,business_permit_path,business_permit_valid_until,tax_clearance_certificate_path,tax_clearance_valid_until,pcab_license_path,pcab_license_valid_until,registration_type,created_by,updated_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+          $st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$pcab,$pcabDate,$reg,(int)currentUser()['id'],(int)currentUser()['id']]);
+        }
       }
       flash('success','Supplier information saved successfully.');header('Location:supplier_registry.php');exit;
     }
@@ -171,14 +175,7 @@ pageStart('Supplier Registry');
       </div>
       <div class="table-wrap">
         <table class="table supplier-table" id="supplierTable">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Supplier/Company Name</th>
-              <th>Permits and Licenses</th>
-              <?php if($isEditor): ?><th>Actions</th><?php endif; ?>
-            </tr>
-          </thead>
+          <thead><tr><th>#</th><th>Supplier/Company Name</th><th>Permits and Licenses</th><?php if($isEditor): ?><th>Actions</th><?php endif; ?></tr></thead>
           <tbody>
           <?php $i=1;foreach($rows as $r): ?>
           <tr>
@@ -190,41 +187,15 @@ pageStart('Supplier Registry');
               <div><strong>Authorized Representative:</strong> <?=e($r['authorized_representative']?:'—')?></div>
             </td>
             <td class="supplier-doc-links">
-              <div><strong>PhilGEPS Membership Certificate:</strong>
-                <?php if($r['philgeps_certificate_path']): ?><a href="<?=e($r['philgeps_certificate_path'])?>" target="_blank">View PDF</a><?php else: ?>—<?php endif; ?>
-                <small> | Validity: <?=e(supplierDisplayDate($r['philgeps_valid_until']))?></small>
-              </div>
-              <div><strong>Mayor's/Business Permit:</strong>
-                <?php if($r['business_permit_path']): ?><a href="<?=e($r['business_permit_path'])?>" target="_blank">View PDF</a><?php else: ?>—<?php endif; ?>
-                <small> | Validity: <?=e(supplierDisplayDate($r['business_permit_valid_until']))?></small>
-              </div>
-              <div><strong>Tax Clearance:</strong>
-                <?php if($r['tax_clearance_certificate_path']): ?><a href="<?=e($r['tax_clearance_certificate_path'])?>" target="_blank">View PDF</a><?php else: ?>—<?php endif; ?>
-                <small> | Registration Type: <?=e($r['registration_type']?:'—')?> | Validity: <?=e(supplierDisplayDate($r['tax_clearance_valid_until']))?></small>
-              </div>
-              <div><strong>PCAB License:</strong>
-                <?php if($r['pcab_license_path']): ?><a href="<?=e($r['pcab_license_path'])?>" target="_blank">View PDF</a><?php else: ?>—<?php endif; ?>
-                <small> | Validity: <?=e(supplierDisplayDate($r['pcab_license_valid_until']))?></small>
-              </div>
+              <div><strong>PhilGEPS Membership Certificate:</strong> <?php if($r['philgeps_certificate_path']): ?><a href="<?=e($r['philgeps_certificate_path'])?>" target="_blank">View PDF</a><?php else: ?>—<?php endif; ?> <small>| Validity: <?=e(supplierDisplayDate($r['philgeps_valid_until']))?></small></div>
+              <div><strong>Mayor's/Business Permit:</strong> <?php if($r['business_permit_path']): ?><a href="<?=e($r['business_permit_path'])?>" target="_blank">View PDF</a><?php else: ?>—<?php endif; ?> <small>| Validity: <?=e(supplierDisplayDate($r['business_permit_valid_until']))?></small></div>
+              <div><strong>Tax Clearance:</strong> <?php if($r['tax_clearance_certificate_path']): ?><a href="<?=e($r['tax_clearance_certificate_path'])?>" target="_blank">View PDF</a><?php else: ?>—<?php endif; ?> <small>| Registration Type: <?=e($r['registration_type']?:'—')?> | Validity: <?=e(supplierDisplayDate($r['tax_clearance_valid_until']))?></small></div>
+              <div><strong>PCAB License:</strong> <?php if($r['pcab_license_path']): ?><a href="<?=e($r['pcab_license_path'])?>" target="_blank">View PDF</a><?php else: ?>—<?php endif; ?> <small>| Validity: <?=e(supplierDisplayDate($r['pcab_license_valid_until']))?></small></div>
             </td>
-            <?php if($isEditor): ?>
-            <td class="supplier-actions">
-              <div class="supplier-actions">
-                <a class="btn secondary" href="supplier_registry.php?edit=<?=(int)$r['id']?>">Edit</a>
-                <form method="post" onsubmit="return confirm('Delete this supplier and all uploaded permits/licenses?');">
-                  <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-                  <input type="hidden" name="action" value="delete">
-                  <input type="hidden" name="id" value="<?=(int)$r['id']?>">
-                  <button class="btn danger" type="submit">Delete</button>
-                </form>
-              </div>
-            </td>
-            <?php endif; ?>
+            <?php if($isEditor): ?><td class="supplier-actions"><div class="supplier-actions"><a class="btn secondary" href="supplier_registry.php?edit=<?=(int)$r['id']?>">Edit</a><form method="post" onsubmit="return confirm('Delete this supplier and all uploaded permits/licenses?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=(int)$r['id']?>"><button class="btn danger" type="submit">Delete</button></form></div></td><?php endif; ?>
           </tr>
           <?php endforeach; ?>
-          <?php if(!$rows): ?>
-          <tr><td colspan="<?=$isEditor?3:2?>" class="empty">No suppliers found.</td></tr>
-          <?php endif; ?>
+          <?php if(!$rows): ?><tr><td colspan="<?=$isEditor?3:2?>" class="empty">No suppliers found.</td></tr><?php endif; ?>
           </tbody>
         </table>
       </div>
@@ -237,16 +208,13 @@ document.addEventListener('DOMContentLoaded',function(){
  function formatSupplierDate(value){if(!value)return '';const d=new Date(value+'T00:00:00');return isNaN(d)?value:d.toLocaleDateString('en-US',{month:'long',day:'2-digit',year:'numeric'});}
  function syncDatePicker(p){const native=p.querySelector('.supplier-date-native'),display=p.querySelector('.supplier-date-display');if(native&&display){display.value=formatSupplierDate(native.value);display.style.setProperty('font-size','12px','important');display.style.setProperty('line-height','1.2','important');const openPicker=function(e){if(e){e.preventDefault();e.stopPropagation();}try{native.focus({preventScroll:true});if(typeof native.showPicker==='function')native.showPicker();else native.click();}catch(err){try{native.focus({preventScroll:true});}catch(ignore){}}};display.addEventListener('click',openPicker);p.addEventListener('click',function(e){if(e.target!==native)openPicker(e);});native.addEventListener('change',function(){display.value=formatSupplierDate(native.value);display.style.setProperty('font-size','12px','important');display.style.setProperty('line-height','1.2','important');});}}
  if(datePickerRoot){datePickerRoot.querySelectorAll('.supplier-date-picker').forEach(syncDatePicker);}
-
  const rows=document.querySelector('.supplier-form-scroll'),add=document.getElementById('addSupplierRow');
  if(add&&rows){add.addEventListener('click',function(){const r=rows.querySelector('.supplier-entry-row').cloneNode(true);r.querySelectorAll('input').forEach(i=>{if(i.type!=='hidden')i.value='';});r.querySelectorAll('textarea').forEach(t=>t.value='');r.querySelectorAll('select').forEach(s=>s.selectedIndex=0);r.querySelectorAll('input[type=file]').forEach(i=>i.value='');rows.appendChild(r);const dp=r.querySelector('.supplier-date-picker');if(dp){const n=dp.querySelector('.supplier-date-native'),d=dp.querySelector('.supplier-date-display');if(n)n.value='';if(d)d.value='';syncDatePicker(dp);}});rows.addEventListener('click',function(e){if(e.target.classList.contains('supplier-remove-row')){const all=rows.querySelectorAll('.supplier-entry-row');if(all.length>1)e.target.closest('.supplier-entry-row').remove();else e.target.closest('.supplier-entry-row').querySelectorAll('input').forEach(i=>{if(i.type!=='hidden')i.value='';});}});}
  const input=document.getElementById('supplierSearchInput'),box=document.getElementById('supplierSearchBox'),suggestions=document.getElementById('supplierSearchSuggestions'),table=document.getElementById('supplierTable');
  if(!input||!suggestions||!table)return;const tableRows=Array.from(table.querySelectorAll('tbody tr')).filter(r=>!r.classList.contains('empty'));
  function filter(term){term=String(term||'').trim().toLowerCase();tableRows.forEach(r=>r.style.display=!term||r.textContent.toLowerCase().includes(term)?'':'none');}
  function close(){suggestions.innerHTML='';suggestions.style.display='none';}
- input.addEventListener('input',function(){const term=input.value.trim().toLowerCase();suggestions.innerHTML='';if(!term){close();filter('');return;}const m=tableRows.filter(r=>r.textContent.toLowerCase().includes(term)).slice(0,10);m.forEach(r=>{const b=document.createElement('button');b.type='button';b.className='supplier-search-suggestion';b.textContent=(r.cells[1]?.querySelector('strong')?.textContent||r.cells[1]?.textContent||'').trim();b.onclick=()=>{input.value=b.textContent;close();filter(b.textContent)};suggestions.appendChild(b)});if(!m.length){const e=document.createElement('div');e.className='supplier-search-empty';e.textContent='No matching supplier found.';suggestions.appendChild(e)}suggestions.style.display='block';filter(term)});
- input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';close();filter('')}});document.addEventListener('click',e=>{if(box&&!box.contains(e.target))close()});
+ input.addEventListener('input',function(){const term=input.value.trim().toLowerCase();suggestions.innerHTML='';if(!term){close();filter('');return;}const m=tableRows.filter(r=>r.textContent.toLowerCase().includes(term)).slice(0,10);m.forEach(r=>{const b=document.createElement('button');b.type='button';b.className='supplier-search-suggestion';b.textContent=(r.cells[1]?.querySelector('strong')?.textContent||r.cells[1]?.textContent||'').trim();b.onclick=()=>{input.value=b.textContent;close();filter(b.textContent)};suggestions.appendChild(b)});if(!m.length){const e=document.createElement('div');e.className='supplier-search-empty';e.textContent='No matching supplier found.';suggestions.appendChild(e)}suggestions.style.display='block';filter(term)});input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';close();filter('')}});document.addEventListener('click',e=>{if(box&&!box.contains(e.target))close()});
 });
 </script>
-
 <?php pageEnd(); ?>
