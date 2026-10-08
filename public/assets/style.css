@@ -1276,7 +1276,7 @@ body{font-size:11px!important}
 }
 .supplier-content-panel .supplier-entry-row{
   display:grid!important;
-  grid-template-columns:200px 200px 200px 200px 200px 200px 125px 200px 125px 200px 125px 125px 80px!important;
+  grid-template-columns:200px 200px 200px 200px 200px 200px 125px 200px 125px 200px 125px 125px 200px 125px 125px 80px!important;
   gap:7px!important;
   width:max-content!important;
   min-width:max-content!important;
