@@ -2246,3 +2246,9 @@ body{font-size:11px!important}
     200px
     120px!important;
 }
+
+
+/* Supplier Registry - column headers at 12px */
+.supplier-content-panel .supplier-entry-row > .supplier-field > label{
+  font-size:12px!important;
+}
