@@ -2326,3 +2326,11 @@ body{font-size:11px!important}
   opacity:1!important;
   background:#b42318!important;
 }
+
+
+/* Supplier Registry - Remove button must be red */
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn.danger,
+.supplier-content-panel .supplier-entry-row .supplier-row-action button.danger{
+  background:#b42318!important;
+  color:#fff!important;
+}
