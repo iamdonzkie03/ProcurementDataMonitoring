@@ -586,7 +586,11 @@ body{font-size:11px!important}
 .supplier-search-suggestion:hover,.supplier-search-suggestion:focus{background:#eef5ff}
 .supplier-search-empty{padding:9px 12px;color:#6b7280;font-size:13px}
 .supplier-add-btn{white-space:nowrap}
-@media(max-width:700px){.supplier-toolbar{flex-wrap:wrap}.supplier-header-search{width:100%;min-width:0}.supplier-header-search .input{width:100%}}
+.supplier-toolbar{align-items:center!important;justify-content:space-between!important;flex-wrap:nowrap!important}
+.supplier-toolbar>div:first-child{min-width:0!important;flex:1 1 auto!important}
+.supplier-header-search{margin-left:auto!important;flex:0 0 260px!important;width:260px!important;min-width:260px!important;align-self:center!important}
+.supplier-header-search .input{width:260px!important;height:34px!important;box-sizing:border-box!important}
+@media(max-width:700px){.supplier-toolbar{flex-wrap:wrap!important}.supplier-header-search{width:100%!important;min-width:0!important;flex-basis:100%!important}.supplier-header-search .input{width:100%!important}}
 
 /* Supplier Registry - compact single-line controls */
 .supplier-row-form{display:block!important;margin-bottom:16px!important}
