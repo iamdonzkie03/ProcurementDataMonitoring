@@ -2190,3 +2190,31 @@ body{font-size:11px!important}
   padding-top:10px!important;
   margin-top:10px!important;
 }
+
+
+/* Supplier Registry - keep Supplier/Company and Address fields fitted */
+.supplier-content-panel .supplier-entry-row{
+  grid-template-columns:
+    220px
+    260px
+    200px
+    200px
+    200px
+    200px
+    200px
+    200px
+    120px!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field:first-of-type,
+.supplier-content-panel .supplier-entry-row>.supplier-field:nth-of-type(2){
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+}
+.supplier-content-panel .supplier-entry-row>.supplier-field:first-of-type .input,
+.supplier-content-panel .supplier-entry-row>.supplier-field:nth-of-type(2) textarea.input{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
