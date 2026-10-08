@@ -4,11 +4,15 @@ USE procurement;
 CREATE TABLE IF NOT EXISTS users (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   username VARCHAR(80) NOT NULL UNIQUE,
+  agency_id VARCHAR(100) NULL UNIQUE,
   full_name VARCHAR(150) NOT NULL,
   email VARCHAR(190) NULL,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('Administrator','Editor','Viewer','Guest') NOT NULL DEFAULT 'Guest',
   status ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
+  must_change_password TINYINT(1) NOT NULL DEFAULT 0,
+  remember_token_hash VARCHAR(128) NULL,
+  remember_token_expires_at DATETIME NULL,
   division_id INT UNSIGNED NULL,
   area_id INT UNSIGNED NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -254,6 +258,28 @@ UNION ALL SELECT d.id,'Finance','FIN' FROM divisions d WHERE d.name='Finance' AN
 UNION ALL SELECT d.id,'Human Resource','HR' FROM divisions d WHERE d.name='Human Resource' AND NOT EXISTS (SELECT 1 FROM areas a WHERE a.name='Human Resource')
 UNION ALL SELECT d.id,'Information Technology','IT' FROM divisions d WHERE d.name='Information Technology' AND NOT EXISTS (SELECT 1 FROM areas a WHERE a.name='Information Technology');
 INSERT INTO categories(name) VALUES ('Office Supplies'),('IT Equipment'),('Furniture'),('Infrastructure'),('Professional Services') ON DUPLICATE KEY UPDATE name=VALUES(name);
-INSERT INTO users(username,full_name,email,password_hash,role,status) VALUES
-('admin','System Administrator','admin@example.local','$2y$12$xauFrgrusgURr3xHolB7KeOrO7zCyWm.RqoGXz5VjFrZ0csA6Lxca','Administrator','Active')
+INSERT INTO users(username,agency_id,full_name,email,password_hash,role,status,must_change_password) VALUES
+('admin',NULL,'System Administrator','admin@example.local','$2y$12$xauFrgrusgURr3xHolB7KeOrO7zCyWm.RqoGXz5VjFrZ0csA6Lxca','Administrator','Active')
 ON DUPLICATE KEY UPDATE username=VALUES(username);
+
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id INT UNSIGNED NOT NULL,
+  token_hash CHAR(64) NOT NULL UNIQUE,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_prt_user(user_id),
+  CONSTRAINT fk_prt_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS system_settings (
+  setting_key VARCHAR(100) PRIMARY KEY,
+  setting_value TEXT NULL,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO system_settings(setting_key,setting_value) VALUES
+('login_background','philippine-blue')
+ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value);
