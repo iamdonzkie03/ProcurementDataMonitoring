@@ -1,1 +1,4 @@
-<?php require_once __DIR__.'/../config/config.php'; session_destroy(); header('Location:login.php'); exit;
+<?php
+require_once __DIR__.'/../config/config.php';
+if(isLoggedIn()){try{$pdo=db();ensureAuthSchema($pdo);$pdo->prepare("UPDATE users SET remember_token_hash=NULL,remember_token_expires_at=NULL WHERE id=?")->execute([(int)currentUser()['id']]);}catch(Throwable $e){}}
+clearRememberCookie();$_SESSION=[];if(ini_get('session.use_cookies')){ $p=session_get_cookie_params();setcookie(session_name(),'',['expires'=>time()-42000,'path'=>$p['path'],'domain'=>$p['domain'],'secure'=>$p['secure'],'httponly'=>$p['httponly'],'samesite'=>$p['samesite']??'Lax']);}session_destroy();header('Location:login.php');exit;
