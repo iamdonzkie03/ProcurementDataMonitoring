@@ -576,3 +576,14 @@ body{font-size:11px!important}
   border:1px solid #e5eaf0;
   border-radius:14px;
 }
+
+/* Supplier Registry header search - match UOM workflow */
+.supplier-toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.supplier-header-search{position:relative;width:200px;min-width:200px;margin-left:auto}
+.supplier-header-search .input{width:200px;box-sizing:border-box}
+.supplier-search-suggestions{position:absolute;left:0;right:0;top:100%;z-index:1000;background:#fff;border:1px solid #cfd6df;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:240px;overflow-y:auto;display:none}
+.supplier-search-suggestion{display:block;width:100%;padding:9px 12px;border:0;background:#fff;text-align:left;cursor:pointer;font-size:13px}
+.supplier-search-suggestion:hover,.supplier-search-suggestion:focus{background:#eef5ff}
+.supplier-search-empty{padding:9px 12px;color:#6b7280;font-size:13px}
+.supplier-add-btn{white-space:nowrap}
+@media(max-width:700px){.supplier-toolbar{flex-wrap:wrap}.supplier-header-search{width:100%;min-width:0}.supplier-header-search .input{width:100%}}
