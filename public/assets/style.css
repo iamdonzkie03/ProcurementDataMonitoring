@@ -2334,3 +2334,14 @@ body{font-size:11px!important}
   background:#b42318!important;
   color:#fff!important;
 }
+
+
+/* Supplier Registry - Action column Remove button is explicitly red */
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn.danger,
+.supplier-content-panel .supplier-entry-row .supplier-row-action button.danger,
+.supplier-content-panel .supplier-entry-row .supplier-row-action .remove-btn,
+.supplier-content-panel .supplier-entry-row .supplier-row-action button.remove{
+  background:#b42318!important;
+  background-color:#b42318!important;
+  color:#fff!important;
+}
