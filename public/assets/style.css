@@ -2231,3 +2231,18 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-entry-row .supplier-registration-under-tax>span{
   font-size:12px!important;
 }
+
+
+/* Supplier Registry - set first four columns to 200px */
+.supplier-content-panel .supplier-entry-row{
+  grid-template-columns:
+    200px
+    200px
+    200px
+    200px
+    200px
+    200px
+    200px
+    200px
+    120px!important;
+}
