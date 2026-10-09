@@ -2684,3 +2684,18 @@ html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .sup
   padding-top: 14px !important;
   margin-top: 14px !important;
 }
+
+/* Supplier Registry: keep the row separator out of the Actions column */
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row {
+  position: relative !important;
+  border-top: 0 !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: calc(100% - 92px) !important;
+  border-top: 1px solid #cbd5e1 !important;
+  pointer-events: none !important;
+}
