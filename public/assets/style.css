@@ -2677,3 +2677,10 @@ html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .sup
   height: 38px !important;
   z-index: 2 !important;
 }
+
+/* Supplier Registry: show a horizontal separator before every newly added row */
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row {
+  border-top: 1px solid #cbd5e1 !important;
+  padding-top: 14px !important;
+  margin-top: 14px !important;
+}
