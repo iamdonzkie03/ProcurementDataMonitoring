@@ -2757,3 +2757,22 @@ html body .supplier-content-panel .supplier-list-section table.supplier-table tb
   content: none !important;
   display: none !important;
 }
+
+
+/* Supplier Registry: visibly separate each record across the full table width */
+html body .supplier-content-panel .supplier-list-section table.supplier-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+html body .supplier-content-panel .supplier-list-section table.supplier-table tbody tr > td {
+  border-bottom: 1px solid #dfe3e8 !important;
+}
+html body .supplier-content-panel .supplier-list-section table.supplier-table tbody tr:last-child > td {
+  border-bottom: 1px solid #dfe3e8 !important;
+}
+/* Keep the Actions cell clean of its own underline while retaining row separation */
+html body .supplier-content-panel .supplier-list-section table.supplier-table tbody tr > td.supplier-actions {
+  border-bottom: 1px solid #dfe3e8 !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
