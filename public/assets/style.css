@@ -2138,3 +2138,110 @@ body{font-size:11px!important}
 .user-management-table .user-status-toggle.is-active .user-status-toggle-knob{right:4px!important}
 .user-management-table .user-status-toggle.is-inactive .user-status-toggle-knob{left:4px!important}
 .user-management-table .user-status-toggle:disabled{opacity:.65!important;cursor:not-allowed!important}
+
+
+/* Supplier Registry - fit field content to its columns and use consistent 12px typography */
+.supplier-content-panel .supplier-entry-row,
+.supplier-content-panel .supplier-entry-row > .supplier-field,
+.supplier-content-panel .supplier-entry-row > .supplier-field > label,
+.supplier-content-panel .supplier-entry-row input,
+.supplier-content-panel .supplier-entry-row textarea,
+.supplier-content-panel .supplier-entry-row select,
+.supplier-content-panel .supplier-entry-row button,
+.supplier-content-panel .supplier-entry-row .supplier-validity,
+.supplier-content-panel .supplier-entry-row .supplier-validity > span,
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax,
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax > span,
+.supplier-content-panel .supplier-entry-row .supplier-date-picker,
+.supplier-content-panel .supplier-entry-row .supplier-date-display,
+.supplier-content-panel .supplier-entry-row .supplier-date-native {
+  font-size:12px!important;
+}
+.supplier-content-panel .supplier-entry-row {
+  align-items:start!important;
+}
+.supplier-content-panel .supplier-entry-row > .supplier-field {
+  min-width:0!important;
+  max-width:100%!important;
+  overflow-wrap:anywhere!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row > .supplier-field > label {
+  display:block!important;
+  width:100%!important;
+  min-height:2.4em!important;
+  line-height:1.2!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  margin-bottom:5px!important;
+}
+.supplier-content-panel .supplier-entry-row .input,
+.supplier-content-panel .supplier-entry-row .select,
+.supplier-content-panel .supplier-entry-row input[type="file"],
+.supplier-content-panel .supplier-entry-row .supplier-date-picker {
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+  font-size:12px!important;
+}
+.supplier-content-panel .supplier-entry-row input[type="file"] {
+  display:block!important;
+  padding:6px 4px!important;
+  line-height:1.2!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-validity,
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax {
+  min-width:0!important;
+  max-width:100%!important;
+  line-height:1.2!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-validity > span,
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax > span {
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-date-picker {
+  position:relative!important;
+  display:block!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-date-picker .supplier-date-display {
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  padding:8px 6px!important;
+  line-height:1.2!important;
+  box-sizing:border-box!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-date-picker .supplier-date-native {
+  font-size:12px!important;
+}
+.supplier-content-panel .supplier-entry-row .supplier-row-action .btn {
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  padding:9px 6px!important;
+  font-size:12px!important;
+  white-space:normal!important;
+}
+.supplier-content-panel .supplier-table,
+.supplier-content-panel .supplier-table th,
+.supplier-content-panel .supplier-table td,
+.supplier-content-panel .supplier-table td *,
+.supplier-content-panel .supplier-table .btn {
+  font-size:12px!important;
+}
+.supplier-content-panel .supplier-table td {
+  overflow-wrap:anywhere!important;
+  vertical-align:top!important;
+}
+.supplier-content-panel .supplier-table .supplier-company-details,
+.supplier-content-panel .supplier-table .supplier-doc-links {
+  line-height:1.4!important;
+  overflow-wrap:anywhere!important;
+}
+.supplier-content-panel .supplier-table .supplier-company-details > div,
+.supplier-content-panel .supplier-table .supplier-doc-links > div {
+  margin:0 0 5px!important;
+}
