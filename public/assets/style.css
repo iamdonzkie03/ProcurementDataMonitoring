@@ -2743,3 +2743,17 @@ html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .sup
   border: 0 !important;
   box-shadow: none !important;
 }
+
+
+/* Supplier Registry list: remove the table row underline specifically from the Actions cell */
+html body .supplier-content-panel .supplier-list-section table.supplier-table tbody tr > td.supplier-actions,
+html body .supplier-content-panel .supplier-list-section table.supplier-table tbody tr > td:last-child.supplier-actions {
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+html body .supplier-content-panel .supplier-list-section table.supplier-table tbody tr > td.supplier-actions::before,
+html body .supplier-content-panel .supplier-list-section table.supplier-table tbody tr > td.supplier-actions::after {
+  content: none !important;
+  display: none !important;
+}
