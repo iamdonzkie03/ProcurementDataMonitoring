@@ -2604,3 +2604,15 @@ html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .sup
   max-width: 100% !important;
   box-sizing: border-box !important;
 }
+
+
+/* Supplier Registry: date selectors and Registration Type dropdown limited to 170px */
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row .supplier-document-field .supplier-date-picker,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row .supplier-document-field .supplier-date-picker .supplier-date-display,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row .supplier-document-field .supplier-date-picker .supplier-date-native,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row .supplier-document-field .supplier-registration-under-tax select {
+  width: 170px !important;
+  min-width: 170px !important;
+  max-width: 170px !important;
+  box-sizing: border-box !important;
+}
