@@ -2245,3 +2245,30 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-table .supplier-doc-links > div {
   margin:0 0 5px!important;
 }
+
+
+/* Supplier Registry - enforce 12px for all named field columns and their contents */
+.supplier-content-panel .supplier-entry-row > .supplier-field,
+.supplier-content-panel .supplier-entry-row > .supplier-field > label,
+.supplier-content-panel .supplier-entry-row > .supplier-field input,
+.supplier-content-panel .supplier-entry-row > .supplier-field textarea,
+.supplier-content-panel .supplier-entry-row > .supplier-field select,
+.supplier-content-panel .supplier-entry-row > .supplier-field button,
+.supplier-content-panel .supplier-entry-row > .supplier-field input::placeholder,
+.supplier-content-panel .supplier-entry-row .supplier-validity,
+.supplier-content-panel .supplier-entry-row .supplier-validity > span,
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax,
+.supplier-content-panel .supplier-entry-row .supplier-registration-under-tax > span,
+.supplier-content-panel .supplier-entry-row .supplier-date-picker,
+.supplier-content-panel .supplier-entry-row .supplier-date-picker *,
+.supplier-content-panel .supplier-table th,
+.supplier-content-panel .supplier-table td,
+.supplier-content-panel .supplier-table td * {
+  font-size:12px!important;
+}
+.supplier-content-panel .supplier-entry-row > .supplier-field > label {
+  line-height:1.2!important;
+}
+.supplier-content-panel .supplier-entry-row input[type="file"] {
+  font-size:12px!important;
+}
