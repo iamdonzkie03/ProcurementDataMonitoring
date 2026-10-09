@@ -2713,3 +2713,33 @@ html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .sup
 .supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row::before {
   width: calc(100% - 100px) !important;
 }
+
+
+/* Supplier Registry: draw row separators only across data fields, never the Actions column */
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row {
+  border-top: 0 !important;
+  margin-top: 14px !important;
+  padding-top: 14px !important;
+  position: relative !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row::before {
+  content: none !important;
+  display: none !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row > .supplier-field {
+  border-top: 1px solid #cbd5e1 !important;
+  padding-top: 0 !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row > .supplier-row-action {
+  border: 0 !important;
+  border-top: 0 !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row > .supplier-row-action::before,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row > .supplier-row-action::after {
+  content: none !important;
+  display: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
