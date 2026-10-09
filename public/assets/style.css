@@ -2616,3 +2616,36 @@ html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .sup
   max-width: 170px !important;
   box-sizing: border-box !important;
 }
+
+
+/* Supplier Registry validity date fields: match the PPMP Data Entry date-picker appearance */
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row .supplier-document-field .supplier-date-picker {
+  position: relative !important;
+  display: block !important;
+  width: 170px !important;
+  min-width: 170px !important;
+  max-width: 170px !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row .supplier-document-field .supplier-date-picker .supplier-date-display {
+  display: block !important;
+  width: 170px !important;
+  min-width: 170px !important;
+  max-width: 170px !important;
+  height: 38px !important;
+  padding: 8px 10px !important;
+  box-sizing: border-box !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+  font-variant-numeric: tabular-nums !important;
+  cursor: pointer !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row .supplier-document-field .supplier-date-picker .supplier-date-native {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
