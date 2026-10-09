@@ -2776,3 +2776,17 @@ html body .supplier-content-panel .supplier-list-section table.supplier-table tb
   box-shadow: none !important;
   background-image: none !important;
 }
+
+
+/* Supplier Registry: extend record separators through the Actions column */
+html body .supplier-content-panel .supplier-list-section table.supplier-table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+html body .supplier-content-panel .supplier-list-section table.supplier-table tbody tr > td,
+html body .supplier-content-panel .supplier-list-section table.supplier-table tbody tr > td.supplier-actions {
+  border-bottom: 1px solid #dfe3e8 !important;
+}
+html body .supplier-content-panel .supplier-list-section table.supplier-table tbody tr > td.supplier-actions {
+  min-width: 0 !important;
+}
