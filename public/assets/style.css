@@ -2288,3 +2288,39 @@ body{font-size:11px!important}
   min-width: 200px !important;
   max-width: 200px !important;
 }
+
+
+/* Supplier Registry form: enforce exact 200px widths for the first four visible fields.
+   The hidden supplier_id input is the first child, so visible fields start at child 2. */
+.supplier-content-panel .supplier-form-scroll {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row {
+  display: grid !important;
+  grid-template-columns: 200px 200px 200px 200px 170px 170px 170px 170px 80px !important;
+  grid-auto-columns: unset !important;
+  grid-auto-flow: row !important;
+  width: max-content !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  justify-content: start !important;
+  gap: 7px !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-field:nth-of-type(-n+4) {
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  grid-column: auto !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-field:nth-of-type(n+5):nth-of-type(-n+8) {
+  width: 170px !important;
+  min-width: 170px !important;
+  max-width: 170px !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-field:nth-of-type(9) {
+  width: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+}
