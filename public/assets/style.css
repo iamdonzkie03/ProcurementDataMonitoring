@@ -2699,3 +2699,17 @@ html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .sup
   border-top: 1px solid #cbd5e1 !important;
   pointer-events: none !important;
 }
+
+/* Supplier Registry: ensure row separators never extend into the Actions column */
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row > .supplier-row-action {
+  border-top: 0 !important;
+  box-shadow: none !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row > .supplier-row-action::before,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row > .supplier-row-action::after {
+  content: none !important;
+  display: none !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row::before {
+  width: calc(100% - 100px) !important;
+}
