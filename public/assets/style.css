@@ -2324,3 +2324,38 @@ body{font-size:11px!important}
   min-width: 80px !important;
   max-width: 80px !important;
 }
+
+
+/* Supplier Registry: fixed 200px information columns with inputs fitted inside each column */
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row {
+  display: grid !important;
+  grid-template-columns: 200px 200px 200px 200px 170px 170px 170px 170px 80px !important;
+  grid-auto-flow: row !important;
+  grid-auto-columns: unset !important;
+  width: max-content !important;
+  min-width: max-content !important;
+  max-width: none !important;
+  justify-content: start !important;
+  gap: 7px !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-company-field,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-address-field,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-owner-field,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-authorized-representative-field {
+  display: flex !important;
+  flex: none !important;
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  box-sizing: border-box !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-company-field > .input,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-address-field > .input,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-owner-field > .input,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-authorized-representative-field > .input {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
