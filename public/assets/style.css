@@ -2412,3 +2412,21 @@ body{font-size:11px!important}
 .supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field input[type="file"]::file-selector-button {
   font-size: 12px !important;
 }
+
+
+/* Highest-specificity Supplier Registry font-size override (all row states) */
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-document-field input[type="file"],
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-document-field input[type="file"]::file-selector-button,
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-document-field .supplier-validity,
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-document-field .supplier-validity span,
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-document-field .supplier-date-picker,
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-document-field .supplier-date-picker input,
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-document-field .supplier-date-display,
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-document-field .supplier-registration-under-tax,
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-document-field .supplier-registration-under-tax span,
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-document-field .supplier-registration-under-tax select,
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-row-action button.supplier-remove-row,
+html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .supplier-row-action button.supplier-remove-row * {
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+}
