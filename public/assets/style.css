@@ -2586,3 +2586,21 @@ html body .supplier-content-panel .supplier-form-scroll .supplier-entry-row .sup
   max-width: 100% !important;
   box-sizing: border-box !important;
 }
+
+
+/* Supplier Registry: all four document columns also use exact 200px widths */
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row {
+  grid-template-columns: 200px 200px 200px 200px 200px 200px 200px 200px 80px !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field {
+  width: 200px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  box-sizing: border-box !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field > * {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
