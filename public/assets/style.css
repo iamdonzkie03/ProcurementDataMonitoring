@@ -2395,3 +2395,20 @@ body{font-size:11px!important}
   max-width: 100% !important;
   box-sizing: border-box !important;
 }
+
+
+/* Supplier Registry: enforce 12px typography for uploads, validity dates, registration type, and Remove */
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field input[type="file"],
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field .supplier-validity,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field .supplier-validity > span,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field .supplier-date-picker,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field .supplier-date-picker input,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field .supplier-registration-under-tax,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field .supplier-registration-under-tax > span,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field .supplier-registration-under-tax select,
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-row-action .supplier-remove-row {
+  font-size: 12px !important;
+}
+.supplier-content-panel .supplier-form-scroll > .supplier-entry-row > .supplier-document-field input[type="file"]::file-selector-button {
+  font-size: 12px !important;
+}
