@@ -28,6 +28,11 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $tab==='uom'){
   require __DIR__.'/units.php';
   exit;
 }
+if($_SERVER['REQUEST_METHOD']==='POST' && $tab==='area-unit'){
+  $embedded=true;
+  require __DIR__.'/areas.php';
+  exit;
+}
 
 pageStart('Settings');
 ?>
