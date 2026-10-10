@@ -781,10 +781,10 @@ pageStart('Project Procurement Management Plan');
 </div>
 
 <?php if($divisionId>0 && $areaId>0): ?>
-<div class="ppmp-toolbar ppmp-actions-row">
-  <div class="toolbar">
+<div class="ppmp-actions-row" style="display:block!important;margin:0 0 16px!important;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important">
+  <div class="toolbar" style="display:flex!important;justify-content:flex-end!important;align-items:center!important;gap:10px!important;width:100%!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important">
     <!-- PPMP toolbar: Add PPMP Item intentionally removed. -->
-    <button class="btn ppmp-toolbar-action ppmp-print-form-btn" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button>
+    <button class="btn ppmp-print-form-btn" style="display:inline-flex!important;align-items:center!important;justify-content:center!important;width:150px!important;min-width:150px!important;height:36px!important;padding:0 10px!important;background:#12345a!important;background-color:#12345a!important;border:1px solid #12345a!important;border-radius:6px!important;color:#fff!important;box-shadow:none!important;text-indent:0!important" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label" style="position:static!important;display:inline!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;color:#fff!important;font-size:12px!important;line-height:1.2!important;transform:none!important;clip:auto!important;overflow:visible!important">Print PPMP Form</span></button>
     <?php if(!$isPpmpSupervisor && $rows && in_array(($rows[0]['review_status']??'Draft'),['Draft','Declined'],true)):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
   </div>
 </div>
