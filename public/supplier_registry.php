@@ -250,22 +250,22 @@ pageStart('Supplier Registry');
 .supplier-table .supplier-doc-links small{white-space:normal}
 .supplier-table .supplier-actions{display:flex;flex-wrap:wrap;gap:4px}
 .supplier-form-scroll{display:block!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:visible!important}
-.supplier-entry-table{border-collapse:separate!important;border-spacing:5px!important;table-layout:fixed!important;width:1788px!important;min-width:1788px!important;max-width:none!important;margin:0!important}
+.supplier-entry-table{border-collapse:separate!important;border-spacing:5px!important;table-layout:fixed!important;width:2088px!important;min-width:2088px!important;max-width:none!important;margin:0!important}
 .supplier-entry-table .supplier-entry-row{display:table-row!important;width:auto!important}
 .supplier-entry-table .supplier-entry-row>.supplier-field{display:table-cell!important;float:none!important;position:static!important;vertical-align:top!important;box-sizing:border-box!important;}
 .supplier-entry-table .supplier-entry-row>.supplier-row-select-field{width:60px!important;min-width:60px!important;max-width:60px!important;}
 .supplier-entry-table .supplier-entry-row>.supplier-company-field,.supplier-entry-table .supplier-entry-row>.supplier-address-field,.supplier-entry-table .supplier-entry-row>.supplier-owner-field,.supplier-entry-table .supplier-entry-row>.supplier-authorized-representative-field{width:200px!important;min-width:200px!important;max-width:200px!important;}
-.supplier-entry-table .supplier-entry-row>.supplier-document-field{width:230px!important;min-width:230px!important;max-width:230px!important;}
+.supplier-entry-table .supplier-entry-row>.supplier-document-field{width:250px!important;min-width:250px!important;max-width:250px!important;}
 .supplier-entry-table,.supplier-entry-table *{box-sizing:border-box!important;}
 .supplier-entry-table col:nth-child(1){width:60px!important;}
 .supplier-entry-table col:nth-child(2),.supplier-entry-table col:nth-child(3),.supplier-entry-table col:nth-child(4),.supplier-entry-table col:nth-child(5){width:200px!important;}
-.supplier-entry-table col:nth-child(6),.supplier-entry-table col:nth-child(7),.supplier-entry-table col:nth-child(8),.supplier-entry-table col:nth-child(9){width:230px!important;}
+.supplier-entry-table col:nth-child(6),.supplier-entry-table col:nth-child(7),.supplier-entry-table col:nth-child(8),.supplier-entry-table col:nth-child(9){width:250px!important;}
 .supplier-entry-table .supplier-field{display:table-cell!important;vertical-align:top!important;border:0!important;border-radius:4px!important;padding:6px!important;box-sizing:border-box!important;background:#fff!important;white-space:normal!important;}
 .supplier-entry-table .supplier-row-select-field{width:60px!important;min-width:60px!important;max-width:60px!important;padding:6px 4px!important}
 .supplier-entry-table .supplier-row-select-field label{display:block!important;margin:0 0 5px!important;white-space:nowrap!important}
 .supplier-entry-table .supplier-row-select-field input[type=checkbox]{display:block!important;width:15px!important;height:15px!important;margin:0!important}
 .supplier-entry-table .supplier-company-field,.supplier-entry-table .supplier-address-field,.supplier-entry-table .supplier-owner-field,.supplier-entry-table .supplier-authorized-representative-field{width:200px!important;min-width:200px!important;max-width:200px!important}
-.supplier-entry-table .supplier-document-field{width:230px!important;min-width:230px!important;max-width:230px!important}
+.supplier-entry-table .supplier-document-field{width:250px!important;min-width:250px!important;max-width:250px!important}
 .supplier-entry-table .supplier-field label{display:block!important;margin-bottom:5px!important}
 .supplier-entry-table input:not([type=checkbox]):not([type=file]),.supplier-entry-table select{max-width:100%!important;box-sizing:border-box!important}
 .supplier-entry-table input[type=file]{display:block!important;width:100%!important;max-width:100%!important;font-size:12px!important}
