@@ -952,97 +952,54 @@ pageStart('Project Procurement Management Plan');
 <?php endif; ?>
 <?php endif; ?>
 <?php
-$h=($allPpmpRows[0]??$rows[0]??[]);
+// For printing, use an Approved item as the source of the form's workflow
+// metadata. The rows were already filtered to Approved above.
+$h=$print ? ($rows[0]??[]) : ($allPpmpRows[0]??$rows[0]??[]);
 $ppmpNo=$h['ppmp_no']??'';
-// The Saved PPMP Items Status is item-level (COALESCE of the review-item
-// status and PPMP review status). Use that displayed status to control the
-// Submitted By section, so Pending for Review never shows an empty signatory box.
 $printReviewStatus=trim((string)($h['review_status']??''));
 $pendingApprovalDate=trim((string)($h['ppmp_pending_approval_at']??''));
 $budgetApprovedDate=trim((string)($h['ppmp_budget_approved_at']??''));
-if($printReviewStatus==='' && !empty($h['fiscal_year']) && !empty($h['area_id']) && $ppmpNo!==''){
-  $stPrintStatus=$pdo->prepare('SELECT status FROM ppmp_reviews WHERE fiscal_year=? AND area_id=? AND ppmp_no=? ORDER BY id DESC LIMIT 1');
-  $stPrintStatus->execute([(int)$h['fiscal_year'],(int)$h['area_id'],(string)$ppmpNo]);
-  $printReviewStatus=trim((string)($stPrintStatus->fetchColumn()?:''));
-}
-// Prepared By is the selected Area/Unit Head from the PPMP workflow.
-// The print button passes the current selection as area_head.
-$person=trim((string)($_GET['area_head']??$areaHeadName??''));
-$preparedPos='';
-$preparedSignature='';
+$preparedDate=trim((string)($h['created_at']??''));
+
+// Prepared By is always the selected Division/Department Head.
 $preparedAreaId=(int)($areaId ?: ($h['area_id']??0));
-if($person!=='' && $preparedAreaId>0){
-  $stPreparedPerson=$pdo->prepare('SELECT position_designation,electronic_signature
-    FROM area_personnel WHERE area_id=? AND name=? LIMIT 1');
-  $stPreparedPerson->execute([$preparedAreaId,$person]);
-  $preparedPerson=$stPreparedPerson->fetch(PDO::FETCH_ASSOC);
-  if($preparedPerson){
-    $preparedPos=trim((string)($preparedPerson['position_designation']??''));
-    $preparedSignature=trim((string)($preparedPerson['electronic_signature']??''));
-  }else{
-    // A Division/Department Head may use the dedicated Division Area/Unit,
-    // whose head details are stored on the divisions record instead.
-    $stPreparedDivision=$pdo->prepare('SELECT d.division_head,d.head_position_designation,d.electronic_signature
-      FROM areas a JOIN divisions d ON d.id=a.division_id
-      WHERE a.id=? AND LOWER(TRIM(d.division_head))=LOWER(TRIM(?)) LIMIT 1');
-    $stPreparedDivision->execute([$preparedAreaId,$person]);
-    $preparedDivision=$stPreparedDivision->fetch(PDO::FETCH_ASSOC);
-    if($preparedDivision){
-      $preparedPos=trim((string)($preparedDivision['head_position_designation']??''));
-      $preparedSignature=trim((string)($preparedDivision['electronic_signature']??''));
-    }
-  }
+$person=trim((string)($h['authorized_person']??''));
+$preparedPos=trim((string)($h['authorized_position']??''));
+$preparedSignature=trim((string)($h['authorized_signature']??''));
+if($preparedAreaId>0 && ($person==='' || $preparedPos==='' || $preparedSignature==='')){
+  $stPreparedDivision=$pdo->prepare('SELECT d.division_head,d.head_position_designation,d.electronic_signature
+    FROM areas a JOIN divisions d ON d.id=a.division_id WHERE a.id=? LIMIT 1');
+  $stPreparedDivision->execute([$preparedAreaId]);
+  $preparedDivision=$stPreparedDivision->fetch(PDO::FETCH_ASSOC)?:[];
+  if($person==='') $person=trim((string)($preparedDivision['division_head']??''));
+  if($preparedPos==='') $preparedPos=trim((string)($preparedDivision['head_position_designation']??''));
+  if($preparedSignature==='') $preparedSignature=trim((string)($preparedDivision['electronic_signature']??''));
 }
-// For legacy PPMPs without a passed Area/Unit Head selection, use the saved
-// requested-by/prepared-position values rather than substituting the Supervisor.
-if($person===''){
-  $person=trim((string)($h['requested_by']??$h['prepared_by']??''));
-  $preparedPos=trim((string)($h['prepared_position']??''));
-  if($person!=='' && $preparedAreaId>0){
-    $stLegacyPerson=$pdo->prepare('SELECT position_designation,electronic_signature
-      FROM area_personnel WHERE area_id=? AND name=? LIMIT 1');
-    $stLegacyPerson->execute([$preparedAreaId,$person]);
-    $legacyPerson=$stLegacyPerson->fetch(PDO::FETCH_ASSOC);
-    if($legacyPerson){
-      if($preparedPos==='') $preparedPos=trim((string)($legacyPerson['position_designation']??''));
-      $preparedSignature=trim((string)($legacyPerson['electronic_signature']??''));
-    }
-  }
-}
-if($preparedPos==='') $preparedPos='End-User or Implementing Unit';
-// Resolve the Submitted By supervisor/signatory using the selected Area/Unit,
-// not only the first item's area_id. Some existing PPMP rows may have blank
-// submitted_by fields, so fall back to the Division/Department Head settings.
-$submitted='';
+if($preparedPos==='') $preparedPos='Division/Department Head';
+
+// Submitted By is the selected Supervisor / Area / Unit Head.
+$submitted=trim((string)($_GET['area_head']??$areaHeadName??''));
 $submittedPos='';
 $submittedSignature='';
 $signatoryAreaId=(int)($areaId ?: ($h['area_id']??0));
-if($signatoryAreaId>0){
-  $stSubmittedDivision=$pdo->prepare('SELECT d.division_head,d.head_position_designation,d.electronic_signature,
-      d.name AS division_name,d.ppmp_supervisor_enabled
-    FROM areas a JOIN divisions d ON d.id=a.division_id
-    WHERE a.id=? LIMIT 1');
-  $stSubmittedDivision->execute([$signatoryAreaId]);
-  $submittedDivision=$stSubmittedDivision->fetch(PDO::FETCH_ASSOC);
-  if($submittedDivision){
-    // Prefer an explicitly stored signatory on the PPMP, when present.
-    $submitted=trim((string)($h['submitted_by']??''));
-    $submittedPos=trim((string)($h['submitted_position']??''));
-    if($submitted==='') $submitted=trim((string)($submittedDivision['division_head']??''));
-    if($submittedPos==='') $submittedPos=trim((string)($submittedDivision['head_position_designation']??''));
-    $submittedSignature=trim((string)($submittedDivision['electronic_signature']??''));
+if($signatoryAreaId>0 && $submitted!==''){
+  $stSubmittedPerson=$pdo->prepare('SELECT position_designation,electronic_signature
+    FROM area_personnel WHERE area_id=? AND name=? LIMIT 1');
+  $stSubmittedPerson->execute([$signatoryAreaId,$submitted]);
+  $submittedPerson=$stSubmittedPerson->fetch(PDO::FETCH_ASSOC)?:[];
+  $submittedPos=trim((string)($submittedPerson['position_designation']??''));
+  $submittedSignature=trim((string)($submittedPerson['electronic_signature']??''));
+  // Division Head PPMPs use the division record rather than area_personnel.
+  if(strcasecmp($submitted,$person)===0){
+    if($submittedPos==='') $submittedPos=$preparedPos;
+    if($submittedSignature==='') $submittedSignature=$preparedSignature;
   }
 }
-// If the PPMP was created by the Division/Department Head, also use the
-// Division Head signature for Prepared By when no Area/Unit personnel
-// signature is configured for that person.
-if($preparedSignature==='' && $submitted!=='' && strcasecmp(trim((string)$person),$submitted)===0){
-  $preparedSignature=$submittedSignature;
+if($submitted===''){
+  $submitted=trim((string)($h['submitted_by']??''));
+  $submittedPos=trim((string)($h['submitted_position']??''));
 }
 
-// Keep Prepared By tied to the selected Area/Unit Head resolved above.
-// Submitted By remains the Division/Department Supervisor signatory.
-// Do not overwrite $person, $preparedPos, or $preparedSignature with supervisor data.
 // Budget signatory comes from the Area/Unit master list.
 // IMPORTANT: do not inspect the selected PPMP Area/Unit personnel and do not
 // look for the word "Budget" in a person's name/position. Instead, locate the
@@ -1302,15 +1259,15 @@ function ppmpPrintDate($value): string{
       <div class="signature-caption">Signature over Printed Name</div>
       <div class="signature-meta"><?=e($preparedPos)?></div>
       <div class="signature-meta"><i>End-User or Implementing Unit</i></div>
-      <div class="signature-meta">Date : <?=e(ppmpPrintDate($h['updated_at']??$h['created_at']??date('Y-m-d'))) ?></div>
+      <div class="signature-meta">Date: <?=e($printReviewStatus==='Approved' && $preparedDate!==''?ppmpPrintDate($preparedDate):'______________________________')?></div>
     </div>
     <div class="ppmp-signature-box">
       <b>Submitted by:</b>
-      <div class="signature-line ppmp-submitted-signature"><?php if(in_array($printReviewStatus,['Pending for Approval','Approved'],true) && $submittedSignature!==''): ?><img src="<?=e($submittedSignature)?>" alt="Submitted By electronic signature"><?php endif; ?></div>
-      <div class="signature-name"><?php if(in_array($printReviewStatus,['Pending for Approval','Approved'],true)): ?><?=e($submitted)?><?php endif; ?></div>
+      <div class="signature-line ppmp-submitted-signature"><?php if($printReviewStatus==='Approved' && $submittedSignature!==''): ?><img src="<?=e($submittedSignature)?>" alt="Submitted By electronic signature"><?php endif; ?></div>
+      <div class="signature-name"><?php if($printReviewStatus==='Approved'): ?><?=e($submitted)?><?php endif; ?></div>
       <div class="signature-underline"></div>
       <div class="signature-caption">Signature over Printed Name</div>
-      <div class="signature-meta"><?php if(in_array($printReviewStatus,['Pending for Approval','Approved'],true)): ?><?=e($submittedPos)?><?php endif; ?></div>
+      <div class="signature-meta"><?php if($printReviewStatus==='Approved'): ?><?=e($submittedPos)?><?php endif; ?></div>
       <div class="signature-meta"><i>Division/Department/Section Unit</i></div>
       <div class="signature-meta">Date: <?=e($printReviewStatus==='Approved' && $pendingApprovalDate!==''?ppmpPrintDate($pendingApprovalDate):'______________________________')?></div>
     </div>
