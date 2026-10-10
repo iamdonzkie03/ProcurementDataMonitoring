@@ -714,7 +714,7 @@ pageStart('Project Procurement Management Plan');
 <div class="panel" style="margin-bottom:16px"><h2>PPMP Workspace</h2><div class="empty">You have not created your own PPMP yet. Only PPMPs submitted by Areas/Units in your Division/Department that are <b>Pending for Review</b> are available above. You may not add or modify another Area/Unit's PPMP.</div></div>
 <?php endif; ?>
 <?php if(!$print && (!$isPpmpSupervisor || $canManagePpmp)): ?>
-<div class="panel ppmp-toolbar">
+<div class="panel ppmp-toolbar" style="margin-bottom:24px!important">
   <div class="ppmp-selection-header">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
       <h2 style="margin-top:0;margin-bottom:0">Project Procurement Management Plan</h2>
