@@ -936,7 +936,10 @@ if(!empty($h['area_id'])){
     FROM areas a JOIN divisions d ON d.id=a.division_id WHERE a.id=? LIMIT 1');
   $stSubmittedDivision->execute([(int)$h['area_id']]);
   $submittedDivision=$stSubmittedDivision->fetch();
-  if($submittedDivision && (int)$submittedDivision['ppmp_supervisor_enabled']===1){
+  // The printed Submitted By signatory is always the Division/Department Head
+  // assigned to the PPMP's Division. Do not hide the name or designation when
+  // the optional supervisor-review setting is disabled.
+  if($submittedDivision){
     $submitted=trim((string)($submittedDivision['division_head']??''));
     $submittedPos=trim((string)($submittedDivision['head_position_designation']??''));
     $submittedSignature=trim((string)($submittedDivision['electronic_signature']??''));
