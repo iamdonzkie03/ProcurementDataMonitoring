@@ -336,13 +336,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if(!$validRows){ flash('error','Add at least one masterlist item.'); header('Location:ppmp_masterlist.php'); exit; }
     $seenRows=[];
     foreach($validRows as $i=>$row){
-      $key=ppmpMasterlistDuplicateKey($row[0],$row[1],$row[2],$row[3]);
+      $key=ppmpMasterlistDuplicateKey($row[0],$row[1],$row[2],$row[3],$row[4]);
       if(isset($seenRows[$key])){
         flash('error','Manual row '.($i+1).' duplicates another row in this submission. No items were saved.');
         header('Location:ppmp_masterlist.php'); exit;
       }
       $seenRows[$key]=true;
-      if(ppmpMasterlistDuplicateExists($pdo,$row[0],$row[1],$row[2],$row[3])){
+      if(ppmpMasterlistDuplicateExists($pdo,$row[0],$row[1],$row[2],$row[3],$row[4])){
         flash('error','Manual row '.($i+1).' already exists in the PPMP Masterlist. No items were saved.');
         header('Location:ppmp_masterlist.php'); exit;
       }
