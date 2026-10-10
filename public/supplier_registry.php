@@ -166,6 +166,9 @@ pageStart('Supplier Registry');
     </form>
     <?php endif; ?>
 
+  </div>
+
+  <div class="panel supplier-content-panel supplier-list-panel">
     <div class="supplier-list-section">
       <div class="supplier-list-header">
         <div>
