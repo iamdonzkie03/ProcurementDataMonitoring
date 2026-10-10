@@ -814,7 +814,7 @@ pageStart('Project Procurement Management Plan');
 <div class="ppmp-actions-row" style="display:block!important;margin:0 0 16px!important;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important">
   <div class="toolbar" style="display:flex!important;justify-content:flex-end!important;align-items:center!important;gap:10px!important;width:100%!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important">
     <!-- PPMP toolbar: Add PPMP Item intentionally removed. -->
-    <button class="btn ppmp-print-form-btn" style="display:inline-flex!important;align-items:center!important;justify-content:center!important;width:150px!important;min-width:150px!important;height:36px!important;padding:0 10px!important;background:#12345a!important;background-color:#12345a!important;border:1px solid #12345a!important;border-radius:6px!important;color:#fff!important;box-shadow:none!important;text-indent:0!important" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label" style="position:static!important;display:inline!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;color:#fff!important;font-size:12px!important;line-height:1.2!important;transform:none!important;clip:auto!important;overflow:visible!important">Print PPMP Form</span></button>
+    <button class="btn ppmp-print-form-btn" style="display:inline-flex!important;align-items:center!important;justify-content:center!important;width:150px!important;min-width:150px!important;height:36px!important;padding:0 10px!important;background:#12345a!important;background-color:#12345a!important;border:1px solid #12345a!important;border-radius:6px!important;color:#fff!important;box-shadow:none!important;text-indent:0!important" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>&area_head='+encodeURIComponent(document.getElementById('ppmp_area_head')?.value||''),'_blank','noopener')"><span class="ppmp-toolbar-label" style="position:static!important;display:inline!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important;color:#fff!important;font-size:12px!important;line-height:1.2!important;transform:none!important;clip:auto!important;overflow:visible!important">Print PPMP Form</span></button>
     <?php if(!$isPpmpSupervisor && $rows && in_array(($rows[0]['review_status']??'Draft'),['Draft','Declined'],true)):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
   </div>
 </div>
@@ -917,14 +917,51 @@ pageStart('Project Procurement Management Plan');
 <?php
 $h=($allPpmpRows[0]??$rows[0]??[]);
 $ppmpNo=$h['ppmp_no']??'';
-$person=$h['requested_by']??'';
-$preparedPos=$h['prepared_position']??'End-User or Implementing Unit';
+// Prepared By is the selected Area/Unit Head from the PPMP workflow.
+// The print button passes the current selection as area_head.
+$person=trim((string)($_GET['area_head']??$areaHeadName??''));
+$preparedPos='';
 $preparedSignature='';
-if($person!=='' && !empty($h['area_id'])){
-  $stPreparedSignature=$pdo->prepare('SELECT electronic_signature FROM area_personnel WHERE area_id=? AND name=? LIMIT 1');
-  $stPreparedSignature->execute([(int)$h['area_id'],$person]);
-  $preparedSignature=trim((string)($stPreparedSignature->fetchColumn()??''));
+$preparedAreaId=(int)($areaId ?: ($h['area_id']??0));
+if($person!=='' && $preparedAreaId>0){
+  $stPreparedPerson=$pdo->prepare('SELECT position_designation,electronic_signature
+    FROM area_personnel WHERE area_id=? AND name=? LIMIT 1');
+  $stPreparedPerson->execute([$preparedAreaId,$person]);
+  $preparedPerson=$stPreparedPerson->fetch(PDO::FETCH_ASSOC);
+  if($preparedPerson){
+    $preparedPos=trim((string)($preparedPerson['position_designation']??''));
+    $preparedSignature=trim((string)($preparedPerson['electronic_signature']??''));
+  }else{
+    // A Division/Department Head may use the dedicated Division Area/Unit,
+    // whose head details are stored on the divisions record instead.
+    $stPreparedDivision=$pdo->prepare('SELECT d.division_head,d.head_position_designation,d.electronic_signature
+      FROM areas a JOIN divisions d ON d.id=a.division_id
+      WHERE a.id=? AND LOWER(TRIM(d.division_head))=LOWER(TRIM(?)) LIMIT 1');
+    $stPreparedDivision->execute([$preparedAreaId,$person]);
+    $preparedDivision=$stPreparedDivision->fetch(PDO::FETCH_ASSOC);
+    if($preparedDivision){
+      $preparedPos=trim((string)($preparedDivision['head_position_designation']??''));
+      $preparedSignature=trim((string)($preparedDivision['electronic_signature']??''));
+    }
+  }
 }
+// For legacy PPMPs without a passed Area/Unit Head selection, use the saved
+// requested-by/prepared-position values rather than substituting the Supervisor.
+if($person===''){
+  $person=trim((string)($h['requested_by']??$h['prepared_by']??''));
+  $preparedPos=trim((string)($h['prepared_position']??''));
+  if($person!=='' && $preparedAreaId>0){
+    $stLegacyPerson=$pdo->prepare('SELECT position_designation,electronic_signature
+      FROM area_personnel WHERE area_id=? AND name=? LIMIT 1');
+    $stLegacyPerson->execute([$preparedAreaId,$person]);
+    $legacyPerson=$stLegacyPerson->fetch(PDO::FETCH_ASSOC);
+    if($legacyPerson){
+      if($preparedPos==='') $preparedPos=trim((string)($legacyPerson['position_designation']??''));
+      $preparedSignature=trim((string)($legacyPerson['electronic_signature']??''));
+    }
+  }
+}
+if($preparedPos==='') $preparedPos='End-User or Implementing Unit';
 // Resolve the Submitted By supervisor/signatory using the selected Area/Unit,
 // not only the first item's area_id. Some existing PPMP rows may have blank
 // submitted_by fields, so fall back to the Division/Department Head settings.
