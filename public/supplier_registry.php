@@ -218,7 +218,7 @@ pageStart('Supplier Registry');
             <?php if($isEditor): ?><td class="supplier-actions"><div class="supplier-actions"><a class="btn secondary" href="supplier_registry.php?edit=<?=(int)$r['id']?>">Edit</a></div></td><?php endif; ?>
           </tr>
           <?php endforeach; ?>
-          <?php if(!$rows): ?><tr><td colspan="<?=$isEditor?3:2?>" class="empty">No suppliers found.</td></tr><?php endif; ?>
+          <?php if(!$rows): ?><tr><td colspan="<?=$isEditor?5:3?>" class="empty">No suppliers found.</td></tr><?php endif; ?>
           </tbody>
         </table>
       </div>
