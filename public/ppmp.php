@@ -840,13 +840,14 @@ pageStart('Project Procurement Management Plan');
     <div class="ppmp-section">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
         <h3 style="margin:0"><?= $editing ? 'Edit PPMP Item' : 'PPMP Items' ?></h3>
-        <?php if(!$editing): ?><button class="btn secondary" type="button" id="ppmpAddRow">+ Add Row</button><?php endif; ?>
+        <?php if(!$editing): ?><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn secondary" type="button" id="ppmpAddRow">+ Add Row</button><button class="btn danger" type="button" id="ppmpDeleteSelectedRows">Delete Selected</button></div><?php endif; ?>
       </div>
             <div class="table-wrap ppmp-entry-table-wrap">
         <table class="table ppmp-entry-table" id="ppmpEntryTable">
-          <thead><tr><th>#</th><th>Classification *</th><th>Item Name *</th><th>Technical Specifications *</th><th>Category *</th><th>Quantity *</th><th>Unit *</th><th>Unit Cost *</th><th>Total Budget</th><th>Procurement Mode *</th><th>Pre-Procurement *</th><th>Start *</th><th>End *</th><th>Delivery *</th><th>Source of Funds *</th><th>Supporting Documents</th><th>Remarks</th><th>Action</th></tr></thead>
+          <thead><tr><th><input type="checkbox" id="ppmpSelectAllRows" aria-label="Select all PPMP items"></th><th>#</th><th>Classification *</th><th>Item Name *</th><th>Technical Specifications *</th><th>Category *</th><th>Quantity *</th><th>Unit *</th><th>Unit Cost *</th><th>Total Budget</th><th>Procurement Mode *</th><th>Pre-Procurement *</th><th>Start *</th><th>End *</th><th>Delivery *</th><th>Source of Funds *</th><th>Supporting Documents</th><th>Remarks</th></tr></thead>
           <tbody id="ppmpEntryBody">
             <tr class="ppmp-entry-row">
+              <td><input type="checkbox" class="ppmp-select-row" aria-label="Select PPMP item 1"></td>
               <td class="ppmp-row-number">1</td>
               <td><select class="select" name="<?=$editing?'procurement_type':'items[0][procurement_type]'?>" required><option value="">Select</option><?php foreach($classifications as $c):?><option value="<?=e($c['name'])?>" <?=((string)($formState['procurement_type']??'')===(string)$c['name'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select></td>
               <td><div class="ppmp-item-autocomplete"><input class="input ppmp-item-name" name="<?=$editing?'item_name':'items[0][item_name]'?>" required autocomplete="off" value="<?=e($formState['item_name']??'')?>"><div class="ppmp-item-suggestions" role="listbox"></div></div></td>
@@ -873,7 +874,6 @@ pageStart('Project Procurement Management Plan');
                 </div>
               </td>
               <td><input class="input ppmp-row-remarks" type="text" name="<?=$editing?'remarks':'items[0][remarks]'?>" value="<?=e($formState['remarks']??'')?>"></td>
-              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php endif; ?></td>
             </tr>
           </tbody>
         </table>
@@ -1654,80 +1654,39 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    syncAllRowDocuments();
    syncAllRowActions();
  }
- function ensureDeleteButton(row){
-   if(!row)return null;
-   const rows=body.querySelectorAll('.ppmp-entry-row');
-   let remove=row.querySelector('.ppmp-remove-row');
-   if(rows.length<2){
-     if(remove)remove.remove();
-     return null;
-   }
-   if(!remove){
-     const actionCell=row.querySelector('td:last-child');
-     if(!actionCell)return null;
-     remove=document.createElement('button');
-     remove.type='button';
-     remove.className='btn danger ppmp-remove-row';
-     remove.textContent='Delete';
-     actionCell.appendChild(remove);
-   }
-   remove.style.setProperty('display','inline-flex','important');
-   return remove;
- }
- function syncAllRowActions(){
-    const rows=[...body.querySelectorAll('.ppmp-entry-row')];
-    const multiple=rows.length>=2;
-    body.dataset.ppmpRowCount=String(rows.length);
-
-    rows.forEach(function(row){
-      const actionCell=row.querySelector('td:last-child');
-      if(!actionCell)return;
-
-      // Remove Clear buttons and any Delete button when only one row remains.
-      actionCell.querySelectorAll('.ppmp-clear-row').forEach(function(button){button.remove();});
-      let remove=row.querySelector('.ppmp-remove-row');
-
-      if(!multiple){
-        if(remove)remove.remove();
-        return;
-      }
-
-      // With two or more rows, every row gets a visible Delete button.
-      if(!remove){
-        remove=document.createElement('button');
-        remove.type='button';
-        remove.className='btn danger ppmp-remove-row';
-        remove.textContent='Delete';
-        actionCell.appendChild(remove);
-      }
-      remove.style.setProperty('display','inline-flex','important');
-    });
-  }
-  function syncRowAction(row){
-   syncAllRowActions();
- }
- // One delegated handler means Delete works for both the original row and
- // every row created by + Add Row, including rows created by cloneNode().
- body.addEventListener('click',function(e){
-   const button=e.target.closest('.ppmp-remove-row');
-   if(!button || !body.contains(button))return;
-   e.preventDefault();
-   e.stopPropagation();
-   const row=button.closest('.ppmp-entry-row');
-   if(row)deleteRow(row);
- });
- function bind(row){
-   row.querySelectorAll('.ppmp-row-qty,.ppmp-row-unit-price').forEach(x=>{
-     x.addEventListener('input',function(){formatNumberInput(this,false);calc();syncAllRowActions();});
-     x.addEventListener('blur',function(){formatNumberInput(this,true);calc();syncAllRowActions();});
-   });
-   ensureDeleteButton(row);
- }
- add.addEventListener('click',function(){
+ function syncRowSelection(){
+  const rows=[...body.querySelectorAll('.ppmp-entry-row')];
+  rows.forEach((row,i)=>{const box=row.querySelector('.ppmp-select-row');if(box)box.setAttribute('aria-label','Select PPMP item '+(i+1));});
+  const selectAll=document.getElementById('ppmpSelectAllRows');if(selectAll){selectAll.checked=false;selectAll.indeterminate=false;}
+}
+function deleteRow(row){
+  if(!row)return;const rows=body.querySelectorAll('.ppmp-entry-row');
+  if(rows.length===1){
+    row.querySelectorAll('input,textarea,select').forEach(function(x){if(x.type==='checkbox'){x.checked=false;return;}if(x.type==='file'){x.value='';return;}if(x.type!=='hidden'){if(x.tagName==='SELECT')x.selectedIndex=0;else x.value='';}});
+    row.querySelectorAll('.ppmp-item-suggestions').forEach(function(el){el.innerHTML='';});
+    const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');if(unitHidden)unitHidden.value='';
+    const categoryHidden=row.querySelector('.ppmp-category-value');if(categoryHidden)categoryHidden.value='';
+    const item=row.querySelector('.ppmp-item-name');if(item)item.dataset.selectedMasterlistName='';
+    const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');if(unit){unit.value='';unit.disabled=true;}
+  }else{row.remove();}
+  renumber();calc();syncAllRowDocuments();syncRowSelection();
+}
+const deleteSelectedButton=document.getElementById('ppmpDeleteSelectedRows');
+if(deleteSelectedButton){deleteSelectedButton.addEventListener('click',function(){
+  const selected=[...body.querySelectorAll('.ppmp-entry-row')].filter(row=>row.querySelector('.ppmp-select-row')?.checked);
+  if(!selected.length){alert('Please select at least one PPMP item to delete.');return;}
+  if(!confirm('Delete '+selected.length+' selected PPMP item(s)?'))return;
+  selected.forEach(function(row){if(body.contains(row))deleteRow(row);});syncRowSelection();
+});}
+const selectAll=document.getElementById('ppmpSelectAllRows');
+if(selectAll){selectAll.addEventListener('change',function(){body.querySelectorAll('.ppmp-select-row').forEach(function(box){box.checked=selectAll.checked;});});
+  body.addEventListener('change',function(e){if(!e.target.matches('.ppmp-select-row'))return;const boxes=[...body.querySelectorAll('.ppmp-select-row')];const checked=boxes.filter(box=>box.checked).length;selectAll.checked=boxes.length>0&&checked===boxes.length;selectAll.indeterminate=checked>0&&checked<boxes.length;});}
+add.addEventListener('click',function(){
    const original=body.querySelector('.ppmp-entry-row');
    if(!original)return;
    const row=original.cloneNode(true);
    row.dataset.ppmpNewRow='1';
+   row.querySelectorAll('.ppmp-select-row').forEach(function(box){box.checked=false;});
    row.querySelectorAll('input,textarea').forEach(function(x){
      if(x.type==='file')x.value='';
      else x.value='';
@@ -1745,9 +1704,8 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    calc();
    // Reconcile row actions immediately after insertion, so adding the second
    // row creates Delete buttons on both rows in the same click.
-   syncAllRowActions();
    bind(row);
-   syncAllRowActions();
+   syncRowSelection();
  });
  bind(body.querySelector('.ppmp-entry-row'));
 renumber();
@@ -1756,49 +1714,6 @@ calc();
 syncAllRowActions();
 })();
 
-/* Independent row-count guard: keeps Delete buttons correct even if the
-   row is inserted or removed by another PPMP script. */
-(function(){
-  function initPpmpRowActionGuard(){
-    const body=document.getElementById('ppmpEntryBody');
-    if(!body || body.dataset.rowActionGuardInitialized==='1')return;
-    body.dataset.rowActionGuardInitialized='1';
-
-    function syncDeleteButtons(){
-      const rows=Array.from(body.querySelectorAll('.ppmp-entry-row'));
-      const showDelete=rows.length>=2;
-      rows.forEach(function(row){
-        const cell=row.querySelector('td:last-child');
-        if(!cell)return;
-        cell.querySelectorAll('.ppmp-clear-row').forEach(function(button){button.remove();});
-        let button=row.querySelector('.ppmp-remove-row');
-        if(!showDelete){
-          if(button)button.remove();
-          return;
-        }
-        if(!button){
-          button=document.createElement('button');
-          button.type='button';
-          button.className='btn danger ppmp-remove-row';
-          button.textContent='Delete';
-          cell.appendChild(button);
-        }
-        button.style.setProperty('display','inline-flex','important');
-      });
-    }
-
-    syncDeleteButtons();
-    const observer=new MutationObserver(function(){syncDeleteButtons();});
-    observer.observe(body,{childList:true,subtree:true});
-    const addButton=document.getElementById('ppmpAddRow');
-    if(addButton)addButton.addEventListener('click',function(){syncDeleteButtons();});
-  }
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',initPpmpRowActionGuard);
-  }else{
-    initPpmpRowActionGuard();
-  }
-})();
 /* Remove any legacy PPMP add-item control injected into the toolbar.
    This affects only the toolbar control and never the Data Entry "+ Add Row" control. */
 (function(){
