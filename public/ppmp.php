@@ -748,7 +748,7 @@ pageStart('Project Procurement Management Plan');
 .ppmp-entry-table .ppmp-total-budget{font-weight:700!important}
 /* PPMP rows are selected with checkboxes for bulk deletion. */
 .ppmp-entry-table .ppmp-row-remarks{width:150px!important;min-width:150px!important;max-width:150px!important;box-sizing:border-box}
-</style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style>
+</style><style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style>
 <?php if(!$print && $isPpmpSupervisor): ?>
 <div class="panel" style="margin-bottom:16px"><h2>PPMPs Pending for Review</h2><p class="muted">Review PPMP submissions from all Areas/Units under your Division/Department.</p>
 <?php if($supervisorPending): ?><div class="table-wrap"><table class="table"><tr><th>Division/Department</th><th>Area/Unit</th><th>PPMP No.</th><th>Fiscal Year</th><th>Items</th><th>Submitted By</th><th>Status</th><th>Action</th></tr>
