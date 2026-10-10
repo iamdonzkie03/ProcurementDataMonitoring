@@ -13,12 +13,15 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     checkCsrf();
     try{
         $action=$_POST['action']??'';
-        if($action==='delete'){
-            $id=(int)($_POST['id']??0);
-            if($id<=0) throw new RuntimeException('Invalid Procurement Method.');
-            $st=$pdo->prepare('DELETE FROM procurement_methods WHERE id=?');
-            $st->execute([$id]);
-            flash('success','Procurement Method deleted.');
+        if($action==='bulk_delete'){
+            $ids=array_values(array_unique(array_filter(array_map('intval',(array)($_POST['selected_ids']??[])),static fn($id)=>$id>0)));
+            if(!$ids) throw new RuntimeException('Select at least one Procurement Method to delete.');
+            $placeholders=implode(',',array_fill(0,count($ids),'?'));
+            $st=$pdo->prepare("DELETE FROM procurement_methods WHERE id IN ($placeholders)");
+            $st->execute($ids);
+            $deleted=$st->rowCount();
+            if($deleted<1) throw new RuntimeException('No matching Procurement Methods were found.');
+            flash('success',$deleted===1?'Procurement Method deleted.':$deleted.' Procurement Methods deleted.');
         }elseif($action==='save_bulk'){
             $names=array_map('trim',(array)($_POST['names']??[]));
             $validNames=[];
@@ -109,30 +112,52 @@ if(!$embedded) pageStart('Procurement Method');
   </form>
 
   <div class="table-wrap" style="margin-top:22px">
-  <div class="procurement_method-pagination" id="procurement_methodPagination" aria-label="Procurement Method pagination"><div class="procurement_method-page-size"><label for="procurement_methodPageSize">Show</label><select class="input" id="procurement_methodPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="procurement_methodPageSize">records</label></span></div><div class="procurement_method-pagination-info" id="procurement_methodPaginationInfo"></div><div class="procurement_method-pagination-buttons" id="procurement_methodPaginationButtons"></div></div>
+  <form method="post" id="procurementMethodBulkDeleteForm" onsubmit="return confirmBulkProcurementMethodDelete();">
+    <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+    <input type="hidden" name="action" value="bulk_delete">
+    <div class="procurement-method-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px">
+      <label style="display:flex;align-items:center;gap:7px;margin:0;font-size:13px"><input type="checkbox" id="selectAllProcurementMethods"> Select All</label>
+      <button class="btn danger" type="submit" id="deleteSelectedProcurementMethods" disabled>Delete Selected</button>
+    </div>
+    <div class="procurement_method-pagination" id="procurement_methodPagination" aria-label="Procurement Method pagination"><div class="procurement_method-page-size"><label for="procurement_methodPageSize">Show</label><select class="input" id="procurement_methodPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="procurement_methodPageSize">records</label></span></div><div class="procurement_method-pagination-info" id="procurement_methodPaginationInfo"></div><div class="procurement_method-pagination-buttons" id="procurement_methodPaginationButtons"></div></div>
     <table class="table" id="procurement_methodTable">
-      <thead><tr><th>Procurement Method</th><th>Actions</th></tr></thead>
+      <thead><tr><th style="width:42px">Select</th><th>Procurement Method</th><th>Actions</th></tr></thead>
       <tbody>
       <?php foreach($rows as $r): ?>
         <tr data-procurement_method-id="<?=e((string)$r['id'])?>" data-procurement_method-name="<?=e($r['procurement_method'])?>">
+          <td><input type="checkbox" class="procurement-method-select" name="selected_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['procurement_method'])?>"></td>
           <td><b><?=e($r['procurement_method'])?></b></td>
-          <td>
-            <a class="btn secondary master-action" href="<?=e($embedded?'settings.php?tab=procurement-method&edit='.(int)$r['id']:'procurement_methods.php?edit='.(int)$r['id'])?>">Edit</a>
-            <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Procurement Method?');">
-              <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-              <input type="hidden" name="action" value="delete">
-              <input type="hidden" name="id" value="<?=(int)$r['id']?>">
-              <button class="btn danger master-action" type="submit">Delete</button>
-            </form>
-          </td>
+          <td><a class="btn secondary master-action" href="<?=e($embedded?'settings.php?tab=procurement-method&edit='.(int)$r['id']:'procurement_methods.php?edit='.(int)$r['id'])?>">Edit</a></td>
         </tr>
       <?php endforeach; ?>
-      <?php if(!$rows): ?><tr><td colspan="2" class="empty">No Procurement Methods have been added yet.</td></tr><?php endif; ?>
+      <?php if(!$rows): ?><tr><td colspan="3" class="empty">No Procurement Methods have been added yet.</td></tr><?php endif; ?>
       </tbody>
     </table>
+  </form>
   </div>
 </div>
 
+<script>
+function confirmBulkProcurementMethodDelete(){
+  const selected=Array.from(document.querySelectorAll('.procurement-method-select:checked'));
+  if(!selected.length){alert('Select at least one Procurement Method to delete.');return false;}
+  const count=selected.length;
+  return confirm(count===1?'Delete the selected Procurement Method?':'Delete all '+count+' selected Procurement Methods?');
+}
+document.addEventListener('DOMContentLoaded',function(){
+  const selectAll=document.getElementById('selectAllProcurementMethods');
+  const deleteButton=document.getElementById('deleteSelectedProcurementMethods');
+  const checks=Array.from(document.querySelectorAll('.procurement-method-select'));
+  function updateBulkSelection(){
+    const selected=checks.filter(function(box){return box.checked;}).length;
+    if(deleteButton)deleteButton.disabled=selected===0;
+    if(selectAll){selectAll.checked=checks.length>0&&selected===checks.length;selectAll.indeterminate=selected>0&&selected<checks.length;}
+  }
+  if(selectAll)selectAll.addEventListener('change',function(){checks.forEach(function(box){box.checked=selectAll.checked;});updateBulkSelection();});
+  checks.forEach(function(box){box.addEventListener('change',updateBulkSelection);});
+  updateBulkSelection();
+});
+</script>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
   const rows=document.getElementById('procurement_methodRows');
