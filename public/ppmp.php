@@ -1268,6 +1268,7 @@ function ppmpPrintDate($value): string{
       <div class="signature-meta"><i>End-User or Implementing Unit</i></div>
       <div class="signature-meta">Date : <?=e(ppmpPrintDate($h['updated_at']??$h['created_at']??date('Y-m-d'))) ?></div>
     </div>
+    <?php if(($h['review_status']??'')==='Pending for Approval'): ?>
     <div class="ppmp-signature-box">
       <b>Submitted by:</b>
       <div class="signature-line ppmp-submitted-signature"><?php if($submittedSignature!==''): ?><img src="<?=e($submittedSignature)?>" alt="Submitted By electronic signature"><?php endif; ?></div>
@@ -1278,6 +1279,7 @@ function ppmpPrintDate($value): string{
       <div class="signature-meta"><i>Division/Department/Section Unit</i></div>
       <div class="signature-meta">Date : ______________________________</div>
     </div>
+    <?php endif; ?>
     <div class="ppmp-signature-box ppmp-budget-signature">
       <b>within the budget allocation:</b>
       <div class="signature-line"></div>
