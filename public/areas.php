@@ -55,15 +55,19 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $code=trim($_POST['code']??'') ?: null;
   $signatureData=trim((string)($_POST['electronic_signature_data']??''));
 
-  if($action==='delete'){
-    if($id<=0){ flash('error','Invalid Area/Unit.'); }
-    else {
+  if($action==='bulk_delete'){
+    $ids=array_values(array_unique(array_filter(array_map('intval',(array)($_POST['selected_ids']??[])),static fn($selectedId)=>$selectedId>0)));
+    if(!$ids){
+      flash('error','Select at least one Area/Unit to delete.');
+    }else{
       try{
-        $st=$pdo->prepare('DELETE FROM areas WHERE id=?');
-        $st->execute([$id]);
-        flash($st->rowCount() ? 'success' : 'error',$st->rowCount() ? 'Area/Unit deleted.' : 'Area/Unit not found.');
+        $placeholders=implode(',',array_fill(0,count($ids),'?'));
+        $st=$pdo->prepare("DELETE FROM areas WHERE id IN ($placeholders)");
+        $st->execute($ids);
+        $deleted=$st->rowCount();
+        flash($deleted ? 'success' : 'error',$deleted===1 ? 'Area/Unit deleted.' : ($deleted>1 ? $deleted.' Area/Units deleted.' : 'No matching Area/Unit records were found.'));
       }catch(PDOException $e){
-        flash('error','This Area/Unit cannot be deleted because it is already used by existing PPMP or Purchase Request records.');
+        flash('error','One or more selected Area/Units cannot be deleted because they are already used by existing PPMP or Purchase Request records. No Area/Unit records were deleted if the database rejected the operation.');
       }
     }
     header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
@@ -435,18 +439,46 @@ if(!$embedded) pageStart('Area/Unit Management');
             <div class="management-search-suggestions" id="areaSearchSuggestions" role="listbox"></div>
           </div>
         </div>
+        <form method="post" id="areaBulkDeleteForm" onsubmit="return confirmBulkAreaDelete();">
+          <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+          <input type="hidden" name="action" value="bulk_delete">
         <div class="area-pagination" id="areaPagination" aria-label="Area/Unit pagination"><div class="area-page-size"><label for="areaPageSize">Show</label><select class="input" id="areaPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="areaPageSize">records</label></span></div><div class="area-pagination-info" id="areaPaginationInfo"></div><div class="area-pagination-buttons" id="areaPaginationButtons"></div></div>
         <div class="table-wrap"><table class="table" id="areaTable">
-          <tr><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
+          <tr><th style="width:34px">Select</th><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
           <?php foreach($rows as $r): ?><?php $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id'])); ?>
-          <tr data-management-search-id="<?=e((string)$r['id'])?>" data-management-search-name="<?=e($r['name'])?>" data-management-search-division="<?=e($r['division_name'])?>"><td><?=e($r['division_name'])?></td><td><?=e($r['division_head'])?></td><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?><?php if(!empty($p['position_designation'])): ?> — <span class="muted"><?=e($p['position_designation'])?></span><?php endif; ?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td><td><?=e($r['created_at'])?></td><td><div class="actions"><a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=area-unit&edit='.(int)$r['id'] : 'areas.php?edit='.(int)$r['id'])?>">Edit</a><form method="post" class="master-action-form" onsubmit="return confirm('Delete this Area/Unit? This can only be deleted if it is not used by existing records.');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><button class="btn danger master-action" type="submit">Delete</button></form></div></td></tr>
-          <?php endforeach; ?><?php if(!$rows): ?><tr><td colspan="7">No Area/Unit records found.</td></tr><?php endif; ?>
+          <tr data-management-search-id="<?=e((string)$r['id'])?>" data-management-search-name="<?=e($r['name'])?>" data-management-search-division="<?=e($r['division_name'])?>"><td><input type="checkbox" class="area-select" name="selected_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['name'])?>"></td><td><?=e($r['division_name'])?></td><td><?=e($r['division_head'])?></td><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?><?php if(!empty($p['position_designation'])): ?> — <span class="muted"><?=e($p['position_designation'])?></span><?php endif; ?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td><td><?=e($r['created_at'])?></td><td><div class="actions"><a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=area-unit&edit='.(int)$r['id'] : 'areas.php?edit='.(int)$r['id'])?>">Edit</a></div></td></tr>
+          <?php endforeach; ?><?php if(!$rows): ?><tr><td colspan="8">No Area/Unit records found.</td></tr><?php endif; ?>
         </table></div>
+        <div class="area-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 0">
+          <label style="display:flex;align-items:center;gap:7px;margin:0;font-size:13px"><input type="checkbox" id="selectAllAreas"> Select All</label>
+          <button class="btn danger" type="submit" id="deleteSelectedAreas" disabled>Delete Selected</button>
+        </div>
+        </form>
       </div>
     </div>
   </div>
 </div>
 
+<script>
+function confirmBulkAreaDelete(){
+  const selected=Array.from(document.querySelectorAll('.area-select:checked'));
+  if(!selected.length){alert('Select at least one Area/Unit to delete.');return false;}
+  return confirm(selected.length===1?'Delete the selected Area/Unit?':'Delete all '+selected.length+' selected Area/Units?');
+}
+document.addEventListener('DOMContentLoaded',function(){
+  const selectAll=document.getElementById('selectAllAreas');
+  const deleteButton=document.getElementById('deleteSelectedAreas');
+  const checks=Array.from(document.querySelectorAll('.area-select'));
+  function updateBulkSelection(){
+    const selected=checks.filter(function(box){return box.checked;}).length;
+    if(deleteButton)deleteButton.disabled=selected===0;
+    if(selectAll){selectAll.checked=checks.length>0&&selected===checks.length;selectAll.indeterminate=selected>0&&selected<checks.length;}
+  }
+  if(selectAll)selectAll.addEventListener('change',function(){checks.forEach(function(box){box.checked=selectAll.checked;});updateBulkSelection();});
+  checks.forEach(function(box){box.addEventListener('change',updateBulkSelection);});
+  updateBulkSelection();
+});
+</script>
 <script>
 (function(){
   // Convert the Division/Department signature upload to the hidden base64
@@ -724,19 +756,21 @@ if(!$embedded) pageStart('Area/Unit Management');
 .management-column:nth-child(2) .management-list-content .table td{padding:7px 4px;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word}
 .management-column:nth-child(2) .management-list-content .table th{text-align:center}
 .management-column:nth-child(2) .management-list-content .table th:nth-child(1),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(1){width:17%}
+.management-column:nth-child(2) .management-list-content .table td:nth-child(1){width:4%;text-align:center}
 .management-column:nth-child(2) .management-list-content .table th:nth-child(2),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(2){width:15%}
+.management-column:nth-child(2) .management-list-content .table td:nth-child(2){width:16%}
 .management-column:nth-child(2) .management-list-content .table th:nth-child(3),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(3){width:16%}
+.management-column:nth-child(2) .management-list-content .table td:nth-child(3){width:14%}
 .management-column:nth-child(2) .management-list-content .table th:nth-child(4),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(4){width:7%}
+.management-column:nth-child(2) .management-list-content .table td:nth-child(4){width:15%}
 .management-column:nth-child(2) .management-list-content .table th:nth-child(5),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(5){width:22%}
+.management-column:nth-child(2) .management-list-content .table td:nth-child(5){width:6%}
 .management-column:nth-child(2) .management-list-content .table th:nth-child(6),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(6){width:11%}
+.management-column:nth-child(2) .management-list-content .table td:nth-child(6){width:20%}
 .management-column:nth-child(2) .management-list-content .table th:nth-child(7),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(7){width:12%}
+.management-column:nth-child(2) .management-list-content .table td:nth-child(7){width:10%}
+.management-column:nth-child(2) .management-list-content .table th:nth-child(8),
+.management-column:nth-child(2) .management-list-content .table td:nth-child(8){width:10%}
 .management-column:nth-child(2) .management-list-content .table ul{padding-left:14px!important}
 .management-column:nth-child(2) .management-list-content .table .actions{display:flex;gap:3px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap;width:100%;max-width:100%}
 .management-column:nth-child(2) .management-list-content .table .master-action{width:42px;min-width:42px;height:28px;padding:2px 3px;font-size:10px}
