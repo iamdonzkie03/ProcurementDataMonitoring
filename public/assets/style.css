@@ -2792,7 +2792,7 @@ html body .supplier-content-panel .supplier-list-section table.supplier-table tb
 }
 
 
-/* Supplier Registry: separate Registered Suppliers into its own panel with 24px vertical spacing */
+/* Supplier Registry: enforce 24px vertical separation between the two panels */
 .supplier-registry-page{
   display:flex!important;
   flex-direction:column!important;
@@ -2803,6 +2803,9 @@ html body .supplier-content-panel .supplier-list-section table.supplier-table tb
   flex:0 0 auto!important;
   margin:0!important;
 }
-.supplier-content-panel .supplier-list-section{
+.supplier-registry-page > .supplier-list-panel{
+  margin-top:24px!important;
+}
+.supplier-registry-page > .supplier-content-panel .supplier-list-section{
   margin:0!important;
 }
