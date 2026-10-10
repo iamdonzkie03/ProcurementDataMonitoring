@@ -55,7 +55,9 @@ try{
 
 $ppmpMasterlistRows=[];
 try{
-  $ppmpMasterlistRows=$pdo->query("SELECT id,item_name,technical_specifications,unit_of_measurement,unit_cost FROM ppmp_masterlist WHERE TRIM(item_name)<>'' ORDER BY item_name ASC,id ASC")->fetchAll();
+  $ppmpMasterlistRows=$pdo->query("SELECT pm.id,pm.item_name,pm.technical_specifications,pm.unit_of_measurement,pm.unit_cost,
+    COALESCE((SELECT c.id FROM categories c WHERE LOWER(TRIM(c.name))=LOWER(TRIM(pm.category)) LIMIT 1),0) AS category_id
+    FROM ppmp_masterlist pm WHERE TRIM(pm.item_name)<>'' ORDER BY pm.item_name ASC,pm.id ASC")->fetchAll();
 }catch(PDOException $e){ $ppmpMasterlistRows=[]; }
 
 $currentFiscalYear=(int)date('Y');
@@ -1224,6 +1226,7 @@ function ppmpPrintDate($value): string{
       button.dataset.specifications=item.technical_specifications||'';
       button.dataset.unit=item.unit_of_measurement||'';
       button.dataset.unitCost=item.unit_cost??'';
+      button.dataset.categoryId=item.category_id??'';
       button.innerHTML='<strong>'+escapeHtml(item.item_name||'')+'</strong>'+(item.technical_specifications?'<small>'+escapeHtml(item.technical_specifications)+'</small>':'');
       list.appendChild(button);
     });
@@ -1242,6 +1245,8 @@ function ppmpPrintDate($value): string{
         this.dataset.selectedMasterlistName='';
         const description=row.querySelector('.ppmp-item-description');
         if(description)description.value='';
+        const categorySelect=row.querySelector('select[name$="[category_id]"]')||row.querySelector('select[name="category_id"]');
+        if(categorySelect)categorySelect.value='';
         const unitSelect=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
         if(unitSelect)unitSelect.value='';
         const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');
@@ -1268,6 +1273,11 @@ function ppmpPrintDate($value): string{
       const button=e.target.closest('.ppmp-item-suggestion');if(!button)return;
       input.value=button.dataset.itemName||'';
       input.dataset.selectedMasterlistName=button.dataset.itemName||'';
+      const categorySelect=row.querySelector('select[name$="[category_id]"]')||row.querySelector('select[name="category_id"]');
+      if(categorySelect){
+        categorySelect.value=String(button.dataset.categoryId||'');
+        categorySelect.dispatchEvent(new Event('change',{bubbles:true}));
+      }
       const description=row.querySelector('.ppmp-item-description');
       if(description){description.value=button.dataset.specifications||'';description.readOnly=true;description.classList.add('ppmp-masterlist-locked');}
       const unitSelect=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
