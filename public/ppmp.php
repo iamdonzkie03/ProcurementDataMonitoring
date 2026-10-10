@@ -1261,8 +1261,12 @@ function ppmpPrintDate($value): string{
   function bindItemAutocomplete(row){
     if(!row)return;
     const input=row.querySelector('.ppmp-item-name'), box=input&&input.closest('.ppmp-item-autocomplete');
-    if(!input||!box||input.dataset.autocompleteBound==='1')return;
+    if(!input||!box)return;
     const popup=box.querySelector('.ppmp-item-suggestions');
+    if(input.dataset.autocompleteBound==='1'){
+      if(popup&&!box._ppmpSuggestionsList){box._ppmpSuggestionsList=popup;popup._ppmpAutocompleteBox=box;}
+      return;
+    }
     if(popup){box._ppmpSuggestionsList=popup;popup._ppmpAutocompleteBox=box;}
     input.dataset.autocompleteBound='1';
     input.addEventListener('input',function(){
@@ -1661,6 +1665,7 @@ add.addEventListener('click',function(){
    if(!original)return;
    const row=original.cloneNode(true);
    row.dataset.ppmpNewRow='1';
+   row.querySelectorAll('.ppmp-item-name').forEach(function(input){delete input.dataset.autocompleteBound;delete input.dataset.selectedMasterlistName;});
    row.querySelectorAll('.ppmp-select-row').forEach(function(box){box.checked=false;});
    row.querySelectorAll('input,textarea').forEach(function(x){
      if(x.type==='file')x.value='';
