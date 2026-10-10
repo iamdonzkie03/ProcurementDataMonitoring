@@ -258,6 +258,9 @@ pageStart('Supplier Registry');
 }
 </style>
 <div class="supplier-registry-page" style="display:flex!important;flex-direction:column!important;align-items:stretch!important;row-gap:24px!important;">
+  <div class="supplier-table-select-all-toolbar" style="display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:12px">
+    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSupplierEntryRows"> Select All</label>
+  </div>
   <div class="panel supplier-content-panel">
     <div class="supplier-toolbar supplier-registry-heading-row">
       <div class="supplier-heading-block">
@@ -310,14 +313,10 @@ pageStart('Supplier Registry');
       <form method="post" id="bulkSupplierDeleteForm" onsubmit="return confirm('Delete all selected supplier records and their uploaded permits/licenses? This cannot be undone.');">
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="action" value="bulk_delete">
-        <div class="supplier-bulk-actions" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0;font-size:12px;width:100%;box-sizing:border-box">
-          <label style="display:flex;align-items:center;gap:6px;flex:0 0 auto"><input type="checkbox" id="selectAllSuppliers"> Select all</label>
+        <div class="supplier-bulk-actions" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:12px 0;font-size:12px;width:100%;box-sizing:border-box">
           <button class="btn danger" type="submit" id="deleteSelectedSuppliers" style="margin-left:auto;flex:0 0 auto">Delete Selected</button>
         </div>
       <?php endif; ?>
-      <div class="supplier-table-select-all-toolbar" style="display:flex;align-items:center;gap:6px;margin:8px 0;font-size:12px">
-        <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSupplierEntryRows"> Select All</label>
-      </div>
       <div class="table-wrap supplier-table-wrap">
         <table class="table supplier-table <?=$isEditor?'supplier-table-editor':'supplier-table-viewer'?>" id="supplierTable">
           <colgroup><?php if($isEditor): ?><col class="col-select"><col class="col-number"><col class="col-company"><col class="col-permits"><col class="col-actions"><?php else: ?><col style="width:5%"><col style="width:35%"><col style="width:60%"><?php endif; ?></colgroup>
