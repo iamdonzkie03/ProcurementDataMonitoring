@@ -1675,30 +1675,42 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
     const months={january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12};
     return m[3]+'-'+String(months[m[1].toLowerCase()]).padStart(2,'0')+'-'+String(m[2]).padStart(2,'0');
   }
-  document.querySelectorAll('.ppmp-date-picker').forEach(function(box){
-    const display=box.querySelector('.ppmp-long-date'), picker=box.querySelector('.ppmp-date-native'), hidden=box.querySelector('input[type="hidden"]');
-    if(!display||!picker||!hidden)return;
-    const existing=isoDate(display.value);
-    if(existing){picker.value=existing;hidden.value=existing;}
-    function openPicker(){
-      try{
-        if(typeof picker.showPicker==='function') picker.showPicker();
-        else {picker.style.pointerEvents='auto';picker.click();picker.style.pointerEvents='none';}
-      }catch(e){picker.style.pointerEvents='auto';picker.click();picker.style.pointerEvents='none';}
-    }
-    display.addEventListener('click',openPicker);
-    display.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openPicker();}});
-    picker.addEventListener('change',function(){hidden.value=this.value;display.value=displayDate(this.value);});
-    display.addEventListener('input',function(){
-      const iso=isoDate(this.value);
-      hidden.value=iso;
-      if(iso)picker.value=iso;
+  function bindPpmpDatePickers(root){
+    const scope=root||document;
+    const boxes=[];
+    if(scope.matches&&scope.matches('.ppmp-date-picker'))boxes.push(scope);
+    scope.querySelectorAll('.ppmp-date-picker').forEach(function(box){boxes.push(box);});
+    boxes.forEach(function(box){
+      if(box.dataset.ppmpDateBound==='1')return;
+      const display=box.querySelector('.ppmp-long-date'), picker=box.querySelector('.ppmp-date-native'), hidden=box.querySelector('input[type="hidden"]');
+      if(!display||!picker||!hidden)return;
+      box.dataset.ppmpDateBound='1';
+      const existing=isoDate(display.value);
+      if(existing){picker.value=existing;hidden.value=existing;}
+      function openPicker(){
+        try{
+          picker.style.pointerEvents='auto';
+          if(typeof picker.showPicker==='function') picker.showPicker();
+          else picker.click();
+        }catch(e){picker.click();}
+        finally{picker.style.pointerEvents='none';}
+      }
+      display.addEventListener('click',openPicker);
+      display.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openPicker();}});
+      picker.addEventListener('change',function(){hidden.value=this.value;display.value=displayDate(this.value);});
+      display.addEventListener('input',function(){
+        const iso=isoDate(this.value);
+        hidden.value=iso;
+        if(iso)picker.value=iso;
+      });
+      display.addEventListener('blur',function(){
+        const iso=isoDate(this.value);
+        if(iso)this.value=displayDate(iso);
+      });
     });
-    display.addEventListener('blur',function(){
-      const iso=isoDate(this.value);
-      if(iso)this.value=displayDate(iso);
-    });
-  });
+  }
+  window.ppmpBindDatePickers=bindPpmpDatePickers;
+  bindPpmpDatePickers(document);
 })();
 </script><script>
 (function(){
@@ -1846,6 +1858,7 @@ add.addEventListener('click',function(){
    const item=row.querySelector('.ppmp-item-name');
    if(item)item.dataset.selectedMasterlistName='';
    body.appendChild(row);
+    if(window.ppmpBindDatePickers)window.ppmpBindDatePickers(row);
    renumber();
    syncAllRowDocuments();
    calc();
