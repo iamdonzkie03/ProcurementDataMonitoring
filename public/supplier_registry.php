@@ -144,11 +144,17 @@ pageStart('Supplier Registry');
 .supplier-table-wrap{overflow-x:hidden}
 .supplier-table{width:100%!important;max-width:100%!important;table-layout:fixed;border-collapse:collapse}
 .supplier-table th,.supplier-table td{box-sizing:border-box;padding:8px 7px;white-space:normal;overflow-wrap:anywhere;word-break:normal;vertical-align:top}
-.supplier-table-editor th:nth-child(1),.supplier-table-editor td:nth-child(1){width:15%}
-.supplier-table-editor th:nth-child(2),.supplier-table-editor td:nth-child(2){width:10%}
-.supplier-table-editor th:nth-child(3),.supplier-table-editor td:nth-child(3){width:25%}
-.supplier-table-editor th:nth-child(4),.supplier-table-editor td:nth-child(4){width:35%}
-.supplier-table-editor th:nth-child(5),.supplier-table-editor td:nth-child(5){width:15%}
+.supplier-table.supplier-table-editor{width:100%!important;min-width:0!important;max-width:100%!important;table-layout:fixed!important}
+.supplier-table.supplier-table-editor col.col-select{width:15%!important}
+.supplier-table.supplier-table-editor col.col-number{width:10%!important}
+.supplier-table.supplier-table-editor col.col-company{width:25%!important}
+.supplier-table.supplier-table-editor col.col-permits{width:35%!important}
+.supplier-table.supplier-table-editor col.col-actions{width:15%!important}
+.supplier-table.supplier-table-editor th:nth-child(1),.supplier-table.supplier-table-editor td:nth-child(1){width:15%!important;min-width:0!important}
+.supplier-table.supplier-table-editor th:nth-child(2),.supplier-table.supplier-table-editor td:nth-child(2){width:10%!important;min-width:0!important}
+.supplier-table.supplier-table-editor th:nth-child(3),.supplier-table.supplier-table-editor td:nth-child(3){width:25%!important;min-width:0!important}
+.supplier-table.supplier-table-editor th:nth-child(4),.supplier-table.supplier-table-editor td:nth-child(4){width:35%!important;min-width:0!important}
+.supplier-table.supplier-table-editor th:nth-child(5),.supplier-table.supplier-table-editor td:nth-child(5){width:15%!important;min-width:0!important}
 .supplier-table-viewer th:nth-child(1),.supplier-table-viewer td:nth-child(1){width:5%}
 .supplier-table-viewer th:nth-child(2),.supplier-table-viewer td:nth-child(2){width:35%}
 .supplier-table-viewer th:nth-child(3),.supplier-table-viewer td:nth-child(3){width:60%}
@@ -221,6 +227,7 @@ pageStart('Supplier Registry');
       <?php endif; ?>
       <div class="table-wrap supplier-table-wrap">
         <table class="table supplier-table <?=$isEditor?'supplier-table-editor':'supplier-table-viewer'?>" id="supplierTable">
+          <colgroup><?php if($isEditor): ?><col class="col-select"><col class="col-number"><col class="col-company"><col class="col-permits"><col class="col-actions"><?php else: ?><col style="width:5%"><col style="width:35%"><col style="width:60%"><?php endif; ?></colgroup>
           <thead><tr><?php if($isEditor): ?><th><span class="sr-only">Select</span></th><?php endif; ?><th>#</th><th>Supplier/Company Name</th><th>Permits and Licenses</th><?php if($isEditor): ?><th>Actions</th><?php endif; ?></tr></thead>
           <tbody>
           <?php $i=1;foreach($rows as $r): ?>
