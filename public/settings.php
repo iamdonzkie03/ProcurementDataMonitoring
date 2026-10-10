@@ -11,8 +11,13 @@ $pdo=db(); ensureAuthSchema($pdo);
 if($tab==='login-background' && !hasRole(['Administrator'])){http_response_code(403);exit('403 - Only the System Administrator can change the login background.');}
 if($_SERVER['REQUEST_METHOD']==='POST' && $tab==='login-background'){checkCsrf();setSetting('login_background',$_POST['login_background']??'philippine-blue');flash('success','Login background updated.');header('Location:settings.php?tab=login-background');exit;}
 
-// Process embedded Category form submissions before pageStart() emits HTML,
-// so the redirect in categories.php can send HTTP headers safely.
+// Process embedded form submissions before pageStart() emits HTML,
+// so redirects from these modules can send HTTP headers safely.
+if($_SERVER['REQUEST_METHOD']==='POST' && $tab==='procurement-method'){
+  $embedded=true;
+  require __DIR__.'/procurement_methods.php';
+  exit;
+}
 if($_SERVER['REQUEST_METHOD']==='POST' && $tab==='category'){
   $embedded=true;
   require __DIR__.'/categories.php';
