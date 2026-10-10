@@ -251,6 +251,10 @@ pageStart('Supplier Registry');
 .supplier-table .supplier-actions{display:flex;flex-wrap:wrap;gap:4px}
 .supplier-form-scroll{display:block!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:visible!important}
 .supplier-entry-row{display:grid!important;grid-template-columns:60px repeat(8,250px)!important;grid-auto-flow:row!important;align-items:start!important;justify-items:start!important;width:max-content!important;min-width:0!important;column-gap:12px!important;row-gap:12px!important}
+.supplier-entry-row>.supplier-field{border:1px solid #cbd5e1!important;border-radius:4px!important;padding:6px!important;box-sizing:border-box!important;background:#fff!important;min-height:100%!important}
+.supplier-entry-row>.supplier-field label{display:block!important;margin-bottom:5px!important}
+.supplier-entry-row>.supplier-row-select-field{border:1px solid #cbd5e1!important;padding:6px 2px!important}
+
 .supplier-entry-row>.supplier-row-select-field{grid-column:1!important;display:block!important;width:60px!important;min-width:60px!important;max-width:60px!important;box-sizing:border-box!important}
 .supplier-entry-row>.supplier-company-field{grid-column:2!important;justify-self:start!important;width:250px!important;min-width:250px!important;max-width:250px!important;box-sizing:border-box!important}
 .supplier-entry-row>.supplier-row-select-field{grid-column:1!important;width:60px!important;min-width:60px!important;max-width:60px!important}
