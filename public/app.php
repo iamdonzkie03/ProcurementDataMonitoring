@@ -4,10 +4,10 @@ requireLogin();
 require_once __DIR__.'/../app/layout.php';$pdo=db();$currentYear=(int)date('Y');$availableYears=array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN));
 if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;rsort($availableYears);$year=(int)($_GET['year']??$currentYear);
 	if(!in_array($year,$availableYears,true))$year=$currentYear;$q=trim($_GET['q']??'');
-		$sql='SELECT p.fiscal_year, TRIM(LOWER(p.item_name)) item_key, MIN(p.item_name) item_name, p.unit, c.name category, p.unit_price, SUM(p.quantity) total_qty, SUM(p.quantity*p.unit_price) total_abc, COUNT(DISTINCT p.area_id) area_count, GROUP_CONCAT(DISTINCT a.name ORDER BY a.name SEPARATOR ", ") areas FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=?';
+		$sql='SELECT src.fiscal_year, src.item_key, MIN(src.item_name) item_name, src.unit, src.category_id, src.category, src.unit_price, SUM(src.area_qty) total_qty, SUM(src.area_abc) total_abc, COUNT(DISTINCT src.area_id) area_count, GROUP_CONCAT(CONCAT(src.area_name, " (Qty: ", FORMAT(src.area_qty, 2), ")") ORDER BY src.area_name SEPARATOR ", ") areas FROM (SELECT p.fiscal_year, TRIM(LOWER(p.item_name)) item_key, MIN(p.item_name) item_name, p.unit, c.id category_id, c.name category, p.unit_price, p.area_id, a.name area_name, SUM(p.quantity) area_qty, SUM(p.quantity*p.unit_price) area_abc FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=?';
 		$args=[$year];
 				if($q!==''){$sql.=' AND (p.item_name LIKE ? OR c.name LIKE ? OR a.name LIKE ?)';
-					$args=[...$args,"%$q%","%$q%","%$q%"];}$sql.=' GROUP BY p.fiscal_year, TRIM(LOWER(p.item_name)), p.unit, c.id, c.name, p.unit_price ORDER BY item_name, p.unit_price';
+					$args=[...$args,"%$q%","%$q%","%$q%"];}$sql.=' GROUP BY p.fiscal_year, TRIM(LOWER(p.item_name)), p.unit, c.id, c.name, p.unit_price, p.area_id, a.name) src GROUP BY src.fiscal_year, src.item_key, src.unit, src.category_id, src.category, src.unit_price ORDER BY item_name, src.unit_price';
 					$st=$pdo->prepare($sql);
 					$st->execute($args);
 					$rows=$st->fetchAll();
@@ -24,7 +24,7 @@ if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;r
 		<span class="badge" style="display:inline-flex;align-items:center;justify-content:center;text-align:center;"><?=count($rows)?> consolidated lines</span>
 		<span style="display:inline-flex;align-items:center;justify-content:center;text-align:center;font-size:16px;font-weight:700;">Total Approved Budget for the Contract (ABC): <span style="margin-left:6px;font-size:16px;font-weight:700;">₱<?=number_format($grandAbc,2)?></span></span>
 	</div>
-		<p style="font-size:12px;color:#6b7280">Equivalent items are consolidated across all Area/Unit PPMPs using normalized item name + unit + category + unit price. Source quantities are summed only when all of those values match; total ABC is summed.</p>
+		<p style="font-size:12px;color:#6b7280">Equivalent items are consolidated using normalized item name + unit + category + unit price. The Contributing Areas/Units column shows each Area/Unit with its requested quantity; consolidated quantity and total ABC are summed.</p>
 		<div class="table-wrap">
 			<table class="table">
 				<tr><th>Item</th>
