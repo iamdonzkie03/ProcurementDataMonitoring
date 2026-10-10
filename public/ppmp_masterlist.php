@@ -15,13 +15,14 @@ $editing=null;
  * unit of measurement, and unit cost. Text comparison ignores case and
  * surrounding whitespace; costs are compared at the database's 2-decimal precision.
  */
-function ppmpMasterlistDuplicateExists(PDO $pdo, string $itemName, string $specifications, string $uom, float $unitCost, int $excludeId=0): bool {
+function ppmpMasterlistDuplicateExists(PDO $pdo, string $category, string $itemName, string $specifications, string $uom, float $unitCost, int $excludeId=0): bool {
   $sql = "SELECT id FROM ppmp_masterlist
-          WHERE LOWER(TRIM(item_name)) = LOWER(TRIM(?))
+          WHERE LOWER(TRIM(COALESCE(category,''))) = LOWER(TRIM(?))
+            AND LOWER(TRIM(item_name)) = LOWER(TRIM(?))
             AND LOWER(TRIM(COALESCE(technical_specifications,''))) = LOWER(TRIM(?))
             AND LOWER(TRIM(unit_of_measurement)) = LOWER(TRIM(?))
             AND unit_cost = ?";
-  $params = [$itemName, $specifications, $uom, number_format($unitCost, 2, '.', '')];
+  $params = [$category, $itemName, $specifications, $uom, number_format($unitCost, 2, '.', '')];
   if($excludeId > 0){
     $sql .= " AND id <> ?";
     $params[] = $excludeId;
@@ -32,8 +33,9 @@ function ppmpMasterlistDuplicateExists(PDO $pdo, string $itemName, string $speci
   return (bool)$st->fetchColumn();
 }
 
-function ppmpMasterlistDuplicateKey(string $itemName, string $specifications, string $uom, float $unitCost): string {
-  return mb_strtolower(trim($itemName),'UTF-8')."\x1F".
+function ppmpMasterlistDuplicateKey(string $category, string $itemName, string $specifications, string $uom, float $unitCost): string {
+  return mb_strtolower(trim($category),'UTF-8')."\x1F".
+         mb_strtolower(trim($itemName),'UTF-8')."\x1F"
          mb_strtolower(trim($specifications),'UTF-8')."\x1F".
          mb_strtolower(trim($uom),'UTF-8')."\x1F".
          number_format($unitCost, 2, '.', '');
@@ -156,6 +158,7 @@ try{
     item_name VARCHAR(255) NOT NULL,
     technical_specifications TEXT NULL,
     unit_of_measurement VARCHAR(100) NOT NULL,
+    category VARCHAR(120) NOT NULL DEFAULT '',
     unit_cost DECIMAL(18,2) NOT NULL DEFAULT 0.00,
     created_by INT UNSIGNED NULL,
     updated_by INT UNSIGNED NULL,
@@ -166,6 +169,8 @@ try{
   ) ENGINE=InnoDB");
   $cols=$pdo->query("SHOW COLUMNS FROM ppmp_masterlist LIKE 'technical_specifications'")->fetch();
   if(!$cols) $pdo->exec("ALTER TABLE ppmp_masterlist ADD COLUMN technical_specifications TEXT NULL AFTER item_name");
+  $categoryColumn=$pdo->query("SHOW COLUMNS FROM ppmp_masterlist LIKE 'category'")->fetch();
+  if(!$categoryColumn) $pdo->exec("ALTER TABLE ppmp_masterlist ADD COLUMN category VARCHAR(120) NOT NULL DEFAULT '' AFTER item_name");
 }catch(PDOException $e){
   flash('error','Unable to initialize the PPMP Masterlist table.');
 }
@@ -177,6 +182,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $specifications=(array)($_POST['technical_specifications']??[]);
   $uoms=(array)($_POST['unit_of_measurement']??[]);
   $unitCosts=(array)($_POST['unit_cost']??[]);
+  $categories=(array)($_POST['category']??[]);
+  $category=trim((string)($categories[0]??''));
   $itemName=trim((string)($itemNames[0]??''));
   $technicalSpecifications=trim((string)($specifications[0]??''));
   $uom=trim((string)($uoms[0]??''));
@@ -203,7 +210,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
     try{
       $rowsFromExcel=ppmpMasterlistReadXlsx((string)$upload['tmp_name']);
-      $expectedHeaders=['item name','technical specifications','unit of measurement','unit cost'];
+      $expectedHeaders=['category','item name','technical specifications','unit of measurement','unit cost'];
 
       // Excel cells may have sparse column indexes, invisible whitespace/BOM characters,
       // or extra formatted-but-empty columns. Normalize the header before validating it.
@@ -219,9 +226,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       while($normalizedHeader && end($normalizedHeader)==='') array_pop($normalizedHeader);
 
       if($normalizedHeader!==$expectedHeaders){
-        throw new RuntimeException('The Excel header row must contain these four columns in this order: Item Name, Technical Specifications, Unit of Measurement, Unit Cost. Please remove any non-empty extra columns and ensure the headings are on the first row.');
+        throw new RuntimeException('The Excel header row must contain these five columns in this exact order: Category, Item Name, Technical Specifications, Unit of Measurement, Unit Cost. Please remove any non-empty extra columns and ensure the headings are on the first row.');
       }
 
+      $activeCategories=[];
+      $categoryCheck=$pdo->query('SELECT name FROM categories ORDER BY name');
+      foreach($categoryCheck->fetchAll(PDO::FETCH_COLUMN) as $name) $activeCategories[mb_strtolower(trim((string)$name),'UTF-8')]=true;
       $activeUoms=[];
       $uomCheck=$pdo->query("SELECT name FROM units_of_measure WHERE status='Active'");
       foreach($uomCheck->fetchAll(PDO::FETCH_COLUMN) as $name) $activeUoms[mb_strtolower(trim((string)$name),'UTF-8')]=true;
@@ -229,16 +239,16 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $importRows=[];
       foreach(array_slice($rowsFromExcel,1) as $excelIndex=>$row){
         $excelRow=$excelIndex+2;
-        $row=array_pad($row,4,'');
-        $itemName=trim((string)($row[0]??''));
-        $spec=trim((string)($row[1]??''));
-        $uom=trim((string)($row[2]??''));
-        $costRaw=str_replace([',','₱',' '],'',trim((string)($row[3]??'')));
+        $row=array_pad($row,5,'');
+        $category=trim((string)($row[0]??''));
+        $itemName=trim((string)($row[1]??''));
+        $spec=trim((string)($row[2]??''));
+        $uom=trim((string)($row[3]??''));
+        $costRaw=str_replace([',','₱',' '],'',trim((string)($row[4]??'')));
 
-        if($itemName==='' && $spec==='' && $uom==='' && $costRaw==='') continue;
-        if($itemName==='' || $uom==='' || $costRaw===''){
-          throw new RuntimeException("Excel row {$excelRow}: Item Name, Unit of Measurement, and Unit Cost are required.");
-        }
+        if($category==='' && $itemName==='' && $spec==='' && $uom==='' && $costRaw==='') continue;
+        if($category==='' || $itemName==='' || $uom==='' || $costRaw==='') throw new RuntimeException("Excel row {$excelRow}: Category, Item Name, Unit of Measurement, and Unit Cost are required.");
+        if(!isset($activeCategories[mb_strtolower($category,'UTF-8')])) throw new RuntimeException("Excel row {$excelRow}: Category does not exist in Settings > Category.");
         if(!is_numeric($costRaw) || (float)$costRaw<0){
           throw new RuntimeException("Excel row {$excelRow}: Unit Cost must be a valid non-negative number.");
         }
@@ -247,7 +257,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         }
         if(mb_strlen($itemName,'UTF-8')>255) throw new RuntimeException("Excel row {$excelRow}: Item Name exceeds 255 characters.");
         if(mb_strlen($spec,'UTF-8')>5000) throw new RuntimeException("Excel row {$excelRow}: Technical Specifications exceeds 5000 characters.");
-        $importRows[]=[$itemName,$spec,$uom,(float)$costRaw];
+        $importRows[]=[$category,$itemName,$spec,$uom,(float)$costRaw];
       }
 
       if(!$importRows) throw new RuntimeException('The Excel workbook contains no masterlist items to import.');
@@ -255,19 +265,19 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $seenRows=[];
       foreach($importRows as $i=>$row){
         $excelRow=$i+2;
-        $key=ppmpMasterlistDuplicateKey($row[0],$row[1],$row[2],$row[3]);
+        $key=ppmpMasterlistDuplicateKey($row[0],$row[1],$row[2],$row[3],$row[4]);
         if(isset($seenRows[$key])){
           throw new RuntimeException("Excel row {$excelRow}: this item duplicates another row in the uploaded file. No items were imported.");
         }
         $seenRows[$key]=true;
-        if(ppmpMasterlistDuplicateExists($pdo,$row[0],$row[1],$row[2],$row[3])){
+        if(ppmpMasterlistDuplicateExists($pdo,$row[0],$row[1],$row[2],$row[3],$row[4])){
           throw new RuntimeException("Excel row {$excelRow}: this item already exists in the PPMP Masterlist. No items were imported.");
         }
       }
 
       $pdo->beginTransaction();
-      $st=$pdo->prepare('INSERT INTO ppmp_masterlist (item_name,technical_specifications,unit_of_measurement,unit_cost,created_by,updated_by) VALUES (?,?,?,?,?,?)');
-      foreach($importRows as $row) $st->execute([$row[0],$row[1],$row[2],$row[3],$userId,$userId]);
+      $st=$pdo->prepare('INSERT INTO ppmp_masterlist (category,item_name,technical_specifications,unit_of_measurement,unit_cost,created_by,updated_by) VALUES (?,?,?,?,?,?,?)');
+      foreach($importRows as $row) $st->execute([$row[0],$row[1],$row[2],$row[3],$row[4],$userId,$userId]);
       $pdo->commit();
       flash('success',count($importRows).' PPMP Masterlist item(s) imported successfully.');
     }catch(Throwable $e){
@@ -313,14 +323,15 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   if($action==='save' && !$editId && count($itemNames)>1){
     $validRows=[];
     foreach($itemNames as $i=>$name){
+      $category=trim((string)($categories[$i]??''));
       $name=trim((string)$name); $spec=trim((string)($specifications[$i]??'')); $measure=trim((string)($uoms[$i]??'')); $costRaw=str_replace(',','',trim((string)($unitCosts[$i]??'')));
-      if($name==='' && $measure==='' && $costRaw==='') continue;
+      if($category==='' && $name==='' && $measure==='' && $costRaw==='') continue;
       $cost=is_numeric($costRaw)?(float)$costRaw:-1;
-      if($name==='' || $measure==='' || $costRaw==='' || $cost<0 || !is_numeric($costRaw)){
-        flash('error','Each masterlist row must have Item Name, Unit of Measurement, and a valid Unit Cost.');
+      if($category==='' || $name==='' || $measure==='' || $costRaw==='' || $cost<0 || !is_numeric($costRaw)){
+        flash('error','Each masterlist row must have Category, Item Name, Unit of Measurement, and a valid Unit Cost.');
         header('Location:ppmp_masterlist.php'); exit;
       }
-      $validRows[]=[$name,$spec,$measure,$cost];
+      $validRows[]=[$category,$name,$spec,$measure,$cost];
     }
     if(!$validRows){ flash('error','Add at least one masterlist item.'); header('Location:ppmp_masterlist.php'); exit; }
     $seenRows=[];
@@ -338,31 +349,31 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
     try{
       $pdo->beginTransaction();
-      $st=$pdo->prepare('INSERT INTO ppmp_masterlist (item_name,technical_specifications,unit_of_measurement,unit_cost,created_by,updated_by) VALUES (?,?,?,?,?,?)');
-      foreach($validRows as $row) $st->execute([$row[0],$row[1],$row[2],$row[3],$userId,$userId]);
+      $st=$pdo->prepare('INSERT INTO ppmp_masterlist (category,item_name,technical_specifications,unit_of_measurement,unit_cost,created_by,updated_by) VALUES (?,?,?,?,?,?,?)');
+      foreach($validRows as $row) $st->execute([$row[0],$row[1],$row[2],$row[3],$row[4],$userId,$userId]);
       $pdo->commit(); flash('success',count($validRows).' PPMP Masterlist item(s) added.');
     }catch(PDOException $e){ if($pdo->inTransaction())$pdo->rollBack(); flash('error','Unable to save the PPMP Masterlist items.'); }
     header('Location:ppmp_masterlist.php'); exit;
   }
 
-  if($itemName==='' || $uom==='' || $unitCostRaw==='' || !is_numeric($unitCostRaw) || $unitCost<0){
-    flash('error','Item Name, Unit of Measurement, and a valid Unit Cost are required.');
+  if($category==='' || $itemName==='' || $uom==='' || $unitCostRaw==='' || !is_numeric($unitCostRaw) || $unitCost<0){
+    flash('error','Category, Item Name, Unit of Measurement, and a valid Unit Cost are required.');
     header('Location:ppmp_masterlist.php'.($id>0?'?edit='.$id:'')); exit;
   }
 
   try{
-    if(ppmpMasterlistDuplicateExists($pdo,$itemName,$technicalSpecifications,$uom,$unitCost,($action==='update' && $id>0)?$id:0)){
+    if(ppmpMasterlistDuplicateExists($pdo,$category,$itemName,$technicalSpecifications,$uom,$unitCost,($action==='update' && $id>0)?$id:0)){
       flash('error','This item already exists in the PPMP Masterlist with the same Item Name, Technical Specifications, Unit of Measurement, and Unit Cost. No changes were saved.');
       header('Location:ppmp_masterlist.php'.(($action==='update' && $id>0)?'?edit='.$id:''));
       exit;
     }
     if($action==='update' && $id>0){
-      $st=$pdo->prepare('UPDATE ppmp_masterlist SET item_name=?,technical_specifications=?,unit_of_measurement=?,unit_cost=?,updated_by=? WHERE id=?');
-      $st->execute([$itemName,$technicalSpecifications,$uom,$unitCost,$userId,$id]);
+      $st=$pdo->prepare('UPDATE ppmp_masterlist SET category=?,item_name=?,technical_specifications=?,unit_of_measurement=?,unit_cost=?,updated_by=? WHERE id=?');
+      $st->execute([$category,$itemName,$technicalSpecifications,$uom,$unitCost,$userId,$id]);
       flash('success','PPMP Masterlist item updated.');
     }else{
-      $st=$pdo->prepare('INSERT INTO ppmp_masterlist (item_name,technical_specifications,unit_of_measurement,unit_cost,created_by,updated_by) VALUES (?,?,?,?,?,?)');
-      $st->execute([$itemName,$technicalSpecifications,$uom,$unitCost,$userId,$userId]);
+      $st=$pdo->prepare('INSERT INTO ppmp_masterlist (category,item_name,technical_specifications,unit_of_measurement,unit_cost,created_by,updated_by) VALUES (?,?,?,?,?,?,?)');
+      $st->execute([$category,$itemName,$technicalSpecifications,$uom,$unitCost,$userId,$userId]);
       flash('success','PPMP Masterlist item added.');
     }
   }catch(PDOException $e){
@@ -382,7 +393,8 @@ if($editId>0){
 }
 
 $uomRows=$pdo->query("SELECT id,name FROM units_of_measure WHERE status='Active' ORDER BY name ASC")->fetchAll();
-$st=$pdo->query('SELECT id,item_name,technical_specifications,unit_of_measurement,unit_cost,created_at,updated_at FROM ppmp_masterlist ORDER BY item_name ASC,id ASC');
+$categoryRows=$pdo->query('SELECT id,name FROM categories ORDER BY name ASC')->fetchAll();
+$st=$pdo->query('SELECT id,category,item_name,technical_specifications,unit_of_measurement,unit_cost,created_at,updated_at FROM ppmp_masterlist ORDER BY item_name ASC,id ASC');
 $masterlist=$st->fetchAll();
 
 pageStart('PPMP Masterlist');
@@ -458,8 +470,7 @@ document.addEventListener('DOMContentLoaded',function(){
     if(!first)return;
     const row=first.cloneNode(true);
     row.querySelectorAll('input,textarea').forEach(function(input){input.value='';});
-    const uomSelect=row.querySelector('select[name="unit_of_measurement[]"]');
-    if(uomSelect)uomSelect.selectedIndex=0;
+    row.querySelectorAll('select').forEach(function(select){select.selectedIndex=0;});
     const action=row.querySelector('.masterlist-submit');
     if(action){
       action.innerHTML='<button class="btn danger masterlist-remove-row" type="button">Remove</button>';
@@ -636,7 +647,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
   <div style="margin-bottom:18px;padding:14px 16px;border:1px solid #dbe3ea;border-radius:6px;background:#f8fafc">
     <div style="font-weight:600;margin-bottom:5px">Option 1: Upload Excel File</div>
-    <div class="muted" style="margin-bottom:10px">Upload an <strong>.xlsx</strong> file with exactly these columns, in this exact order: <strong>Item Name</strong>, <strong>Technical Specifications</strong>, <strong>Unit of Measurement</strong>, <strong>Unit Cost</strong>.</div>
+    <div class="muted" style="margin-bottom:10px">Upload an <strong>.xlsx</strong> file with exactly these columns, in this exact order: <strong>Category</strong>, <strong>Item Name</strong>, <strong>Technical Specifications</strong>, <strong>Unit of Measurement</strong>, <strong>Unit Cost</strong>. Category must already exist in Settings &gt; Category.</div>
     <form method="post" enctype="multipart/form-data" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="action" value="import_excel">
@@ -651,6 +662,7 @@ document.addEventListener('DOMContentLoaded',function(){
     <?php if($editing): ?><input type="hidden" name="id" value="<?=e((string)$editing['id'])?>"><?php endif; ?>
     <div id="masterlistRows">
       <div class="masterlist-row masterlist-form-grid">
+        <div class="field masterlist-field"><label>Category *</label><select class="input" name="category[]" required><option value="">Select Category</option><?php foreach($categoryRows as $categoryRow): ?><option value="<?=e($categoryRow['name'])?>" <?=($editing['category']??'')===$categoryRow['name']?'selected':''?>><?=e($categoryRow['name'])?></option><?php endforeach; ?></select></div>
         <div class="field masterlist-field"><label>Item Name *</label><input class="input" type="text" name="item_name[]" required maxlength="255" value="<?=e($editing['item_name']??'')?>" placeholder="Enter item name"></div>
         <div class="field masterlist-field"><label>Technical Specifications</label><input class="input" type="text" name="technical_specifications[]" maxlength="5000" value="<?=e($editing['technical_specifications']??'')?>" placeholder="Enter technical specifications"></div>
         <div class="field masterlist-field"><label>Unit of Measurement *</label><select class="input" name="unit_of_measurement[]" required><option value="">Select Unit</option><?php foreach($uomRows as $uomRow): ?><option value="<?=e($uomRow['name'])?>" <?=($editing['unit_of_measurement']??'')===$uomRow['name']?'selected':''?>><?=e($uomRow['name'])?></option><?php endforeach; ?></select></div>
@@ -697,12 +709,13 @@ document.addEventListener('DOMContentLoaded',function(){
       <div class="masterlist-pagination-buttons" id="masterlistPaginationButtons"></div>
     </div>
     <table class="table masterlist-table" id="masterlistTable">
-      <thead><tr><th><input type="checkbox" id="masterlistSelectAll" aria-label="Select all items on this page" title="Select all visible items"></th><th>#</th><th>Item Name</th><th>Technical Specifications</th><th>Unit of Measurement</th><th class="masterlist-cost">Unit Cost</th><th>Action</th></tr></thead>
+      <thead><tr><th><input type="checkbox" id="masterlistSelectAll" aria-label="Select all items on this page" title="Select all visible items"></th><th>#</th><th>Category</th><th>Item Name</th><th>Technical Specifications</th><th>Unit of Measurement</th><th class="masterlist-cost">Unit Cost</th><th>Action</th></tr></thead>
       <tbody>
       <?php foreach($masterlist as $i=>$row): ?>
         <tr data-masterlist-id="<?=e((string)$row['id'])?>" data-masterlist-name="<?=e($row['item_name'])?>">
           <td><input type="checkbox" class="masterlist-row-select" value="<?=e((string)$row['id'])?>" aria-label="Select <?=e($row['item_name'])?>"></td>
           <td><?=e((string)($i+1))?></td>
+          <td><?=e($row['category']??'')?></td>
           <td><?=e($row['item_name'])?></td>
           <td><?=nl2br(e($row['technical_specifications']??''))?></td>
           <td><?=e($row['unit_of_measurement'])?></td>
@@ -720,7 +733,7 @@ document.addEventListener('DOMContentLoaded',function(){
           </td>
         </tr>
       <?php endforeach; ?>
-      <tr class="masterlist-empty-row" <?= $masterlist ? 'style="display:none"' : '' ?>><td colspan="7" class="empty">No PPMP Masterlist items match your search.</td></tr>
+      <tr class="masterlist-empty-row" <?= $masterlist ? 'style="display:none"' : '' ?>><td colspan="8" class="empty">No PPMP Masterlist items match your search.</td></tr>
       </tbody>
     </table>
   </div>
