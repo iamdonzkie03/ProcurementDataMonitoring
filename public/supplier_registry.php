@@ -172,8 +172,8 @@ pageStart('Supplier Registry');
     <div class="supplier-list-section">
       <div class="supplier-list-header">
         <div>
-          <h2 style="margin:0">Registered Suppliers</h2>
-          <p class="hint-text"><?=number_format(count($rows))?> supplier<?=count($rows)===1?'':'s'?> found</p>
+          <h2 style="margin:0;font-size:17px!important;line-height:1.3!important;font-weight:700!important">Registered Suppliers</h2>
+          <p class="hint-text" style="font-size:11px!important;line-height:1.35!important;margin:5px 0 0!important"><?=number_format(count($rows))?> supplier<?=count($rows)===1?'':'s'?> found</p>
         </div>
       </div>
       <div class="table-wrap">
