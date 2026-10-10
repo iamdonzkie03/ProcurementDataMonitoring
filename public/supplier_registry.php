@@ -128,7 +128,7 @@ $list=$pdo->prepare("SELECT * FROM suppliers WHERE supplier_company_name LIKE ? 
 $like='%'.$search.'%';$list->execute([$like,$like,$like,$like]);$rows=$list->fetchAll();
 pageStart('Supplier Registry');
 ?>
-<div class="supplier-registry-page">
+<div class="supplier-registry-page" style="display:flex!important;flex-direction:column!important;align-items:stretch!important;row-gap:24px!important;">
   <div class="panel supplier-content-panel">
     <div class="supplier-toolbar supplier-registry-heading-row">
       <div class="supplier-heading-block">
@@ -168,7 +168,7 @@ pageStart('Supplier Registry');
 
   </div>
 
-  <div class="panel supplier-content-panel supplier-list-panel">
+  <div class="panel supplier-content-panel supplier-list-panel" style="margin-top:24px!important;">
     <div class="supplier-list-section">
       <div class="supplier-list-header">
         <div>
