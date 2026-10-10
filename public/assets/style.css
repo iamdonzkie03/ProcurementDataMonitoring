@@ -2877,3 +2877,18 @@ html body .supplier-content-panel .supplier-list-section table#supplierTable td.
 }
 html body .supplier-content-panel .supplier-list-section table#supplierTable td.supplier-actions > .supplier-actions {gap:8px!important;align-items:flex-start!important;}
 html body .supplier-content-panel .supplier-list-section table#supplierTable td.supplier-actions > .supplier-actions > form {margin:0!important;}
+
+
+/* Existing uploaded PDF shown in Supplier Registry edit form; file inputs cannot be pre-populated by browsers. */
+html body .supplier-content-panel .supplier-form-scroll .supplier-current-upload {
+  margin-top:4px!important;
+  font-size:11px!important;
+  line-height:1.4!important;
+  overflow-wrap:anywhere!important;
+  color:#64748b!important;
+}
+html body .supplier-content-panel .supplier-form-scroll .supplier-current-upload a {
+  color:#1769aa!important;
+  font-weight:600!important;
+  text-decoration:underline!important;
+}
