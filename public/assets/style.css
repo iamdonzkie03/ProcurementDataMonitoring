@@ -2790,3 +2790,19 @@ html body .supplier-content-panel .supplier-list-section table.supplier-table tb
 html body .supplier-content-panel .supplier-list-section table.supplier-table tbody tr > td.supplier-actions {
   min-width: 0 !important;
 }
+
+
+/* Supplier Registry: separate Registered Suppliers into its own panel with 24px vertical spacing */
+.supplier-registry-page{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  gap:24px!important;
+}
+.supplier-registry-page > .supplier-content-panel{
+  flex:0 0 auto!important;
+  margin:0!important;
+}
+.supplier-content-panel .supplier-list-section{
+  margin:0!important;
+}
