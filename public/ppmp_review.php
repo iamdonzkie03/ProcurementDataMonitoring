@@ -170,6 +170,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $finalStatus=$declined?'Declined':'Approved';
         $up->execute([$finalStatus,$declined?$remark:null,(int)$user['id'],(int)$itemReviewId,$reviewId]);
       }
+      if($up->rowCount()>0){$pdo->prepare('UPDATE ppmp_reviews SET budget_reviewed_by=?,budget_reviewed_at=NOW() WHERE id=?')->execute([(int)$user['id'],$reviewId]);}
       $pdo->commit();refreshReviewStatus($pdo,$reviewId);flash('success','Budget Officer item decisions have been saved.');
     }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();flash('error',$e->getMessage());}
     header('Location:ppmp_review.php?review_id='.$reviewId);exit;
