@@ -148,12 +148,12 @@ pageStart('Supplier Registry');
 .supplier-table.supplier-table-editor col.col-select{width:20px!important}
 .supplier-table.supplier-table-editor col.col-number{width:10px!important}
 .supplier-table.supplier-table-editor col.col-company{width:200px!important}
-.supplier-table.supplier-table-editor col.col-permits{width:300px!important}
+.supplier-table.supplier-table-editor col.col-permits{width:250px!important}
 .supplier-table.supplier-table-editor col.col-actions{width:20px!important}
 .supplier-table.supplier-table-editor th:nth-child(1),.supplier-table.supplier-table-editor td:nth-child(1){width:20px!important;min-width:20px!important;max-width:20px!important;padding-left:6px;padding-right:6px}
 .supplier-table.supplier-table-editor th:nth-child(2),.supplier-table.supplier-table-editor td:nth-child(2){width:10px!important;min-width:10px!important;max-width:10px!important}
 .supplier-table.supplier-table-editor th:nth-child(3),.supplier-table.supplier-table-editor td:nth-child(3){width:200px!important;min-width:200px!important;max-width:200px!important}
-.supplier-table.supplier-table-editor th:nth-child(4),.supplier-table.supplier-table-editor td:nth-child(4){width:300px!important;min-width:300px!important;max-width:300px!important}
+.supplier-table.supplier-table-editor th:nth-child(4),.supplier-table.supplier-table-editor td:nth-child(4){width:250px!important;min-width:250px!important;max-width:250px!important}
 .supplier-table.supplier-table-editor th:nth-child(5),.supplier-table.supplier-table-editor td:nth-child(5){width:20px!important;min-width:20px!important;max-width:20px!important}
 .supplier-table.supplier-table-editor th{font-size:12px;line-height:1.25;white-space:normal;overflow-wrap:normal}
 .supplier-table-viewer th:nth-child(1),.supplier-table-viewer td:nth-child(1){width:5%}
