@@ -1671,18 +1671,22 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
  function syncAllRowActions(){
     const rows=[...body.querySelectorAll('.ppmp-entry-row')];
     const multiple=rows.length>=2;
-
-    // No Clear button: show Delete on every row only when at least two rows exist.
     body.dataset.ppmpRowCount=String(rows.length);
 
     rows.forEach(function(row){
       const actionCell=row.querySelector('td:last-child');
       if(!actionCell)return;
 
-      // Remove any stale Clear buttons from previously rendered/cloned markup.
+      // Remove Clear buttons and any Delete button when only one row remains.
       actionCell.querySelectorAll('.ppmp-clear-row').forEach(function(button){button.remove();});
-
       let remove=row.querySelector('.ppmp-remove-row');
+
+      if(!multiple){
+        if(remove)remove.remove();
+        return;
+      }
+
+      // With two or more rows, every row gets a visible Delete button.
       if(!remove){
         remove=document.createElement('button');
         remove.type='button';
@@ -1690,8 +1694,7 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
         remove.textContent='Delete';
         actionCell.appendChild(remove);
       }
-
-      remove.style.setProperty('display',multiple?'inline-flex':'none','important');
+      remove.style.setProperty('display','inline-flex','important');
     });
   }
   function syncRowAction(row){
