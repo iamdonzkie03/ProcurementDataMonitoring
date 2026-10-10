@@ -933,10 +933,11 @@ pageStart('Project Procurement Management Plan');
 <?php
 $h=($allPpmpRows[0]??$rows[0]??[]);
 $ppmpNo=$h['ppmp_no']??'';
-// Use the overall PPMP workflow status for the signature block, not the
-// individual item's review_status (which can differ across rows).
-$printReviewStatus='';
-if(!empty($h['fiscal_year']) && !empty($h['area_id']) && $ppmpNo!==''){
+// The Saved PPMP Items Status is item-level (COALESCE of the review-item
+// status and PPMP review status). Use that displayed status to control the
+// Submitted By section, so Pending for Review never shows an empty signatory box.
+$printReviewStatus=trim((string)($h['review_status']??''));
+if($printReviewStatus==='' && !empty($h['fiscal_year']) && !empty($h['area_id']) && $ppmpNo!==''){
   $stPrintStatus=$pdo->prepare('SELECT status FROM ppmp_reviews WHERE fiscal_year=? AND area_id=? AND ppmp_no=? ORDER BY id DESC LIMIT 1');
   $stPrintStatus->execute([(int)$h['fiscal_year'],(int)$h['area_id'],(string)$ppmpNo]);
   $printReviewStatus=trim((string)($stPrintStatus->fetchColumn()?:''));
