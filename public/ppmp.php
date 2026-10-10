@@ -84,6 +84,34 @@ if($editId>0 && !$print){
   $year=(int)$editing['fiscal_year']; $areaId=(int)$editing['area_id'];
 }
 
+
+function ppmpSafePathSegment(string $value): string {
+  $value=trim($value);
+  $value=preg_replace('/[\\\\\/\\:\\*?"<>|]+/u','-',$value);
+  $value=preg_replace('/[^\\pL\\pN ._-]+/u','',$value);
+  $value=preg_replace('/\\s+/u','_',$value);
+  $value=trim($value," ._-");
+  return $value!=='' ? mb_substr($value,0,100,'UTF-8') : 'Unassigned_Area_Unit';
+}
+function ppmpAreaUploadDirectory(PDO $pdo,int $areaId): array {
+  $st=$pdo->prepare('SELECT name FROM areas WHERE id=? LIMIT 1');
+  $st->execute([$areaId]);
+  $areaName=trim((string)$st->fetchColumn());
+  if($areaName==='') throw new RuntimeException('Unable to determine the selected Area/Unit for supporting document storage.');
+  $folderName=ppmpSafePathSegment($areaName);
+  $relativeDirectory='uploads/ppmp/'.$folderName;
+  $absoluteDirectory=__DIR__.'/'.$relativeDirectory;
+  if(!is_dir($absoluteDirectory) && !mkdir($absoluteDirectory,0775,true) && !is_dir($absoluteDirectory)){
+    throw new RuntimeException('Unable to create the Supporting Documents folder for '.$areaName.'.');
+  }
+  return [$absoluteDirectory,$relativeDirectory];
+}
+function ppmpDocumentFilename(string $documentName): string {
+  $base=ppmpSafePathSegment($documentName);
+  $stamp=date('Y-m-d_His');
+  return $base.'_'.$stamp.'_'.bin2hex(random_bytes(3)).'.pdf';
+}
+
 function ppmpSaveFormError(string $message,int $year,int $areaId,int $id=0): void{
   $_SESSION['ppmp_form_old']=$_POST;
   $_SESSION['ppmp_form_edit_id']=$id;
@@ -165,8 +193,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     // the existing PPMP has already reached Pending for Approval or Approved.
     // Newly saved rows are placed in Pending for Review and the PPMP review queue
     // is reopened so the Supervisor can review the new rows.
-    $uploadDir=__DIR__.'/uploads/ppmp';
-    if(!is_dir($uploadDir)) @mkdir($uploadDir,0775,true);
+    [$uploadDir,$uploadRelativeDir]=ppmpAreaUploadDirectory($pdo,$areaId);
     $insert=$pdo->prepare('INSERT INTO ppmp_items (fiscal_year,ppmp_no,area_id,category_id,item_name,description,procurement_type,quantity,unit,procurement_mode,preprocurement_conference,start_procurement,end_procurement,delivery_period,source_of_funds,unit_price,total_budget,supporting_documents,requested_by,prepared_by,prepared_position,submitted_by,submitted_position,budget_approved_by,budget_position,prepared_date,submitted_date,budget_date,remarks,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
     $saved=0; $pdo->beginTransaction();
     try{
@@ -209,9 +236,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
               if($ext!=='pdf'||$mime!=='application/pdf') throw new RuntimeException('Supporting Documents must be PDF files only.');
               $documentName=trim((string)($documentNamesForRow[$docIndex]??''));
               if($documentName==='') throw new RuntimeException('Please provide a name for every supporting PDF in item row '.($itemKey+1).'.');
-              $safeName='ppmp_'.date('YmdHis').'_'.$itemKey.'_'.$docIndex.'_'.bin2hex(random_bytes(5)).'.pdf';
+              $safeName=ppmpDocumentFilename($documentName);
               if(!move_uploaded_file($tmpFile,$uploadDir.'/'.$safeName)) throw new RuntimeException('Unable to save a supporting PDF for item row '.($itemKey+1).'.');
-              $rowDocs[]=array('name'=>$documentName,'original_name'=>basename($originalName),'path'=>'uploads/ppmp/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s'));
+              $rowDocs[]=array('name'=>$documentName,'original_name'=>basename($originalName),'path'=>$uploadRelativeDir.'/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s'));
             }
           }
         }
@@ -440,8 +467,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $existingDocs=[];
   if($supportingDocuments!==''){ $decoded=json_decode($supportingDocuments,true); if(is_array($decoded)) $existingDocs=$decoded; }
   if(!empty($_FILES['supporting_documents']['name']) && is_array($_FILES['supporting_documents']['name'])){
-    $uploadDir=__DIR__.'/uploads/ppmp';
-    if(!is_dir($uploadDir)) @mkdir($uploadDir,0775,true);
+    try{[$uploadDir,$uploadRelativeDir]=ppmpAreaUploadDirectory($pdo,$areaId);}
+    catch(Throwable $e){ppmpSaveFormError($e->getMessage(),$year,$areaId,$id);}
     foreach($_FILES['supporting_documents']['name'] as $i=>$originalName){
       if($_FILES['supporting_documents']['error'][$i]===UPLOAD_ERR_NO_FILE) continue;
       if($_FILES['supporting_documents']['error'][$i]!==UPLOAD_ERR_OK){ ppmpSaveFormError('One or more supporting documents could not be uploaded.',$year,$areaId,$id); }
@@ -451,9 +478,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       if($ext!=='pdf' || $mime!=='application/pdf'){ ppmpSaveFormError('Attached Supporting Documents must be PDF files only.',$year,$areaId,$id); }
       $documentName=trim((string)(($_POST['supporting_document_names']??[])[$i]??''));
       if($documentName===''){ ppmpSaveFormError('Please provide a Name for every Attached Supporting Document.',$year,$areaId,$id); }
-      $safeName='ppmp_'.date('YmdHis').'_'.$i.'_'.bin2hex(random_bytes(5)).'.pdf';
+      $safeName=ppmpDocumentFilename($documentName);
       if(!move_uploaded_file($_FILES['supporting_documents']['tmp_name'][$i],$uploadDir.'/'.$safeName)){ ppmpSaveFormError('Unable to save one or more supporting PDF files.',$year,$areaId,$id); }
-      $existingDocs[]=['name'=>$documentName,'original_name'=>basename($originalName),'path'=>'uploads/ppmp/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s')];
+      $existingDocs[]=['name'=>$documentName,'original_name'=>basename($originalName),'path'=>$uploadRelativeDir.'/'.$safeName,'uploaded_at'=>date('Y-m-d H:i:s')];
     }
   }
   $supportingDocuments=$existingDocs ? json_encode($existingDocs,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE) : '';
