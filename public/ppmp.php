@@ -427,6 +427,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $declinedItemEdit=false;
   $pendingApprovalItemEdit=false;
   $pendingReviewItemEdit=false;
+  $approvedItemEdit=false;
   $itemReviewStatus='';
   $itemReviewId=0;
   if(in_array($action,['edit','delete'],true) && $id>0){
@@ -443,18 +444,16 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $declinedItemEdit=in_array($itemReviewStatus,['Declined','Budget Declined'],true);
       $pendingApprovalItemEdit=$itemReviewStatus==='Pending for Approval';
       $pendingReviewItemEdit=$itemReviewStatus==='Pending for Review';
+      $approvedItemEdit=$itemReviewStatus==='Approved';
     }
   }
 
-  // Editing is permitted for Draft, Pending for Review, and Pending for Approval
-  // items because the Saved PPMP Items table exposes Edit for these states.
-  // Editing a Pending for Review item keeps it in the Supervisor review queue;
-  // editing a Pending for Approval item resets that item's review decision.
-  // Deleting is permitted for Draft, Pending for Approval, and Declined items.
+  // Draft, Pending for Review, Pending for Approval, and Approved items may be edited/deleted as configured.
+  // Editing Pending for Approval or Approved resets that item to Pending for Review.
   $itemWorkflowException=
     $declinedItemEdit ||
     ($pendingReviewItemEdit && $action==='edit') ||
-    ($pendingApprovalItemEdit && in_array($action,['edit','delete'],true));
+    (($pendingApprovalItemEdit || $approvedItemEdit) && in_array($action,['edit','delete'],true));
 
   if($workflowStatus!=='' && !in_array($workflowStatus,['Draft','Declined'],true)
      && in_array($action,['add','edit','delete'],true) && !$itemWorkflowException){
@@ -551,10 +550,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $st=$pdo->prepare('UPDATE ppmp_items SET fiscal_year=?,ppmp_no=?,area_id=?,category_id=?,item_name=?,description=?,procurement_type=?,quantity=?,unit=?,procurement_mode=?,preprocurement_conference=?,start_procurement=?,end_procurement=?,delivery_period=?,source_of_funds=?,unit_price=?,total_budget=?,supporting_documents=?,requested_by=?,prepared_by=?,prepared_position=?,submitted_by=?,submitted_position=?,budget_approved_by=?,budget_position=?,prepared_date=?,submitted_date=?,budget_date=?,remarks=? WHERE id=?');
     $st->execute([...$values,$id]);
 
-    // If an item was already Pending for Approval, editing it invalidates the
-    // previous Supervisor/Budget decisions for that item only. Return it to the
-    // Supervisor's review queue while leaving other PPMP items untouched.
-    if($itemReviewStatus==='Pending for Approval' && $itemReviewId>0){
+    // Editing Pending for Approval or Approved invalidates previous decisions for this item.
+    // Return only this item to Pending for Review and clear old approval timestamps.
+    if(in_array($itemReviewStatus,['Pending for Approval','Approved'],true) && $itemReviewId>0){
       $stResetReviewItem=$pdo->prepare("UPDATE ppmp_review_items
         SET status='Pending for Review',
             supervisor_remarks=NULL,
@@ -566,9 +564,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         WHERE id=?");
       $stResetReviewItem->execute([$itemReviewId]);
 
-      $stResetReview=$pdo->prepare("UPDATE ppmp_reviews SET status='Pending for Review',updated_at=CURRENT_TIMESTAMP WHERE id=?");
-      $stResetReview->execute([$itemReview['review_id']]);
-      flash('success','PPMP item updated and resubmitted to the Supervisor for review.');
+      refreshReviewStatus($pdo,(int)$itemReview['review_id']);
+      flash('success','PPMP item updated and returned to Pending for Review for the Supervisor to review again.');
     }else{
       flash('success','PPMP item updated.');
     }
@@ -846,9 +843,9 @@ pageStart('Project Procurement Management Plan');
   </div>
   <div class="table-wrap"><table class="table"><tr><th>PPMP No.</th><th>Area/Unit</th><th>Item</th><th>Type</th><th>Qty / Unit</th><th>Mode</th><th>Unit Cost</th><th>Total Budget</th><th>Saved</th><th>Status</th><th>Actions</th></tr>
   <?php foreach($rows as $r):?><tr><td><?=e($r['ppmp_no'])?></td><td><?=e($r['area'])?></td><td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['procurement_type'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td><?=e($r['procurement_mode'])?></td><td>₱<?=number_format($r['unit_price'],2)?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td><td><?=!empty($r['saved_at'])?e(date('F j, Y g:i A',strtotime($r['saved_at']))):e(date('F j, Y g:i A',strtotime($r['created_at'])))?></td><td><span class="ppmp-status-badge ppmp-status-<?=e(strtolower(str_replace(' ','-',(string)$r['review_status'])))?>"><?=e($r['review_status'])?></span><?php if($r['review_status']==='Declined' && !empty($r['review_remarks'])):?><br><small><?=e($r['review_remarks'])?></small><?php endif;?></td><td class="ppmp-actions-cell">
-<?php if(hasRole(['Administrator','Editor']) && (!$isPpmpSupervisor || (int)$r['created_by']===$currentUserId) && in_array($r['review_status'],['Draft','Pending for Review','Pending for Approval','Declined'],true)):?>
+<?php if(hasRole(['Administrator','Editor']) && (!$isPpmpSupervisor || (int)$r['created_by']===$currentUserId) && in_array($r['review_status'],['Draft','Pending for Review','Pending for Approval','Approved','Declined'],true)):?>
   <div class="ppmp-row-actions">
-    <?php if(in_array($r['review_status'],['Draft','Pending for Review','Pending for Approval'],true)):?>
+    <?php if(in_array($r['review_status'],['Draft','Pending for Review','Pending for Approval','Approved'],true)):?>
       <a class="btn secondary ppmp-action-btn" href="ppmp.php?year=<?=$year?>&area_id=<?=$areaId?>&edit=<?=$r['id']?>">Edit</a>
     <?php endif;?>
     <?php if(in_array($r['review_status'],['Draft','Pending for Review','Pending for Approval','Declined'],true)):?>
