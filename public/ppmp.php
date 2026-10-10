@@ -1214,7 +1214,19 @@ function ppmpPrintDate($value): string{
     const box=input.closest('.ppmp-item-autocomplete');
     if(!box)return;
     let list=box._ppmpSuggestionsList||box.querySelector('.ppmp-item-suggestions');
-    if(!list)return;
+    // A previous suggestion popup may have been moved to <body> and then
+    // its row removed. Recreate the popup for this live input when necessary.
+    if(!list || !list.isConnected){
+      list=box.querySelector('.ppmp-item-suggestions');
+      if(!list){
+        list=document.createElement('div');
+        list.className='ppmp-item-suggestions';
+        list.setAttribute('role','listbox');
+        box.appendChild(list);
+      }
+      box._ppmpSuggestionsList=list;
+      list._ppmpAutocompleteBox=box;
+    }
     // Render the popup under <body> so the PPMP table's horizontal/vertical
     // scrolling container cannot clip it. Fixed positioning keeps it anchored
     // to the input while the document itself is scrolled.
@@ -1262,7 +1274,13 @@ function ppmpPrintDate($value): string{
     if(!row)return;
     const input=row.querySelector('.ppmp-item-name'), box=input&&input.closest('.ppmp-item-autocomplete');
     if(!input||!box)return;
-    const popup=box.querySelector('.ppmp-item-suggestions');
+    let popup=box.querySelector('.ppmp-item-suggestions');
+    if(!popup){
+      popup=document.createElement('div');
+      popup.className='ppmp-item-suggestions';
+      popup.setAttribute('role','listbox');
+      box.appendChild(popup);
+    }
     if(input.dataset.autocompleteBound==='1'){
       if(popup&&!box._ppmpSuggestionsList){box._ppmpSuggestionsList=popup;popup._ppmpAutocompleteBox=box;}
       return;
@@ -1666,6 +1684,19 @@ add.addEventListener('click',function(){
    const row=original.cloneNode(true);
    row.dataset.ppmpNewRow='1';
    row.querySelectorAll('.ppmp-item-name').forEach(function(input){delete input.dataset.autocompleteBound;delete input.dataset.selectedMasterlistName;});
+   // cloneNode does not copy event listeners, and a popup may have been moved
+   // out of the original row into <body>. Guarantee each new row owns a popup.
+   row.querySelectorAll('.ppmp-item-autocomplete').forEach(function(box){
+     let popup=box.querySelector('.ppmp-item-suggestions');
+     if(!popup){
+       popup=document.createElement('div');
+       popup.className='ppmp-item-suggestions';
+       popup.setAttribute('role','listbox');
+       box.appendChild(popup);
+     }
+     box._ppmpSuggestionsList=popup;
+     popup._ppmpAutocompleteBox=box;
+   });
    row.querySelectorAll('.ppmp-select-row').forEach(function(box){box.checked=false;});
    row.querySelectorAll('input,textarea').forEach(function(x){
      if(x.type==='file')x.value='';
