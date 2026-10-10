@@ -252,7 +252,7 @@ pageStart('Supplier Registry');
 .supplier-form-scroll{display:block!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:visible!important}
 .supplier-entry-row{display:grid!important;grid-template-columns:20px repeat(8,250px)!important;grid-auto-flow:column!important;align-items:start!important;justify-items:start!important;width:max-content!important;min-width:0!important;gap:12px!important}
 .supplier-entry-row .supplier-row-select-field{display:block!important;grid-column:auto!important;justify-self:start!important;align-self:start!important;flex:none!important;width:20px!important;min-width:20px!important;max-width:20px!important;padding:0 2px!important;margin:0!important;box-sizing:border-box!important;overflow:visible!important}
-.supplier-entry-row .supplier-row-select-field label{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.supplier-entry-row .supplier-row-select-field label{position:static!important;display:block!important;width:auto!important;height:auto!important;padding:0!important;margin:0 0 4px!important;overflow:visible!important;clip:auto!important;white-space:nowrap!important;border:0!important}
 .supplier-entry-row .supplier-row-select-field input[type=checkbox]{display:block!important;position:static!important;float:none!important;width:15px!important;min-width:15px!important;max-width:15px!important;height:15px!important;margin:0!important;padding:0!important;transform:none!important;}
 .supplier-bulk-actions{min-width:0}
 @media(max-width:760px){
