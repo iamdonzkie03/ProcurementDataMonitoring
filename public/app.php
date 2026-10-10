@@ -4,7 +4,7 @@ requireLogin();
 require_once __DIR__.'/../app/layout.php';$pdo=db();$currentYear=(int)date('Y');$availableYears=array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN));
 if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;rsort($availableYears);$year=(int)($_GET['year']??$currentYear);
 	if(!in_array($year,$availableYears,true))$year=$currentYear;$q=trim($_GET['q']??'');
-		$sql='SELECT src.fiscal_year, src.item_key, MIN(src.item_name) item_name, src.unit, src.category_id, src.category, src.unit_price, SUM(src.area_qty) total_qty, SUM(src.area_abc) total_abc, COUNT(DISTINCT src.area_id) area_count, GROUP_CONCAT(CONCAT(src.area_name, " (Qty: ", FORMAT(src.area_qty, 0), ")") ORDER BY src.area_name SEPARATOR ", ") areas FROM (SELECT p.fiscal_year, TRIM(LOWER(p.item_name)) item_key, MIN(p.item_name) item_name, p.unit, c.id category_id, c.name category, p.unit_price, p.area_id, a.name area_name, SUM(p.quantity) area_qty, SUM(p.quantity*p.unit_price) area_abc FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=?';
+		$sql='SELECT src.fiscal_year, src.item_key, MIN(src.item_name) item_name, src.unit, src.category_id, src.category, src.unit_price, SUM(src.area_qty) total_qty, SUM(src.area_abc) total_abc, GROUP_CONCAT(CONCAT(src.area_name, " (Qty: ", FORMAT(src.area_qty, 0), ")") ORDER BY src.area_name SEPARATOR ", ") areas FROM (SELECT p.fiscal_year, TRIM(LOWER(p.item_name)) item_key, MIN(p.item_name) item_name, p.unit, c.id category_id, c.name category, p.unit_price, p.area_id, a.name area_name, SUM(p.quantity) area_qty, SUM(p.quantity*p.unit_price) area_abc FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=?';
 		$args=[$year];
 				if($q!==''){$sql.=' AND (p.item_name LIKE ? OR c.name LIKE ? OR a.name LIKE ?)';
 					$args=[...$args,"%$q%","%$q%","%$q%"];}$sql.=' GROUP BY p.fiscal_year, TRIM(LOWER(p.item_name)), p.unit, c.id, c.name, p.unit_price, p.area_id, a.name) src GROUP BY src.fiscal_year, src.item_key, src.unit, src.category_id, src.category, src.unit_price ORDER BY item_name, src.unit_price';
@@ -41,7 +41,7 @@ if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;r
 					<td><?=number_format($r['total_qty'],2)?></td>
 					<td>₱<?=number_format($r['unit_price'],2)?></td>
 					<td><b>₱<?=number_format($r['total_abc'],2)?></b></td>
-					<td><?=e($r['areas'])?> <small>(<?=$r['area_count']?>)</small></td>
+					<td><?=e($r['areas'])?></td>
 				</tr><?php endforeach;?><?php if(!$rows):?>
 				<tr><td colspan="7" class="empty">No PPMP data for FY <?=$year?>.</td></tr><?php endif;?>
 			</table>
