@@ -460,8 +460,98 @@ document.addEventListener('DOMContentLoaded',function(){
 
 });
 </script>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const input=document.getElementById('masterlistSearchInput');
+  const suggestions=document.getElementById('masterlistSearchSuggestions');
+  const box=document.getElementById('masterlistSearchBox');
+  const table=document.getElementById('masterlistTable');
+  const pageSizeSelect=document.getElementById('masterlistPageSize');
+  const paginationInfo=document.getElementById('masterlistPaginationInfo');
+  const paginationButtons=document.getElementById('masterlistPaginationButtons');
+  if(!input||!suggestions||!table||!pageSizeSelect||!paginationInfo||!paginationButtons)return;
+  const tableRows=Array.from(table.querySelectorAll('tr[data-masterlist-id]'));
+  const emptyRow=table.querySelector('.masterlist-empty-row');
+  let filteredRows=tableRows.slice(),currentPage=1,pageSize=Number(pageSizeSelect.value)||10;
+  function closeSuggestions(){suggestions.innerHTML='';suggestions.style.display='none';}
+  function getName(row){return String(row.dataset.masterlistName||'');}
+  function renderPagination(){
+    const total=filteredRows.length,totalPages=Math.max(1,Math.ceil(total/pageSize));
+    if(currentPage>totalPages)currentPage=totalPages;
+    tableRows.forEach(function(row){row.style.display='none';row.classList.remove('masterlist-search-selected');});
+    const start=(currentPage-1)*pageSize;
+    filteredRows.slice(start,start+pageSize).forEach(function(row){row.style.display='';});
+    if(emptyRow)emptyRow.style.display=total?'none':'';
+    paginationInfo.textContent=total?'Showing '+(start+1)+'-'+Math.min(start+pageSize,total)+' of '+total+' records':'0 records';
+    paginationButtons.innerHTML='';
+    function addButton(label,page,disabled,active){
+      const b=document.createElement('button');b.type='button';b.className='btn secondary masterlist-page-button'+(active?' active':'');
+      b.textContent=label;b.disabled=!!disabled;b.addEventListener('click',function(){currentPage=page;renderPagination();});
+      paginationButtons.appendChild(b);
+    }
+    addButton('Previous',currentPage-1,currentPage===1,false);
+    const max=7;let first=Math.max(1,currentPage-3),last=Math.min(totalPages,first+max-1);first=Math.max(1,last-max+1);
+    for(let page=first;page<=last;page++)addButton(String(page),page,false,page===currentPage);
+    addButton('Next',currentPage+1,currentPage===totalPages,false);
+  }
+  function applyFilter(term,selected,reset){
+    const value=String(term||'').trim().toLowerCase();
+    filteredRows=tableRows.filter(function(row){
+      const text=row.textContent.toLowerCase();
+      return selected?getName(row).toLowerCase()===selected.toLowerCase():(!value||text.includes(value));
+    });
+    if(reset)currentPage=1;
+    renderPagination();
+    if(selected)filteredRows.forEach(function(row){row.classList.add('masterlist-search-selected');});
+  }
+  function showSuggestions(){
+    const term=String(input.value||'').trim().toLowerCase();suggestions.innerHTML='';
+    if(!term){closeSuggestions();applyFilter('',null,true);return;}
+    const matches=tableRows.filter(function(row){return getName(row).toLowerCase().includes(term);}).slice(0,10);
+    if(!matches.length){
+      const empty=document.createElement('div');empty.className='masterlist-search-empty';empty.textContent='No matching item found.';suggestions.appendChild(empty);
+      suggestions.style.display='block';applyFilter(term,null,true);return;
+    }
+    matches.forEach(function(row){
+      const button=document.createElement('button');button.type='button';button.className='masterlist-search-suggestion';
+      button.setAttribute('role','option');button.dataset.name=getName(row);button.textContent=getName(row);suggestions.appendChild(button);
+    });
+    suggestions.style.display='block';applyFilter(term,null,true);
+  }
+  input.addEventListener('input',showSuggestions);
+  input.addEventListener('focus',function(){if(input.value.trim())showSuggestions();});
+  input.addEventListener('keydown',function(e){if(e.key==='Escape'){input.value='';closeSuggestions();applyFilter('',null,true);}});
+  suggestions.addEventListener('click',function(e){
+    const button=e.target.closest('.masterlist-search-suggestion');if(!button)return;
+    const name=button.dataset.name||'';input.value=name;closeSuggestions();applyFilter(name,name,true);
+  });
+  pageSizeSelect.addEventListener('change',function(){pageSize=Number(pageSizeSelect.value)||10;currentPage=1;renderPagination();});
+  document.addEventListener('click',function(e){if(box&&!box.contains(e.target))closeSuggestions();});
+  renderPagination();
+});
+</script>
 <style>
 .masterlist-toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.masterlist-list-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.masterlist-list-header h2{margin:0}
+.masterlist-search{position:relative;width:200px;min-width:200px;margin:0 0 0 auto}
+.masterlist-search .input{width:200px;box-sizing:border-box}
+.masterlist-search-suggestions{position:absolute;left:0;right:0;top:100%;z-index:1000;background:#fff;border:1px solid #cfd6df;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:240px;overflow-y:auto;display:none}
+.masterlist-search-suggestion{display:block;width:100%;padding:9px 12px;border:0;background:#fff;text-align:left;cursor:pointer;font-size:14px}
+.masterlist-search-suggestion:hover,.masterlist-search-suggestion:focus{background:#eef5ff}
+.masterlist-search-empty{padding:9px 12px;color:#6b7280;font-size:13px}
+#masterlistTable tr.masterlist-search-selected td{background:#eef5ff}
+.masterlist-pagination{display:flex;align-items:center;justify-content:flex-end;gap:12px;width:100%;clear:both;position:static;float:none;margin:0 0 10px;padding:0;box-sizing:border-box}
+.masterlist-pagination-info{flex:0 0 auto;text-align:right;font-size:13px;color:#6b7280}
+.masterlist-page-size{display:flex;align-items:center;gap:6px;font-size:14px;color:#4b5563}
+.masterlist-page-size .input{width:78px;min-width:78px;height:36px}
+.masterlist-pagination-buttons{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.masterlist-page-button{min-width:38px;height:36px;padding:0 10px;background:#cfe8ff;color:#1f5f85;border-color:#b7d9f5}
+.masterlist-page-button:hover:not(:disabled):not(.active){background:#b9dcfa;color:#174a69}
+.masterlist-page-button.active{font-weight:700;pointer-events:none;background:#0d6efd;color:#fff;border-color:#0d6efd}
+.masterlist-pagination-buttons .masterlist-page-button:first-child,.masterlist-pagination-buttons .masterlist-page-button:last-child{background:#495057;color:#fff;border-color:#495057}
+.masterlist-pagination-buttons .masterlist-page-button:disabled{opacity:.7;cursor:not-allowed}
+@media(max-width:700px){.masterlist-pagination{align-items:flex-start;justify-content:flex-end;flex-wrap:wrap}.masterlist-pagination-info{order:3;flex-basis:100%;text-align:right}}
 .masterlist-toolbar h2{margin:0}
 .masterlist-form-grid{display:grid;grid-template-columns:minmax(0,20fr) minmax(0,45fr) minmax(0,15fr) minmax(0,20fr) auto;gap:16px;align-items:start}
 .masterlist-form-grid .field{margin:0}
@@ -532,14 +622,24 @@ document.addEventListener('DOMContentLoaded',function(){
 </div>
 
 <div class="panel">
-  <h2>Masterlist Items</h2>
-  <?php if($masterlist): ?>
-  <div class="table-wrap">
-    <table class="table masterlist-table">
+  <div class="masterlist-list-header">
+    <h2>Masterlist Items</h2>
+    <div class="masterlist-search" id="masterlistSearchBox">
+      <input class="input" type="text" id="masterlistSearchInput" autocomplete="off" placeholder="Search Masterlist..." aria-label="Search Masterlist Items">
+      <div class="masterlist-search-suggestions" id="masterlistSearchSuggestions" role="listbox"></div>
+    </div>
+  </div>
+  <div class="table-wrap" style="margin-top:16px">
+    <div class="masterlist-pagination" id="masterlistPagination" aria-label="Masterlist pagination">
+      <div class="masterlist-page-size"><label for="masterlistPageSize">Show</label><select class="input" id="masterlistPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>records</span></div>
+      <div class="masterlist-pagination-info" id="masterlistPaginationInfo"></div>
+      <div class="masterlist-pagination-buttons" id="masterlistPaginationButtons"></div>
+    </div>
+    <table class="table masterlist-table" id="masterlistTable">
       <thead><tr><th>#</th><th>Item Name</th><th>Technical Specifications</th><th>Unit of Measurement</th><th class="masterlist-cost">Unit Cost</th><th>Action</th></tr></thead>
       <tbody>
       <?php foreach($masterlist as $i=>$row): ?>
-        <tr>
+        <tr data-masterlist-id="<?=e((string)$row['id'])?>" data-masterlist-name="<?=e($row['item_name'])?>">
           <td><?=e((string)($i+1))?></td>
           <td><?=e($row['item_name'])?></td>
           <td><?=nl2br(e($row['technical_specifications']??''))?></td>
@@ -558,11 +658,9 @@ document.addEventListener('DOMContentLoaded',function(){
           </td>
         </tr>
       <?php endforeach; ?>
+      <tr class="masterlist-empty-row" <?= $masterlist ? 'style="display:none"' : '' ?>><td colspan="6" class="empty">No PPMP Masterlist items match your search.</td></tr>
       </tbody>
     </table>
   </div>
-  <?php else: ?>
-    <div class="empty">No PPMP Masterlist items have been added yet.</div>
-  <?php endif; ?>
 </div>
 <?php pageEnd(); ?>
