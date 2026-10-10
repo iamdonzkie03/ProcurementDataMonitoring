@@ -2792,22 +2792,23 @@ html body .supplier-content-panel .supplier-list-section table.supplier-table tb
 }
 
 
-/* Supplier Registry: guarantee 24px of visible space between the entry and list panels */
+/* Supplier Registry panels use the same width and vertical spacing rules as User Management */
 .supplier-registry-page{
-  display:flex!important;
-  flex-direction:column!important;
-  align-items:stretch!important;
-  gap:0!important;
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
 }
 .supplier-registry-page > .supplier-content-panel{
-  flex:0 0 auto!important;
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
   margin:0!important;
 }
-.supplier-registry-page > .supplier-content-panel:not(.supplier-list-panel){
-  margin-bottom:24px!important;
-}
-.supplier-registry-page > .supplier-list-panel{
-  margin-top:0!important;
+.supplier-registry-page > .supplier-content-panel + .supplier-content-panel{
+  margin-top:24px!important;
 }
 .supplier-registry-page > .supplier-content-panel .supplier-list-section{
   margin:0!important;
