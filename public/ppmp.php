@@ -925,23 +925,26 @@ if($person!=='' && !empty($h['area_id'])){
   $stPreparedSignature->execute([(int)$h['area_id'],$person]);
   $preparedSignature=trim((string)($stPreparedSignature->fetchColumn()??''));
 }
-// Resolve the Submitted By signatory directly from the Division/Department
-// attached to the PPMP. This is authoritative for the Division Head and does
-// not depend on whether the selected Area/Unit row carried the signature value.
+// Resolve the Submitted By supervisor/signatory using the selected Area/Unit,
+// not only the first item's area_id. Some existing PPMP rows may have blank
+// submitted_by fields, so fall back to the Division/Department Head settings.
 $submitted='';
 $submittedPos='';
 $submittedSignature='';
-if(!empty($h['area_id'])){
-  $stSubmittedDivision=$pdo->prepare('SELECT d.division_head,d.head_position_designation,d.electronic_signature,d.ppmp_supervisor_enabled
-    FROM areas a JOIN divisions d ON d.id=a.division_id WHERE a.id=? LIMIT 1');
-  $stSubmittedDivision->execute([(int)$h['area_id']]);
-  $submittedDivision=$stSubmittedDivision->fetch();
-  // The printed Submitted By signatory is always the Division/Department Head
-  // assigned to the PPMP's Division. Do not hide the name or designation when
-  // the optional supervisor-review setting is disabled.
+$signatoryAreaId=(int)($areaId ?: ($h['area_id']??0));
+if($signatoryAreaId>0){
+  $stSubmittedDivision=$pdo->prepare('SELECT d.division_head,d.head_position_designation,d.electronic_signature,
+      d.name AS division_name,d.ppmp_supervisor_enabled
+    FROM areas a JOIN divisions d ON d.id=a.division_id
+    WHERE a.id=? LIMIT 1');
+  $stSubmittedDivision->execute([$signatoryAreaId]);
+  $submittedDivision=$stSubmittedDivision->fetch(PDO::FETCH_ASSOC);
   if($submittedDivision){
-    $submitted=trim((string)($submittedDivision['division_head']??''));
-    $submittedPos=trim((string)($submittedDivision['head_position_designation']??''));
+    // Prefer an explicitly stored signatory on the PPMP, when present.
+    $submitted=trim((string)($h['submitted_by']??''));
+    $submittedPos=trim((string)($h['submitted_position']??''));
+    if($submitted==='') $submitted=trim((string)($submittedDivision['division_head']??''));
+    if($submittedPos==='') $submittedPos=trim((string)($submittedDivision['head_position_designation']??''));
     $submittedSignature=trim((string)($submittedDivision['electronic_signature']??''));
   }
 }
