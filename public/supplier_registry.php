@@ -84,16 +84,26 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
   checkCsrf();
   $action=(string)($_POST['action']??'');
   try {
-    if($action==='delete'){
-      $id=(int)($_POST['id']??0);
-      $st=$pdo->prepare("SELECT * FROM suppliers WHERE id=?");$st->execute([$id]);$old=$st->fetch();
-      if(!$old) throw new RuntimeException('Supplier record was not found.');
-      supplierRemoveFile($old['philgeps_certificate_path']??null);
-      supplierRemoveFile($old['business_permit_path']??null);
-      supplierRemoveFile($old['tax_clearance_certificate_path']??null);
-      supplierRemoveFile($old['pcab_license_path']??null);
-      $pdo->prepare("DELETE FROM suppliers WHERE id=?")->execute([$id]);
-      flash('success','Supplier and all uploaded files were deleted successfully.');
+    if($action==='bulk_delete'){
+      $ids=array_values(array_unique(array_filter(array_map('intval', (array)($_POST['supplier_ids']??[])), static fn($id)=>$id>0)));
+      if(!$ids) throw new RuntimeException('Select at least one supplier record to delete.');
+      $placeholders=implode(',',array_fill(0,count($ids),'?'));
+      $st=$pdo->prepare("SELECT * FROM suppliers WHERE id IN ($placeholders)");
+      $st->execute($ids);
+      $selected=$st->fetchAll();
+      if(!$selected) throw new RuntimeException('No matching supplier records were found.');
+      $deleteIds=[];
+      foreach($selected as $old){
+        supplierRemoveFile($old['philgeps_certificate_path']??null);
+        supplierRemoveFile($old['business_permit_path']??null);
+        supplierRemoveFile($old['tax_clearance_certificate_path']??null);
+        supplierRemoveFile($old['pcab_license_path']??null);
+        $deleteIds[]=(int)$old['id'];
+      }
+      $deletePlaceholders=implode(',',array_fill(0,count($deleteIds),'?'));
+      $pdo->prepare("DELETE FROM suppliers WHERE id IN ($deletePlaceholders)")->execute($deleteIds);
+      flash('success',count($deleteIds).' supplier record(s) and their uploaded files were deleted successfully.');
+      header('Location:supplier_registry.php');exit;
     } elseif($action==='save'){
       $ids=$_POST['supplier_id']??[];$names=$_POST['supplier_company_name']??[];$addresses=$_POST['address']??[];$owners=$_POST['owner']??[];$reps=$_POST['authorized_representative']??[];$businesses=[];$regs=$_POST['registration_type']??[];$phDates=$_POST['philgeps_valid_until']??[];$bpDates=$_POST['business_permit_valid_until']??[];$taxDates=$_POST['tax_clearance_valid_until']??[];$pcabDates=$_POST['pcab_license_valid_until']??[];
       $count=max(count($names),count($ids));
@@ -176,12 +186,22 @@ pageStart('Supplier Registry');
           <p class="hint-text" style="font-size:11px!important;line-height:1.35!important;margin:5px 0 0!important"><?=number_format(count($rows))?> supplier<?=count($rows)===1?'':'s'?> found</p>
         </div>
       </div>
+      <?php if($isEditor): ?>
+      <form method="post" id="bulkSupplierDeleteForm" onsubmit="return confirm('Delete all selected supplier records and their uploaded permits/licenses? This cannot be undone.');">
+        <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+        <input type="hidden" name="action" value="bulk_delete">
+        <div class="supplier-bulk-actions" style="display:flex;align-items:center;gap:8px;margin:12px 0;font-size:12px">
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSuppliers"> Select all</label>
+          <button class="btn danger" type="submit" id="deleteSelectedSuppliers">Delete Selected</button>
+        </div>
+      <?php endif; ?>
       <div class="table-wrap">
         <table class="table supplier-table" id="supplierTable">
-          <thead><tr><th>#</th><th>Supplier/Company Name</th><th>Permits and Licenses</th><?php if($isEditor): ?><th>Actions</th><?php endif; ?></tr></thead>
+          <thead><tr><?php if($isEditor): ?><th><span class="sr-only">Select</span></th><?php endif; ?><th>#</th><th>Supplier/Company Name</th><th>Permits and Licenses</th><?php if($isEditor): ?><th>Actions</th><?php endif; ?></tr></thead>
           <tbody>
           <?php $i=1;foreach($rows as $r): ?>
           <tr>
+            <?php if($isEditor): ?><td><input type="checkbox" class="supplier-select-checkbox" name="supplier_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['supplier_company_name'])?> for deletion"></td><?php endif; ?>
             <td><?=$i++?></td>
             <td class="supplier-company-details">
               <div><strong><?=e($r['supplier_company_name'])?></strong></div>
@@ -195,13 +215,14 @@ pageStart('Supplier Registry');
               <div><strong>Tax Clearance:</strong> <?php if($r['tax_clearance_certificate_path']): ?><a href="<?=e($r['tax_clearance_certificate_path'])?>" target="_blank">View PDF</a><?php else: ?>—<?php endif; ?> <small>| Registration Type: <?=e($r['registration_type']?:'—')?> | Validity: <?=e(supplierDisplayDate($r['tax_clearance_valid_until']))?></small></div>
               <div><strong>PCAB License:</strong> <?php if($r['pcab_license_path']): ?><a href="<?=e($r['pcab_license_path'])?>" target="_blank">View PDF</a><?php else: ?>—<?php endif; ?> <small>| Validity: <?=e(supplierDisplayDate($r['pcab_license_valid_until']))?></small></div>
             </td>
-            <?php if($isEditor): ?><td class="supplier-actions"><div class="supplier-actions"><a class="btn secondary" href="supplier_registry.php?edit=<?=(int)$r['id']?>">Edit</a><form method="post" onsubmit="return confirm('Delete this supplier and all uploaded permits/licenses?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=(int)$r['id']?>"><button class="btn danger" type="submit">Delete</button></form></div></td><?php endif; ?>
+            <?php if($isEditor): ?><td class="supplier-actions"><div class="supplier-actions"><a class="btn secondary" href="supplier_registry.php?edit=<?=(int)$r['id']?>">Edit</a></div></td><?php endif; ?>
           </tr>
           <?php endforeach; ?>
           <?php if(!$rows): ?><tr><td colspan="<?=$isEditor?3:2?>" class="empty">No suppliers found.</td></tr><?php endif; ?>
           </tbody>
         </table>
       </div>
+      <?php if($isEditor): ?></form><?php endif; ?>
     </div>
   </div>
 </div>
@@ -213,6 +234,9 @@ document.addEventListener('DOMContentLoaded',function(){
  if(datePickerRoot){datePickerRoot.querySelectorAll('.supplier-date-picker').forEach(syncDatePicker);}
  const rows=document.querySelector('.supplier-form-scroll'),add=document.getElementById('addSupplierRow');
  if(add&&rows){add.addEventListener('click',function(){const r=rows.querySelector('.supplier-entry-row').cloneNode(true);r.querySelectorAll('input').forEach(i=>{if(i.type!=='hidden')i.value='';});r.querySelectorAll('textarea').forEach(t=>t.value='');r.querySelectorAll('select').forEach(s=>s.selectedIndex=0);r.querySelectorAll('input[type=file]').forEach(i=>i.value='');rows.appendChild(r);r.querySelectorAll('.supplier-date-picker').forEach(function(dp){const n=dp.querySelector('.supplier-date-native'),d=dp.querySelector('.supplier-date-display');if(n)n.value='';if(d)d.value='';syncDatePicker(dp);});});rows.addEventListener('click',function(e){if(e.target.classList.contains('supplier-remove-row')){const all=rows.querySelectorAll('.supplier-entry-row');if(all.length>1)e.target.closest('.supplier-entry-row').remove();else e.target.closest('.supplier-entry-row').querySelectorAll('input').forEach(i=>{if(i.type!=='hidden')i.value='';});}});}
+ const selectAll=document.getElementById('selectAllSuppliers');
+ if(selectAll){selectAll.addEventListener('change',function(){document.querySelectorAll('.supplier-select-checkbox').forEach(cb=>{const tr=cb.closest('tr');if(tr&&tr.style.display!=='none')cb.checked=selectAll.checked;});});}
+ document.querySelectorAll('.supplier-select-checkbox').forEach(cb=>cb.addEventListener('change',function(){const all=Array.from(document.querySelectorAll('.supplier-select-checkbox'));if(selectAll)selectAll.checked=all.length>0&&all.every(x=>x.checked);}));
  const input=document.getElementById('supplierSearchInput'),box=document.getElementById('supplierSearchBox'),suggestions=document.getElementById('supplierSearchSuggestions'),table=document.getElementById('supplierTable');
  if(!input||!suggestions||!table)return;const tableRows=Array.from(table.querySelectorAll('tbody tr')).filter(r=>!r.classList.contains('empty'));
  function filter(term){term=String(term||'').trim().toLowerCase();tableRows.forEach(r=>r.style.display=!term||r.textContent.toLowerCase().includes(term)?'':'none');}
