@@ -1670,10 +1670,63 @@ function deleteRow(row){
 }
 const deleteSelectedButton=document.getElementById('ppmpDeleteSelectedRows');
 if(deleteSelectedButton){deleteSelectedButton.addEventListener('click',function(){
-  const selected=[...body.querySelectorAll('.ppmp-entry-row')].filter(row=>row.querySelector('.ppmp-select-row')?.checked);
+  const allRows=[...body.querySelectorAll('.ppmp-entry-row')];
+  const selected=allRows.filter(row=>row.querySelector('.ppmp-select-row')?.checked);
   if(!selected.length){alert('Please select at least one PPMP item to delete.');return;}
   if(!confirm('Delete '+selected.length+' selected PPMP item(s)?'))return;
-  selected.forEach(function(row){if(body.contains(row))deleteRow(row);});syncRowSelection();
+
+  // Remove selected rows as one batch. Calling deleteRow() repeatedly is unsafe:
+  // once the row count falls to one, deleteRow() clears that row instead of
+  // removing it, which makes multi-row deletion appear to delete only one row.
+  function disposeRowPopup(row){
+    row.querySelectorAll('.ppmp-item-autocomplete').forEach(function(box){
+      const popup=box._ppmpSuggestionsList||box.querySelector('.ppmp-item-suggestions');
+      if(popup){
+        popup.innerHTML='';
+        popup.style.display='none';
+        popup.dataset.open='0';
+        if(popup.parentElement===document.body)popup.remove();
+      }
+      box._ppmpSuggestionsList=null;
+    });
+  }
+  function clearEntryRow(row){
+    row.querySelectorAll('input,textarea,select').forEach(function(field){
+      if(field.type==='checkbox'){field.checked=false;return;}
+      if(field.type==='file'||field.type==='hidden'){field.value='';return;}
+      if(field.tagName==='SELECT')field.selectedIndex=0;
+      else field.value='';
+    });
+    row.querySelectorAll('.ppmp-item-suggestions').forEach(function(popup){
+      popup.innerHTML='';popup.style.display='none';popup.dataset.open='0';
+    });
+    const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');if(unitHidden)unitHidden.value='';
+    const categoryHidden=row.querySelector('.ppmp-category-value');if(categoryHidden)categoryHidden.value='';
+    const item=row.querySelector('.ppmp-item-name');if(item){item.dataset.selectedMasterlistName='';delete item.dataset.autocompleteBound;}
+    const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
+    if(unit){unit.value='';unit.disabled=true;}
+  }
+
+  if(selected.length===allRows.length){
+    // Keep one blank entry row so the form remains usable.
+    const keep=allRows[0];
+    selected.forEach(function(row){if(row!==keep){disposeRowPopup(row);row.remove();}});
+    disposeRowPopup(keep);
+    clearEntryRow(keep);
+  }else{
+    selected.forEach(function(row){
+      disposeRowPopup(row);
+      row.remove();
+    });
+  }
+  renumber();
+  calc();
+  syncAllRowDocuments();
+  syncRowSelection();
+  // Rebind the retained blank row if every row was selected and cleared.
+  body.querySelectorAll('.ppmp-entry-row').forEach(function(row){
+    if(window.ppmpBindItemAutocomplete)window.ppmpBindItemAutocomplete(row);
+  });
 });}
 const selectAll=document.getElementById('ppmpSelectAllRows');
 if(selectAll){selectAll.addEventListener('change',function(){body.querySelectorAll('.ppmp-select-row').forEach(function(box){box.checked=selectAll.checked;});});
