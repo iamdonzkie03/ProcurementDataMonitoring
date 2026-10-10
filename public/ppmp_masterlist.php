@@ -371,6 +371,13 @@ pageStart('PPMP Masterlist');
 ?>
 
 <style>
+/* Keep a consistent visible gap between every top-level panel on this page. */
+body .panel{
+  margin-bottom:24px !important;
+}
+body .panel:last-of-type{
+  margin-bottom:0 !important;
+}
 .masterlist-row{margin-bottom:10px}
 .masterlist-row + .masterlist-row{padding-top:10px;border-top:1px solid #eee}
 .masterlist-remove-row{white-space:nowrap}
