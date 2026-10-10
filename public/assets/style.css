@@ -2955,3 +2955,18 @@ html body .supplier-content-panel .supplier-list-section table#supplierTable tbo
   content:none !important;
   display:none !important;
 }
+
+
+/* Supplier Registry entry form: add a full-width separator before each additional row. */
+html body .supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row {
+  border-top: 1px solid #cbd5e1 !important;
+  margin-top: 12px !important;
+  padding-top: 12px !important;
+  position: relative !important;
+  box-shadow: none !important;
+}
+html body .supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row > .supplier-field,
+html body .supplier-content-panel .supplier-form-scroll > .supplier-entry-row + .supplier-entry-row > .supplier-row-action {
+  border-top: 0 !important;
+  box-shadow: none !important;
+}
