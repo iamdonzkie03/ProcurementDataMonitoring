@@ -1830,6 +1830,10 @@ add.addEventListener('click',function(){
    const original=body.querySelector('.ppmp-entry-row');
    if(!original)return;
    const row=original.cloneNode(true);
+    // Cloned date-picker wrappers inherit the original row's bound marker,
+    // but cloneNode does not copy event listeners. Clear it so the new row
+    // receives its own click/change handlers.
+    row.querySelectorAll('.ppmp-date-picker').forEach(function(box){delete box.dataset.ppmpDateBound;});
    row.dataset.ppmpNewRow='1';
    row.querySelectorAll('.ppmp-item-name').forEach(function(input){delete input.dataset.autocompleteBound;delete input.dataset.selectedMasterlistName;});
    // cloneNode does not copy event listeners, and a popup may have been moved
