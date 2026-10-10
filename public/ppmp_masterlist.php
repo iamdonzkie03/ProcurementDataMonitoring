@@ -723,12 +723,6 @@ document.addEventListener('DOMContentLoaded',function(){
           <td>
             <div class="masterlist-actions">
               <a class="btn secondary" href="ppmp_masterlist.php?edit=<?=e((string)$row['id'])?>">Edit</a>
-              <form method="post" onsubmit="return confirm('Delete this PPMP Masterlist item?');">
-                <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" name="id" value="<?=e((string)$row['id'])?>">
-                <button class="btn danger" type="submit">Delete</button>
-              </form>
             </div>
           </td>
         </tr>
