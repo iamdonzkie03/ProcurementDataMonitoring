@@ -81,7 +81,13 @@ if($editId>0 && !$print){
   $stEdit=$pdo->prepare('SELECT p.*,a.division_id FROM ppmp_items p JOIN areas a ON a.id=p.area_id WHERE p.id=?'); $stEdit->execute([$editId]); $editing=$stEdit->fetch();
   if(!$editing){ flash('error','PPMP item not found.'); header('Location:ppmp.php?year='.$year.'&division_id='.(int)$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).'&q='.urlencode($q).'#savedPpmpItems'); exit; }
   if($isPpmpSupervisor && ((int)$editing['created_by']!==$currentUserId || (int)$editing['division_id']!==currentLoginDivisionId())){ http_response_code(403); exit('403 - Supervisors may only edit PPMP items they created.'); }
-  $year=(int)$editing['fiscal_year']; $areaId=(int)$editing['area_id'];
+  $year=(int)$editing['fiscal_year'];
+  $areaId=(int)$editing['area_id'];
+  // The Edit link may be opened directly from Saved PPMP Items without the
+  // selector query parameters. Restore the item's Division and Area/Unit so
+  // the Data Entry panel is visible and the correct selector options stay set.
+  $divisionId=(int)$editing['division_id'];
+  if($areaHeadName==='') $areaHeadName=trim((string)($editing['prepared_by']??''));
 }
 
 
