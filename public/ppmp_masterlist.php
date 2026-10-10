@@ -35,7 +35,7 @@ function ppmpMasterlistDuplicateExists(PDO $pdo, string $category, string $itemN
 
 function ppmpMasterlistDuplicateKey(string $category, string $itemName, string $specifications, string $uom, float $unitCost): string {
   return mb_strtolower(trim($category),'UTF-8')."\x1F".
-         mb_strtolower(trim($itemName),'UTF-8')."\x1F"
+         mb_strtolower(trim($itemName),'UTF-8')."\x1F".
          mb_strtolower(trim($specifications),'UTF-8')."\x1F".
          mb_strtolower(trim($uom),'UTF-8')."\x1F".
          number_format($unitCost, 2, '.', '');
@@ -616,7 +616,7 @@ document.addEventListener('DOMContentLoaded',function(){
 .masterlist-pagination-buttons .masterlist-page-button:disabled{opacity:.7;cursor:not-allowed}
 @media(max-width:700px){.masterlist-pagination{align-items:flex-start;justify-content:flex-end;flex-wrap:wrap}.masterlist-pagination-info{order:3;flex-basis:100%;text-align:right}}
 .masterlist-toolbar h2{margin:0}
-.masterlist-form-grid{display:grid;grid-template-columns:minmax(0,20fr) minmax(0,45fr) minmax(0,15fr) minmax(0,20fr) auto;gap:16px;align-items:start}
+.masterlist-form-grid{display:grid;grid-template-columns:minmax(0,16fr) minmax(0,18fr) minmax(0,35fr) minmax(0,13fr) minmax(0,18fr) auto;gap:16px;align-items:start}
 .masterlist-form-grid .field{margin:0}
 .masterlist-form-grid .masterlist-field{width:100%}
 .masterlist-form-grid .masterlist-field .input{width:100%}
@@ -626,7 +626,7 @@ document.addEventListener('DOMContentLoaded',function(){
 .masterlist-actions form{margin:0}
 .masterlist-table th,.masterlist-table td{vertical-align:middle}
 .masterlist-cost{text-align:right;white-space:nowrap}
-@media(max-width:1100px){.masterlist-form-grid{grid-template-columns:minmax(0,20fr) minmax(0,45fr) minmax(0,15fr) minmax(0,20fr) auto;gap:10px}.masterlist-form-grid .masterlist-submit{min-width:90px;padding-top:22px}}
+@media(max-width:1100px){.masterlist-form-grid{grid-template-columns:minmax(0,16fr) minmax(0,18fr) minmax(0,35fr) minmax(0,13fr) minmax(0,18fr) auto;gap:10px}.masterlist-form-grid .masterlist-submit{min-width:90px;padding-top:22px}}
 
 
 @media(max-width:600px){.masterlist-form-grid{grid-template-columns:1fr}}
