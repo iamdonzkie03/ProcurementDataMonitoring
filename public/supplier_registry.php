@@ -249,7 +249,7 @@ pageStart('Supplier Registry');
 .supplier-table .supplier-doc-links>div{margin-bottom:6px;line-height:1.4}
 .supplier-table .supplier-doc-links small{white-space:normal}
 .supplier-table .supplier-actions{display:flex;flex-wrap:wrap;gap:4px}
-.supplier-entry-row .supplier-row-select-field{flex:0 0 52px;min-width:52px}
+.supplier-entry-row .supplier-row-select-field{flex:0 0 20px!important;width:20px!important;min-width:20px!important;max-width:20px!important;box-sizing:border-box;overflow:visible}.supplier-entry-row .supplier-row-select-field label{white-space:normal;overflow-wrap:anywhere;font-size:12px!important}.supplier-entry-row .supplier-row-select-field input[type=checkbox]{display:block;margin:4px auto 0!important}
 .supplier-entry-row .supplier-row-select-field input[type=checkbox]{width:15px;height:15px;margin:4px 0}
 .supplier-bulk-actions{min-width:0}
 @media(max-width:760px){
