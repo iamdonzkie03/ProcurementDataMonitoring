@@ -58,11 +58,14 @@ function supplierDisplayDate(?string $v): string {
   return ($d && $d->format('Y-m-d')===$v) ? $d->format('F d, Y') : $v;
 }
 function supplierFolderName(string $companyName): string {
+  // Use the actual submitted company name, not the uploaded PDF's filename.
   $name=trim($companyName);
-  $name=preg_replace('/[\\\\/:*?"<>|]+/u','-',$name);
+  $name=preg_replace('/[\\\\\\\\/:*?"<>|]+/u','-',$name);
   $name=preg_replace('/\\s+/u',' ',$name);
-  $name=trim((string)$name," .-\\t\\n\\r\\0\\x0B");
-  return $name!=='' ? mb_substr($name,0,100,'UTF-8') : 'Unnamed Supplier';
+  // Double quotes let PHP interpret tab/newline/NUL escapes as intended.
+  $name=trim((string)$name, " .-\\t\\n\\r\\0\\x0B");
+  if($name==='') throw new RuntimeException('Enter a Supplier/Company Name before uploading documents.');
+  return mb_substr($name,0,100,'UTF-8');
 }
 function supplierUpload(string $field,string $uploadDir,string $uploadWeb,string $companyName,?string $oldPath=null,int $index=0): ?string {
   if(empty($_FILES[$field]) || !isset($_FILES[$field]['error'][$index]) || $_FILES[$field]['error'][$index]===UPLOAD_ERR_NO_FILE) return $oldPath;
