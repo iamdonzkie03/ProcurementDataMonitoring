@@ -873,7 +873,7 @@ pageStart('Project Procurement Management Plan');
                 </div>
               </td>
               <td><input class="input ppmp-row-remarks" type="text" name="<?=$editing?'remarks':'items[0][remarks]'?>" value="<?=e($formState['remarks']??'')?>"></td>
-              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php else: ?><button class="btn danger ppmp-remove-row" type="button">Delete</button><?php endif; ?></td>
+              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php endif; ?></td>
             </tr>
           </tbody>
         </table>
@@ -1656,7 +1656,12 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
  }
  function ensureDeleteButton(row){
    if(!row)return null;
+   const rows=body.querySelectorAll('.ppmp-entry-row');
    let remove=row.querySelector('.ppmp-remove-row');
+   if(rows.length<2){
+     if(remove)remove.remove();
+     return null;
+   }
    if(!remove){
      const actionCell=row.querySelector('td:last-child');
      if(!actionCell)return null;
@@ -1666,6 +1671,7 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
      remove.textContent='Delete';
      actionCell.appendChild(remove);
    }
+   remove.style.setProperty('display','inline-flex','important');
    return remove;
  }
  function syncAllRowActions(){
