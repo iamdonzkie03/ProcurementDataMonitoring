@@ -29,4 +29,4 @@ $st=$pdo->prepare('INSERT INTO users(username,agency_id,full_name,email,password
  function filterNames(){const id=d.value;Array.from(n.options).forEach((o,i)=>{if(i)o.hidden=!id||o.dataset.division!==id;});if(!n.value||(n.selectedOptions[0]&&n.selectedOptions[0].hidden))n.value='';n.disabled=!id;}
  d.addEventListener('change',filterNames);filterNames();
 })();
-</script><?php pageEnd();
+</script><style>.user-management-table{table-layout:fixed;width:100%}.user-management-table th:nth-child(3),.user-management-table td:nth-child(3){width:200px;min-width:200px;max-width:200px;box-sizing:border-box;overflow-wrap:anywhere}</style><?php pageEnd();
