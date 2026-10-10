@@ -2826,3 +2826,34 @@ html body .supplier-content-panel .supplier-list-header .hint-text{
   line-height:1.35!important;
   margin:5px 0 0!important;
 }
+
+
+/* Supplier Registry registered-suppliers table: balance the three requested content columns */
+html body .supplier-content-panel .supplier-list-section table#supplierTable{
+  width:100%!important;
+  table-layout:fixed!important;
+}
+html body .supplier-content-panel .supplier-list-section table#supplierTable th:nth-child(1),
+html body .supplier-content-panel .supplier-list-section table#supplierTable td:nth-child(1){
+  width:5%!important;
+}
+html body .supplier-content-panel .supplier-list-section table#supplierTable th:nth-child(2),
+html body .supplier-content-panel .supplier-list-section table#supplierTable td:nth-child(2){
+  width:35%!important;
+}
+html body .supplier-content-panel .supplier-list-section table#supplierTable th:nth-child(3),
+html body .supplier-content-panel .supplier-list-section table#supplierTable td:nth-child(3){
+  width:45%!important;
+}
+html body .supplier-content-panel .supplier-list-section table#supplierTable th:nth-child(4),
+html body .supplier-content-panel .supplier-list-section table#supplierTable td:nth-child(4){
+  width:15%!important;
+}
+html body .supplier-content-panel .supplier-list-section table#supplierTable td.supplier-company-details,
+html body .supplier-content-panel .supplier-list-section table#supplierTable td:not(.supplier-actions){
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+html body .supplier-content-panel .supplier-list-section table#supplierTable td.supplier-actions{
+  white-space:normal!important;
+}
