@@ -20,7 +20,7 @@ try{
 
 function signatureSafeSegment(string $value): string{
   $value=trim($value);
-  $value=preg_replace('/[\\\\\\/\\\\:*?"<>|]+/u','',$value);
+  $value=str_replace(['\\\\','/',':','*','?','"','<','>','|'], '', $value);
   $value=preg_replace('/\\s+/u',' ',$value);
   return trim($value," .\\t\\n\\r\\0\\x0B") ?: 'Unnamed';
 }
