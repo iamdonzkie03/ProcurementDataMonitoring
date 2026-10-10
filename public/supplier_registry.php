@@ -253,7 +253,7 @@ pageStart('Supplier Registry');
 .supplier-entry-table{border-collapse:separate!important;border-spacing:12px 0!important;table-layout:fixed!important;width:2004px!important;min-width:2004px!important;max-width:none!important;margin:0!important}
 .supplier-entry-table .supplier-entry-row{display:table-row!important;width:auto!important}
 .supplier-entry-table .supplier-entry-row>.supplier-field{display:table-cell!important;float:none!important;position:static!important;vertical-align:top!important;}
-.supplier-entry-table .supplier-field{display:table-cell!important;vertical-align:top!important;border:none!important;border-radius:0!important;padding:6px!important;box-sizing:border-box!important;background:transparent!important;white-space:normal!important}
+.supplier-entry-table .supplier-field{display:table-cell!important;vertical-align:top!important;border:1px solid #cbd5e1!important;border-radius:4px!important;padding:6px!important;box-sizing:border-box!important;background:#fff!important;white-space:normal!important}
 .supplier-entry-table .supplier-row-select-field{width:60px!important;min-width:60px!important;max-width:60px!important;padding:6px 4px!important}
 .supplier-entry-table .supplier-row-select-field label{display:block!important;margin:0 0 5px!important;white-space:nowrap!important}
 .supplier-entry-table .supplier-row-select-field input[type=checkbox]{display:block!important;width:15px!important;height:15px!important;margin:0!important}
