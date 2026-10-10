@@ -9,12 +9,15 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     checkCsrf();
     try{
         $action=$_POST['action']??'';
-        if($action==='delete'){
-            $id=(int)($_POST['id']??0);
-            if($id<=0) throw new RuntimeException('Invalid Category.');
-            $st=$pdo->prepare('DELETE FROM categories WHERE id=?');
-            $st->execute([$id]);
-            flash('success','Category deleted.');
+        if($action==='bulk_delete'){
+            $ids=array_values(array_unique(array_filter(array_map('intval',(array)($_POST['selected_ids']??[])),static fn($id)=>$id>0)));
+            if(!$ids) throw new RuntimeException('Select at least one Category to delete.');
+            $placeholders=implode(',',array_fill(0,count($ids),'?'));
+            $st=$pdo->prepare("DELETE FROM categories WHERE id IN ($placeholders)");
+            $st->execute($ids);
+            $deleted=$st->rowCount();
+            if($deleted<1) throw new RuntimeException('No matching Categories were found.');
+            flash('success',$deleted===1?'Category deleted.':$deleted.' Categories deleted.');
         }elseif($action==='save_bulk'){
             $names=array_map('trim',(array)($_POST['names']??[]));
             $validNames=[];
@@ -105,30 +108,51 @@ if(!$embedded) pageStart('Category');
   </form>
 
   <div class="table-wrap" style="margin-top:22px">
-  <div class="category-pagination" id="categoryPagination" aria-label="Category pagination"><div class="category-page-size"><label for="categoryPageSize">Show</label><select class="input" id="categoryPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="categoryPageSize">records</label></span></div><div class="category-pagination-info" id="categoryPaginationInfo"></div><div class="category-pagination-buttons" id="categoryPaginationButtons"></div></div>
+  <form method="post" id="categoryBulkDeleteForm" onsubmit="return confirmBulkCategoryDelete();">
+    <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+    <input type="hidden" name="action" value="bulk_delete">
+    <div class="category-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px">
+      <label style="display:flex;align-items:center;gap:7px;margin:0;font-size:13px"><input type="checkbox" id="selectAllCategories"> Select All</label>
+      <button class="btn danger" type="submit" id="deleteSelectedCategories" disabled>Delete Selected</button>
+    </div>
+    <div class="category-pagination" id="categoryPagination" aria-label="Category pagination"><div class="category-page-size"><label for="categoryPageSize">Show</label><select class="input" id="categoryPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="categoryPageSize">records</label></span></div><div class="category-pagination-info" id="categoryPaginationInfo"></div><div class="category-pagination-buttons" id="categoryPaginationButtons"></div></div>
     <table class="table" id="categoryTable">
-      <thead><tr><th>Category</th><th>Actions</th></tr></thead>
+      <thead><tr><th style="width:42px">Select</th><th>Category</th><th>Actions</th></tr></thead>
       <tbody>
       <?php foreach($rows as $r): ?>
         <tr data-category-id="<?=e((string)$r['id'])?>" data-category-name="<?=e($r['name'])?>">
+          <td><input type="checkbox" class="category-select" name="selected_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['name'])?>"></td>
           <td><b><?=e($r['name'])?></b></td>
-          <td>
-            <a class="btn secondary master-action" href="<?=e($embedded?'settings.php?tab=category&edit='.(int)$r['id']:'categories.php?edit='.(int)$r['id'])?>">Edit</a>
-            <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Category?');">
-              <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-              <input type="hidden" name="action" value="delete">
-              <input type="hidden" name="id" value="<?=(int)$r['id']?>">
-              <button class="btn danger master-action" type="submit">Delete</button>
-            </form>
-          </td>
+          <td><a class="btn secondary master-action" href="<?=e($embedded?'settings.php?tab=category&edit='.(int)$r['id']:'categories.php?edit='.(int)$r['id'])?>">Edit</a></td>
         </tr>
       <?php endforeach; ?>
-      <?php if(!$rows): ?><tr><td colspan="2" class="empty">No Categories have been added yet.</td></tr><?php endif; ?>
+      <?php if(!$rows): ?><tr><td colspan="3" class="empty">No Categories have been added yet.</td></tr><?php endif; ?>
       </tbody>
     </table>
+  </form>
   </div>
 </div>
 
+<script>
+function confirmBulkCategoryDelete(){
+  const selected=Array.from(document.querySelectorAll('.category-select:checked'));
+  if(!selected.length){alert('Select at least one Category to delete.');return false;}
+  return confirm(selected.length===1?'Delete the selected Category?':'Delete all '+selected.length+' selected Categories?');
+}
+document.addEventListener('DOMContentLoaded',function(){
+  const selectAll=document.getElementById('selectAllCategories');
+  const deleteButton=document.getElementById('deleteSelectedCategories');
+  const checks=Array.from(document.querySelectorAll('.category-select'));
+  function updateBulkSelection(){
+    const selected=checks.filter(function(box){return box.checked;}).length;
+    if(deleteButton)deleteButton.disabled=selected===0;
+    if(selectAll){selectAll.checked=checks.length>0&&selected===checks.length;selectAll.indeterminate=selected>0&&selected<checks.length;}
+  }
+  if(selectAll)selectAll.addEventListener('change',function(){checks.forEach(function(box){box.checked=selectAll.checked;});updateBulkSelection();});
+  checks.forEach(function(box){box.addEventListener('change',updateBulkSelection);});
+  updateBulkSelection();
+});
+</script>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
   const rows=document.getElementById('categoryRows');
