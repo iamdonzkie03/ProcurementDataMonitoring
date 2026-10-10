@@ -11,12 +11,15 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             $st=$pdo->prepare('UPDATE units_of_measure SET status=IF(status="Active","Inactive","Active") WHERE id=?');
             $st->execute([$id]);
             flash('success','Unit status updated.');
-        }elseif($action==='delete'){
-            $id=(int)$_POST['id'];
-            if($id<=0) throw new RuntimeException('Invalid unit of measurement.');
-            $st=$pdo->prepare('DELETE FROM units_of_measure WHERE id=?');
-            $st->execute([$id]);
-            flash('success','Unit of measurement deleted.');
+        }elseif($action==='bulk_delete'){
+            $ids=array_values(array_unique(array_filter(array_map('intval',(array)($_POST['selected_ids']??[])),static fn($id)=>$id>0)));
+            if(!$ids) throw new RuntimeException('Select at least one Unit of Measurement to delete.');
+            $placeholders=implode(',',array_fill(0,count($ids),'?'));
+            $st=$pdo->prepare("DELETE FROM units_of_measure WHERE id IN ($placeholders)");
+            $st->execute($ids);
+            $deleted=$st->rowCount();
+            if($deleted<1) throw new RuntimeException('No matching Units of Measurement were found.');
+            flash('success',$deleted===1?'Unit of Measurement deleted.':$deleted.' Units of Measurement deleted.');
         }elseif($action==='save_bulk'){
             $names=(array)($_POST['names']??[]);
             $validNames=[];
@@ -91,12 +94,39 @@ if(!$embedded) pageStart('Units of Measurement');
 </div>
 <?php endif; ?>
 </form>
-<div class="uom-pagination" id="uomPagination" aria-label="Units of Measurement pagination"><div class="uom-page-size"><label for="uomPageSize">Show</label><select class="input" id="uomPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="uomPageSize">records</label></span></span></span></div><div class="uom-pagination-info" id="uomPaginationInfo"></div><div class="uom-pagination-buttons" id="uomPaginationButtons"></div></div>
-<div class="table-wrap"><table class="table" id="uomTable"><tr><th>Unit</th><th>Action</th></tr><?php foreach($rows as $r):?><tr data-uom-id="<?=e((string)$r['id'])?>" data-uom-name="<?=e($r['name'])?>"><td><b><?=e($r['name'])?></b></td><td>
-<a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=uom&edit='.(int)$r['id'] : 'units.php?edit='.(int)$r['id'])?>">Edit</a>
-<form method="post" class="master-action-form" onsubmit="return confirm('Delete this Unit of Measurement?');"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?=$r['id']?>"><button class="btn danger master-action" type="submit">Delete</button></form>
-</td></tr><?php endforeach;?></table></div>
+<div class="uom-pagination" id="uomPagination" aria-label="Units of Measurement pagination"><div class="uom-page-size"><label for="uomPageSize">Show</label><select class="input" id="uomPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="uomPageSize">records</label></span></div><div class="uom-pagination-info" id="uomPaginationInfo"></div><div class="uom-pagination-buttons" id="uomPaginationButtons"></div></div>
+<div class="table-wrap">
+<form method="post" id="uomBulkDeleteForm" onsubmit="return confirmBulkUomDelete();">
+<input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="bulk_delete">
+<div class="uom-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px">
+<label style="display:flex;align-items:center;gap:7px;margin:0;font-size:13px"><input type="checkbox" id="selectAllUom"> Select All</label>
+<button class="btn danger" type="submit" id="deleteSelectedUom" disabled>Delete Selected</button>
 </div>
+<table class="table" id="uomTable"><thead><tr><th style="width:42px">Select</th><th>Unit</th><th>Action</th></tr></thead><tbody><?php foreach($rows as $r):?><tr data-uom-id="<?=e((string)$r['id'])?>" data-uom-name="<?=e($r['name'])?>"><td><input type="checkbox" class="uom-select" name="selected_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['name'])?>"></td><td><b><?=e($r['name'])?></b></td><td>
+<a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=uom&edit='.(int)$r['id'] : 'units.php?edit='.(int)$r['id'])?>">Edit</a>
+</td></tr><?php endforeach;?><?php if(!$rows):?><tr><td colspan="3" class="empty">No Units of Measurement have been added yet.</td></tr><?php endif;?></tbody></table>
+</form></div>
+</div>
+<script>
+function confirmBulkUomDelete(){
+  const selected=Array.from(document.querySelectorAll('.uom-select:checked'));
+  if(!selected.length){alert('Select at least one Unit of Measurement to delete.');return false;}
+  return confirm(selected.length===1?'Delete the selected Unit of Measurement?':'Delete all '+selected.length+' selected Units of Measurement?');
+}
+document.addEventListener('DOMContentLoaded',function(){
+  const selectAll=document.getElementById('selectAllUom');
+  const deleteButton=document.getElementById('deleteSelectedUom');
+  const checks=Array.from(document.querySelectorAll('.uom-select'));
+  function updateBulkSelection(){
+    const selected=checks.filter(function(box){return box.checked;}).length;
+    if(deleteButton)deleteButton.disabled=selected===0;
+    if(selectAll){selectAll.checked=checks.length>0&&selected===checks.length;selectAll.indeterminate=selected>0&&selected<checks.length;}
+  }
+  if(selectAll)selectAll.addEventListener('change',function(){checks.forEach(function(box){box.checked=selectAll.checked;});updateBulkSelection();});
+  checks.forEach(function(box){box.addEventListener('change',updateBulkSelection);});
+  updateBulkSelection();
+});
+</script>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
   const rows=document.getElementById('uomRows');
