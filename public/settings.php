@@ -23,6 +23,11 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $tab==='category'){
   require __DIR__.'/categories.php';
   exit;
 }
+if($_SERVER['REQUEST_METHOD']==='POST' && $tab==='uom'){
+  $embedded=true;
+  require __DIR__.'/units.php';
+  exit;
+}
 
 pageStart('Settings');
 ?>
