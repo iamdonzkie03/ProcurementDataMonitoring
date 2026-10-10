@@ -33,6 +33,28 @@ CREATE TABLE IF NOT EXISTS suppliers (
 ) ENGINE=InnoDB
 SQL);
 } catch(Throwable $e) {}
+
+// Existing installations may have a UNIQUE index on supplier identity fields.
+// Duplicate supplier details are allowed in the registry, so remove only non-primary
+// unique indexes made exclusively from company name, address, and/or owner columns.
+try {
+  $indexRows=$pdo->query("SHOW INDEX FROM suppliers")->fetchAll(PDO::FETCH_ASSOC);
+  $uniqueIndexes=[];
+  foreach($indexRows as $indexRow){
+    $keyName=(string)($indexRow['Key_name']??'');
+    if($keyName==='' || strtoupper($keyName)==='PRIMARY' || (int)($indexRow['Non_unique']??1)!==0) continue;
+    $uniqueIndexes[$keyName][(int)($indexRow['Seq_in_index']??1)]=(string)($indexRow['Column_name']??'');
+  }
+  $identityColumns=['supplier_company_name','address','owner'];
+  foreach($uniqueIndexes as $keyName=>$columnsByOrder){
+    $columns=array_values($columnsByOrder);
+    if($columns && count(array_diff($columns,$identityColumns))===0){
+      $quotedName=chr(96).str_replace(chr(96),chr(96).chr(96),$keyName).chr(96);
+      $pdo->exec("ALTER TABLE suppliers DROP INDEX $quotedName");
+    }
+  }
+} catch(Throwable $e) {}
+
 try {
   $pdo->exec("ALTER TABLE suppliers ADD COLUMN pcab_license_path VARCHAR(500) NULL AFTER tax_clearance_valid_until");
 } catch(Throwable $e) {}
