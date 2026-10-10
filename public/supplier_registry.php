@@ -144,11 +144,14 @@ pageStart('Supplier Registry');
 .supplier-table-wrap{overflow-x:hidden}
 .supplier-table{width:100%!important;max-width:100%!important;table-layout:fixed;border-collapse:collapse}
 .supplier-table th,.supplier-table td{box-sizing:border-box;padding:8px 7px;white-space:normal;overflow-wrap:anywhere;word-break:normal;vertical-align:top}
-.supplier-table th:nth-child(1),.supplier-table td:nth-child(1){width:4%}
-.supplier-table th:nth-child(2),.supplier-table td:nth-child(2){width:4%}
-.supplier-table th:nth-child(3),.supplier-table td:nth-child(3){width:28%}
-.supplier-table th:nth-child(4),.supplier-table td:nth-child(4){width:50%}
-.supplier-table th:nth-child(5),.supplier-table td:nth-child(5){width:14%}
+.supplier-table-editor th:nth-child(1),.supplier-table-editor td:nth-child(1){width:4%}
+.supplier-table-editor th:nth-child(2),.supplier-table-editor td:nth-child(2){width:4%}
+.supplier-table-editor th:nth-child(3),.supplier-table-editor td:nth-child(3){width:28%}
+.supplier-table-editor th:nth-child(4),.supplier-table-editor td:nth-child(4){width:50%}
+.supplier-table-editor th:nth-child(5),.supplier-table-editor td:nth-child(5){width:14%}
+.supplier-table-viewer th:nth-child(1),.supplier-table-viewer td:nth-child(1){width:5%}
+.supplier-table-viewer th:nth-child(2),.supplier-table-viewer td:nth-child(2){width:35%}
+.supplier-table-viewer th:nth-child(3),.supplier-table-viewer td:nth-child(3){width:60%}
 .supplier-table .supplier-company-details,.supplier-table .supplier-doc-links{min-width:0;overflow-wrap:anywhere}
 .supplier-table .supplier-doc-links>div{margin-bottom:6px;line-height:1.4}
 .supplier-table .supplier-doc-links small{white-space:normal}
@@ -217,7 +220,7 @@ pageStart('Supplier Registry');
         </div>
       <?php endif; ?>
       <div class="table-wrap supplier-table-wrap">
-        <table class="table supplier-table" id="supplierTable">
+        <table class="table supplier-table <?=$isEditor?'supplier-table-editor':'supplier-table-viewer'?>" id="supplierTable">
           <thead><tr><?php if($isEditor): ?><th><span class="sr-only">Select</span></th><?php endif; ?><th>#</th><th>Supplier/Company Name</th><th>Permits and Licenses</th><?php if($isEditor): ?><th>Actions</th><?php endif; ?></tr></thead>
           <tbody>
           <?php $i=1;foreach($rows as $r): ?>
