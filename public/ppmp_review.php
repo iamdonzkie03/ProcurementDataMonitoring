@@ -78,13 +78,13 @@ function isSupervisorForArea(PDO $pdo,int $areaId,string $userName): bool{
   return (int)$st->fetchColumn()>0;
 }
 function isBudgetOfficerForArea(PDO $pdo,int $areaId,string $userName): bool{
-  // Budget Officers are configured under the Budget Area/Unit and review
-  // PPMPs submitted by every Area/Unit, not just their own Area/Unit.
+  // Identify the Budget Officer by the person's name listed in Area/Unit
+  // under the Budget Office. The position/designation text is not required.
+  // The assigned Budget Officer may approve PPMPs from every Area/Unit.
   if($userName==='') return false;
   $st=$pdo->prepare("SELECT COUNT(*) FROM area_personnel ap JOIN areas a ON a.id=ap.area_id
     WHERE LOWER(TRIM(ap.name))=LOWER(TRIM(?))
-      AND LOWER(COALESCE(ap.position_designation,'')) LIKE '%budget officer%'
-      AND (LOWER(TRIM(a.name))='budget' OR LOWER(a.name) LIKE 'budget %' OR LOWER(a.name) LIKE '% budget' OR LOWER(a.name) LIKE '% budget %')");
+      AND LOWER(a.name) LIKE '%budget%'");
   $st->execute([$userName]);
   return (int)$st->fetchColumn()>0;
 }
