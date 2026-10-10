@@ -74,10 +74,19 @@ function supplierUpload(string $field,string $uploadDir,string $uploadWeb,?strin
   }
   return $uploadWeb.'/'.$name;
 }
-function supplierRemoveFile(?string $path): void {
-  if(!$path) return;
-  $file=__DIR__.'/'.ltrim(str_replace(['\\','/'],DIRECTORY_SEPARATOR,$path),DIRECTORY_SEPARATOR);
-  if(is_file($file)) @unlink($file);
+function supplierRemoveFile(?string $path,string $uploadDir): bool {
+  $path=trim((string)$path);
+  if($path==='') return true;
+
+  // Only delete files inside public/uploads/suppliers; never follow arbitrary stored paths.
+  $filename=basename(str_replace('\\\\','/',$path));
+  if($filename==='' || $filename==='.' || $filename==='..') return false;
+  $base=realpath($uploadDir);
+  if($base===false) return false;
+  $file=$base.DIRECTORY_SEPARATOR.$filename;
+
+  if(!is_file($file)) return true; // Already absent.
+  return @unlink($file);
 }
 
 if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
@@ -93,16 +102,28 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
       $selected=$st->fetchAll();
       if(!$selected) throw new RuntimeException('No matching supplier records were found.');
       $deleteIds=[];
+      $filesToRemove=[];
       foreach($selected as $old){
-        supplierRemoveFile($old['philgeps_certificate_path']??null);
-        supplierRemoveFile($old['business_permit_path']??null);
-        supplierRemoveFile($old['tax_clearance_certificate_path']??null);
-        supplierRemoveFile($old['pcab_license_path']??null);
         $deleteIds[]=(int)$old['id'];
+        foreach(['philgeps_certificate_path','business_permit_path','tax_clearance_certificate_path','pcab_license_path'] as $fileColumn){
+          if(!empty($old[$fileColumn])) $filesToRemove[]=$old[$fileColumn];
+        }
       }
+
+      // Remove database records first. Only after the delete succeeds, remove every
+      // associated PDF from the local uploads/suppliers folder.
       $deletePlaceholders=implode(',',array_fill(0,count($deleteIds),'?'));
       $pdo->prepare("DELETE FROM suppliers WHERE id IN ($deletePlaceholders)")->execute($deleteIds);
-      flash('success',count($deleteIds).' supplier record(s) and their uploaded files were deleted successfully.');
+
+      $fileDeleteFailures=[];
+      foreach(array_unique($filesToRemove) as $filePath){
+        if(!supplierRemoveFile($filePath,$uploadDir)) $fileDeleteFailures[]=basename((string)$filePath);
+      }
+      if($fileDeleteFailures){
+        flash('error','Supplier record(s) deleted, but these attached file(s) could not be removed from the local folder: '.implode(', ',$fileDeleteFailures).'. Please check folder permissions.');
+      } else {
+        flash('success',count($deleteIds).' supplier record(s) and all attached files were deleted successfully.');
+      }
       header('Location:supplier_registry.php');exit;
     } elseif($action==='save'){
       $ids=$_POST['supplier_id']??[];$names=$_POST['supplier_company_name']??[];$addresses=$_POST['address']??[];$owners=$_POST['owner']??[];$reps=$_POST['authorized_representative']??[];$businesses=[];$regs=$_POST['registration_type']??[];$phDates=$_POST['philgeps_valid_until']??[];$bpDates=$_POST['business_permit_valid_until']??[];$taxDates=$_POST['tax_clearance_valid_until']??[];$pcabDates=$_POST['pcab_license_valid_until']??[];
