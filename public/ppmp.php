@@ -844,14 +844,14 @@ pageStart('Project Procurement Management Plan');
       </div>
             <div class="table-wrap ppmp-entry-table-wrap">
         <table class="table ppmp-entry-table" id="ppmpEntryTable">
-          <thead><tr><th>#</th><th>Category *</th><th>Classification *</th><th>Item Name *</th><th>Technical Specifications *</th><th>Quantity *</th><th>Unit *</th><th>Unit Cost *</th><th>Total Budget</th><th>Procurement Mode *</th><th>Pre-Procurement *</th><th>Start *</th><th>End *</th><th>Delivery *</th><th>Source of Funds *</th><th>Supporting Documents</th><th>Remarks</th><th>Action</th></tr></thead>
+          <thead><tr><th>#</th><th>Classification *</th><th>Item Name *</th><th>Technical Specifications *</th><th>Category *</th><th>Quantity *</th><th>Unit *</th><th>Unit Cost *</th><th>Total Budget</th><th>Procurement Mode *</th><th>Pre-Procurement *</th><th>Start *</th><th>End *</th><th>Delivery *</th><th>Source of Funds *</th><th>Supporting Documents</th><th>Remarks</th><th>Action</th></tr></thead>
           <tbody id="ppmpEntryBody">
             <tr class="ppmp-entry-row">
               <td class="ppmp-row-number">1</td>
-              <td><select class="select" name="<?=$editing?'category_id':'items[0][category_id]'?>" required><option value="">Select</option><?php foreach($cats as $c):?><option value="<?=$c['id']?>" <?=((int)($formState['category_id']??0)===(int)$c['id'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select></td>
               <td><select class="select" name="<?=$editing?'procurement_type':'items[0][procurement_type]'?>" required><option value="">Select</option><?php foreach($classifications as $c):?><option value="<?=e($c['name'])?>" <?=((string)($formState['procurement_type']??'')===(string)$c['name'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select></td>
               <td><div class="ppmp-item-autocomplete"><input class="input ppmp-item-name" name="<?=$editing?'item_name':'items[0][item_name]'?>" required autocomplete="off" value="<?=e($formState['item_name']??'')?>"><div class="ppmp-item-suggestions" role="listbox"></div></div></td>
               <td><input class="input ppmp-item-description ppmp-masterlist-locked" type="text" name="<?=$editing?'description':'items[0][description]'?>" readonly required value="<?=e($formState['description']??'')?>"></td>
+              <td><select class="select ppmp-category-locked" name="<?=$editing?'category_id':'items[0][category_id]'?>" required disabled aria-label="Category (automatically selected)"><option value="">Select</option><?php foreach($cats as $c):?><option value="<?=$c['id']?>" <?=((int)($formState['category_id']??0)===(int)$c['id'])?'selected':''?>><?=e($c['name'])?></option><?php endforeach;?></select><input type="hidden" class="ppmp-category-value" name="<?=$editing?'category_id':'items[0][category_id]'?>" value="<?=e($formState['category_id']??'')?>"></td>
               <td><input class="input ppmp-row-qty" name="<?=$editing?'quantity':'items[0][quantity]'?>" inputmode="decimal" required value="<?=isset($formState['quantity'])?e(number_format((float)$formState['quantity'],2,'.','')):''?>"></td>
               <td><select class="select ppmp-masterlist-locked" name="<?=$editing?'unit':'items[0][unit]'?>" required disabled><option value="">Select</option><?php foreach($units as $u):?><option value="<?=e($u['name'])?>" <?=((string)($formState['unit']??'')===(string)$u['name'])?'selected':''?>><?=e($u['name'])?></option><?php endforeach;?></select><input type="hidden" class="ppmp-masterlist-unit-value" name="<?=$editing?'unit':'items[0][unit]'?>" value="<?=e($formState['unit']??'')?>"></td>
               <td><input class="input ppmp-row-unit-price ppmp-masterlist-locked" name="<?=$editing?'unit_price':'items[0][unit_price]'?>" inputmode="decimal" readonly required value="<?=isset($formState['unit_price'])?e(number_format((float)$formState['unit_price'],2,'.',',')):''?>"></td>
@@ -1245,8 +1245,10 @@ function ppmpPrintDate($value): string{
         this.dataset.selectedMasterlistName='';
         const description=row.querySelector('.ppmp-item-description');
         if(description)description.value='';
-        const categorySelect=row.querySelector('select[name$="[category_id]"]')||row.querySelector('select[name="category_id"]');
+        const categorySelect=row.querySelector('.ppmp-category-locked');
         if(categorySelect)categorySelect.value='';
+        const categoryHidden=row.querySelector('.ppmp-category-value');
+        if(categoryHidden)categoryHidden.value='';
         const unitSelect=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
         if(unitSelect)unitSelect.value='';
         const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');
@@ -1273,11 +1275,11 @@ function ppmpPrintDate($value): string{
       const button=e.target.closest('.ppmp-item-suggestion');if(!button)return;
       input.value=button.dataset.itemName||'';
       input.dataset.selectedMasterlistName=button.dataset.itemName||'';
-      const categorySelect=row.querySelector('select[name$="[category_id]"]')||row.querySelector('select[name="category_id"]');
-      if(categorySelect){
-        categorySelect.value=String(button.dataset.categoryId||'');
-        categorySelect.dispatchEvent(new Event('change',{bubbles:true}));
-      }
+      const categorySelect=row.querySelector('.ppmp-category-locked');
+      const categoryId=String(button.dataset.categoryId||'');
+      if(categorySelect)categorySelect.value=categoryId;
+      const categoryHidden=row.querySelector('.ppmp-category-value');
+      if(categoryHidden)categoryHidden.value=categoryId;
       const description=row.querySelector('.ppmp-item-description');
       if(description){description.value=button.dataset.specifications||'';description.readOnly=true;description.classList.add('ppmp-masterlist-locked');}
       const unitSelect=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
