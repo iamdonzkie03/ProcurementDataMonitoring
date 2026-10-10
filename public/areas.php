@@ -18,15 +18,14 @@ try{
 }catch(PDOException $e){ /* Migration can also be applied manually. */ }
 
 function signatureSafeSegment(string $value): string{
-  // Keep every word from the original name. Windows-forbidden filename
-  // characters are replaced with spaces instead of deleting adjacent words.
+  // Preserve the exact internal spacing and words entered by the user.
+  // Only replace characters Windows does not permit in file/folder names.
   $value=trim($value);
-  $value=preg_replace('/[\\\\\\/:*?"<>|]+/u',' ',$value);
-  $value=preg_replace('/\\s+/u',' ',$value);
-  $value=trim($value," .\\t\\n\\r\\0\\x0B");
+  $value=str_replace(["\\", "/", ":", "*", "?", "\"", "<", ">", "|"], "-", $value);
+  // Windows does not allow a filename/folder name to end in a space or period.
+  $value=rtrim($value, " .\t\n\r\0\x0B");
   return $value!=='' ? $value : 'Unnamed';
 }
-
 function deleteStoredSignature(?string $relativePath): void{
   $relativePath=trim((string)$relativePath);
   if($relativePath==='' || str_contains($relativePath,'..')) return;
