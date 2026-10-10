@@ -174,10 +174,23 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
     try{
       $rowsFromExcel=ppmpMasterlistReadXlsx((string)$upload['tmp_name']);
-      $expectedHeaders=['Item Name','Technical Specifications','Unit of Measurement','Unit Cost'];
-      $header=array_slice($rowsFromExcel[0],0,4);
-      if(count($rowsFromExcel[0])!==4 || $header!==$expectedHeaders){
-        throw new RuntimeException('The Excel columns must exactly match: Item Name, Technical Specifications, Unit of Measurement, Unit Cost.');
+      $expectedHeaders=['item name','technical specifications','unit of measurement','unit cost'];
+
+      // Excel cells may have sparse column indexes, invisible whitespace/BOM characters,
+      // or extra formatted-but-empty columns. Normalize the header before validating it.
+      $headerRow=$rowsFromExcel[0]??[];
+      ksort($headerRow);
+      $headerRow=array_values($headerRow);
+      $normalizedHeader=[];
+      foreach($headerRow as $cellValue){
+        $cellValue=(string)$cellValue;
+        $cellValue=preg_replace('/^[\\s\\x{FEFF}\\x{00A0}]+|[\\s\\x{FEFF}\\x{00A0}]+$/u','',$cellValue);
+        $normalizedHeader[]=mb_strtolower($cellValue,'UTF-8');
+      }
+      while($normalizedHeader && end($normalizedHeader)==='') array_pop($normalizedHeader);
+
+      if($normalizedHeader!==$expectedHeaders){
+        throw new RuntimeException('The Excel header row must contain these four columns in this order: Item Name, Technical Specifications, Unit of Measurement, Unit Cost. Please remove any non-empty extra columns and ensure the headings are on the first row.');
       }
 
       $activeUoms=[];
