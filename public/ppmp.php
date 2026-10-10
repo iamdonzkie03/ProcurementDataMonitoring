@@ -954,6 +954,18 @@ if($signatoryAreaId>0){
 if($preparedSignature==='' && $submitted!=='' && strcasecmp(trim((string)$person),$submitted)===0){
   $preparedSignature=$submittedSignature;
 }
+
+// The official PPMP print form's Prepared By block must identify the
+// Supervisor/Division-Department Head and their position/designation.
+if($submitted!==''){
+  $person=$submitted;
+}
+if($submittedPos!==''){
+  $preparedPos=$submittedPos;
+}
+if($submittedSignature!==''){
+  $preparedSignature=$submittedSignature;
+}
 // Budget signatory comes from the Area/Unit master list.
 // IMPORTANT: do not inspect the selected PPMP Area/Unit personnel and do not
 // look for the word "Budget" in a person's name/position. Instead, locate the
