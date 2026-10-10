@@ -250,7 +250,7 @@ pageStart('Supplier Registry');
 .supplier-table .supplier-doc-links small{white-space:normal}
 .supplier-table .supplier-actions{display:flex;flex-wrap:wrap;gap:4px}
 .supplier-form-scroll{display:block!important;width:100%!important;max-width:100%!important;overflow-x:auto!important;overflow-y:visible!important}
-.supplier-entry-table{border-collapse:separate!important;border-spacing:8px 0!important;table-layout:fixed!important;width:max-content!important;min-width:2300px!important;margin:0!important}
+.supplier-entry-table{border-collapse:separate!important;border-spacing:8px 0!important;table-layout:fixed!important;width:2372px!important;min-width:2372px!important;max-width:none!important;margin:0!important}
 .supplier-entry-table .supplier-entry-row{display:table-row!important;width:auto!important}
 .supplier-entry-table .supplier-entry-row>.supplier-field{display:table-cell!important;float:none!important;position:static!important;vertical-align:top!important;}
 .supplier-entry-table .supplier-field{display:table-cell!important;vertical-align:top!important;border:1px solid #cbd5e1!important;border-radius:4px!important;padding:6px!important;box-sizing:border-box!important;background:#fff!important;white-space:normal!important}
@@ -291,6 +291,7 @@ pageStart('Supplier Registry');
       <div class="supplier-form-scroll">
         <input type="hidden" name="supplier_id[]" value="<?=e((string)$editing['id'])?>">
         <table class="supplier-entry-table">
+          <colgroup><col style="width:60px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:280px"></colgroup>
           <tbody>
           <tr class="supplier-entry-row">
           <td class="supplier-field supplier-row-select-field"><label>Select</label><input type="checkbox" class="supplier-entry-select" aria-label="Select supplier entry row to remove" style="display:block!important;position:static!important;float:none!important;justify-self:start!important;width:15px!important;min-width:15px!important;max-width:15px!important;height:15px!important;margin:0!important;padding:0!important;transform:none!important;"></td>
