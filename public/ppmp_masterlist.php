@@ -73,7 +73,7 @@ function ppmpMasterlistReadXlsx(string $filePath): array {
       $sharedNs=$shared->getDocNamespaces(true);
       $shared->registerXPathNamespace('x',$sharedNs['']??$mainNs);
       foreach(($shared->xpath('//x:si')?:[]) as $si){
-        $texts=$si->xpath('.//x:t');
+        $texts=$si->xpath('.//*[local-name()="t"]');
         $value='';
         foreach(($texts?:[]) as $t) $value.=(string)$t;
         $sharedStrings[]=$value;
@@ -93,7 +93,7 @@ function ppmpMasterlistReadXlsx(string $filePath): array {
   $result=[];
   foreach($rows as $row){
     $values=[];
-    foreach(($row->xpath('./x:c')?:[]) as $cell){
+    foreach(($row->xpath('./*[local-name()="c"]')?:[]) as $cell){
       $ref=(string)$cell['r'];
       if($ref==='' || !preg_match('/^([A-Z]+)\d+$/i',$ref,$m)) continue;
       $letters=strtoupper($m[1]);
@@ -103,10 +103,10 @@ function ppmpMasterlistReadXlsx(string $filePath): array {
       $type=(string)$cell['t'];
       $value='';
       if($type==='inlineStr'){
-        $texts=$cell->xpath('./x:is//x:t');
+        $texts=$cell->xpath('./*[local-name()="is"]//*[local-name()="t"]');
         foreach(($texts?:[]) as $t) $value.=(string)$t;
       }else{
-        $v=$cell->xpath('./x:v');
+        $v=$cell->xpath('./*[local-name()="v"]');
         $value=isset($v[0])?(string)$v[0]:'';
         if($type==='s' && $value!=='' && isset($sharedStrings[(int)$value])) $value=$sharedStrings[(int)$value];
         if($type==='b') $value=$value==='1'?'TRUE':'FALSE';
