@@ -244,7 +244,9 @@ if($reviewId>0){
     $st->execute([$reviewId,(int)$review['fiscal_year'],(int)$review['area_id'],(string)$review['ppmp_no']]);$items=$st->fetchAll();
   }
 }
-pageStart('PPMP Review');
+$isBudgetOfficerPage=isBudgetOfficerForArea($pdo,0,$userName);
+$pageTitle=$isBudgetOfficerPage?'PPMP for Approval':'PPMP for Review';
+pageStart($pageTitle);
 ?>
 <style>
 .ppmp-review-status{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}.pending{background:#fff3cd;color:#856404}.pfa{background:#cff4fc;color:#055160}.approved{background:#d1e7dd;color:#0f5132}.declined{background:#f8d7da;color:#842029}
@@ -253,8 +255,8 @@ pageStart('PPMP Review');
 </style>
 <div class="review-grid">
 <div class="panel">
-<h2>Pending PPMP Requests</h2>
-<p class="muted">Select an Area/Unit to review its submitted PPMP items independently.</p>
+<h2><?=e($pageTitle)?></h2>
+<p class="muted"><?= $isBudgetOfficerPage ? 'Review PPMP items awaiting Budget Officer approval and record an Approved or Declined decision.' : 'Select an Area/Unit to review its submitted PPMP items independently.' ?></p>
 <?php if($supervisorQueue):?>
 <h3>Areas/Units Pending Supervisor Review</h3>
 <div class="table-wrap"><table class="table"><tr><th>Division</th><th>Area/Unit</th><th>PPMP No.</th><th>Fiscal Year</th><th>Items</th><th>Submitted By</th><th>Status</th><th>Action</th></tr>
