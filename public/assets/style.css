@@ -2813,3 +2813,16 @@ html body .supplier-content-panel .supplier-list-section table.supplier-table tb
 .supplier-registry-page > .supplier-content-panel .supplier-list-section{
   margin:0!important;
 }
+
+
+/* Supplier Registry: match Registered Suppliers heading and subtitle typography to the main panel */
+html body .supplier-content-panel .supplier-list-header h2{
+  font-size:17px!important;
+  line-height:1.3!important;
+  font-weight:700!important;
+}
+html body .supplier-content-panel .supplier-list-header .hint-text{
+  font-size:11px!important;
+  line-height:1.35!important;
+  margin:5px 0 0!important;
+}
