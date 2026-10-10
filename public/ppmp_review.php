@@ -123,6 +123,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     try{
       $get=$pdo->prepare('SELECT id,status FROM ppmp_review_items WHERE id=? AND review_id=? LIMIT 1');
       $up=$pdo->prepare("UPDATE ppmp_review_items SET status=?,supervisor_remarks=?,supervisor_reviewed_by=?,supervisor_reviewed_at=NOW() WHERE id=? AND review_id=?");
+      $approvedAny=false;
       foreach($statuses as $itemReviewId=>$status){
         $itemReviewId=(int)$itemReviewId;
         if(!in_array($status,['Approved','Declined'],true))continue;
@@ -132,6 +133,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if($status==='Declined' && $remark===''){throw new RuntimeException('A decline reason is required for every item marked Declined.');}
         $nextStatus=$status==='Approved'?'Pending for Approval':'Declined';
         $up->execute([$nextStatus,$status==='Declined'?$remark:null,(int)$user['id'],$itemReviewId,$reviewId]);
+        if($status==='Approved')$approvedAny=true;
+      }
+      if($approvedAny){
+        $pdo->prepare("UPDATE ppmp_reviews SET supervisor_reviewed_by=?,supervisor_reviewed_at=NOW() WHERE id=?")
+          ->execute([(int)$user['id'],$reviewId]);
       }
       $pdo->commit();refreshReviewStatus($pdo,$reviewId);flash('success','PPMP item review decisions have been saved.');
     }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();flash('error',$e->getMessage());}
