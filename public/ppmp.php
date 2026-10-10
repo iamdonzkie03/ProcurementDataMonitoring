@@ -933,6 +933,14 @@ pageStart('Project Procurement Management Plan');
 <?php
 $h=($allPpmpRows[0]??$rows[0]??[]);
 $ppmpNo=$h['ppmp_no']??'';
+// Use the overall PPMP workflow status for the signature block, not the
+// individual item's review_status (which can differ across rows).
+$printReviewStatus='';
+if(!empty($h['fiscal_year']) && !empty($h['area_id']) && $ppmpNo!==''){
+  $stPrintStatus=$pdo->prepare('SELECT status FROM ppmp_reviews WHERE fiscal_year=? AND area_id=? AND ppmp_no=? ORDER BY id DESC LIMIT 1');
+  $stPrintStatus->execute([(int)$h['fiscal_year'],(int)$h['area_id'],(string)$ppmpNo]);
+  $printReviewStatus=trim((string)($stPrintStatus->fetchColumn()?:''));
+}
 // Prepared By is the selected Area/Unit Head from the PPMP workflow.
 // The print button passes the current selection as area_head.
 $person=trim((string)($_GET['area_head']??$areaHeadName??''));
@@ -1182,6 +1190,7 @@ function ppmpPrintDate($value): string{
   align-items:start;
   width:100%;
 }
+.ppmp-signature-template.ppmp-no-submitted{grid-template-columns:repeat(2,minmax(0,1fr));}
 .ppmp-signature-template .ppmp-signature-box{
   min-width:0;
   text-align:center;
@@ -1252,12 +1261,13 @@ function ppmpPrintDate($value): string{
     grid-template-columns:repeat(3,1fr);
     gap:12px;
   }
+  .ppmp-signature-template.ppmp-no-submitted{grid-template-columns:repeat(2,minmax(0,1fr));}
   .ppmp-signature-template .ppmp-signature-box{
     grid-template-rows:22px 50px 20px 8px 22px 22px 22px;
   }
 }
 </style>
-<div class="ppmp-signatures ppmp-signature-template">
+<div class="ppmp-signatures ppmp-signature-template <?= $printReviewStatus==='Pending for Approval' ? '' : 'ppmp-no-submitted' ?>">
     <div class="ppmp-signature-box">
       <b>Prepared by:</b>
       <div class="signature-line ppmp-prepared-signature"><?php if($preparedSignature!==''): ?><img src="<?=e($preparedSignature)?>" alt="Prepared By electronic signature"><?php endif; ?></div>
@@ -1268,7 +1278,7 @@ function ppmpPrintDate($value): string{
       <div class="signature-meta"><i>End-User or Implementing Unit</i></div>
       <div class="signature-meta">Date : <?=e(ppmpPrintDate($h['updated_at']??$h['created_at']??date('Y-m-d'))) ?></div>
     </div>
-    <?php if(($h['review_status']??'')==='Pending for Approval'): ?>
+    <?php if($printReviewStatus==='Pending for Approval'): ?>
     <div class="ppmp-signature-box">
       <b>Submitted by:</b>
       <div class="signature-line ppmp-submitted-signature"><?php if($submittedSignature!==''): ?><img src="<?=e($submittedSignature)?>" alt="Submitted By electronic signature"><?php endif; ?></div>
