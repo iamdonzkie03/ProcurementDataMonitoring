@@ -258,14 +258,14 @@ pageStart('Supplier Registry');
 }
 </style>
 <div class="supplier-registry-page" style="display:flex!important;flex-direction:column!important;align-items:stretch!important;row-gap:24px!important;">
-  <div class="supplier-table-select-all-toolbar" style="display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:12px">
-    <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSupplierEntryRows"> Select All</label>
-  </div>
   <div class="panel supplier-content-panel">
     <div class="supplier-toolbar supplier-registry-heading-row">
       <div class="supplier-heading-block">
         <h2 style="margin:0">Supplier Registry</h2>
         <p class="hint-text">Maintain the official registry of suppliers and their accreditation documents.</p>
+        <div class="supplier-table-select-all-toolbar" style="display:flex;align-items:center;gap:6px;margin:8px 0 0;font-size:12px">
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSupplierEntryRows"> Select All</label>
+        </div>
       </div>
       <div class="supplier-header-search" id="supplierSearchBox">
         <input class="input" type="search" id="supplierSearchInput" name="search" value="<?=e($search)?>" placeholder="Search Supplier..." autocomplete="off" aria-label="Search Supplier">
