@@ -1291,7 +1291,7 @@ function ppmpPrintDate($value): string{
       <div class="signature-caption">Signature over Printed Name</div>
       <div class="signature-meta"><?php if(in_array($printReviewStatus,['Pending for Approval','Approved'],true)): ?><?=e($submittedPos)?><?php endif; ?></div>
       <div class="signature-meta"><i>Division/Department/Section Unit</i></div>
-      <div class="signature-meta">Date : ______________________________</div>
+      <div class="signature-meta">Date : <?=e($printReviewStatus==='Approved' && $pendingApprovalDate!==''?ppmpPrintDate($pendingApprovalDate):'______________________________')?></div>
     </div>
     <div class="ppmp-signature-box ppmp-budget-signature">
       <b>within the budget allocation:</b>
@@ -1302,7 +1302,7 @@ function ppmpPrintDate($value): string{
       <div class="signature-meta"><?=e($budgetPos)?></div>
       <div class="signature-meta"><i>Budget Section</i></div>
       <div class="signature-meta">Pending for Approval: <?=e($pendingApprovalDate!==''?ppmpPrintDate($pendingApprovalDate):'________________')?></div>
-      <div class="signature-meta">Approved by Budget Officer: <?=e($budgetApprovedDate!==''?ppmpPrintDate($budgetApprovedDate):'________________')?></div>
+      <div class="signature-meta">Approved by Budget Officer: <?=e($printReviewStatus==='Approved' && $budgetApprovedDate!==''?ppmpPrintDate($budgetApprovedDate):'________________')?></div>
     </div>
   </div>
 </div>
