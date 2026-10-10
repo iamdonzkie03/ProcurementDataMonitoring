@@ -1671,6 +1671,14 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    field.value=value;
  }
  function calc(){let g=0;body.querySelectorAll('.ppmp-entry-row').forEach(row=>{let q=parseFloat((row.querySelector('.ppmp-row-qty')?.value||'').replace(/,/g,''))||0,p=parseFloat((row.querySelector('.ppmp-row-unit-price')?.value||'').replace(/,/g,''))||0,t=q*p;g+=t;row.querySelector('.ppmp-row-total').value=t?t.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'';});if(grand)grand.textContent=g.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+ // Recalculate each row's Total Budget and the grand total whenever Quantity
+ // or the masterlist-populated Unit Cost changes. Delegation also covers cloned rows.
+ body.addEventListener('input',function(e){
+   if(e.target.matches('.ppmp-row-qty,.ppmp-row-unit-price'))calc();
+ });
+ body.addEventListener('change',function(e){
+   if(e.target.matches('.ppmp-row-qty,.ppmp-row-unit-price'))calc();
+ });
  function rowHasAllRequiredData(row){
    const required=row.querySelectorAll('select[required],input[required],textarea[required]');
    for(const field of required){
