@@ -111,11 +111,11 @@ if(!$embedded) pageStart('Category');
   <form method="post" id="categoryBulkDeleteForm" onsubmit="return confirmBulkCategoryDelete();">
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="bulk_delete">
+    <div class="category-pagination" id="categoryPagination" aria-label="Category pagination"><div class="category-page-size"><label for="categoryPageSize">Show</label><select class="input" id="categoryPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="categoryPageSize">records</label></span></div><div class="category-pagination-info" id="categoryPaginationInfo"></div><div class="category-pagination-buttons" id="categoryPaginationButtons"></div></div>
     <div class="category-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px">
       <label style="display:flex;align-items:center;gap:7px;margin:0;font-size:13px"><input type="checkbox" id="selectAllCategories"> Select All</label>
       <button class="btn danger" type="submit" id="deleteSelectedCategories" disabled>Delete Selected</button>
     </div>
-    <div class="category-pagination" id="categoryPagination" aria-label="Category pagination"><div class="category-page-size"><label for="categoryPageSize">Show</label><select class="input" id="categoryPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="categoryPageSize">records</label></span></div><div class="category-pagination-info" id="categoryPaginationInfo"></div><div class="category-pagination-buttons" id="categoryPaginationButtons"></div></div>
     <table class="table" id="categoryTable">
       <thead><tr><th style="width:42px">Select</th><th>Category</th><th>Actions</th></tr></thead>
       <tbody>
