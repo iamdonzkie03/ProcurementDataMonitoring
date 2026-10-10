@@ -961,27 +961,31 @@ $pendingApprovalDate=trim((string)($h['ppmp_pending_approval_at']??''));
 $budgetApprovedDate=trim((string)($h['ppmp_budget_approved_at']??''));
 $preparedDate=trim((string)($h['created_at']??''));
 
-// Prepared By is always the selected Division/Department Head.
+// Resolve each signatory independently from its authoritative source so the
+// Prepared By and Submitted By fields cannot be accidentally interchanged.
 $preparedAreaId=(int)($areaId ?: ($h['area_id']??0));
-$person=trim((string)($h['authorized_person']??''));
-$preparedPos=trim((string)($h['authorized_position']??''));
-$preparedSignature=trim((string)($h['authorized_signature']??''));
-if($preparedAreaId>0 && ($person==='' || $preparedPos==='' || $preparedSignature==='')){
+$person='';
+$preparedPos='';
+$preparedSignature='';
+$preparedDate=trim((string)($h['created_at']??''));
+$signatoryAreaId=$preparedAreaId;
+
+// Prepared By: Division/Department Head from the division linked to the selected Area/Unit.
+if($signatoryAreaId>0){
   $stPreparedDivision=$pdo->prepare('SELECT d.division_head,d.head_position_designation,d.electronic_signature
     FROM areas a JOIN divisions d ON d.id=a.division_id WHERE a.id=? LIMIT 1');
-  $stPreparedDivision->execute([$preparedAreaId]);
+  $stPreparedDivision->execute([$signatoryAreaId]);
   $preparedDivision=$stPreparedDivision->fetch(PDO::FETCH_ASSOC)?:[];
-  if($person==='') $person=trim((string)($preparedDivision['division_head']??''));
-  if($preparedPos==='') $preparedPos=trim((string)($preparedDivision['head_position_designation']??''));
-  if($preparedSignature==='') $preparedSignature=trim((string)($preparedDivision['electronic_signature']??''));
+  $person=trim((string)($preparedDivision['division_head']??''));
+  $preparedPos=trim((string)($preparedDivision['head_position_designation']??''));
+  $preparedSignature=trim((string)($preparedDivision['electronic_signature']??''));
 }
 if($preparedPos==='') $preparedPos='Division/Department Head';
 
-// Submitted By is the selected Supervisor / Area / Unit Head.
+// Submitted By: explicitly selected Supervisor / Area / Unit Head from the area_personnel record.
 $submitted=trim((string)($_GET['area_head']??$areaHeadName??''));
 $submittedPos='';
 $submittedSignature='';
-$signatoryAreaId=(int)($areaId ?: ($h['area_id']??0));
 if($signatoryAreaId>0 && $submitted!==''){
   $stSubmittedPerson=$pdo->prepare('SELECT position_designation,electronic_signature
     FROM area_personnel WHERE area_id=? AND name=? LIMIT 1');
@@ -989,8 +993,10 @@ if($signatoryAreaId>0 && $submitted!==''){
   $submittedPerson=$stSubmittedPerson->fetch(PDO::FETCH_ASSOC)?:[];
   $submittedPos=trim((string)($submittedPerson['position_designation']??''));
   $submittedSignature=trim((string)($submittedPerson['electronic_signature']??''));
-  // Division Head PPMPs use the division record rather than area_personnel.
-  if(strcasecmp($submitted,$person)===0){
+
+  // When a Division/Department Head is also the selected Area/Unit Head,
+  // use the division's position and signature for that same person.
+  if($submitted!=='' && $person!=='' && strcasecmp($submitted,$person)===0){
     if($submittedPos==='') $submittedPos=$preparedPos;
     if($submittedSignature==='') $submittedSignature=$preparedSignature;
   }
