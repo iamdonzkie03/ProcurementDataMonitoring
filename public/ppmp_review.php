@@ -116,7 +116,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
   if($action==='review_items'){
     if(!isSupervisorForArea($pdo,$areaId,$userName)){http_response_code(403);exit('403 - You are not the assigned Supervisor/Authorized Person for this Area/Unit.');}
-    if($review['status']!=='Pending for Review'){flash('error','This PPMP is no longer open for Supervisor review.');header('Location:ppmp_review.php?review_id='.$reviewId);exit;}
+    // Decisions are item-level: keep reviewing any remaining Pending for Review
+    // items even when other items in this PPMP have advanced to later statuses.
+    $pendingCheck=$pdo->prepare("SELECT COUNT(*) FROM ppmp_review_items WHERE review_id=? AND status='Pending for Review'");
+    $pendingCheck->execute([$reviewId]);
+    if((int)$pendingCheck->fetchColumn()===0){flash('error','There are no PPMP items pending for Supervisor review.');header('Location:ppmp_review.php?review_id='.$reviewId);exit;}
     $statuses=$_POST['item_status']??[];$remarks=$_POST['item_remarks']??[];
     if(!is_array($statuses))$statuses=[];
     $pdo->beginTransaction();
@@ -187,6 +191,8 @@ $supervisorQueue=[];$budgetQueue=[];
 $stQueue=$pdo->prepare("SELECT r.*,a.name area,d.name division,u.full_name submitted_by_name,
   COUNT(DISTINCT p.id) item_count,
   COUNT(DISTINCT CASE WHEN pri_pending.status='Pending for Review' THEN pri_pending.id END) pending_review_count,
+  COUNT(DISTINCT CASE WHEN pri_pending.status='Approved' THEN pri_pending.id END) approved_count,
+  COUNT(DISTINCT CASE WHEN pri_pending.status='Pending for Approval' THEN pri_pending.id END) pending_approval_count,
   COALESCE(SUM(CASE WHEN p.total_budget IS NULL OR p.total_budget=0 THEN p.quantity*p.unit_price ELSE p.total_budget END),0) total_abc
   FROM ppmp_reviews r
   JOIN areas a ON a.id=r.area_id
@@ -258,7 +264,7 @@ pageStart($pageTitle);
 <style>
 .ppmp-review-status{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}.pending{background:#fff3cd;color:#856404}.pfa{background:#cff4fc;color:#055160}.approved{background:#d1e7dd;color:#0f5132}.declined{background:#f8d7da;color:#842029}
 .review-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}.review-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}.decision-select{min-width:140px}.decline-remark{display:none;margin-top:6px;min-width:220px}.item-review-row.is-declined .decline-remark{display:block}.item-review-row td{vertical-align:top}
-.area-card{padding:14px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;margin-bottom:10px}.area-card a{text-decoration:none}
+.area-card{padding:14px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;margin-bottom:10px}.area-card a{text-decoration:none}.status-counts{display:flex;gap:5px;flex-wrap:wrap;min-width:230px}.status-counts .ppmp-review-status{white-space:nowrap;font-size:11px;padding:4px 7px}
 </style>
 <div class="review-grid">
 <div class="panel">
@@ -267,7 +273,7 @@ pageStart($pageTitle);
 <?php if($supervisorQueue):?>
 <h3>Areas/Units Pending Supervisor Review</h3>
 <div class="table-wrap"><table class="table"><tr><th>Division</th><th>Area/Unit</th><th>PPMP No.</th><th>Fiscal Year</th><th>Items</th><th>Submitted By</th><th>Status</th><th>Action</th></tr>
-<?php foreach($supervisorQueue as $r):?><tr><td><?=e($r['division'])?></td><td><?=e($r['area'])?></td><td><?=e($r['ppmp_no'])?></td><td><?=e((string)$r['fiscal_year'])?></td><td><?=e((string)$r['item_count'])?></td><td><?=e($r['submitted_by_name']??'')?></td><td><span class="ppmp-review-status pending"><?=e($r['status'])?></span></td><td><a class="btn secondary" href="ppmp_review.php?review_id=<?=$r['id']?>">Review PPMP</a></td></tr><?php endforeach;?>
+<?php foreach($supervisorQueue as $r):?><tr><td><?=e($r['division'])?></td><td><?=e($r['area'])?></td><td><?=e($r['ppmp_no'])?></td><td><?=e((string)$r['fiscal_year'])?></td><td><?=e((string)$r['item_count'])?></td><td><?=e($r['submitted_by_name']??'')?></td><td><div class="status-counts"><span class="ppmp-review-status approved">Approved: <?= (int)($r['approved_count']??0) ?></span><span class="ppmp-review-status pending">Pending for Review: <?= (int)($r['pending_review_count']??0) ?></span><span class="ppmp-review-status pfa">Pending for Approval: <?= (int)($r['pending_approval_count']??0) ?></span></div></td><td><a class="btn secondary" href="ppmp_review.php?review_id=<?=$r['id']?>">Review PPMP</a></td></tr><?php endforeach;?>
 </table></div>
 <?php endif;?>
 <?php if($budgetQueue):?>
@@ -282,7 +288,8 @@ pageStart($pageTitle);
 <div class="panel">
 <h2><?=e($review['area'])?> — PPMP <?=e($review['ppmp_no'])?></h2>
 <p><b>Division:</b> <?=e($review['division'])?> &nbsp; <b>Fiscal Year:</b> <?=e((string)$review['fiscal_year'])?> &nbsp; <b>Submitted By:</b> <?=e($review['submitted_by_name']??'')?></p>
-<span class="ppmp-review-status <?=strtolower(str_replace(' ','-',($review['status']==='Pending for Approval'?'pfa':$review['status'])))?>"><?=e($review['status'])?></span>
+<?php $itemStatusCounts=['Approved'=>0,'Pending for Review'=>0,'Pending for Approval'=>0]; foreach($items as $countItem){if(isset($itemStatusCounts[$countItem['status']]))$itemStatusCounts[$countItem['status']]++;} ?>
+<div class="status-counts" style="margin:10px 0 14px"><span class="ppmp-review-status approved">Approved: <?=$itemStatusCounts['Approved']?></span><span class="ppmp-review-status pending">Pending for Review: <?=$itemStatusCounts['Pending for Review']?></span><span class="ppmp-review-status pfa">Pending for Approval: <?=$itemStatusCounts['Pending for Approval']?></span></div>
 <form method="post" id="supervisorReviewForm">
 <input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="<?=isBudgetOfficerForArea($pdo,(int)$review['area_id'],$userName)?'budget_decision':'review_items'?>"><input type="hidden" name="review_id" value="<?=$reviewId?>">
 <div class="review-actions"><button type="button" class="btn secondary" id="approveSelected">Approve Selected</button><button type="button" class="btn secondary" id="declineSelected">Decline Selected</button><span class="muted" id="selectedCount">0 selected</span></div>
@@ -290,10 +297,10 @@ pageStart($pageTitle);
 <tr><th><input type="checkbox" id="selectAllItems" aria-label="Select all items"></th><th>PPMP Item</th><th>Category</th><th>Qty / Unit</th><th>Unit Cost</th><th>Total</th><th>Review Decision</th></tr>
 <?php foreach($items as $r):?>
 <tr class="item-review-row" data-item="<?=$r['id']?>">
-<td><input type="checkbox" class="item-check" aria-label="Select PPMP item" <?=$r['status']!=='Pending for Review' && $review['status']==='Pending for Review'?'disabled':''?>></td>
+<td><input type="checkbox" class="item-check" aria-label="Select PPMP item" <?=$r['status']!=='Pending for Review'?'disabled':''?>></td>
 <td><b><?=e($r['item_name'])?></b><br><small><?=e($r['description'])?></small></td><td><?=e($r['category'])?></td><td><?=number_format((float)$r['quantity'],2).' '.e($r['unit'])?></td><td>₱<?=number_format((float)$r['unit_price'],2)?></td><td>₱<?=number_format((float)($r['total_budget']??((float)$r['quantity']*(float)$r['unit_price'])),2)?></td>
 <td>
-<?php if($review['status']==='Pending for Review' && isSupervisorForArea($pdo,(int)$review['area_id'],$userName) && $r['status']==='Pending for Review'):?>
+<?php if(isSupervisorForArea($pdo,(int)$review['area_id'],$userName) && $r['status']==='Pending for Review'):?>
 <select class="select decision-select" name="item_status[<?=$r['id']?>]"><option value="">Select</option><option value="Approved">Approved</option><option value="Declined">Declined</option></select>
 <textarea class="input decline-remark" name="item_remarks[<?=$r['id']?>]" rows="2" placeholder="Reason for decline"><?=e($r['supervisor_remarks']??'')?></textarea>
 <?php elseif(isBudgetOfficerForArea($pdo,(int)$review['area_id'],$userName) && $r['status']==='Pending for Approval'):?>
