@@ -18,23 +18,56 @@ try{
   if(!$cols) $pdo->exec("ALTER TABLE area_personnel ADD COLUMN electronic_signature VARCHAR(255) NULL AFTER position_designation");
 }catch(PDOException $e){ /* Migration can also be applied manually. */ }
 
-function saveElectronicSignatureData(string $data): string{
+function signatureSafeSegment(string $value): string{
+  $value=trim($value);
+  $value=preg_replace('/[\\\\\\/\\\\:*?"<>|]+/u','',$value);
+  $value=preg_replace('/\\s+/u',' ',$value);
+  return trim($value," .\\t\\n\\r\\0\\x0B") ?: 'Unnamed';
+}
+
+function deleteStoredSignature(?string $relativePath): void{
+  $relativePath=trim((string)$relativePath);
+  if($relativePath==='' || str_contains($relativePath,'..')) return;
+  $base=realpath(__DIR__.'/uploads/signatures');
+  $file=__DIR__.'/'.$relativePath;
+  $parent=realpath(dirname($file));
+  if($base!==false && $parent!==false && ($parent===$base || str_starts_with($parent,$base.DIRECTORY_SEPARATOR)) && is_file($file)) @unlink($file);
+}
+
+function saveElectronicSignatureData(string $data, array $folders, string $personName): string{
   if($data==='') throw new RuntimeException('No electronic signature was selected.');
   if(!preg_match('/^data:(image\\/(?:png|jpeg));base64,(.+)$/s',$data,$m)) throw new RuntimeException('Electronic signature must be a PNG or JPG image.');
   $binary=base64_decode($m[2],true);
   if($binary===false || $binary==='') throw new RuntimeException('The electronic signature data could not be decoded.');
   if(strlen($binary)>2*1024*1024) throw new RuntimeException('Electronic signature must not exceed 2 MB.');
   $imageInfo=@getimagesizefromstring($binary);
-  if($imageInfo===false) throw new RuntimeException('Electronic signature must be a valid PNG or JPG image.');
-  $actualMime=(string)($imageInfo['mime']??'');
-  $allowed=['image/png'=>'png','image/jpeg'=>'jpg'];
-  if(!isset($allowed[$actualMime]) || $actualMime!==$m[1]) throw new RuntimeException('Electronic signature must be a valid PNG or JPG image.');
+  if($imageInfo===false || !in_array((string)($imageInfo['mime']??''),['image/png','image/jpeg'],true) || (string)$imageInfo['mime']!==$m[1]) throw new RuntimeException('Electronic signature must be a valid PNG or JPG image.');
+  if(!function_exists('imagecreatefromstring') || !function_exists('imagejpeg')) throw new RuntimeException('The PHP GD extension is required to save signatures in JPG format.');
+  $image=@imagecreatefromstring($binary);
+  if(!$image) throw new RuntimeException('The electronic signature image could not be processed.');
+  $segments=array_map(static fn($part)=>signatureSafeSegment((string)$part),$folders);
   $dir=__DIR__.'/uploads/signatures';
-  if(!is_dir($dir) && !mkdir($dir,0755,true) && !is_dir($dir)) throw new RuntimeException('Unable to create signature upload folder.');
-  $filename='signature_'.date('YmdHis').'_' . bin2hex(random_bytes(5)).'.'.$allowed[$actualMime];
+  foreach($segments as $segment){
+    $dir.='/'.$segment;
+    if(!is_dir($dir) && !mkdir($dir,0755,true) && !is_dir($dir)){
+      imagedestroy($image);
+      throw new RuntimeException('Unable to create the signature folder. Check folder permissions.');
+    }
+  }
+  $filename=signatureSafeSegment($personName).'.jpg';
   $destination=$dir.'/'.$filename;
-  if(file_put_contents($destination,$binary,LOCK_EX)===false) throw new RuntimeException('Unable to save the electronic signature. Check that the signature upload folder is writable.');
-  return 'uploads/signatures/'.$filename;
+  $temp=$destination.'.'.bin2hex(random_bytes(4)).'.tmp';
+  $saved=@imagejpeg($image,$temp,92);
+  imagedestroy($image);
+  if(!$saved || !is_file($temp)){
+    if(is_file($temp)) @unlink($temp);
+    throw new RuntimeException('Unable to save the JPG signature. Check that the signature upload folder is writable.');
+  }
+  if(!@rename($temp,$destination)){
+    @unlink($temp);
+    throw new RuntimeException('Unable to finalize the JPG signature file.');
+  }
+  return 'uploads/signatures/'.implode('/',$segments).'/'.$filename;
 }
 
 $editId=(int)($_GET['edit']??0);
@@ -62,32 +95,49 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }else{
       try{
         $placeholders=implode(',',array_fill(0,count($ids),'?'));
+        $sigSt=$pdo->prepare("SELECT ap.electronic_signature FROM area_personnel ap WHERE ap.area_id IN ($placeholders) AND COALESCE(ap.electronic_signature,'')<>''");
+        $sigSt->execute($ids);
+        $signaturePaths=$sigSt->fetchAll(PDO::FETCH_COLUMN);
+        $pdo->beginTransaction();
         $st=$pdo->prepare("DELETE FROM areas WHERE id IN ($placeholders)");
         $st->execute($ids);
         $deleted=$st->rowCount();
+        $pdo->commit();
+        foreach($signaturePaths as $signaturePath) deleteStoredSignature($signaturePath);
         flash($deleted ? 'success' : 'error',$deleted===1 ? 'Area/Unit deleted.' : ($deleted>1 ? $deleted.' Area/Units deleted.' : 'No matching Area/Unit records were found.'));
       }catch(PDOException $e){
+        if($pdo->inTransaction()) $pdo->rollBack();
         flash('error','One or more selected Area/Units cannot be deleted because they are already used by existing PPMP or Purchase Request records. No Area/Unit records were deleted if the database rejected the operation.');
       }
     }
     header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
   }
 
-  if($action==='delete_division'){
-    if($id<=0){ flash('error','Invalid Division/Department.'); }
-    else {
+  if($action==='bulk_delete_divisions' || $action==='delete_division'){
+    $divisionIds=$action==='delete_division' ? [$id] : array_values(array_unique(array_filter(array_map('intval',(array)($_POST['selected_division_ids']??[])),static fn($selectedId)=>$selectedId>0)));
+    if(!$divisionIds){ flash('error','Select at least one Division/Department to delete.'); }
+    else{
       try{
-        $stCount=$pdo->prepare('SELECT COUNT(*) FROM areas WHERE division_id=?');
-        $stCount->execute([$id]);
-        if((int)$stCount->fetchColumn()>0){
-          flash('error','This Division/Department cannot be deleted because it still has Area/Unit records. Delete or reassign its Area/Units first.');
+        $placeholders=implode(',',array_fill(0,count($divisionIds),'?'));
+        $countSt=$pdo->prepare("SELECT COUNT(*) FROM areas WHERE division_id IN ($placeholders)");
+        $countSt->execute($divisionIds);
+        if((int)$countSt->fetchColumn()>0){
+          flash('error','Selected Division/Department records cannot be deleted while they still contain Area/Unit records. Delete or reassign those Area/Units first. No Division/Department records were deleted.');
         }else{
-          $st=$pdo->prepare('DELETE FROM divisions WHERE id=?');
-          $st->execute([$id]);
-          flash($st->rowCount() ? 'success' : 'error',$st->rowCount() ? 'Division/Department deleted.' : 'Division/Department not found.');
+          $sigSt=$pdo->prepare("SELECT electronic_signature FROM divisions WHERE id IN ($placeholders) AND COALESCE(electronic_signature,'')<>''");
+          $sigSt->execute($divisionIds);
+          $signaturePaths=$sigSt->fetchAll(PDO::FETCH_COLUMN);
+          $pdo->beginTransaction();
+          $st=$pdo->prepare("DELETE FROM divisions WHERE id IN ($placeholders)");
+          $st->execute($divisionIds);
+          $deleted=$st->rowCount();
+          $pdo->commit();
+          foreach($signaturePaths as $signaturePath) deleteStoredSignature($signaturePath);
+          flash($deleted ? 'success' : 'error',$deleted===1 ? 'Division/Department deleted.' : ($deleted>1 ? $deleted.' Division/Department records deleted.' : 'No matching Division/Department records were found.'));
         }
       }catch(PDOException $e){
-        flash('error','This Division/Department cannot be deleted because it is already used by existing records.');
+        if($pdo->inTransaction()) $pdo->rollBack();
+        flash('error','Selected Division/Department records cannot be deleted because they are already used by existing records.');
       }
     }
     header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
@@ -109,7 +159,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
     if($signatureData!==''){
       try{
-        $signaturePath=saveElectronicSignatureData($signatureData);
+        $signaturePath=saveElectronicSignatureData($signatureData,[$divisionName],$head);
       }catch(RuntimeException $e){
         flash('error',$e->getMessage());
         header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
@@ -139,17 +189,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
           $st->execute([$divisionName,$head,$headPosition,$supervisorEnabled,$divisionId]);
         }
 
-        if($signaturePath!==null && $oldSignaturePath!=='' && $oldSignaturePath!==$signaturePath){
-          $oldFile=__DIR__.'/'.$oldSignaturePath;
-          if(is_file($oldFile)) @unlink($oldFile);
-        }
+        if($signaturePath!==null && $oldSignaturePath!=='' && $oldSignaturePath!==$signaturePath) deleteStoredSignature($oldSignaturePath);
         flash('success','Division/Department updated.');
       }
     }catch(PDOException $e){
-      if($signaturePath!==null){
-        $newFile=__DIR__.'/'.$signaturePath;
-        if(is_file($newFile)) @unlink($newFile);
-      }
+      if($signaturePath!==null) deleteStoredSignature($signaturePath);
       flash('error','Unable to save the Division/Department. The Division/Department name may already exist or the record is invalid.');
     }
     header('Location:'.($embedded ? 'settings.php?tab=area-unit' : 'areas.php')); exit;
@@ -208,12 +252,16 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   try{
     foreach($signatureDataByIndex as $idx=>$data){
       $data=trim((string)$data);
-      if($data!=='') $signaturePathsByIndex[(int)$idx]=saveElectronicSignatureData($data);
+      if($data!==''){
+        $folderSt=$pdo->prepare('SELECT name FROM divisions WHERE id=?');
+        $folderSt->execute([$divisionId]);
+        $signatureDivisionName=(string)($folderSt->fetchColumn()?:'');
+        $signaturePathsByIndex[(int)$idx]=saveElectronicSignatureData($data,[$signatureDivisionName,$name],(string)(($_POST['names'][$idx]??'')?:'Area Unit Head'));
+      }
     }
   }catch(RuntimeException $e){
     foreach($signaturePathsByIndex as $savedPath){
-      $savedFile=__DIR__.'/'.$savedPath;
-      if(is_file($savedFile)) @unlink($savedFile);
+      deleteStoredSignature($savedPath);
     }
     flash('error',$e->getMessage());
     header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:'')));
@@ -284,8 +332,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $stStillUsed=$pdo->prepare('SELECT COUNT(*) FROM area_personnel WHERE electronic_signature=?');
       $stStillUsed->execute([$oldSignaturePath]);
       if((int)$stStillUsed->fetchColumn()===0){
-        $oldFile=__DIR__.'/'.$oldSignaturePath;
-        if(is_file($oldFile)) @unlink($oldFile);
+        deleteStoredSignature($oldSignaturePath);
       }
     }
 
@@ -293,8 +340,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   }catch(PDOException $e){
     if($pdo->inTransaction()) $pdo->rollBack();
     foreach($signaturePathsByIndex as $savedPath){
-      $newFile=__DIR__.'/'.$savedPath;
-      if(is_file($newFile)) @unlink($newFile);
+      deleteStoredSignature($savedPath);
     }
     flash('error','Unable to save the Area/Unit and its names. The Area/Unit name/code may already exist, or the selected Division/Department or name data is invalid.');
   }
@@ -360,10 +406,14 @@ if(!$embedded) pageStart('Area/Unit Management');
             <div class="management-search-suggestions" id="divisionSearchSuggestions" role="listbox"></div>
           </div>
         </div>
+        <form method="post" id="divisionBulkDeleteForm" onsubmit="return confirmBulkDivisionDelete();">
+          <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+          <input type="hidden" name="action" value="bulk_delete_divisions">
         <div class="table-wrap"><table class="table" id="divisionTable">
-          <tr><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized Person</th><th>Actions</th></tr>
+          <tr><th style="width:34px">Select</th><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized Person</th><th>Actions</th></tr>
           <?php foreach($divisions as $d): ?>
           <tr data-management-search-id="<?=e((string)$d['id'])?>" data-management-search-name="<?=e($d['name'])?>" data-management-search-head="<?=e($d['division_head'])?>">
+            <td><input type="checkbox" class="division-select" name="selected_division_ids[]" value="<?=(int)$d['id']?>" aria-label="Select <?=e($d['name'])?>"></td>
             <td><?=e($d['name'])?></td>
             <td>
               <div><?=e($d['division_head'])?></div>
@@ -379,18 +429,17 @@ if(!$embedded) pageStart('Area/Unit Management');
             <td>
               <div class="actions">
                 <a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=area-unit&edit_division='.(int)$d['id'] : 'areas.php?edit_division='.(int)$d['id'])?>">Edit</a>
-                <form method="post" class="master-action-form" onsubmit="return confirm('Delete this Division/Department? This can only be deleted if it has no Area/Unit records.');">
-                  <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-                  <input type="hidden" name="action" value="delete_division">
-                  <input type="hidden" name="id" value="<?=e($d['id'])?>">
-                  <button class="btn danger master-action" type="submit">Delete</button>
-                </form>
               </div>
             </td>
           </tr>
           <?php endforeach; ?>
-          <?php if(!$divisions): ?><tr><td colspan="4">No Division/Department records found.</td></tr><?php endif; ?>
+          <?php if(!$divisions): ?><tr><td colspan="5">No Division/Department records found.</td></tr><?php endif; ?>
         </table></div>
+        <div class="area-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 0">
+          <label style="display:flex;align-items:center;gap:7px;margin:0;font-size:13px"><input type="checkbox" id="selectAllDivisions"> Select All</label>
+          <button class="btn danger" type="submit" id="deleteSelectedDivisions" disabled>Delete Selected</button>
+        </div>
+        </form>
       </div>
     </div>
   </div>
@@ -460,12 +509,29 @@ if(!$embedded) pageStart('Area/Unit Management');
 </div>
 
 <script>
+function confirmBulkDivisionDelete(){
+  const selected=Array.from(document.querySelectorAll('.division-select:checked'));
+  if(!selected.length){alert('Select at least one Division/Department to delete.');return false;}
+  return confirm(selected.length===1?'Delete the selected Division/Department? It can only be deleted if it has no Area/Unit records.':'Delete all '+selected.length+' selected Division/Department records? Each must have no Area/Unit records.');
+}
 function confirmBulkAreaDelete(){
   const selected=Array.from(document.querySelectorAll('.area-select:checked'));
   if(!selected.length){alert('Select at least one Area/Unit to delete.');return false;}
   return confirm(selected.length===1?'Delete the selected Area/Unit?':'Delete all '+selected.length+' selected Area/Units?');
 }
 document.addEventListener('DOMContentLoaded',function(){
+  const selectAllDivisions=document.getElementById('selectAllDivisions');
+  const deleteDivisions=document.getElementById('deleteSelectedDivisions');
+  const divisionChecks=Array.from(document.querySelectorAll('.division-select'));
+  function updateDivisionSelection(){
+    const selected=divisionChecks.filter(function(box){return box.checked;}).length;
+    if(deleteDivisions)deleteDivisions.disabled=selected===0;
+    if(selectAllDivisions){selectAllDivisions.checked=divisionChecks.length>0&&selected===divisionChecks.length;selectAllDivisions.indeterminate=selected>0&&selected<divisionChecks.length;}
+  }
+  if(selectAllDivisions)selectAllDivisions.addEventListener('change',function(){divisionChecks.forEach(function(box){box.checked=selectAllDivisions.checked;});updateDivisionSelection();});
+  divisionChecks.forEach(function(box){box.addEventListener('change',updateDivisionSelection);});
+  updateDivisionSelection();
+
   const selectAll=document.getElementById('selectAllAreas');
   const deleteButton=document.getElementById('deleteSelectedAreas');
   const checks=Array.from(document.querySelectorAll('.area-select'));
@@ -739,13 +805,15 @@ document.addEventListener('DOMContentLoaded',function(){
 .management-column:first-child .management-list-content .table td{padding:8px 6px;vertical-align:middle;overflow-wrap:anywhere}
 .management-column:first-child .management-list-content .table th{text-align:center}
 .management-column:first-child .management-list-content .table th:nth-child(1),
-.management-column:first-child .management-list-content .table td:nth-child(1){width:24%}
+.management-column:first-child .management-list-content .table td:nth-child(1){width:5%;text-align:center}
 .management-column:first-child .management-list-content .table th:nth-child(2),
-.management-column:first-child .management-list-content .table td:nth-child(2){width:24%}
+.management-column:first-child .management-list-content .table td:nth-child(2){width:21%}
 .management-column:first-child .management-list-content .table th:nth-child(3),
-.management-column:first-child .management-list-content .table td:nth-child(3){width:27%}
+.management-column:first-child .management-list-content .table td:nth-child(3){width:23%}
 .management-column:first-child .management-list-content .table th:nth-child(4),
-.management-column:first-child .management-list-content .table td:nth-child(4){width:25%}
+.management-column:first-child .management-list-content .table td:nth-child(4){width:27%}
+.management-column:first-child .management-list-content .table th:nth-child(5),
+.management-column:first-child .management-list-content .table td:nth-child(5){width:24%}
 .management-column:first-child .management-list-content .table .actions{display:flex;gap:5px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap;width:max-content;max-width:100%}
 .management-column:first-child .management-list-content .table .master-action{width:58px;min-width:58px;height:30px;padding:3px 4px;font-size:11px}
 .management-column:first-child .management-list-content .table .master-action-form{margin:0;display:inline-flex;flex:0 0 auto}
