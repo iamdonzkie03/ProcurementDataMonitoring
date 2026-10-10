@@ -91,7 +91,7 @@ function ppmpSafePathSegment(string $value): string {
   $value=preg_replace('/[^\\pL\\pN ._-]+/u','',$value);
   $value=preg_replace('/\\s+/u','_',$value);
   $value=trim($value," ._-");
-  return $value!=='' ? mb_substr($value,0,100,'UTF-8') : 'Unassigned_Area_Unit';
+  return $value!=='' ? (function_exists('mb_substr') ? mb_substr($value,0,100,'UTF-8') : substr($value,0,100)) : 'Unassigned_Area_Unit';
 }
 function ppmpAreaUploadDirectory(PDO $pdo,int $areaId): array {
   $st=$pdo->prepare('SELECT name FROM areas WHERE id=? LIMIT 1');
@@ -193,7 +193,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     // the existing PPMP has already reached Pending for Approval or Approved.
     // Newly saved rows are placed in Pending for Review and the PPMP review queue
     // is reopened so the Supervisor can review the new rows.
-    [$uploadDir,$uploadRelativeDir]=ppmpAreaUploadDirectory($pdo,$areaId);
+    try{[$uploadDir,$uploadRelativeDir]=ppmpAreaUploadDirectory($pdo,$areaId);}
+    catch(Throwable $e){ppmpSaveFormError($e->getMessage(),$year,$areaId);}
     $insert=$pdo->prepare('INSERT INTO ppmp_items (fiscal_year,ppmp_no,area_id,category_id,item_name,description,procurement_type,quantity,unit,procurement_mode,preprocurement_conference,start_procurement,end_procurement,delivery_period,source_of_funds,unit_price,total_budget,supporting_documents,requested_by,prepared_by,prepared_position,submitted_by,submitted_position,budget_approved_by,budget_position,prepared_date,submitted_date,budget_date,remarks,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
     $saved=0; $pdo->beginTransaction();
     try{
