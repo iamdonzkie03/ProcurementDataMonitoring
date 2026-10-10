@@ -1637,7 +1637,7 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
 function deleteRow(row){
   if(!row)return;const rows=body.querySelectorAll('.ppmp-entry-row');
   if(rows.length===1){
-    row.querySelectorAll('input,textarea,select').forEach(function(x){if(x.type==='checkbox'){x.checked=false;return;}if(x.type==='file'){x.value='';return;}if(x.type!=='hidden'){if(x.tagName==='SELECT')x.selectedIndex=0;else x.value='';}});
+    row.querySelectorAll('input,textarea,select').forEach(function(x){if(x.type==='checkbox'){x.checked=false;return;}if(x.type==='file'||x.type==='hidden'){x.value='';return;}if(x.tagName==='SELECT')x.selectedIndex=0;else x.value='';});
     row.querySelectorAll('.ppmp-item-suggestions').forEach(function(el){el.innerHTML='';});
     const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');if(unitHidden)unitHidden.value='';
     const categoryHidden=row.querySelector('.ppmp-category-value');if(categoryHidden)categoryHidden.value='';
