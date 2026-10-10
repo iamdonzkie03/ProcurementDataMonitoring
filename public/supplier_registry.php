@@ -78,18 +78,24 @@ function supplierDisplayDate(?string $v): string {
   $d=DateTime::createFromFormat('Y-m-d',$v);
   return ($d && $d->format('Y-m-d')===$v) ? $d->format('F d, Y') : $v;
 }
-function supplierFolderName(string $companyName): string {
-  // Preserve the submitted Supplier/Company Name while replacing only characters
-  // that Windows does not permit in directory names.
-  $name=trim($companyName);
-  $name=preg_replace('~[\\\\/:*?"<>|]+~u','-',$name);
-  $name=preg_replace('~\\s+~u',' ',$name);
-  $name=trim((string)$name, " .- \t\n\r\0\x0B");
-  if($name==='') throw new RuntimeException('Enter a Supplier/Company Name before uploading documents.');
-  if(function_exists('mb_substr')) return mb_substr($name,0,100,'UTF-8');
-  return substr($name,0,100);
+function supplierFolderPart(string $value): string {
+  // Replace only characters that are invalid in Windows directory names.
+  $value=trim($value);
+  $value=preg_replace('~[\\\\/:*?"<>|]+~u','-',$value);
+  $value=preg_replace('~\\s+~u',' ',$value);
+  $value=trim((string)$value, " .- \t\n\r\0\x0B");
+  return function_exists('mb_substr') ? mb_substr($value,0,100,'UTF-8') : substr($value,0,100);
 }
-function supplierUpload(string $field,string $uploadDir,string $uploadWeb,string $companyName,?string $oldPath=null,int $index=0): ?string {
+function supplierFolderName(string $companyName,string $address,string $owner): string {
+  $parts=[
+    supplierFolderPart($companyName),
+    supplierFolderPart($address),
+    supplierFolderPart($owner)
+  ];
+  if($parts[0]==='') throw new RuntimeException('Enter a Supplier/Company Name before uploading documents.');
+  return implode(' - ',$parts);
+}
+function supplierUpload(string $field,string $uploadDir,string $uploadWeb,string $companyName,string $address,string $owner,?string $oldPath=null,int $index=0): ?string {
   if(empty($_FILES[$field]) || !isset($_FILES[$field]['error'][$index]) || $_FILES[$field]['error'][$index]===UPLOAD_ERR_NO_FILE) return $oldPath;
   if($_FILES[$field]['error'][$index]!==UPLOAD_ERR_OK) throw new RuntimeException('The uploaded file could not be processed.');
   if((int)($_FILES[$field]['size'][$index]??0)>8*1024*1024) throw new RuntimeException('Each supplier certificate/permit file must not exceed 8 MB.');
@@ -98,7 +104,7 @@ function supplierUpload(string $field,string $uploadDir,string $uploadWeb,string
   if(!in_array($ext,['pdf'],true)) throw new RuntimeException('Only PDF files are allowed.');
   $safe=preg_replace('/[^a-zA-Z0-9_-]/','-',pathinfo($original,PATHINFO_FILENAME));
   $name=$safe.'-'.bin2hex(random_bytes(8)).'.'.$ext;
-  $folder=supplierFolderName($companyName);
+  $folder=supplierFolderName($companyName,$address,$owner);
   $companyDir=rtrim($uploadDir,'/\\').DIRECTORY_SEPARATOR.$folder;
   if(!is_dir($companyDir) && !@mkdir($companyDir,0775,true) && !is_dir($companyDir)) throw new RuntimeException('Unable to create the supplier folder: '.$folder);
   $target=$companyDir.DIRECTORY_SEPARATOR.$name;
@@ -192,10 +198,10 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
           throw new RuntimeException('A supplier/company with the same Supplier/Company Name, Address, and Owner already exists. Please check the Registered Suppliers list.');
         }
 
-        $ph=supplierUpload('philgeps_certificate',$uploadDir,$uploadWeb,$name,$old['philgeps_certificate_path']??null,$i);
-        $bp=supplierUpload('business_permit',$uploadDir,$uploadWeb,$name,$old['business_permit_path']??null,$i);
-        $tax=supplierUpload('tax_clearance_certificate',$uploadDir,$uploadWeb,$name,$old['tax_clearance_certificate_path']??null,$i);
-        $pcab=supplierUpload('pcab_license',$uploadDir,$uploadWeb,$name,$old['pcab_license_path']??null,$i);
+        $ph=supplierUpload('philgeps_certificate',$uploadDir,$uploadWeb,$name,$address,$owner,$old['philgeps_certificate_path']??null,$i);
+        $bp=supplierUpload('business_permit',$uploadDir,$uploadWeb,$name,$address,$owner,$old['business_permit_path']??null,$i);
+        $tax=supplierUpload('tax_clearance_certificate',$uploadDir,$uploadWeb,$name,$address,$owner,$old['tax_clearance_certificate_path']??null,$i);
+        $pcab=supplierUpload('pcab_license',$uploadDir,$uploadWeb,$name,$address,$owner,$old['pcab_license_path']??null,$i);
         if($id){
           $st=$pdo->prepare("UPDATE suppliers SET supplier_company_name=?,address=?,owner=?,authorized_representative=?,business_type=?,philgeps_certificate_path=?,philgeps_valid_until=?,business_permit_path=?,business_permit_valid_until=?,tax_clearance_certificate_path=?,tax_clearance_valid_until=?,pcab_license_path=?,pcab_license_valid_until=?,registration_type=?,updated_by=? WHERE id=?");
           $st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$pcab,$pcabDate,$reg,(int)currentUser()['id'],$id]);
