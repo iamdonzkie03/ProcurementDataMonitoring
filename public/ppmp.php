@@ -1755,6 +1755,50 @@ syncAllRowDocuments();
 calc();
 syncAllRowActions();
 })();
+
+/* Independent row-count guard: keeps Delete buttons correct even if the
+   row is inserted or removed by another PPMP script. */
+(function(){
+  function initPpmpRowActionGuard(){
+    const body=document.getElementById('ppmpEntryBody');
+    if(!body || body.dataset.rowActionGuardInitialized==='1')return;
+    body.dataset.rowActionGuardInitialized='1';
+
+    function syncDeleteButtons(){
+      const rows=Array.from(body.querySelectorAll('.ppmp-entry-row'));
+      const showDelete=rows.length>=2;
+      rows.forEach(function(row){
+        const cell=row.querySelector('td:last-child');
+        if(!cell)return;
+        cell.querySelectorAll('.ppmp-clear-row').forEach(function(button){button.remove();});
+        let button=row.querySelector('.ppmp-remove-row');
+        if(!showDelete){
+          if(button)button.remove();
+          return;
+        }
+        if(!button){
+          button=document.createElement('button');
+          button.type='button';
+          button.className='btn danger ppmp-remove-row';
+          button.textContent='Delete';
+          cell.appendChild(button);
+        }
+        button.style.setProperty('display','inline-flex','important');
+      });
+    }
+
+    syncDeleteButtons();
+    const observer=new MutationObserver(function(){syncDeleteButtons();});
+    observer.observe(body,{childList:true,subtree:true});
+    const addButton=document.getElementById('ppmpAddRow');
+    if(addButton)addButton.addEventListener('click',function(){syncDeleteButtons();});
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',initPpmpRowActionGuard);
+  }else{
+    initPpmpRowActionGuard();
+  }
+})();
 /* Remove any legacy PPMP add-item control injected into the toolbar.
    This affects only the toolbar control and never the Data Entry "+ Add Row" control. */
 (function(){
