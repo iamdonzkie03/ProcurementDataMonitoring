@@ -261,8 +261,8 @@ pageStart('Supplier Registry');
 .supplier-entry-table col:nth-child(2),.supplier-entry-table col:nth-child(3),.supplier-entry-table col:nth-child(4),.supplier-entry-table col:nth-child(5){width:200px!important;}
 .supplier-entry-table col:nth-child(6),.supplier-entry-table col:nth-child(7),.supplier-entry-table col:nth-child(8),.supplier-entry-table col:nth-child(9){width:250px!important;}
 .supplier-entry-table .supplier-entry-row>.supplier-field{border:0!important;}
-.supplier-entry-table .supplier-row-separator>td{height:1px!important;min-height:1px!important;padding:0!important;border:0!important;background:transparent!important;line-height:0!important;font-size:0!important;}
-.supplier-entry-table .supplier-row-separator>td::after{content:"";display:block;width:100%;height:1px;background:#cbd5e1;}
+.supplier-entry-table .supplier-row-separator>td{height:1px!important;min-height:1px!important;padding:0!important;border:0!important;background:#cbd5e1!important;line-height:0!important;font-size:0!important;}
+.supplier-entry-table .supplier-row-separator>td::after{content:none!important;display:none!important;}
 .supplier-entry-table .supplier-field{display:table-cell!important;vertical-align:top!important;border:0!important;border-radius:4px!important;padding:6px!important;box-sizing:border-box!important;background:#fff!important;white-space:normal!important;}
 .supplier-entry-table .supplier-row-select-field{width:60px!important;min-width:60px!important;max-width:60px!important;padding:6px 4px!important}
 .supplier-entry-table .supplier-row-select-field label{display:block!important;margin:0 0 5px!important;white-space:nowrap!important}
@@ -288,10 +288,6 @@ pageStart('Supplier Registry');
         <div class="supplier-table-select-all-toolbar" style="display:flex;align-items:center;gap:6px;margin:8px 0 0;font-size:12px">
           <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSupplierEntryRows"> Select All</label>
         </div>
-      </div>
-      <div class="supplier-header-search" id="supplierSearchBox">
-        <input class="input" type="search" id="supplierSearchInput" name="search" value="<?=e($search)?>" placeholder="Search Supplier..." autocomplete="off" aria-label="Search Supplier">
-        <div class="supplier-search-suggestions" id="supplierSearchSuggestions"></div>
       </div>
     </div>
 
@@ -331,10 +327,14 @@ pageStart('Supplier Registry');
 
   <div class="panel supplier-content-panel supplier-list-panel">
     <div class="supplier-list-section">
-      <div class="supplier-list-header">
+      <div class="supplier-list-header" style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
         <div>
           <h2 style="margin:0;font-size:17px!important;line-height:1.3!important;font-weight:700!important">Registered Suppliers</h2>
           <p class="hint-text" style="font-size:11px!important;line-height:1.35!important;margin:5px 0 0!important"><?=number_format(count($rows))?> supplier<?=count($rows)===1?'':'s'?> found</p>
+        </div>
+        <div class="supplier-header-search" id="supplierSearchBox" style="position:relative;margin-left:auto;width:200px;max-width:100%">
+          <input class="input" type="search" id="supplierSearchInput" name="search" value="<?=e($search)?>" placeholder="Search Supplier..." autocomplete="off" aria-label="Search Supplier" style="width:100%;font-size:12px!important">
+          <div class="supplier-search-suggestions" id="supplierSearchSuggestions"></div>
         </div>
       </div>
       <?php if($isEditor): ?>
