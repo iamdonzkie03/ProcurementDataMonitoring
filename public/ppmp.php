@@ -697,8 +697,9 @@ if($areaId>0){$where.=' AND p.area_id=?';$args[]=$areaId;}
 if($q!==''){$where.=' AND (p.item_name LIKE ? OR p.description LIKE ? OR a.name LIKE ? OR c.name LIKE ?)';$args=[...$args,"%$q%","%$q%","%$q%","%$q%"];}
 $sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,c.name category,COALESCE(pri.status,pr.status,\'Draft\') review_status,COALESCE(pri.supervisor_remarks,pri.budget_remarks,pr.remarks,\'\') review_remarks,COALESCE(pri.supervisor_reviewed_at,pr.supervisor_reviewed_at) AS ppmp_pending_approval_at,COALESCE(pri.budget_reviewed_at,pr.budget_reviewed_at) AS ppmp_budget_approved_at FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id LEFT JOIN ppmp_reviews pr ON pr.fiscal_year=p.fiscal_year AND pr.area_id=p.area_id AND pr.ppmp_no=p.ppmp_no LEFT JOIN ppmp_review_items pri ON pri.review_id=pr.id AND pri.ppmp_item_id=p.id'.$where.' ORDER BY p.id';
 $st=$pdo->prepare($sql);$st->execute($args);$rows=$st->fetchAll();
-// Keep all items available for page metadata, but declined items are excluded
-// from the official printed PPMP Form.
+// Keep all items available for page metadata and Saved PPMP Items totals.
+// The official printed PPMP Form must include only items whose item-level
+// review status is Approved.
 $allPpmpRows=$rows;
 
 // Calculate the ABC totals by the current item-level review status so the
@@ -717,7 +718,7 @@ foreach($rows as $ppmpStatusRow){
 }
 if($print){
   $rows=array_values(array_filter($rows,function($r){
-    return !in_array((string)($r['review_status']??''),['Declined','Budget Declined'],true);
+    return (string)($r['review_status']??'')==='Approved';
   }));
 }
 
