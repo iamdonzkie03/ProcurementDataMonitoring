@@ -168,7 +168,7 @@ pageStart('Supplier Registry');
 
   </div>
 
-  <div class="panel supplier-content-panel supplier-list-panel" style="margin-top:24px!important;">
+  <div class="panel supplier-content-panel supplier-list-panel">
     <div class="supplier-list-section">
       <div class="supplier-list-header">
         <div>
