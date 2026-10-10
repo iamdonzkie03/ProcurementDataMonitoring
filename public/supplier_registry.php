@@ -138,6 +138,27 @@ $list=$pdo->prepare("SELECT * FROM suppliers WHERE supplier_company_name LIKE ? 
 $like='%'.$search.'%';$list->execute([$like,$like,$like,$like]);$rows=$list->fetchAll();
 pageStart('Supplier Registry');
 ?>
+<style>
+.supplier-list-panel{width:100%;max-width:100%;min-width:0;box-sizing:border-box;overflow:hidden}
+.supplier-list-section,.supplier-table-wrap{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+.supplier-table-wrap{overflow-x:hidden}
+.supplier-table{width:100%!important;max-width:100%!important;table-layout:fixed;border-collapse:collapse}
+.supplier-table th,.supplier-table td{box-sizing:border-box;padding:8px 7px;white-space:normal;overflow-wrap:anywhere;word-break:normal;vertical-align:top}
+.supplier-table th:nth-child(1),.supplier-table td:nth-child(1){width:4%}
+.supplier-table th:nth-child(2),.supplier-table td:nth-child(2){width:4%}
+.supplier-table th:nth-child(3),.supplier-table td:nth-child(3){width:28%}
+.supplier-table th:nth-child(4),.supplier-table td:nth-child(4){width:50%}
+.supplier-table th:nth-child(5),.supplier-table td:nth-child(5){width:14%}
+.supplier-table .supplier-company-details,.supplier-table .supplier-doc-links{min-width:0;overflow-wrap:anywhere}
+.supplier-table .supplier-doc-links>div{margin-bottom:6px;line-height:1.4}
+.supplier-table .supplier-doc-links small{white-space:normal}
+.supplier-table .supplier-actions{display:flex;flex-wrap:wrap;gap:4px}
+.supplier-bulk-actions{min-width:0}
+@media(max-width:760px){
+ .supplier-table-wrap{overflow-x:auto}
+ .supplier-table{min-width:680px!important}
+}
+</style>
 <div class="supplier-registry-page" style="display:flex!important;flex-direction:column!important;align-items:stretch!important;row-gap:24px!important;">
   <div class="panel supplier-content-panel">
     <div class="supplier-toolbar supplier-registry-heading-row">
@@ -190,12 +211,12 @@ pageStart('Supplier Registry');
       <form method="post" id="bulkSupplierDeleteForm" onsubmit="return confirm('Delete all selected supplier records and their uploaded permits/licenses? This cannot be undone.');">
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="action" value="bulk_delete">
-        <div class="supplier-bulk-actions" style="display:flex;align-items:center;gap:8px;margin:12px 0;font-size:12px">
-          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSuppliers"> Select all</label>
-          <button class="btn danger" type="submit" id="deleteSelectedSuppliers">Delete Selected</button>
+        <div class="supplier-bulk-actions" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0;font-size:12px;width:100%;box-sizing:border-box">
+          <label style="display:flex;align-items:center;gap:6px;flex:0 0 auto"><input type="checkbox" id="selectAllSuppliers"> Select all</label>
+          <button class="btn danger" type="submit" id="deleteSelectedSuppliers" style="margin-left:auto;flex:0 0 auto">Delete Selected</button>
         </div>
       <?php endif; ?>
-      <div class="table-wrap">
+      <div class="table-wrap supplier-table-wrap">
         <table class="table supplier-table" id="supplierTable">
           <thead><tr><?php if($isEditor): ?><th><span class="sr-only">Select</span></th><?php endif; ?><th>#</th><th>Supplier/Company Name</th><th>Permits and Licenses</th><?php if($isEditor): ?><th>Actions</th><?php endif; ?></tr></thead>
           <tbody>
@@ -241,7 +262,7 @@ document.addEventListener('DOMContentLoaded',function(){
  if(!input||!suggestions||!table)return;const tableRows=Array.from(table.querySelectorAll('tbody tr')).filter(r=>!r.classList.contains('empty'));
  function filter(term){term=String(term||'').trim().toLowerCase();tableRows.forEach(r=>r.style.display=!term||r.textContent.toLowerCase().includes(term)?'':'none');}
  function close(){suggestions.innerHTML='';suggestions.style.display='none';}
- input.addEventListener('input',function(){const term=input.value.trim().toLowerCase();suggestions.innerHTML='';if(!term){close();filter('');return;}const m=tableRows.filter(r=>r.textContent.toLowerCase().includes(term)).slice(0,10);m.forEach(r=>{const b=document.createElement('button');b.type='button';b.className='supplier-search-suggestion';b.textContent=(r.cells[1]?.querySelector('strong')?.textContent||r.cells[1]?.textContent||'').trim();b.onclick=()=>{input.value=b.textContent;close();filter(b.textContent)};suggestions.appendChild(b)});if(!m.length){const e=document.createElement('div');e.className='supplier-search-empty';e.textContent='No matching supplier found.';suggestions.appendChild(e)}suggestions.style.display='block';filter(term)});input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';close();filter('')}});document.addEventListener('click',e=>{if(box&&!box.contains(e.target))close()});
+ input.addEventListener('input',function(){const term=input.value.trim().toLowerCase();suggestions.innerHTML='';if(!term){close();filter('');return;}const m=tableRows.filter(r=>r.textContent.toLowerCase().includes(term)).slice(0,10);m.forEach(r=>{const b=document.createElement('button');b.type='button';b.className='supplier-search-suggestion';b.textContent=(r.cells[document.querySelector('.supplier-select-checkbox')?2:1]?.querySelector('strong')?.textContent||r.cells[document.querySelector('.supplier-select-checkbox')?2:1]?.textContent||'').trim();b.onclick=()=>{input.value=b.textContent;close();filter(b.textContent)};suggestions.appendChild(b)});if(!m.length){const e=document.createElement('div');e.className='supplier-search-empty';e.textContent='No matching supplier found.';suggestions.appendChild(e)}suggestions.style.display='block';filter(term)});input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';close();filter('')}});document.addEventListener('click',e=>{if(box&&!box.contains(e.target))close()});
 });
 </script>
 <?php pageEnd(); ?>
