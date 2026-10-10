@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded',function(){
  if(!input||!suggestions||!table||!pageSizeSelect||!paginationInfo||!paginationButtons)return;
  const tableRows=Array.from(table.querySelectorAll('tr[data-user-id]'));
  let filteredRows=tableRows.slice(),currentPage=1,pageSize=Number(pageSizeSelect.value)||10;
- function textFor(row){return String(row.innerText||row.textContent||'').replace(/\\s+/g,' ').trim();}
+ function textFor(row){return String(row.innerText||row.textContent||'').replace(/\s+/g,' ').trim();}
  function closeSuggestions(){suggestions.innerHTML='';suggestions.style.display='none';}
  function renderPagination(){
   const total=filteredRows.length,totalPages=Math.max(1,Math.ceil(total/pageSize));if(currentPage>totalPages)currentPage=totalPages;
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded',function(){
   if(!term){closeSuggestions();applyFilter('',null,true);return;}
   const matches=tableRows.filter(function(row){return textFor(row).toLowerCase().includes(term);}).slice(0,10);
   if(!matches.length){suggestions.innerHTML='<div class="user-search-empty">No matching user found.</div>';suggestions.style.display='block';applyFilter(term,null,true);return;}
-  matches.forEach(function(row){const button=document.createElement('button');button.type='button';button.className='user-search-suggestion';button.setAttribute('role','option');button.dataset.id=row.dataset.userId;button.textContent=row.dataset.userName+' — '+(row.cells[1]?.innerText||'').replace(/\\s+/g,' ').trim();suggestions.appendChild(button);});
+  matches.forEach(function(row){const button=document.createElement('button');button.type='button';button.className='user-search-suggestion';button.setAttribute('role','option');button.dataset.id=row.dataset.userId;button.textContent=row.dataset.userName+' — '+(row.cells[1]?.innerText||'').replace(/\s+/g,' ').trim();suggestions.appendChild(button);});
   suggestions.style.display='block';applyFilter(term,null,true);
  }
  input.addEventListener('input',showSuggestions);input.addEventListener('focus',function(){if(input.value.trim())showSuggestions();});
