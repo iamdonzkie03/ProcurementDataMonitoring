@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__.'/../config/config.php';
 requireRole(['Administrator','Editor']);
-require_once __DIR__.'/../app/layout.php';
 $embedded=!empty($embedded);
 $pdo=db();
 
@@ -86,7 +85,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $divisionId=(int)($_POST['division_id']??0);
   $name=trim($_POST['name']??'');
   $code=trim($_POST['code']??'') ?: null;
-  $signatureData=trim((string)($_POST['electronic_signature_data']??''));
+  $signatureDataRaw=$_POST['electronic_signature_data']??'';
+  $signatureData=is_string($signatureDataRaw)?trim($signatureDataRaw):'';
 
   if($action==='bulk_delete'){
     $ids=array_values(array_unique(array_filter(array_map('intval',(array)($_POST['selected_ids']??[])),static fn($selectedId)=>$selectedId>0)));
@@ -370,6 +370,7 @@ if($divisionEditId>0){
   $st->execute([$divisionEditId]);
   $divisionEditing=$st->fetch();
 }
+require_once __DIR__.'/../app/layout.php';
 if(!$embedded) pageStart('Area/Unit Management');
 ?>
 <div class="management-columns">
