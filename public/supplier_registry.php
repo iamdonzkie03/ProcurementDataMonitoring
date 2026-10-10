@@ -231,7 +231,7 @@ pageStart('Supplier Registry');
 .supplier-table{width:100%!important;max-width:100%!important;table-layout:fixed;border-collapse:collapse}
 .supplier-table th,.supplier-table td{box-sizing:border-box;padding:8px 7px;white-space:normal;overflow-wrap:anywhere;word-break:normal;vertical-align:top}
 .supplier-table.supplier-table-editor{width:100%!important;min-width:0!important;max-width:100%!important;table-layout:fixed!important}
-.supplier-table.supplier-table-editor col.col-select{width:15px!important}
+.supplier-table.supplier-table-editor col.col-select{width:20px!important}
 .supplier-table.supplier-table-editor col.col-number{width:10px!important}
 .supplier-table.supplier-table-editor col.col-company{width:100px!important}
 .supplier-table.supplier-table-editor col.col-permits{width:150px!important}
