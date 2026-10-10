@@ -118,6 +118,27 @@ function ppmpDocumentFilename(string $documentName): string {
   return $base.'_'.$stamp.'_'.bin2hex(random_bytes(3)).'.pdf';
 }
 
+if(!function_exists('refreshReviewStatus')){
+  function refreshReviewStatus(PDO $pdo,int $reviewId): void{
+    $st=$pdo->prepare("SELECT
+      SUM(status='Pending for Review') pending_count,
+      SUM(status='Approved') approved_count,
+      SUM(status='Pending for Approval') pfa_count,
+      SUM(status='Budget Approved') budget_approved_count,
+      SUM(status='Declined') declined_count,
+      COUNT(*) total_count
+      FROM ppmp_review_items WHERE review_id=?");
+    $st->execute([$reviewId]);
+    $x=$st->fetch()?:[];
+    $status='Declined';
+    if((int)($x['pending_count']??0)>0) $status='Pending for Review';
+    elseif((int)($x['pfa_count']??0)>0) $status='Pending for Approval';
+    elseif((int)($x['approved_count']??0)>0 || (int)($x['budget_approved_count']??0)>0) $status='Approved';
+    elseif((int)($x['declined_count']??0)>0) $status='Declined';
+    $pdo->prepare('UPDATE ppmp_reviews SET status=? WHERE id=?')->execute([$status,$reviewId]);
+  }
+}
+
 function ppmpSaveFormError(string $message,int $year,int $areaId,int $id=0): void{
   $_SESSION['ppmp_form_old']=$_POST;
   $_SESSION['ppmp_form_edit_id']=$id;
@@ -140,6 +161,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $areaHeadName=trim((string)($_POST['area_head']??''));
   $q=trim((string)($_POST['q']??''));
   $requestedBy='';
+  // Item edits may not post personnel-position fields, so always initialize this value.
+  $preparedPosition='';
 
   if($action==='add_bulk'){
     $items=$_POST['items']??[];
