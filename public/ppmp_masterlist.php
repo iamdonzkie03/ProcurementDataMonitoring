@@ -10,6 +10,35 @@ $editId=(int)($_GET['edit']??0);
 
 $editing=null;
 
+/**
+ * A duplicate is an existing row with the same item name, specifications,
+ * unit of measurement, and unit cost. Text comparison ignores case and
+ * surrounding whitespace; costs are compared at the database's 2-decimal precision.
+ */
+function ppmpMasterlistDuplicateExists(PDO $pdo, string $itemName, string $specifications, string $uom, float $unitCost, int $excludeId=0): bool {
+  $sql = "SELECT id FROM ppmp_masterlist
+          WHERE LOWER(TRIM(item_name)) = LOWER(TRIM(?))
+            AND LOWER(TRIM(COALESCE(technical_specifications,''))) = LOWER(TRIM(?))
+            AND LOWER(TRIM(unit_of_measurement)) = LOWER(TRIM(?))
+            AND unit_cost = ?";
+  $params = [$itemName, $specifications, $uom, number_format($unitCost, 2, '.', '')];
+  if($excludeId > 0){
+    $sql .= " AND id <> ?";
+    $params[] = $excludeId;
+  }
+  $sql .= " LIMIT 1";
+  $st = $pdo->prepare($sql);
+  $st->execute($params);
+  return (bool)$st->fetchColumn();
+}
+
+function ppmpMasterlistDuplicateKey(string $itemName, string $specifications, string $uom, float $unitCost): string {
+  return mb_strtolower(trim($itemName),'UTF-8')."\x1F".
+         mb_strtolower(trim($specifications),'UTF-8')."\x1F".
+         mb_strtolower(trim($uom),'UTF-8')."\x1F".
+         number_format($unitCost, 2, '.', '');
+}
+
 function ppmpMasterlistReadXlsx(string $filePath): array {
   if(!class_exists('ZipArchive')) throw new RuntimeException('PHP ZipArchive is required to import Excel files.');
   if(!function_exists('simplexml_load_string')) throw new RuntimeException('PHP SimpleXML is required to import Excel files.');
@@ -223,6 +252,19 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
       if(!$importRows) throw new RuntimeException('The Excel workbook contains no masterlist items to import.');
 
+      $seenRows=[];
+      foreach($importRows as $i=>$row){
+        $excelRow=$i+2;
+        $key=ppmpMasterlistDuplicateKey($row[0],$row[1],$row[2],$row[3]);
+        if(isset($seenRows[$key])){
+          throw new RuntimeException("Excel row {$excelRow}: this item duplicates another row in the uploaded file. No items were imported.");
+        }
+        $seenRows[$key]=true;
+        if(ppmpMasterlistDuplicateExists($pdo,$row[0],$row[1],$row[2],$row[3])){
+          throw new RuntimeException("Excel row {$excelRow}: this item already exists in the PPMP Masterlist. No items were imported.");
+        }
+      }
+
       $pdo->beginTransaction();
       $st=$pdo->prepare('INSERT INTO ppmp_masterlist (item_name,technical_specifications,unit_of_measurement,unit_cost,created_by,updated_by) VALUES (?,?,?,?,?,?)');
       foreach($importRows as $row) $st->execute([$row[0],$row[1],$row[2],$row[3],$userId,$userId]);
@@ -263,6 +305,19 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $validRows[]=[$name,$spec,$measure,$cost];
     }
     if(!$validRows){ flash('error','Add at least one masterlist item.'); header('Location:ppmp_masterlist.php'); exit; }
+    $seenRows=[];
+    foreach($validRows as $i=>$row){
+      $key=ppmpMasterlistDuplicateKey($row[0],$row[1],$row[2],$row[3]);
+      if(isset($seenRows[$key])){
+        flash('error','Manual row '.($i+1).' duplicates another row in this submission. No items were saved.');
+        header('Location:ppmp_masterlist.php'); exit;
+      }
+      $seenRows[$key]=true;
+      if(ppmpMasterlistDuplicateExists($pdo,$row[0],$row[1],$row[2],$row[3])){
+        flash('error','Manual row '.($i+1).' already exists in the PPMP Masterlist. No items were saved.');
+        header('Location:ppmp_masterlist.php'); exit;
+      }
+    }
     try{
       $pdo->beginTransaction();
       $st=$pdo->prepare('INSERT INTO ppmp_masterlist (item_name,technical_specifications,unit_of_measurement,unit_cost,created_by,updated_by) VALUES (?,?,?,?,?,?)');
@@ -278,6 +333,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   }
 
   try{
+    if(ppmpMasterlistDuplicateExists($pdo,$itemName,$technicalSpecifications,$uom,$unitCost,($action==='update' && $id>0)?$id:0)){
+      flash('error','This item already exists in the PPMP Masterlist with the same Item Name, Technical Specifications, Unit of Measurement, and Unit Cost. No changes were saved.');
+      header('Location:ppmp_masterlist.php'.(($action==='update' && $id>0)?'?edit='.$id:''));
+      exit;
+    }
     if($action==='update' && $id>0){
       $st=$pdo->prepare('UPDATE ppmp_masterlist SET item_name=?,technical_specifications=?,unit_of_measurement=?,unit_cost=?,updated_by=? WHERE id=?');
       $st->execute([$itemName,$technicalSpecifications,$uom,$unitCost,$userId,$id]);
