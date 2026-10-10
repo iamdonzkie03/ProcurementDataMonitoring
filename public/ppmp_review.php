@@ -78,11 +78,14 @@ function isSupervisorForArea(PDO $pdo,int $areaId,string $userName): bool{
   return (int)$st->fetchColumn()>0;
 }
 function isBudgetOfficerForArea(PDO $pdo,int $areaId,string $userName): bool{
+  // Budget Officers are configured under the Budget Area/Unit and review
+  // PPMPs submitted by every Area/Unit, not just their own Area/Unit.
+  if($userName==='') return false;
   $st=$pdo->prepare("SELECT COUNT(*) FROM area_personnel ap JOIN areas a ON a.id=ap.area_id
-    WHERE ap.area_id=? AND ap.name=?
+    WHERE LOWER(TRIM(ap.name))=LOWER(TRIM(?))
       AND LOWER(COALESCE(ap.position_designation,'')) LIKE '%budget officer%'
-      AND LOWER(a.name) LIKE '%budget%'");
-  $st->execute([$areaId,$userName]);
+      AND (LOWER(TRIM(a.name))='budget' OR LOWER(a.name) LIKE 'budget %' OR LOWER(a.name) LIKE '% budget' OR LOWER(a.name) LIKE '% budget %')");
+  $st->execute([$userName]);
   return (int)$st->fetchColumn()>0;
 }
 function refreshReviewStatus(PDO $pdo,int $reviewId): void{
@@ -97,9 +100,8 @@ function refreshReviewStatus(PDO $pdo,int $reviewId): void{
   $st->execute([$reviewId]);$x=$st->fetch()?:[];
   $status='Declined';
   if((int)($x['pending_count']??0)>0) $status='Pending for Review';
-  elseif((int)($x['approved_count']??0)>0) $status='Pending for Review';
   elseif((int)($x['pfa_count']??0)>0) $status='Pending for Approval';
-  elseif((int)($x['budget_approved_count']??0)>0) $status='Approved';
+  elseif((int)($x['approved_count']??0)>0 || (int)($x['budget_approved_count']??0)>0) $status='Approved';
   elseif((int)($x['declined_count']??0)>0) $status='Declined';
   $pdo->prepare('UPDATE ppmp_reviews SET status=? WHERE id=?')->execute([$status,$reviewId]);
 }
@@ -128,7 +130,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if(!$row || $row['status']!=='Pending for Review')continue;
         $remark=trim((string)($remarks[$itemReviewId]??''));
         if($status==='Declined' && $remark===''){throw new RuntimeException('A decline reason is required for every item marked Declined.');}
-        $up->execute([$status,$status==='Declined'?$remark:null,(int)$user['id'],$itemReviewId,$reviewId]);
+        $nextStatus=$status==='Approved'?'Pending for Approval':'Declined';
+        $up->execute([$nextStatus,$status==='Declined'?$remark:null,(int)$user['id'],$itemReviewId,$reviewId]);
       }
       $pdo->commit();refreshReviewStatus($pdo,$reviewId);flash('success','PPMP item review decisions have been saved.');
     }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();flash('error',$e->getMessage());}
@@ -160,10 +163,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     try{
       $up=$pdo->prepare("UPDATE ppmp_review_items SET status=?,budget_remarks=?,budget_reviewed_by=?,budget_reviewed_at=NOW() WHERE id=? AND review_id=? AND status='Pending for Approval'");
       foreach($itemStatuses as $itemReviewId=>$status){
-        if(!in_array($status,['Budget Approved','Budget Declined'],true))continue;
+        if(!in_array($status,['Approved','Declined','Budget Approved','Budget Declined'],true))continue;
         $remark=trim((string)($remarks[$itemReviewId]??''));
-        if($status==='Budget Declined' && $remark==='')throw new RuntimeException('A decline reason is required for every item declined by the Budget Officer.');
-        $up->execute([$status,$status==='Budget Declined'?$remark:null,(int)$user['id'],(int)$itemReviewId,$reviewId]);
+        $declined=in_array($status,['Declined','Budget Declined'],true);
+        if($declined && $remark==='')throw new RuntimeException('A decline reason is required for every item declined by the Budget Officer.');
+        $finalStatus=$declined?'Declined':'Approved';
+        $up->execute([$finalStatus,$declined?$remark:null,(int)$user['id'],(int)$itemReviewId,$reviewId]);
       }
       $pdo->commit();refreshReviewStatus($pdo,$reviewId);flash('success','Budget Officer item decisions have been saved.');
     }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();flash('error',$e->getMessage());}
@@ -195,6 +200,21 @@ foreach($stQueue->fetchAll() as $item){
   if($ppmpSupervisor && (int)($item['pending_review_count']??0)>0 && isSupervisorForArea($pdo,(int)$item['area_id'],$userName)){
     $supervisorQueue[]=$item;
   }
+}
+
+// List any PPMP containing items waiting for the Budget Officer, even when
+// other items in the same PPMP still await Supervisor review.
+if(isBudgetOfficerForArea($pdo,0,$userName) || hasRole(['Administrator'])){
+  $stBudgetQueue=$pdo->query("SELECT r.*,a.name area,d.name division,u.full_name submitted_by_name,
+    COUNT(DISTINCT p.id) item_count
+    FROM ppmp_reviews r
+    JOIN areas a ON a.id=r.area_id
+    JOIN divisions d ON d.id=a.division_id
+    LEFT JOIN users u ON u.id=r.submitted_by
+    LEFT JOIN ppmp_items p ON p.fiscal_year=r.fiscal_year AND p.area_id=r.area_id AND p.ppmp_no=r.ppmp_no
+    WHERE EXISTS (SELECT 1 FROM ppmp_review_items pri WHERE pri.review_id=r.id AND pri.status='Pending for Approval')
+    GROUP BY r.id ORDER BY r.updated_at DESC");
+  $budgetQueue=$stBudgetQueue->fetchAll();
 }
 
 $reviewId=(int)($_GET['review_id']??0);$review=null;$items=[];
@@ -243,8 +263,8 @@ pageStart('PPMP Review');
 <?php endif;?>
 <?php if($budgetQueue):?>
 <h3>Areas/Units Pending Budget Approval</h3>
-<div class="table-wrap"><table class="table"><tr><th>Division</th><th>Area/Unit</th><th>PPMP No.</th><th>Fiscal Year</th><th>Items</th><th>Submitted By</th><th>Action</th></tr>
-<?php foreach($budgetQueue as $r):?><tr><td><?=e($r['division'])?></td><td><?=e($r['area'])?></td><td><?=e($r['ppmp_no'])?></td><td><?=e((string)$r['fiscal_year'])?></td><td><?=e((string)$r['item_count'])?></td><td><?=e($r['submitted_by_name']??'')?></td><td><span class="ppmp-review-status pfa"><?=e($r['status'])?></span></td><td><a class="btn secondary" href="ppmp_review.php?review_id=<?=$r['id']?>">Review Approved Items</a></td></tr><?php endforeach;?>
+<div class="table-wrap"><table class="table"><tr><th>Division</th><th>Area/Unit</th><th>PPMP No.</th><th>Fiscal Year</th><th>Items</th><th>Submitted By</th><th>Status</th><th>Action</th></tr>
+<?php foreach($budgetQueue as $r):?><tr><td><?=e($r['division'])?></td><td><?=e($r['area'])?></td><td><?=e($r['ppmp_no'])?></td><td><?=e((string)$r['fiscal_year'])?></td><td><?=e((string)$r['item_count'])?></td><td><?=e($r['submitted_by_name']??'')?></td><td><span class="ppmp-review-status pfa">Pending for Approval</span></td><td><a class="btn secondary" href="ppmp_review.php?review_id=<?=$r['id']?>">Review Pending Items</a></td></tr><?php endforeach;?>
 </table></div>
 <?php endif;?>
 <?php if(!$supervisorQueue&&!$budgetQueue):?><div class="empty">No PPMP requests are currently waiting for your action.</div><?php endif;?>
@@ -255,7 +275,7 @@ pageStart('PPMP Review');
 <p><b>Division:</b> <?=e($review['division'])?> &nbsp; <b>Fiscal Year:</b> <?=e((string)$review['fiscal_year'])?> &nbsp; <b>Submitted By:</b> <?=e($review['submitted_by_name']??'')?></p>
 <span class="ppmp-review-status <?=strtolower(str_replace(' ','-',($review['status']==='Pending for Approval'?'pfa':$review['status'])))?>"><?=e($review['status'])?></span>
 <form method="post" id="supervisorReviewForm">
-<input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="review_items"><input type="hidden" name="review_id" value="<?=$reviewId?>">
+<input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="<?=isBudgetOfficerForArea($pdo,(int)$review['area_id'],$userName)?'budget_decision':'review_items'?>"><input type="hidden" name="review_id" value="<?=$reviewId?>">
 <div class="review-actions"><button type="button" class="btn secondary" id="approveSelected">Approve Selected</button><button type="button" class="btn secondary" id="declineSelected">Decline Selected</button><span class="muted" id="selectedCount">0 selected</span></div>
 <div class="table-wrap"><table class="table">
 <tr><th><input type="checkbox" id="selectAllItems" aria-label="Select all items"></th><th>PPMP Item</th><th>Category</th><th>Qty / Unit</th><th>Unit Cost</th><th>Total</th><th>Review Decision</th></tr>
@@ -267,8 +287,8 @@ pageStart('PPMP Review');
 <?php if($review['status']==='Pending for Review' && isSupervisorForArea($pdo,(int)$review['area_id'],$userName) && $r['status']==='Pending for Review'):?>
 <select class="select decision-select" name="item_status[<?=$r['id']?>]"><option value="">Select</option><option value="Approved">Approved</option><option value="Declined">Declined</option></select>
 <textarea class="input decline-remark" name="item_remarks[<?=$r['id']?>]" rows="2" placeholder="Reason for decline"><?=e($r['supervisor_remarks']??'')?></textarea>
-<?php elseif($review['status']==='Pending for Approval' && isBudgetOfficerForArea($pdo,(int)$review['area_id'],$userName) && $r['status']==='Pending for Approval'):?>
-<select class="select decision-select" name="budget_status[<?=$r['id']?>]"><option value="">Select</option><option value="Budget Approved">Approved</option><option value="Budget Declined">Declined</option></select>
+<?php elseif(isBudgetOfficerForArea($pdo,(int)$review['area_id'],$userName) && $r['status']==='Pending for Approval'):?>
+<select class="select decision-select" name="budget_status[<?=$r['id']?>]"><option value="">Select</option><option value="Approved">Approved</option><option value="Declined">Declined</option></select>
 <textarea class="input decline-remark" name="budget_remarks[<?=$r['id']?>]" rows="2" placeholder="Reason for decline"></textarea>
 <?php else:?>
 <span class="ppmp-review-status <?=in_array($r['status'],['Approved','Budget Approved'],true)?'approved':($r['status']==='Declined'||$r['status']==='Budget Declined'?'declined':'pending')?>"><?=e($r['status'])?></span>
@@ -278,12 +298,12 @@ pageStart('PPMP Review');
 </td></tr>
 <?php endforeach;?>
 </table></div>
-<?php if($review['status']==='Pending for Review' && isSupervisorForArea($pdo,(int)$review['area_id'],$userName)):?>
+<?php if(isSupervisorForArea($pdo,(int)$review['area_id'],$userName) && array_filter($items,fn($it)=>$it['status']==='Pending for Review')):?>
 <div class="review-actions"><button class="btn" type="submit">Save Selected Decisions</button></div>
 </form>
 <?php $approved=0;$pending=0;foreach($items as $it){if($it['status']==='Approved')$approved++;if($it['status']==='Pending for Review')$pending++;}?>
 <?php if($approved>0 && $pending===0):?><form method="post" class="review-actions"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_approval"><input type="hidden" name="review_id" value="<?=$reviewId?>"><button class="btn" type="submit" onclick="return confirm('Submit all approved items to the Budget Officer?');">Submit Approved Items for Approval</button></form><?php endif;?>
-<?php elseif($review['status']==='Pending for Approval' && isBudgetOfficerForArea($pdo,(int)$review['area_id'],$userName)):?>
+<?php elseif(isBudgetOfficerForArea($pdo,(int)$review['area_id'],$userName) && array_filter($items,fn($it)=>$it['status']==='Pending for Approval')):?>
 <div class="review-actions"><button class="btn" type="submit">Save Budget Decisions</button></div>
 </form>
 <?php else:?></form><?php endif;?>
