@@ -313,7 +313,8 @@ pageStart('Supplier Registry');
       <form method="post" id="bulkSupplierDeleteForm" onsubmit="return confirm('Delete all selected supplier records and their uploaded permits/licenses? This cannot be undone.');">
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="action" value="bulk_delete">
-        <div class="supplier-bulk-actions" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:12px 0;font-size:12px;width:100%;box-sizing:border-box">
+        <div class="supplier-bulk-actions" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0;font-size:12px;width:100%;box-sizing:border-box">
+          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSuppliers"> Select All</label>
           <button class="btn danger" type="submit" id="deleteSelectedSuppliers" style="margin-left:auto;flex:0 0 auto">Delete Selected</button>
         </div>
       <?php endif; ?>
