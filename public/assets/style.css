@@ -2941,3 +2941,17 @@ html body .supplier-content-panel .supplier-list-section table#supplierTable tbo
   content: none !important;
   display: none !important;
 }
+
+
+/* Supplier Registry: intentionally hide the row separator inside the Actions column only. */
+html body .supplier-content-panel .supplier-list-section table#supplierTable tbody tr > td.supplier-actions {
+  background-color:#fff !important;
+  background-image:none !important;
+  border-bottom:0 !important;
+  box-shadow:none !important;
+}
+html body .supplier-content-panel .supplier-list-section table#supplierTable tbody tr > td.supplier-actions::before,
+html body .supplier-content-panel .supplier-list-section table#supplierTable tbody tr > td.supplier-actions::after {
+  content:none !important;
+  display:none !important;
+}
