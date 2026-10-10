@@ -1281,11 +1281,11 @@ function ppmpPrintDate($value): string{
     </div>
     <div class="ppmp-signature-box">
       <b>Submitted by:</b>
-      <div class="signature-line ppmp-submitted-signature"><?php if($printReviewStatus==='Pending for Approval' && $submittedSignature!==''): ?><img src="<?=e($submittedSignature)?>" alt="Submitted By electronic signature"><?php endif; ?></div>
-      <div class="signature-name"><?php if($printReviewStatus==='Pending for Approval'): ?><?=e($submitted)?><?php endif; ?></div>
+      <div class="signature-line ppmp-submitted-signature"><?php if(in_array($printReviewStatus,['Pending for Approval','Approved'],true) && $submittedSignature!==''): ?><img src="<?=e($submittedSignature)?>" alt="Submitted By electronic signature"><?php endif; ?></div>
+      <div class="signature-name"><?php if(in_array($printReviewStatus,['Pending for Approval','Approved'],true)): ?><?=e($submitted)?><?php endif; ?></div>
       <div class="signature-underline"></div>
       <div class="signature-caption">Signature over Printed Name</div>
-      <div class="signature-meta"><?php if($printReviewStatus==='Pending for Approval'): ?><?=e($submittedPos)?><?php endif; ?></div>
+      <div class="signature-meta"><?php if(in_array($printReviewStatus,['Pending for Approval','Approved'],true)): ?><?=e($submittedPos)?><?php endif; ?></div>
       <div class="signature-meta"><i>Division/Department/Section Unit</i></div>
       <div class="signature-meta">Date : ______________________________</div>
     </div>
