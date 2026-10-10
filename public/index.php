@@ -19,6 +19,25 @@ try{
   $masterlistCount=(int)$pdo->query("SELECT COUNT(*) FROM ppmp_masterlist")->fetchColumn();
 }catch(Throwable $e){}
 
+// Dashboard mini-panel metrics
+$currentAppTotal=0.0;
+try{
+  $st=$pdo->prepare("SELECT COALESCE(SUM(quantity*unit_price),0) FROM ppmp_items WHERE fiscal_year=?");
+  $st->execute([(int)date('Y')]);
+  $currentAppTotal=(float)$st->fetchColumn();
+}catch(Throwable $e){}
+$supplierCount=0;$recentSupplierDashboard=null;
+try{
+  $supplierCount=(int)$pdo->query("SELECT COUNT(*) FROM suppliers")->fetchColumn();
+  $recentSupplierDashboard=$pdo->query("SELECT supplier_company_name,updated_at FROM suppliers ORDER BY updated_at DESC,id DESC LIMIT 1")->fetch() ?: null;
+}catch(Throwable $e){}
+$totalUsers=0;$recentUserDashboard=null;
+try{
+  ensureUserActivitySchema($pdo);
+  $totalUsers=(int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+  $recentUserDashboard=$pdo->query("SELECT full_name,last_activity_at FROM users WHERE last_activity_at IS NOT NULL ORDER BY last_activity_at DESC,id DESC LIMIT 1")->fetch() ?: null;
+}catch(Throwable $e){}
+
 // 2. Divisions/Departments and all Areas/Units
 $divisionCount=0;$areaUnitCount=0;
 try{
@@ -120,17 +139,65 @@ try{
 $recentSql=$isSupervisor&&$contextDivisionId>0?' WHERE p.fiscal_year=? AND a.division_id=?':($contextAreaId>0?' WHERE p.fiscal_year=? AND p.area_id=?':' WHERE p.fiscal_year=?');
 $recentArgs=$isSupervisor&&$contextDivisionId>0?[$year,$contextDivisionId]:($contextAreaId>0?[$year,$contextAreaId]:[$year]);
 $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id'.$recentSql.' ORDER BY p.created_at DESC LIMIT 8');$recent->execute($recentArgs);pageStart('Dashboard');
-?><div class="cards">
-<div class="card"><div class="label">Masterlist Items</div><div class="metric"><?=number_format($masterlistCount)?></div><div class="hint">Total items in Masterlist</div></div>
-<div class="card"><div class="label">Divisions / Departments</div><div class="metric"><?=number_format($divisionCount)?></div><div class="hint"><?=number_format($areaUnitCount)?> Areas / Units under them</div></div>
-<div class="card"><div class="label">Purchase Requests</div><div class="metric"><?=number_format($prDashboardCount)?></div><div class="hint">₱<?=number_format($prDashboardAmount,2)?> total amount</div></div>
-<div class="card"><div class="label">Purchase Orders</div><div class="metric"><?=number_format($poDashboardCount)?></div><div class="hint">₱<?=number_format($poDashboardAmount,2)?> total amount</div></div>
-</div>
-<div class="cards" style="margin-top:16px">
-<div class="card"><div class="label">Cancelled Purchase Requests</div><div class="metric"><?=number_format($cancelledPrCount)?></div><div class="hint">Cancelled records</div></div>
-<div class="card"><div class="label">Cancelled Purchase Orders</div><div class="metric"><?=number_format($cancelledPoCount)?></div><div class="hint">Cancelled records</div></div>
-<div class="card"><div class="label">Users Logged In</div><div class="metric"><?=number_format($activeUsers)?></div><div class="hint">Active within the last 5 minutes</div></div>
-<div class="card"><div class="label">Current User</div><div class="metric" style="font-size:18px"><?=e(currentUser()['full_name']??'Guest')?></div><div class="hint"><?=e(currentUser()['role']??'Guest')?></div></div>
+?><style>
+.dashboard-mini-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.dashboard-mini-card{min-width:0;min-height:142px;border:1px solid rgba(60,70,90,.10);border-radius:14px;padding:17px 18px;box-shadow:0 5px 16px rgba(31,41,55,.045)}
+.dashboard-mini-card .label{font-size:12px;font-weight:700;color:#334155;margin-bottom:9px}
+.dashboard-mini-card .metric{font-size:24px;font-weight:800;line-height:1.2;margin:5px 0 8px;color:#1f2937;overflow-wrap:anywhere}
+.dashboard-mini-card .hint{font-size:11px;line-height:1.5;color:#475569;overflow-wrap:anywhere}
+.dashboard-mini-card .hint b{color:#334155}
+.dashboard-pastel-blue{background:#eaf3ff}
+.dashboard-pastel-green{background:#eaf7ee}
+.dashboard-pastel-lavender{background:#f1edff}
+.dashboard-pastel-peach{background:#fff0e6}
+.dashboard-pastel-pink{background:#fcecf3}
+.dashboard-pastel-mint{background:#e5f7f3}
+.dashboard-pastel-yellow{background:#fff8dc}
+.dashboard-pastel-sky{background:#e8f7fc}
+@media(max-width:1050px){.dashboard-mini-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.dashboard-mini-cards{grid-template-columns:1fr}.dashboard-mini-card{min-height:unset}}
+</style>
+<div class="dashboard-mini-cards">
+  <div class="dashboard-mini-card dashboard-pastel-blue">
+    <div class="label">Current APP Total · FY <?= (int)date('Y') ?></div>
+    <div class="metric">₱<?=number_format($currentAppTotal,2)?></div>
+    <div class="hint">Total planned budget for the current calendar year</div>
+  </div>
+  <div class="dashboard-mini-card dashboard-pastel-green">
+    <div class="label">Divisions / Departments</div>
+    <div class="metric"><?=number_format($divisionCount)?></div>
+    <div class="hint"><?=number_format($areaUnitCount)?> Areas / Units under them</div>
+  </div>
+  <div class="dashboard-mini-card dashboard-pastel-lavender">
+    <div class="label">Purchase Requests</div>
+    <div class="metric"><?=number_format($prDashboardCount)?></div>
+    <div class="hint"><?php if($recentPrDashboard): ?><b>Last created:</b> <?=e($recentPrDashboard['pr_no']??'')?> · <?=e(date('M d, Y',strtotime($recentPrDashboard['created_at'])))?><?php else: ?>No Purchase Requests created yet<?php endif; ?></div>
+  </div>
+  <div class="dashboard-mini-card dashboard-pastel-peach">
+    <div class="label">Purchase Orders</div>
+    <div class="metric"><?=number_format($poDashboardCount)?></div>
+    <div class="hint"><?php if($recentPoDashboard): ?><b>Last created:</b> <?=e($recentPoDashboard['po_no']??'')?> · <?=e(date('M d, Y',strtotime($recentPoDashboard['created_at'])))?><?php else: ?>No Purchase Orders created yet<?php endif; ?></div>
+  </div>
+  <div class="dashboard-mini-card dashboard-pastel-pink">
+    <div class="label">Supplier Registry</div>
+    <div class="metric"><?=number_format($supplierCount)?></div>
+    <div class="hint"><?php if($recentSupplierDashboard): ?><b>Last updated:</b> <?=e($recentSupplierDashboard['supplier_company_name']??'')?> · <?=!empty($recentSupplierDashboard['updated_at'])?e(date('M d, Y',strtotime($recentSupplierDashboard['updated_at']))):'Date unavailable'?><?php else: ?>No suppliers registered yet<?php endif; ?></div>
+  </div>
+  <div class="dashboard-mini-card dashboard-pastel-mint">
+    <div class="label">Users</div>
+    <div class="metric"><?=number_format($totalUsers)?></div>
+    <div class="hint"><?php if($recentUserDashboard): ?><b>Recent user logged in:</b> <?=e($recentUserDashboard['full_name']??'')?><?php if(!empty($recentUserDashboard['last_activity_at'])): ?> · <?=e(date('M d, Y h:i A',strtotime($recentUserDashboard['last_activity_at'])))?><?php endif; ?><?php else: ?>No recent user activity recorded<?php endif; ?></div>
+  </div>
+  <div class="dashboard-mini-card dashboard-pastel-yellow">
+    <div class="label">Masterlist of Items</div>
+    <div class="metric"><?=number_format($masterlistCount)?></div>
+    <div class="hint">Total items available in the procurement masterlist</div>
+  </div>
+  <div class="dashboard-mini-card dashboard-pastel-sky">
+    <div class="label">Manuals</div>
+    <div class="metric">Guides</div>
+    <div class="hint">Procurement planning, purchasing, and system workflow references</div>
+  </div>
 </div>
 <div class="grid">
 <div class="panel"><h2>Recent Purchase Request</h2><?php if($recentPrDashboard):?><p><b><?=e($recentPrDashboard['pr_no'])?></b></p><p><b>Area/Unit:</b> <?=e($recentPrDashboard['area']??'')?></p><p><b>Division/Department:</b> <?=e($recentPrDashboard['division']??'')?></p><p><b>Total Amount:</b> ₱<?=number_format((float)$recentPrDashboard['total_amount'],2)?></p><p><b>Created:</b> <?=e(date('M d, Y h:i A',strtotime($recentPrDashboard['created_at'])))?></p><?php else:?><p class="empty">No Purchase Request has been created.</p><?php endif;?></div>
