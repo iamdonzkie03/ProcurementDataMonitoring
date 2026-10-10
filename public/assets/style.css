@@ -2857,3 +2857,23 @@ html body .supplier-content-panel .supplier-list-section table#supplierTable td:
 html body .supplier-content-panel .supplier-list-section table#supplierTable td.supplier-actions{
   white-space:normal!important;
 }
+
+
+/* Match Supplier Registry Edit/Delete controls to the standard 82px PPMP action buttons. */
+html body .supplier-content-panel .supplier-list-section table#supplierTable td.supplier-actions > .supplier-actions > a.btn,
+html body .supplier-content-panel .supplier-list-section table#supplierTable td.supplier-actions > .supplier-actions > form > button.btn {
+  width:82px!important;
+  min-width:82px!important;
+  max-width:82px!important;
+  height:36px!important;
+  box-sizing:border-box!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0 12px!important;
+  margin:0!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+html body .supplier-content-panel .supplier-list-section table#supplierTable td.supplier-actions > .supplier-actions {gap:8px!important;align-items:flex-start!important;}
+html body .supplier-content-panel .supplier-list-section table#supplierTable td.supplier-actions > .supplier-actions > form {margin:0!important;}
