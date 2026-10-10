@@ -631,7 +631,7 @@ document.addEventListener('DOMContentLoaded',function(){
   </div>
   <div class="table-wrap" style="margin-top:16px">
     <div class="masterlist-pagination" id="masterlistPagination" aria-label="Masterlist pagination">
-      <div class="masterlist-page-size"><label for="masterlistPageSize">Show</label><select class="input" id="masterlistPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>records</span></div>
+      <div class="masterlist-page-size"><label for="masterlistPageSize">Show</label><select class="input" id="masterlistPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="masterlistPageSize">records</label></span></div>
       <div class="masterlist-pagination-info" id="masterlistPaginationInfo"></div>
       <div class="masterlist-pagination-buttons" id="masterlistPaginationButtons"></div>
     </div>
