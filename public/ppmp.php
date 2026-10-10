@@ -1741,9 +1741,12 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    if(item)item.dataset.selectedMasterlistName='';
    body.appendChild(row);
    renumber();
-   bind(row);
    syncAllRowDocuments();
    calc();
+   // Reconcile row actions immediately after insertion, so adding the second
+   // row creates Delete buttons on both rows in the same click.
+   syncAllRowActions();
+   bind(row);
    syncAllRowActions();
  });
  bind(body.querySelector('.ppmp-entry-row'));
