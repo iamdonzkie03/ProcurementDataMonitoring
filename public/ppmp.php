@@ -675,7 +675,7 @@ $where=' WHERE p.fiscal_year=?'; $args=[$year];
 if($isPpmpSupervisor){ $where.=' AND a.division_id=?'; $args[]=currentLoginDivisionId(); }
 if($areaId>0){$where.=' AND p.area_id=?';$args[]=$areaId;}
 if($q!==''){$where.=' AND (p.item_name LIKE ? OR p.description LIKE ? OR a.name LIKE ? OR c.name LIKE ?)';$args=[...$args,"%$q%","%$q%","%$q%","%$q%"];}
-$sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,c.name category,COALESCE(pri.status,pr.status,\'Draft\') review_status,COALESCE(pri.supervisor_remarks,pri.budget_remarks,pr.remarks,\'\') review_remarks FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id LEFT JOIN ppmp_reviews pr ON pr.fiscal_year=p.fiscal_year AND pr.area_id=p.area_id AND pr.ppmp_no=p.ppmp_no LEFT JOIN ppmp_review_items pri ON pri.review_id=pr.id AND pri.ppmp_item_id=p.id'.$where.' ORDER BY p.id';
+$sql='SELECT p.*,a.name area,d.name division_name,d.division_head authorized_person,d.head_position_designation authorized_position,c.name category,COALESCE(pri.status,pr.status,\'Draft\') review_status,COALESCE(pri.supervisor_remarks,pri.budget_remarks,pr.remarks,\'\') review_remarks,pr.supervisor_reviewed_at AS ppmp_pending_approval_at,pr.budget_reviewed_at AS ppmp_budget_approved_at FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN divisions d ON d.id=a.division_id JOIN categories c ON c.id=p.category_id LEFT JOIN ppmp_reviews pr ON pr.fiscal_year=p.fiscal_year AND pr.area_id=p.area_id AND pr.ppmp_no=p.ppmp_no LEFT JOIN ppmp_review_items pri ON pri.review_id=pr.id AND pri.ppmp_item_id=p.id'.$where.' ORDER BY p.id';
 $st=$pdo->prepare($sql);$st->execute($args);$rows=$st->fetchAll();
 // Keep all items available for page metadata, but declined items are excluded
 // from the official printed PPMP Form.
@@ -937,6 +937,8 @@ $ppmpNo=$h['ppmp_no']??'';
 // status and PPMP review status). Use that displayed status to control the
 // Submitted By section, so Pending for Review never shows an empty signatory box.
 $printReviewStatus=trim((string)($h['review_status']??''));
+$pendingApprovalDate=trim((string)($h['ppmp_pending_approval_at']??''));
+$budgetApprovedDate=trim((string)($h['ppmp_budget_approved_at']??''));
 if($printReviewStatus==='' && !empty($h['fiscal_year']) && !empty($h['area_id']) && $ppmpNo!==''){
   $stPrintStatus=$pdo->prepare('SELECT status FROM ppmp_reviews WHERE fiscal_year=? AND area_id=? AND ppmp_no=? ORDER BY id DESC LIMIT 1');
   $stPrintStatus->execute([(int)$h['fiscal_year'],(int)$h['area_id'],(string)$ppmpNo]);
@@ -1299,7 +1301,8 @@ function ppmpPrintDate($value): string{
       <div class="signature-caption">Signature over Printed Name</div>
       <div class="signature-meta"><?=e($budgetPos)?></div>
       <div class="signature-meta"><i>Budget Section</i></div>
-      <div class="signature-meta">Date : ______________________________</div>
+      <div class="signature-meta">Pending for Approval: <?=e($pendingApprovalDate!==''?ppmpPrintDate($pendingApprovalDate):'________________')?></div>
+      <div class="signature-meta">Approved by Budget Officer: <?=e($budgetApprovedDate!==''?ppmpPrintDate($budgetApprovedDate):'________________')?></div>
     </div>
   </div>
 </div>
