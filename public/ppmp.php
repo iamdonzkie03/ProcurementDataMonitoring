@@ -781,10 +781,10 @@ pageStart('Project Procurement Management Plan');
 </div>
 
 <?php if($divisionId>0 && $areaId>0): ?>
-<div class="panel ppmp-toolbar">
+<div class="ppmp-toolbar ppmp-actions-row">
   <div class="toolbar">
     <!-- PPMP toolbar: Add PPMP Item intentionally removed. -->
-    <button class="btn secondary ppmp-toolbar-action" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button>
+    <button class="btn ppmp-toolbar-action ppmp-print-form-btn" type="button" onclick="window.open('ppmp.php?print=1&year=<?=$year?>&area_id=<?=$areaId?>','_blank','noopener')"><span class="ppmp-toolbar-label">Print PPMP Form</span></button>
     <?php if(!$isPpmpSupervisor && $rows && in_array(($rows[0]['review_status']??'Draft'),['Draft','Declined'],true)):?><form method="post" style="display:inline-block;margin:0;"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="submit_for_review"><input type="hidden" name="fiscal_year" value="<?=e($year)?>"><input type="hidden" name="area_id" value="<?=e($areaId)?>"><button class="btn ppmp-toolbar-action ppmp-submit-review" type="submit" onclick="return confirm('Submit the entire PPMP list for Supervisor/Authorized Person review?');"><span class="ppmp-toolbar-label">Submit for Review</span></button></form><?php endif;?>
   </div>
 </div>
