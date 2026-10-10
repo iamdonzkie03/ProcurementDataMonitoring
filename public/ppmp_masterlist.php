@@ -277,6 +277,24 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location:ppmp_masterlist.php'); exit;
   }
 
+  if($action==='bulk_delete'){
+    $ids=array_values(array_unique(array_filter(array_map('intval',(array)($_POST['ids']??[])),static fn($value)=>$value>0)));
+    if(!$ids){
+      flash('error','Select at least one masterlist item to delete.');
+    }else{
+      try{
+        $placeholders=implode(',',array_fill(0,count($ids),'?'));
+        $st=$pdo->prepare("DELETE FROM ppmp_masterlist WHERE id IN ($placeholders)");
+        $st->execute($ids);
+        $deleted=$st->rowCount();
+        flash($deleted?'success':'error',$deleted?sprintf('%d masterlist item(s) deleted.',$deleted):'No selected masterlist items were found.');
+      }catch(PDOException $e){
+        flash('error','Unable to delete the selected masterlist items.');
+      }
+    }
+    header('Location:ppmp_masterlist.php'); exit;
+  }
+
   if($action==='delete'){
     if($id<=0){
       flash('error','Invalid PPMP Masterlist item.');
@@ -472,6 +490,39 @@ document.addEventListener('DOMContentLoaded',function(){
   if(!input||!suggestions||!table||!pageSizeSelect||!paginationInfo||!paginationButtons)return;
   const tableRows=Array.from(table.querySelectorAll('tr[data-masterlist-id]'));
   const emptyRow=table.querySelector('.masterlist-empty-row');
+  const selectAll=document.getElementById('masterlistSelectAll');
+  const selectedCount=document.getElementById('masterlistSelectedCount');
+  const bulkDeleteButton=document.getElementById('masterlistBulkDeleteButton');
+  const bulkDeleteForm=document.getElementById('masterlistBulkDeleteForm');
+  const bulkDeleteIds=document.getElementById('masterlistBulkDeleteIds');
+  function updateSelectionUi(){
+    const checked=tableRows.filter(function(row){return row.querySelector('.masterlist-row-select')?.checked;});
+    if(selectedCount)selectedCount.textContent=checked.length+' selected';
+    if(bulkDeleteButton)bulkDeleteButton.disabled=checked.length===0;
+    if(selectAll){
+      const visible=tableRows.filter(function(row){return row.style.display!=='none';});
+      const visibleChecked=visible.filter(function(row){return row.querySelector('.masterlist-row-select')?.checked;});
+      selectAll.checked=visible.length>0&&visibleChecked.length===visible.length;
+      selectAll.indeterminate=visibleChecked.length>0&&visibleChecked.length<visible.length;
+    }
+  }
+  table.addEventListener('change',function(e){
+    if(e.target.matches('.masterlist-row-select'))updateSelectionUi();
+  });
+  if(selectAll)selectAll.addEventListener('change',function(){
+    tableRows.filter(function(row){return row.style.display!=='none';}).forEach(function(row){
+      const checkbox=row.querySelector('.masterlist-row-select');if(checkbox)checkbox.checked=selectAll.checked;
+    });
+    updateSelectionUi();
+  });
+  if(bulkDeleteButton)bulkDeleteButton.addEventListener('click',function(){
+    const ids=tableRows.filter(function(row){return row.querySelector('.masterlist-row-select')?.checked;}).map(function(row){return row.dataset.masterlistId;});
+    if(!ids.length){alert('Select at least one masterlist item to delete.');return;}
+    if(!confirm('Delete '+ids.length+' selected masterlist item(s)? This action cannot be undone.'))return;
+    bulkDeleteIds.innerHTML='';
+    ids.forEach(function(id){const field=document.createElement('input');field.type='hidden';field.name='ids[]';field.value=id;bulkDeleteIds.appendChild(field);});
+    bulkDeleteForm.submit();
+  });
   let filteredRows=tableRows.slice(),currentPage=1,pageSize=Number(pageSizeSelect.value)||10;
   function closeSuggestions(){suggestions.innerHTML='';suggestions.style.display='none';}
   function getName(row){return String(row.dataset.masterlistName||'');}
@@ -482,6 +533,7 @@ document.addEventListener('DOMContentLoaded',function(){
     const start=(currentPage-1)*pageSize;
     filteredRows.slice(start,start+pageSize).forEach(function(row){row.style.display='';});
     if(emptyRow)emptyRow.style.display=total?'none':'';
+    updateSelectionUi();
     paginationInfo.textContent=total?'Showing '+(start+1)+'-'+Math.min(start+pageSize,total)+' of '+total+' records':'0 records';
     paginationButtons.innerHTML='';
     function addButton(label,page,disabled,active){
@@ -629,6 +681,15 @@ document.addEventListener('DOMContentLoaded',function(){
       <div class="masterlist-search-suggestions" id="masterlistSearchSuggestions" role="listbox"></div>
     </div>
   </div>
+  <form method="post" id="masterlistBulkDeleteForm" style="display:none">
+    <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+    <input type="hidden" name="action" value="bulk_delete">
+    <div id="masterlistBulkDeleteIds"></div>
+  </form>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px">
+    <span id="masterlistSelectedCount" class="muted">0 selected</span>
+    <button class="btn danger" type="button" id="masterlistBulkDeleteButton" disabled>Delete Selected</button>
+  </div>
   <div class="table-wrap" style="margin-top:16px">
     <div class="masterlist-pagination" id="masterlistPagination" aria-label="Masterlist pagination">
       <div class="masterlist-page-size"><label for="masterlistPageSize">Show</label><select class="input" id="masterlistPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="masterlistPageSize">records</label></span></div>
@@ -636,10 +697,11 @@ document.addEventListener('DOMContentLoaded',function(){
       <div class="masterlist-pagination-buttons" id="masterlistPaginationButtons"></div>
     </div>
     <table class="table masterlist-table" id="masterlistTable">
-      <thead><tr><th>#</th><th>Item Name</th><th>Technical Specifications</th><th>Unit of Measurement</th><th class="masterlist-cost">Unit Cost</th><th>Action</th></tr></thead>
+      <thead><tr><th><input type="checkbox" id="masterlistSelectAll" aria-label="Select all items on this page" title="Select all visible items"></th><th>#</th><th>Item Name</th><th>Technical Specifications</th><th>Unit of Measurement</th><th class="masterlist-cost">Unit Cost</th><th>Action</th></tr></thead>
       <tbody>
       <?php foreach($masterlist as $i=>$row): ?>
         <tr data-masterlist-id="<?=e((string)$row['id'])?>" data-masterlist-name="<?=e($row['item_name'])?>">
+          <td><input type="checkbox" class="masterlist-row-select" value="<?=e((string)$row['id'])?>" aria-label="Select <?=e($row['item_name'])?>"></td>
           <td><?=e((string)($i+1))?></td>
           <td><?=e($row['item_name'])?></td>
           <td><?=nl2br(e($row['technical_specifications']??''))?></td>
@@ -658,7 +720,7 @@ document.addEventListener('DOMContentLoaded',function(){
           </td>
         </tr>
       <?php endforeach; ?>
-      <tr class="masterlist-empty-row" <?= $masterlist ? 'style="display:none"' : '' ?>><td colspan="6" class="empty">No PPMP Masterlist items match your search.</td></tr>
+      <tr class="masterlist-empty-row" <?= $masterlist ? 'style="display:none"' : '' ?>><td colspan="7" class="empty">No PPMP Masterlist items match your search.</td></tr>
       </tbody>
     </table>
   </div>
