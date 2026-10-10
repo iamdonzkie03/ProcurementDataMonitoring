@@ -34,9 +34,8 @@ CREATE TABLE IF NOT EXISTS suppliers (
 SQL);
 } catch(Throwable $e) {}
 
-// Existing installations may have a UNIQUE index on supplier identity fields.
-// Duplicate supplier details are allowed in the registry, so remove only non-primary
-// unique indexes made exclusively from company name, address, and/or owner columns.
+// Keep duplicate prevention in application logic (including existing databases).
+// The exact identity is Supplier/Company Name + Address + Owner.
 try {
   $indexRows=$pdo->query("SHOW INDEX FROM suppliers")->fetchAll(PDO::FETCH_ASSOC);
   $uniqueIndexes=[];
@@ -177,6 +176,22 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
         $address=trim((string)($addresses[$i]??''));$owner=trim((string)($owners[$i]??''));$rep=trim((string)($reps[$i]??''));$business=trim((string)($businesses[$i]??''));$reg=in_array($regs[$i]??'', ['SEC','DTI','CDA'], true)?$regs[$i]:null;
         $phDate=supplierDate($phDates[$i]??null);$bpDate=supplierDate($bpDates[$i]??null);$taxDate=supplierDate($taxDates[$i]??null);$pcabDate=supplierDate($pcabDates[$i]??null);$old=null;
         if($id){$q=$pdo->prepare("SELECT * FROM suppliers WHERE id=?");$q->execute([$id]);$old=$q->fetch();if(!$old)continue;}
+
+        // Reject a duplicate identity if another record already has the same
+        // company name, address, and owner. Exclude this row itself while editing.
+        $duplicateSql = "SELECT id FROM suppliers
+          WHERE LOWER(TRIM(supplier_company_name)) = LOWER(TRIM(?))
+            AND LOWER(TRIM(COALESCE(address,''))) = LOWER(TRIM(?))
+            AND LOWER(TRIM(COALESCE(owner,''))) = LOWER(TRIM(?))";
+        $duplicateParams = [$name,$address,$owner];
+        if($id>0){$duplicateSql .= " AND id <> ?";$duplicateParams[]=$id;}
+        $duplicateSql .= " LIMIT 1";
+        $duplicateCheck=$pdo->prepare($duplicateSql);
+        $duplicateCheck->execute($duplicateParams);
+        if($duplicateCheck->fetchColumn()){
+          throw new RuntimeException('A supplier/company with the same Supplier/Company Name, Address, and Owner already exists. Please check the Registered Suppliers list.');
+        }
+
         $ph=supplierUpload('philgeps_certificate',$uploadDir,$uploadWeb,$name,$old['philgeps_certificate_path']??null,$i);
         $bp=supplierUpload('business_permit',$uploadDir,$uploadWeb,$name,$old['business_permit_path']??null,$i);
         $tax=supplierUpload('tax_clearance_certificate',$uploadDir,$uploadWeb,$name,$old['tax_clearance_certificate_path']??null,$i);
