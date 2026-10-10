@@ -2917,3 +2917,27 @@ html body .supplier-content-panel .supplier-list-section #supplierTable tbody tr
   background:#dfe3e8!important;
   pointer-events:none!important;
 }
+
+
+/* Registered Suppliers: draw one continuous separator across the entire record, including Actions. */
+html body .supplier-content-panel .supplier-list-section table#supplierTable {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+html body .supplier-content-panel .supplier-list-section table#supplierTable tbody tr {
+  background-color: transparent !important;
+  background-image: linear-gradient(to bottom, transparent calc(100% - 1px), #dfe3e8 calc(100% - 1px)) !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+}
+html body .supplier-content-panel .supplier-list-section table#supplierTable tbody tr > td {
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+html body .supplier-content-panel .supplier-list-section table#supplierTable tbody tr > td.supplier-actions::before,
+html body .supplier-content-panel .supplier-list-section table#supplierTable tbody tr > td.supplier-actions::after {
+  content: none !important;
+  display: none !important;
+}
