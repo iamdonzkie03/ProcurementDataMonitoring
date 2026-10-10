@@ -1027,6 +1027,7 @@ if($preparedSignature==='' && $submitted!=='' && strcasecmp(trim((string)$person
 // the person(s) attached to that Area/Unit.
 $budgetName='';
 $budgetPos='';
+$budgetSignature='';
 $budgetAreaId=0;
 
 // Match Budget, Budget Unit, Budget Section, Budget Office, etc.
@@ -1046,7 +1047,7 @@ $stBudgetArea=$pdo->query("SELECT id,name FROM areas
 
 if($stBudgetArea){
   $budgetAreaId=(int)$stBudgetArea['id'];
-  $stBudgetPeople=$pdo->prepare('SELECT name,position_designation
+  $stBudgetPeople=$pdo->prepare('SELECT name,position_designation,electronic_signature
     FROM area_personnel
     WHERE area_id=?
     ORDER BY id');
@@ -1058,6 +1059,7 @@ if($stBudgetArea){
   if($budgetPeople){
     $budgetName=trim((string)($budgetPeople[0]['name']??''));
     $budgetPos=trim((string)($budgetPeople[0]['position_designation']??''));
+    $budgetSignature=trim((string)($budgetPeople[0]['electronic_signature']??''));
   }
 }
 function ppmpPrintDate($value): string{
@@ -1291,7 +1293,7 @@ function ppmpPrintDate($value): string{
     </div>
     <div class="ppmp-signature-box ppmp-budget-signature">
       <b>within the budget allocation:</b>
-      <div class="signature-line"></div>
+      <div class="signature-line ppmp-budget-signature-line"><?php if($printReviewStatus==='Approved' && $budgetSignature!==''): ?><img src="<?=e($budgetSignature)?>" alt="Budget Officer electronic signature"><?php endif; ?></div>
       <div class="signature-name"><?=e($budgetName)?></div>
       <div class="signature-underline"></div>
       <div class="signature-caption">Signature over Printed Name</div>
