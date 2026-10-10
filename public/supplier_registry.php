@@ -289,7 +289,6 @@ pageStart('Supplier Registry');
         </div>
       </div>
       <div class="supplier-form-actions">
-        <label class="supplier-entry-select-all-label" style="display:flex;align-items:center;gap:6px;font-size:12px;margin-right:auto"><input type="checkbox" id="selectAllSupplierEntryRows"> Select all</label>
         <button type="button" class="btn secondary" id="addSupplierRow">+ Add Row</button>
         <button type="button" class="btn danger" id="removeSelectedSupplierRows">Remove Selected</button>
         <button class="btn" type="submit">Save Supplier</button>
@@ -315,6 +314,11 @@ pageStart('Supplier Registry');
           <label style="display:flex;align-items:center;gap:6px;flex:0 0 auto"><input type="checkbox" id="selectAllSuppliers"> Select all</label>
           <button class="btn danger" type="submit" id="deleteSelectedSuppliers" style="margin-left:auto;flex:0 0 auto">Delete Selected</button>
         </div>
+      <?php if($isEditor): ?>
+      <div class="supplier-entry-select-all-toolbar" style="display:flex;align-items:center;gap:6px;margin:8px 0;font-size:12px">
+        <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSupplierEntryRows"> Select all entry rows</label>
+      </div>
+      <?php endif; ?>
       <?php endif; ?>
       <div class="table-wrap supplier-table-wrap">
         <table class="table supplier-table <?=$isEditor?'supplier-table-editor':'supplier-table-viewer'?>" id="supplierTable">
