@@ -41,8 +41,8 @@ try {
 } catch(Throwable $e) {}
 
 $isEditor=hasRole(['Administrator','Editor']);
-$uploadDir=__DIR__.'/uploads/suppliers';
-$uploadWeb='uploads/suppliers';
+$uploadDir=__DIR__.'/suppliers';
+$uploadWeb='suppliers';
 if(!is_dir($uploadDir)) @mkdir($uploadDir,0775,true);
 
 function supplierDate(?string $v): ?string {
@@ -57,7 +57,14 @@ function supplierDisplayDate(?string $v): string {
   $d=DateTime::createFromFormat('Y-m-d',$v);
   return ($d && $d->format('Y-m-d')===$v) ? $d->format('F d, Y') : $v;
 }
-function supplierUpload(string $field,string $uploadDir,string $uploadWeb,?string $oldPath=null,int $index=0): ?string {
+function supplierFolderName(string $companyName): string {
+  $name=trim($companyName);
+  $name=preg_replace('/[\\\\/:*?"<>|]+/u','-',$name);
+  $name=preg_replace('/\\s+/u',' ',$name);
+  $name=trim((string)$name," .-\\t\\n\\r\\0\\x0B");
+  return $name!=='' ? mb_substr($name,0,100,'UTF-8') : 'Unnamed Supplier';
+}
+function supplierUpload(string $field,string $uploadDir,string $uploadWeb,string $companyName,?string $oldPath=null,int $index=0): ?string {
   if(empty($_FILES[$field]) || !isset($_FILES[$field]['error'][$index]) || $_FILES[$field]['error'][$index]===UPLOAD_ERR_NO_FILE) return $oldPath;
   if($_FILES[$field]['error'][$index]!==UPLOAD_ERR_OK) throw new RuntimeException('The uploaded file could not be processed.');
   if((int)($_FILES[$field]['size'][$index]??0)>8*1024*1024) throw new RuntimeException('Each supplier certificate/permit file must not exceed 8 MB.');
@@ -66,27 +73,38 @@ function supplierUpload(string $field,string $uploadDir,string $uploadWeb,?strin
   if(!in_array($ext,['pdf'],true)) throw new RuntimeException('Only PDF files are allowed.');
   $safe=preg_replace('/[^a-zA-Z0-9_-]/','-',pathinfo($original,PATHINFO_FILENAME));
   $name=$safe.'-'.bin2hex(random_bytes(8)).'.'.$ext;
-  $target=rtrim($uploadDir,'/\\').DIRECTORY_SEPARATOR.$name;
+  $folder=supplierFolderName($companyName);
+  $companyDir=rtrim($uploadDir,'/\\').DIRECTORY_SEPARATOR.$folder;
+  if(!is_dir($companyDir) && !@mkdir($companyDir,0775,true) && !is_dir($companyDir)) throw new RuntimeException('Unable to create the supplier folder: '.$folder);
+  $target=$companyDir.DIRECTORY_SEPARATOR.$name;
   if(!move_uploaded_file($_FILES[$field]['tmp_name'][$index],$target)) throw new RuntimeException('Unable to save the uploaded file.');
-  if($oldPath){
-    $oldFile=__DIR__.'/'.ltrim(str_replace(['uploads/','/'],'',$oldPath),'/');
-    if(is_file($oldFile)) @unlink($oldFile);
-  }
-  return $uploadWeb.'/'.$name;
+  if($oldPath && $oldPath!==$uploadWeb.'/'.$folder.'/'.$name) supplierRemoveFile($oldPath,$uploadDir);
+  return $uploadWeb.'/'.$folder.'/'.$name;
 }
 function supplierRemoveFile(?string $path,string $uploadDir): bool {
   $path=trim((string)$path);
   if($path==='') return true;
 
-  // Only delete files inside public/uploads/suppliers; never follow arbitrary stored paths.
-  $filename=basename(str_replace('\\\\','/',$path));
-  if($filename==='' || $filename==='.' || $filename==='..') return false;
-  $base=realpath($uploadDir);
-  if($base===false) return false;
-  $file=$base.DIRECTORY_SEPARATOR.$filename;
+  // Accept the new public/suppliers/<company>/ layout and legacy uploads/suppliers files.
+  $relative=ltrim(str_replace('\\\\','/',$path),'/');
+  if(!(str_starts_with($relative,'suppliers/') || str_starts_with($relative,'uploads/suppliers/'))) return false;
+  $publicRoot=realpath(__DIR__);
+  if($publicRoot===false) return false;
+  $file=$publicRoot.DIRECTORY_SEPARATOR.str_replace('/',DIRECTORY_SEPARATOR,$relative);
+  $parent=realpath(dirname($file));
+  if($parent===false || !str_starts_with($parent,$publicRoot.DIRECTORY_SEPARATOR)) return false;
+  if(!is_file($file)) return true;
+  if(!@unlink($file)) return false;
 
-  if(!is_file($file)) return true; // Already absent.
-  return @unlink($file);
+  // Remove the supplier subfolder when it is empty.
+  if(str_starts_with($relative,'suppliers/')){
+    $supplierDir=dirname($file);
+    if(is_dir($supplierDir)){
+      $items=@scandir($supplierDir);
+      if(is_array($items) && count($items)===2) @rmdir($supplierDir);
+    }
+  }
+  return true;
 }
 
 if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
@@ -133,10 +151,10 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
         $address=trim((string)($addresses[$i]??''));$owner=trim((string)($owners[$i]??''));$rep=trim((string)($reps[$i]??''));$business=trim((string)($businesses[$i]??''));$reg=in_array($regs[$i]??'', ['SEC','DTI','CDA'], true)?$regs[$i]:null;
         $phDate=supplierDate($phDates[$i]??null);$bpDate=supplierDate($bpDates[$i]??null);$taxDate=supplierDate($taxDates[$i]??null);$pcabDate=supplierDate($pcabDates[$i]??null);$old=null;
         if($id){$q=$pdo->prepare("SELECT * FROM suppliers WHERE id=?");$q->execute([$id]);$old=$q->fetch();if(!$old)continue;}
-        $ph=supplierUpload('philgeps_certificate',$uploadDir,$uploadWeb,$old['philgeps_certificate_path']??null,$i);
-        $bp=supplierUpload('business_permit',$uploadDir,$uploadWeb,$old['business_permit_path']??null,$i);
-        $tax=supplierUpload('tax_clearance_certificate',$uploadDir,$uploadWeb,$old['tax_clearance_certificate_path']??null,$i);
-        $pcab=supplierUpload('pcab_license',$uploadDir,$uploadWeb,$old['pcab_license_path']??null,$i);
+        $ph=supplierUpload('philgeps_certificate',$uploadDir,$uploadWeb,$name,$old['philgeps_certificate_path']??null,$i);
+        $bp=supplierUpload('business_permit',$uploadDir,$uploadWeb,$name,$old['business_permit_path']??null,$i);
+        $tax=supplierUpload('tax_clearance_certificate',$uploadDir,$uploadWeb,$name,$old['tax_clearance_certificate_path']??null,$i);
+        $pcab=supplierUpload('pcab_license',$uploadDir,$uploadWeb,$name,$old['pcab_license_path']??null,$i);
         if($id){
           $st=$pdo->prepare("UPDATE suppliers SET supplier_company_name=?,address=?,owner=?,authorized_representative=?,business_type=?,philgeps_certificate_path=?,philgeps_valid_until=?,business_permit_path=?,business_permit_valid_until=?,tax_clearance_certificate_path=?,tax_clearance_valid_until=?,pcab_license_path=?,pcab_license_valid_until=?,registration_type=?,updated_by=? WHERE id=?");
           $st->execute([$name,$address,$owner,$rep,$business,$ph,$phDate,$bp,$bpDate,$tax,$taxDate,$pcab,$pcabDate,$reg,(int)currentUser()['id'],$id]);
