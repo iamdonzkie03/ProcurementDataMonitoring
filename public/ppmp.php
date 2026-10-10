@@ -116,7 +116,10 @@ function ppmpSaveFormError(string $message,int $year,int $areaId,int $id=0): voi
   $_SESSION['ppmp_form_old']=$_POST;
   $_SESSION['ppmp_form_edit_id']=$id;
   flash('error',$message);
-  header('Location:ppmp.php?year='.$year.'&area_id='.$areaId.($id>0?'&edit='.$id:'').'#ppmpForm');
+  $divisionId=(int)($_POST['division_id']??0);
+  $areaHeadName=trim((string)($_POST['area_head']??''));
+  $query='ppmp.php?year='.$year.'&division_id='.$divisionId.'&area_id='.$areaId.'&area_head='.urlencode($areaHeadName).($id>0?'&edit='.$id:'');
+  header('Location:'.$query.'#ppmpForm');
   exit;
 }
 
@@ -305,7 +308,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $stSavedDivision->execute([$areaId]);
     $savedDivisionId=(int)$stSavedDivision->fetchColumn();
     flash('success',$saved.' PPMP item(s) saved under '.$bulkPpmpNo.'. All saved items are now Pending for Review.');
-    header('Location:ppmp.php?year='.$year.'&division_id='.$savedDivisionId.'&area_id='.$areaId);
+    $savedAreaHead=trim((string)($_POST['area_head']??''));
+    header('Location:ppmp.php?year='.$year.'&division_id='.$savedDivisionId.'&area_id='.$areaId.'&area_head='.urlencode($savedAreaHead).'#savedPpmpItems');
     exit;
   }
 
@@ -860,6 +864,7 @@ pageStart('Project Procurement Management Plan');
     <input type="hidden" name="action" value="<?=$editing?'edit':'add_bulk'?>">
     <input type="hidden" name="id" value="<?=$editing?(int)$editing['id']:0?>">
     <input type="hidden" name="division_id" value="<?=e($divisionId)?>">
+    <input type="hidden" name="area_head" value="<?=e($areaHeadName)?>">
     <?php if($editing): ?><input type="hidden" name="existing_supporting_documents" value="<?=e($editing['supporting_documents']??'')?>"><?php endif; ?>
     <input type="hidden" name="fiscal_year" value="<?=e($year)?>">
     <input type="hidden" name="area_id" value="<?=e($areaId)?>">
