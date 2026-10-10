@@ -314,12 +314,10 @@ pageStart('Supplier Registry');
           <label style="display:flex;align-items:center;gap:6px;flex:0 0 auto"><input type="checkbox" id="selectAllSuppliers"> Select all</label>
           <button class="btn danger" type="submit" id="deleteSelectedSuppliers" style="margin-left:auto;flex:0 0 auto">Delete Selected</button>
         </div>
-      <?php if($isEditor): ?>
-      <div class="supplier-entry-select-all-toolbar" style="display:flex;align-items:center;gap:6px;margin:8px 0;font-size:12px">
-        <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSupplierEntryRows"> Select all entry rows</label>
+      <?php endif; ?>
+      <div class="supplier-table-select-all-toolbar" style="display:flex;align-items:center;gap:6px;margin:8px 0;font-size:12px">
+        <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSupplierEntryRows"> Select All</label>
       </div>
-      <?php endif; ?>
-      <?php endif; ?>
       <div class="table-wrap supplier-table-wrap">
         <table class="table supplier-table <?=$isEditor?'supplier-table-editor':'supplier-table-viewer'?>" id="supplierTable">
           <colgroup><?php if($isEditor): ?><col class="col-select"><col class="col-number"><col class="col-company"><col class="col-permits"><col class="col-actions"><?php else: ?><col style="width:5%"><col style="width:35%"><col style="width:60%"><?php endif; ?></colgroup>
