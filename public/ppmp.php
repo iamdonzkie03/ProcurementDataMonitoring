@@ -426,6 +426,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   // the revised item again. Declined items may be deleted, but cannot be edited.
   $declinedItemEdit=false;
   $pendingApprovalItemEdit=false;
+  $pendingReviewItemEdit=false;
   $itemReviewStatus='';
   $itemReviewId=0;
   if(in_array($action,['edit','delete'],true) && $id>0){
@@ -441,14 +442,18 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       $itemReviewStatus=(string)$itemReview['status'];
       $declinedItemEdit=in_array($itemReviewStatus,['Declined','Budget Declined'],true);
       $pendingApprovalItemEdit=$itemReviewStatus==='Pending for Approval';
+      $pendingReviewItemEdit=$itemReviewStatus==='Pending for Review';
     }
   }
 
-  // Editing is permitted for Draft and Pending for Approval items.
+  // Editing is permitted for Draft, Pending for Review, and Pending for Approval
+  // items because the Saved PPMP Items table exposes Edit for these states.
+  // Editing a Pending for Review item keeps it in the Supervisor review queue;
+  // editing a Pending for Approval item resets that item's review decision.
   // Deleting is permitted for Draft, Pending for Approval, and Declined items.
-  // Other workflow states remain locked.
   $itemWorkflowException=
     $declinedItemEdit ||
+    ($pendingReviewItemEdit && $action==='edit') ||
     ($pendingApprovalItemEdit && in_array($action,['edit','delete'],true));
 
   if($workflowStatus!=='' && !in_array($workflowStatus,['Draft','Declined'],true)
