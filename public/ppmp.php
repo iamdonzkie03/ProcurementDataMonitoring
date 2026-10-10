@@ -694,7 +694,7 @@ pageStart('Project Procurement Management Plan');
 .ppmp-row-documents .ppmp-document-row{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-bottom:5px;align-items:center}
 .ppmp-row-documents .input{min-width:0}
 .ppmp-row-documents .ppmp-add-document{white-space:nowrap}
-.ppmp-entry-table .ppmp-row-number{font-weight:700;text-align:center}.ppmp-item-autocomplete{position:relative;min-width:100px;width:100px}.ppmp-item-suggestions{position:absolute;left:0;right:auto;top:100%;width:380px;max-width:min(480px,calc(100vw - 32px));z-index:99999;background:#fff;border:1px solid #94a3b8;border-radius:6px;box-shadow:0 10px 28px rgba(15,23,42,.24);max-height:320px;overflow-y:auto;display:none}.ppmp-item-suggestion{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:0;border-bottom:1px solid #e5e7eb;background:#fff;text-align:left;cursor:pointer;font-size:13px;line-height:1.4;white-space:normal;overflow-wrap:anywhere}.ppmp-item-suggestion:last-child{border-bottom:0}.ppmp-item-suggestion strong{display:block;color:#111827;font-size:13px;line-height:1.4;white-space:normal;overflow-wrap:anywhere}.ppmp-item-suggestion:hover,.ppmp-item-suggestion:focus{background:#eef5ff;outline:2px solid #93c5fd;outline-offset:-2px}.ppmp-item-suggestion small{display:block;color:#4b5563;margin-top:4px;white-space:normal;overflow-wrap:anywhere;line-height:1.4}.ppmp-entry-table .ppmp-masterlist-locked{border:0!important;background:#e5e7eb!important;color:#6b7280!important;box-shadow:none!important;outline:0!important;cursor:not-allowed}.ppmp-entry-table .ppmp-masterlist-unit-value{border:0!important;background:#e5e7eb!important;color:#6b7280!important;box-shadow:none!important;outline:0!important}.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked{text-align:right}.ppmp-entry-table .ppmp-total-budget{border:0!important;background:#e5e7eb!important;color:#4b5563!important;font-weight:700!important;text-align:right;box-shadow:none!important;outline:0!important;font-size:12px!important}.ppmp-entry-table .ppmp-item-description{min-width:360px!important}.ppmp-entry-table .ppmp-remove-row{white-space:nowrap}
+.ppmp-entry-table .ppmp-row-number{font-weight:700;text-align:center}.ppmp-item-autocomplete{position:relative;min-width:100px;width:100px}.ppmp-item-suggestions{position:absolute;left:0;right:auto;top:100%;width:380px;max-width:min(480px,calc(100vw - 32px));z-index:99999;background:#fff;border:1px solid #94a3b8;border-radius:6px;box-shadow:0 10px 28px rgba(15,23,42,.24);max-height:320px;overflow-y:auto;display:none}.ppmp-item-suggestion{display:block;width:100%;box-sizing:border-box;padding:10px 12px;border:0;border-bottom:1px solid #e5e7eb;background:#fff;text-align:left;cursor:pointer;font-size:13px;line-height:1.4;white-space:normal;overflow-wrap:anywhere}.ppmp-item-suggestion:last-child{border-bottom:0}.ppmp-item-suggestion strong{display:block;color:#111827;font-size:13px;line-height:1.4;white-space:normal;overflow-wrap:anywhere}.ppmp-item-suggestion:hover,.ppmp-item-suggestion:focus{background:#eef5ff;outline:2px solid #93c5fd;outline-offset:-2px}.ppmp-item-suggestion small{display:block;color:#4b5563;margin-top:4px;white-space:normal;overflow-wrap:anywhere;line-height:1.4}.ppmp-entry-table .ppmp-masterlist-locked{border:0!important;background:#e5e7eb!important;color:#6b7280!important;box-shadow:none!important;outline:0!important;cursor:not-allowed}.ppmp-entry-table .ppmp-masterlist-unit-value{border:0!important;background:#e5e7eb!important;color:#6b7280!important;box-shadow:none!important;outline:0!important}.ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked{text-align:right}.ppmp-entry-table .ppmp-total-budget{border:0!important;background:#e5e7eb!important;color:#4b5563!important;font-weight:700!important;text-align:right;box-shadow:none!important;outline:0!important;font-size:12px!important}.ppmp-entry-table .ppmp-item-description{min-width:360px!important}
 
 .ppmp-entry-table .ppmp-item-autocomplete{min-width:100px!important;width:100px!important}
 .ppmp-entry-table .ppmp-item-name{width:100px!important;min-width:100px!important;max-width:100px!important;box-sizing:border-box}
@@ -703,7 +703,7 @@ pageStart('Project Procurement Management Plan');
 .ppmp-entry-table .ppmp-row-unit-price,.ppmp-entry-table .ppmp-row-total{width:110px!important;min-width:110px!important;max-width:110px!important;box-sizing:border-box;text-align:right!important}
 .ppmp-entry-table .ppmp-row-unit-price.ppmp-masterlist-locked,.ppmp-entry-table .ppmp-total-budget{margin:0!important;padding-left:7px!important;padding-right:7px!important}
 .ppmp-entry-table .ppmp-total-budget{font-weight:700!important}
-/* PPMP row Delete visibility is controlled by syncAllRowActions(). */
+/* PPMP rows are selected with checkboxes for bulk deletion. */
 .ppmp-entry-table .ppmp-row-remarks{width:150px!important;min-width:150px!important;max-width:150px!important;box-sizing:border-box}
 </style>\n<style>.ppmp-document-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr) auto;gap:10px;align-items:center;margin-bottom:10px}@media(max-width:899px){.ppmp-document-row{grid-template-columns:1fr}}</style>
 <?php if(!$print && $isPpmpSupervisor): ?>
@@ -1629,31 +1629,6 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    }
    return true;
  }
- function deleteRow(row){
-   if(!row)return;
-   const rows=body.querySelectorAll('.ppmp-entry-row');
-   if(rows.length===1){
-     row.querySelectorAll('input,textarea,select').forEach(function(x){
-       if(x.type!=='hidden'&&x.type!=='file'){
-         if(x.tagName==='SELECT')x.selectedIndex=0;
-         else x.value='';
-       }
-     });
-     const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');
-     if(unitHidden)unitHidden.value='';
-     const item=row.querySelector('.ppmp-item-name');
-     if(item)item.dataset.selectedMasterlistName='';
-     const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
-     if(unit){unit.value='';unit.disabled=true;}
-     calc();syncAllRowDocuments();syncAllRowActions();
-     return;
-   }
-   row.remove();
-   renumber();
-   calc();
-   syncAllRowDocuments();
-   syncAllRowActions();
- }
  function syncRowSelection(){
   const rows=[...body.querySelectorAll('.ppmp-entry-row')];
   rows.forEach((row,i)=>{const box=row.querySelector('.ppmp-select-row');if(box)box.setAttribute('aria-label','Select PPMP item '+(i+1));});
@@ -1711,7 +1686,7 @@ add.addEventListener('click',function(){
 renumber();
 syncAllRowDocuments();
 calc();
-syncAllRowActions();
+syncRowSelection();
 })();
 
 /* Remove any legacy PPMP add-item control injected into the toolbar.
