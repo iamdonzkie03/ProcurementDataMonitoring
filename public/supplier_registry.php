@@ -41,8 +41,8 @@ try {
 } catch(Throwable $e) {}
 
 $isEditor=hasRole(['Administrator','Editor']);
-$uploadDir=__DIR__.'/suppliers';
-$uploadWeb='suppliers';
+$uploadDir=__DIR__.'/uploads/suppliers';
+$uploadWeb='uploads/suppliers';
 if(!is_dir($uploadDir)) @mkdir($uploadDir,0775,true);
 
 function supplierDate(?string $v): ?string {
@@ -85,9 +85,9 @@ function supplierRemoveFile(?string $path,string $uploadDir): bool {
   $path=trim((string)$path);
   if($path==='') return true;
 
-  // Accept the new public/suppliers/<company>/ layout and legacy uploads/suppliers files.
+  // Accept the required public/uploads/suppliers/<company>/ layout and legacy public/suppliers/<company>/ paths.
   $relative=ltrim(str_replace('\\\\','/',$path),'/');
-  if(!(str_starts_with($relative,'suppliers/') || str_starts_with($relative,'uploads/suppliers/'))) return false;
+  if(!(str_starts_with($relative,'uploads/suppliers/') || str_starts_with($relative,'suppliers/'))) return false;
   $publicRoot=realpath(__DIR__);
   if($publicRoot===false) return false;
   $file=$publicRoot.DIRECTORY_SEPARATOR.str_replace('/',DIRECTORY_SEPARATOR,$relative);
@@ -97,7 +97,7 @@ function supplierRemoveFile(?string $path,string $uploadDir): bool {
   if(!@unlink($file)) return false;
 
   // Remove the supplier subfolder when it is empty.
-  if(str_starts_with($relative,'suppliers/')){
+  if(str_starts_with($relative,'uploads/suppliers/') || str_starts_with($relative,'suppliers/')){
     $supplierDir=dirname($file);
     if(is_dir($supplierDir)){
       $items=@scandir($supplierDir);
@@ -129,7 +129,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $isEditor){
       }
 
       // Remove database records first. Only after the delete succeeds, remove every
-      // associated PDF from the local uploads/suppliers folder.
+      // associated PDF from the local public/uploads/suppliers/<company>/ folder.
       $deletePlaceholders=implode(',',array_fill(0,count($deleteIds),'?'));
       $pdo->prepare("DELETE FROM suppliers WHERE id IN ($deletePlaceholders)")->execute($deleteIds);
 
