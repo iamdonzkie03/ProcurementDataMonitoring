@@ -873,7 +873,7 @@ pageStart('Project Procurement Management Plan');
                 </div>
               </td>
               <td><input class="input ppmp-row-remarks" type="text" name="<?=$editing?'remarks':'items[0][remarks]'?>" value="<?=e($formState['remarks']??'')?>"></td>
-              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php else: ?><button class="btn secondary ppmp-clear-row" type="button">Clear</button><button class="btn danger ppmp-remove-row" type="button">Delete</button><?php endif; ?></td>
+              <td><?php if($editing): ?><a class="btn secondary" href="ppmp.php?year=<?=$year?>&division_id=<?=$divisionId?>&area_id=<?=$areaId?>#savedPpmpItems">Cancel</a><?php else: ?><button class="btn danger ppmp-remove-row" type="button">Delete</button><?php endif; ?></td>
             </tr>
           </tbody>
         </table>
@@ -1669,42 +1669,32 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    return remove;
  }
  function syncAllRowActions(){
-   const rows=[...body.querySelectorAll('.ppmp-entry-row')];
-   const multiple=rows.length>=2;
+    const rows=[...body.querySelectorAll('.ppmp-entry-row')];
+    const multiple=rows.length>=2;
 
-   // The action state is determined ONLY by the current number of rows:
-   // 1 row  = Clear only
-   // 2+ rows = Clear + Delete on every row.
-   body.dataset.ppmpRowCount=String(rows.length);
+    // No Clear button: show Delete on every row only when at least two rows exist.
+    body.dataset.ppmpRowCount=String(rows.length);
 
-   rows.forEach(function(row){
-     const actionCell=row.querySelector('td:last-child');
-     if(!actionCell)return;
+    rows.forEach(function(row){
+      const actionCell=row.querySelector('td:last-child');
+      if(!actionCell)return;
 
-     let clear=row.querySelector('.ppmp-clear-row');
-     if(!clear){
-       clear=document.createElement('button');
-       clear.type='button';
-       clear.className='btn secondary ppmp-clear-row';
-       clear.textContent='Clear';
-       actionCell.insertBefore(clear,actionCell.firstChild);
-     }
+      // Remove any stale Clear buttons from previously rendered/cloned markup.
+      actionCell.querySelectorAll('.ppmp-clear-row').forEach(function(button){button.remove();});
 
-     let remove=row.querySelector('.ppmp-remove-row');
-     if(!remove){
-       remove=document.createElement('button');
-       remove.type='button';
-       remove.className='btn danger ppmp-remove-row';
-       remove.textContent='Delete';
-       actionCell.appendChild(remove);
-     }
+      let remove=row.querySelector('.ppmp-remove-row');
+      if(!remove){
+        remove=document.createElement('button');
+        remove.type='button';
+        remove.className='btn danger ppmp-remove-row';
+        remove.textContent='Delete';
+        actionCell.appendChild(remove);
+      }
 
-     // Do not depend on a CSS class/rule for this state.
-     clear.style.setProperty('display','inline-flex','important');
-     remove.style.setProperty('display',multiple?'inline-flex':'none','important');
-   });
- }
- function syncRowAction(row){
+      remove.style.setProperty('display',multiple?'inline-flex':'none','important');
+    });
+  }
+  function syncRowAction(row){
    syncAllRowActions();
  }
  // One delegated handler means Delete works for both the original row and
@@ -1721,21 +1711,6 @@ if(area){ area.addEventListener('change',syncSupervisor); syncSupervisor(); }
    row.querySelectorAll('.ppmp-row-qty,.ppmp-row-unit-price').forEach(x=>{
      x.addEventListener('input',function(){formatNumberInput(this,false);calc();syncAllRowActions();});
      x.addEventListener('blur',function(){formatNumberInput(this,true);calc();syncAllRowActions();});
-   });
-   row.querySelector('.ppmp-clear-row')?.addEventListener('click',function(){
-     row.querySelectorAll('input,textarea,select').forEach(function(x){
-       if(x.type==='hidden')return;
-       if(x.type==='file')x.value='';
-       else if(x.tagName==='SELECT')x.selectedIndex=0;
-       else x.value='';
-     });
-     const unitHidden=row.querySelector('.ppmp-masterlist-unit-value');
-     if(unitHidden)unitHidden.value='';
-     const item=row.querySelector('.ppmp-item-name');
-     if(item)item.dataset.selectedMasterlistName='';
-     const unit=row.querySelector('.ppmp-masterlist-locked[name$="[unit]"]')||row.querySelector('.ppmp-masterlist-locked[name="unit"]');
-     if(unit){unit.value='';unit.disabled=true;}
-     calc();syncAllRowDocuments();syncAllRowActions();
    });
    ensureDeleteButton(row);
  }
