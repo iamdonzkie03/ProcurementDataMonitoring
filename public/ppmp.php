@@ -1209,10 +1209,26 @@ function ppmpPrintDate($value): string{
 <script>
 (function(){
   const masterlist=<?= json_encode($ppmpMasterlistRows, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT) ?>;
-  function closeSuggestions(box){const list=box&&box.querySelector('.ppmp-item-suggestions');if(list){list.innerHTML='';list.style.display='none';}}
+  function closeSuggestions(box){const list=box&&(box._ppmpSuggestionsList||box.querySelector('.ppmp-item-suggestions'));if(list){list.innerHTML='';list.style.display='none';list.dataset.open='0';}}
   function showSuggestions(input){
-    const box=input.closest('.ppmp-item-autocomplete'), list=box&&box.querySelector('.ppmp-item-suggestions');
-    if(!box||!list)return;
+    const box=input.closest('.ppmp-item-autocomplete');
+    if(!box)return;
+    let list=box._ppmpSuggestionsList||box.querySelector('.ppmp-item-suggestions');
+    if(!list)return;
+    // Render the popup under <body> so the PPMP table's horizontal/vertical
+    // scrolling container cannot clip it. Fixed positioning keeps it anchored
+    // to the input while the document itself is scrolled.
+    if(list.parentElement!==document.body)document.body.appendChild(list);
+    const rect=input.getBoundingClientRect();
+    const popupWidth=Math.min(380,window.innerWidth-24);
+    const left=Math.max(12,Math.min(rect.left,window.innerWidth-popupWidth-12));
+    list.style.position='fixed';
+    list.style.left=left+'px';
+    list.style.top=Math.min(rect.bottom+2,window.innerHeight-100)+'px';
+    list.style.width=popupWidth+'px';
+    list.style.maxWidth='calc(100vw - 24px)';
+    list.style.zIndex='2147483000';
+    list.dataset.open='1';
     const term=String(input.value||'').trim().toLowerCase();
     list.innerHTML='';
     if(!term){closeSuggestions(box);return;}
@@ -1231,12 +1247,23 @@ function ppmpPrintDate($value): string{
       list.appendChild(button);
     });
     list.style.display='block';
+    const availableBelow=window.innerHeight-rect.bottom-12;
+    const availableAbove=rect.top-12;
+    const maxHeight=Math.max(120,Math.min(320,Math.max(availableBelow,availableAbove)));
+    list.style.maxHeight=maxHeight+'px';
+    if(availableBelow<180 && availableAbove>availableBelow){
+      list.style.top=Math.max(12,rect.top-Math.min(maxHeight,list.scrollHeight)-2)+'px';
+    }else{
+      list.style.top=Math.min(rect.bottom+2,window.innerHeight-maxHeight-12)+'px';
+    }
   }
   function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
   function bindItemAutocomplete(row){
     if(!row)return;
     const input=row.querySelector('.ppmp-item-name'), box=input&&input.closest('.ppmp-item-autocomplete');
     if(!input||!box||input.dataset.autocompleteBound==='1')return;
+    const popup=box.querySelector('.ppmp-item-suggestions');
+    if(popup){box._ppmpSuggestionsList=popup;popup._ppmpAutocompleteBox=box;}
     input.dataset.autocompleteBound='1';
     input.addEventListener('input',function(){
       const typed=String(this.value||'').trim();
@@ -1271,7 +1298,8 @@ function ppmpPrintDate($value): string{
         e.preventDefault();const first=list.querySelector('.ppmp-item-suggestion');if(first)first.focus();
       }
     });
-    box.addEventListener('click',function(e){
+    const suggestionList=box._ppmpSuggestionsList;
+    if(suggestionList)suggestionList.addEventListener('click',function(e){
       const button=e.target.closest('.ppmp-item-suggestion');if(!button)return;
       input.value=button.dataset.itemName||'';
       input.dataset.selectedMasterlistName=button.dataset.itemName||'';
@@ -1307,7 +1335,22 @@ function ppmpPrintDate($value): string{
   }
   document.querySelectorAll('#ppmpEntryBody .ppmp-entry-row').forEach(bindItemAutocomplete);
   document.addEventListener('click',function(e){
-    document.querySelectorAll('.ppmp-item-autocomplete').forEach(function(box){if(!box.contains(e.target))closeSuggestions(box);});
+    document.querySelectorAll('.ppmp-item-autocomplete').forEach(function(box){
+      const list=box._ppmpSuggestionsList;
+      if(!box.contains(e.target)&&!(list&&list.contains(e.target)))closeSuggestions(box);
+    });
+  });
+  window.addEventListener('scroll',function(){
+    document.querySelectorAll('.ppmp-item-autocomplete').forEach(function(box){
+      const list=box._ppmpSuggestionsList;
+      if(list&&list.dataset.open==='1'){
+        const input=box.querySelector('.ppmp-item-name');
+        if(input)closeSuggestions(box);
+      }
+    });
+  },true);
+  window.addEventListener('resize',function(){
+    document.querySelectorAll('.ppmp-item-autocomplete').forEach(function(box){if(box._ppmpSuggestionsList)closeSuggestions(box);});
   });
   window.ppmpBindItemAutocomplete=bindItemAutocomplete;
 })();
