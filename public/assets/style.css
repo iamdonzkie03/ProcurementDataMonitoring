@@ -2970,3 +2970,32 @@ html body .supplier-content-panel .supplier-form-scroll > .supplier-entry-row + 
   border-top: 0 !important;
   box-shadow: none !important;
 }
+
+
+/* PPMP action buttons now sit directly on the page, without a surrounding panel. */
+html body .ppmp-actions-row{
+  margin: 0 0 16px 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+html body .ppmp-actions-row .toolbar{
+  display:flex !important;
+  justify-content:flex-end !important;
+  align-items:center !important;
+  gap:10px !important;
+  width:100% !important;
+}
+html body .ppmp-actions-row .ppmp-print-form-btn{
+  background:#12345a !important;
+  background-color:#12345a !important;
+  border-color:#12345a !important;
+  color:#fff !important;
+}
+html body .ppmp-actions-row .ppmp-print-form-btn:hover{
+  background:#0b2543 !important;
+  background-color:#0b2543 !important;
+  border-color:#0b2543 !important;
+  color:#fff !important;
+}
