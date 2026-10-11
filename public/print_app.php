@@ -58,6 +58,21 @@ $st = $pdo->prepare($sql);
 $st->execute($args);
 $rows = $st->fetchAll();
 
+$printUnitStmt = $pdo->prepare('SELECT TRIM(LOWER(p.item_name)) item_key,p.unit,c.id category_id,p.unit_price,p.area_id,a.name area_name,MIN(p.procurement_mode) procurement_mode FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=? GROUP BY TRIM(LOWER(p.item_name)),p.unit,c.id,p.unit_price,p.area_id,a.name');
+$printUnitStmt->execute([$year]);
+$printUnitsByRow = [];
+foreach ($printUnitStmt->fetchAll() as $unitRow) {
+    $unitRowKey = hash('sha256', json_encode([$year,(string)$unitRow['item_key'],(string)$unitRow['unit'],(string)$unitRow['category_id'],number_format((float)$unitRow['unit_price'],4,'.','')], JSON_UNESCAPED_UNICODE));
+    $printUnitsByRow[$unitRowKey][] = $unitRow;
+}
+$printEditStmt = $pdo->prepare('SELECT row_key,unit_settings FROM app_consolidated_edits WHERE fiscal_year=?');
+$printEditStmt->execute([$year]);
+$printUnitSettings = [];
+foreach ($printEditStmt->fetchAll() as $editRow) {
+    $printUnitSettings[$editRow['row_key']] = json_decode((string)($editRow['unit_settings'] ?? ''), true) ?: [];
+}
+
+
 $sections = [
     'general' => ['title' => 'General Requirements', 'rows' => []],
     'misc' => ['title' => 'Miscellaneous Items (for Direct Acquisition only) Sec. 32.2 of RA No. 12009', 'rows' => []],
@@ -198,7 +213,18 @@ Adopted from GPPB Standard Form</div>
           <td><?=appPrintEscape($row['item_name'])?></td>
           <td><?=appPrintEscape($row['areas'])?></td>
           <td><?=appPrintEscape(appPrintProjectDescription($row))?></td>
-          <td><?=appPrintEscape($row['procurement_mode'])?></td>
+          <td><?php
+          $printRowKey = hash('sha256', json_encode([$year,strtolower(trim((string)$row['item_name'])),(string)$row['unit'],(string)$row['category_id'],number_format((float)$row['unit_price'],4,'.','')], JSON_UNESCAPED_UNICODE));
+          $modeEntries = [];
+          foreach (($printUnitsByRow[$printRowKey] ?? []) as $printUnit) {
+              $unitModeSettings = $printUnitSettings[$printRowKey][(string)$printUnit['area_id']] ?? [];
+              $mode = trim((string)($unitModeSettings['mode'] ?? $printUnit['procurement_mode'] ?? ''));
+              if ($mode !== '' && (!isset($unitModeSettings['select_mode']) || !empty($unitModeSettings['select_mode']))) {
+                  $modeEntries[] = trim((string)$printUnit['area_name']).': '.$mode;
+              }
+          }
+          echo appPrintEscape($modeEntries ? implode("\n", array_unique($modeEntries)) : ($row['procurement_mode'] ?? ''));
+        ?></td>
           <td class="number"><?=appPrintEscape($row['epa'])?></td>
           <td></td>
           <td class="number"><?=appPrintEscape(appPrintDate($row['start_procurement']))?></td>
