@@ -220,10 +220,10 @@ Adopted from GPPB Standard Form</div>
               $unitModeSettings = $printUnitSettings[$printRowKey][(string)$printUnit['area_id']] ?? [];
               $mode = trim((string)($unitModeSettings['mode'] ?? $printUnit['procurement_mode'] ?? ''));
               if ($mode !== '' && (!isset($unitModeSettings['select_mode']) || !empty($unitModeSettings['select_mode']))) {
-                  $modeEntries[] = trim((string)$printUnit['area_name']).': '.$mode;
+                  $modeEntries[] = $mode;
               }
           }
-          echo appPrintEscape($modeEntries ? implode("\n", array_unique($modeEntries)) : ($row['procurement_mode'] ?? ''));
+          echo appPrintEscape($modeEntries ? implode(' / ', array_unique($modeEntries)) : ($row['procurement_mode'] ?? ''));
         ?></td>
           <td class="number"><?=appPrintEscape($row['epa'])?></td>
           <td></td>
