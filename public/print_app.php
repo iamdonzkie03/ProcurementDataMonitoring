@@ -102,29 +102,34 @@ function appPrintProjectDescription(array $row): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ANNUAL PROCUREMENT PLAN FOR FY <?=appPrintEscape($year)?></title>
 <style>
-@page{size:A3 landscape;margin:12mm 8mm 12mm}
+@page{size:A3 landscape;margin:8mm 6mm 8mm}
 *{box-sizing:border-box}
-body{font-family:"Century Gothic",Arial,sans-serif;color:#111;margin:0;font-size:7pt}
+body{font-family:"Century Gothic",Arial,sans-serif;color:#111;margin:0;font-size:7pt;background:#fff}
 .toolbar{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin:0 0 14px}
 .btn{display:inline-block;border:1px solid #475569;border-radius:3px;padding:7px 11px;background:#fff;color:#111;text-decoration:none;font-size:10pt;cursor:pointer}
 .sheet{width:100%;margin:0 auto}
-.form-meta{font-size:7pt;text-align:right;line-height:1.35;margin:0 0 8px;white-space:pre-line}
-.heading{text-align:center;margin:0 0 12px}
+.form-meta{font-size:7pt;text-align:right;line-height:1.25;margin:0 0 5px;white-space:pre-line}
+.heading{text-align:center;margin:0 0 8px}
 .heading h1{font-family:"Century Gothic",Arial,sans-serif;font-size:15pt;font-weight:700;margin:0;letter-spacing:.1px}
 .heading .agency{font-size:9pt;font-weight:700;margin-bottom:4px}
 .heading .sub{font-size:8pt;margin-top:4px}
-table{border-collapse:collapse;width:100%;table-layout:fixed}
+table{border-collapse:collapse;width:100%;table-layout:fixed;border:1.3px solid #222}
 th,td{border:1px solid #222;padding:3px 3px;vertical-align:top;overflow-wrap:anywhere;white-space:pre-line}
+.group-head th{background:#d9e2f3;color:#111;border:1px solid #222;font-weight:700}
+.column-head th{background:#eaf0f8;color:#111;border:1px solid #222}
+.column-number th{background:#f2f2f2;color:#111;border:1px solid #777}
 .group-head th{font-size:8pt;text-align:center;vertical-align:middle;height:26px}
 .column-head th{font-size:7pt;text-align:center;vertical-align:middle;height:88px;font-weight:700}
 .column-number th{font-size:6pt;text-align:center;height:17px;font-weight:400}
 td.number{text-align:center;vertical-align:middle}
 td.amount{text-align:right;white-space:nowrap}
-.section-row td{font-weight:700;background:#e9ecef;padding:5px 4px}
+.section-row td{font-weight:700;background:#d9e2f3;padding:5px 4px;vertical-align:middle;border-top:1.4px solid #222;border-bottom:1.4px solid #222}
+.section-row td:first-child{text-align:left}
+.data-row td{background:#fff}
 .data-row td{height:35px}
-.summary-label{font-weight:700}
+.summary-label{font-weight:700;background:#eaf0f8}
 .summary-row td{height:24px;vertical-align:middle}
-.summary-row .amount{font-weight:700}
+.summary-row .amount{font-weight:700;background:#f2f2f2}
 .note{font-size:7pt;font-style:italic;margin:7px 0 0}
 .signatures{display:flex;justify-content:space-between;gap:24px;margin-top:25px;page-break-inside:avoid}
 .signature{width:32%;text-align:center;font-size:8pt}
@@ -155,12 +160,12 @@ Adopted from GPPB Standard Form</div>
     </colgroup>
     <thead>
       <tr class="group-head">
-        <th rowspan="2">#</th>
+        <th rowspan="2" style="vertical-align:middle">#</th>
         <th colspan="7">PROCUREMENT PROJECT DETAILS</th>
         <th colspan="2">PROJECTED TIMELINE (MM/YYYY)</th>
         <th colspan="2">FUNDING DETAILS</th>
         <th>PROCUREMENT STRATEGY OR TOOLS</th>
-        <th rowspan="2">REMARKS<br>(Other relevant description of the procurement project, if applicable)</th>
+        <th rowspan="2" style="vertical-align:middle">REMARKS<br>(Other relevant description of the procurement project, if applicable)</th>
       </tr>
       <tr class="column-head">
         <th>Project Title</th>
@@ -204,7 +209,7 @@ Adopted from GPPB Standard Form</div>
         <tr class="data-row"><td class="number"></td><?php for($i=0;$i<13;$i++): ?><td></td><?php endfor; ?></tr>
       <?php endif; ?>
     <?php endforeach; ?>
-      <tr><td colspan="14" style="font-style:italic;border-top:0;border-bottom:0">Note: Insert additional rows as necessary.</td></tr>
+      <tr><td colspan="14" style="font-style:italic;border-top:0;border-bottom:0;background:#fff">Note: Insert additional rows as necessary.</td></tr>
       <tr class="summary-row"><td colspan="8" class="summary-label">Total Amount of Estimated Budget for EPA Projects:</td><td colspan="4" class="amount"><?=number_format($epaTotal,2)?></td><td colspan="2"></td></tr>
       <tr class="summary-row"><td colspan="8" class="summary-label">Total Amount of CSEs to be purchased from PS-DBM:</td><td colspan="4" class="amount"><?=number_format($cseTotal,2)?></td><td colspan="2"></td></tr>
       <tr class="summary-row"><td colspan="8" class="summary-label">Total Amount of Estimated Budget for Non-EPA Projects:</td><td colspan="4" class="amount"><?=number_format($nonEpaTotal,2)?></td><td colspan="2"></td></tr>
