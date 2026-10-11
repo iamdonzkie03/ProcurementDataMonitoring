@@ -65,11 +65,14 @@ foreach ($printUnitStmt->fetchAll() as $unitRow) {
     $unitRowKey = hash('sha256', json_encode([$year,(string)$unitRow['item_key'],(string)$unitRow['unit'],(string)$unitRow['category_id'],number_format((float)$unitRow['unit_price'],4,'.','')], JSON_UNESCAPED_UNICODE));
     $printUnitsByRow[$unitRowKey][] = $unitRow;
 }
-$printEditStmt = $pdo->prepare('SELECT row_key,unit_settings FROM app_consolidated_edits WHERE fiscal_year=?');
+$printEditStmt = $pdo->prepare('SELECT row_key,project_title,bid_evaluation_criteria,procurement_strategy,unit_settings FROM app_consolidated_edits WHERE fiscal_year=?');
 $printEditStmt->execute([$year]);
 $printUnitSettings = [];
+$printRowEdits = [];
 foreach ($printEditStmt->fetchAll() as $editRow) {
-    $printUnitSettings[$editRow['row_key']] = json_decode((string)($editRow['unit_settings'] ?? ''), true) ?: [];
+    $printEditRowKey = (string)$editRow['row_key'];
+    $printUnitSettings[$printEditRowKey] = json_decode((string)($editRow['unit_settings'] ?? ''), true) ?: [];
+    $printRowEdits[$printEditRowKey] = $editRow;
 }
 
 
@@ -210,7 +213,8 @@ Adopted from GPPB Standard Form</div>
       <?php if ($section['rows']): foreach ($section['rows'] as $row): ?>
         <tr class="data-row">
           <td class="number"><?=$counter++?></td>
-          <td><?=appPrintEscape($row['item_name'])?></td>
+          <?php $printRowEdit = $printRowEdits[$printRowKey] ?? []; ?>
+          <td><?=appPrintEscape($printRowEdit['project_title'] ?? '')?></td>
           <td><?=appPrintEscape($row['areas'])?></td>
           <td><?=appPrintEscape(appPrintProjectDescription($row))?></td>
           <td><?php
@@ -246,12 +250,20 @@ Adopted from GPPB Standard Form</div>
           }
           echo appPrintEscape($epaEntries ? implode(' / ', array_unique($epaEntries)) : ($row['epa'] ?? ''));
           ?></td>
-          <td></td>
+          <td><?=appPrintEscape($printRowEdit['bid_evaluation_criteria'] ?? '')?></td>
           <td class="number"><?php echo appPrintEscape($startEntries ? implode(' / ', array_unique($startEntries)) : appPrintDate($row['start_procurement'])); ?></td>
           <td class="number"><?php echo appPrintEscape($endEntries ? implode(' / ', array_unique($endEntries)) : appPrintDate($row['end_procurement'])); ?></td>
           <td><?=appPrintEscape($fundEntries ? implode(' / ', array_unique($fundEntries)) : ($row['source_of_funds'] ?? ''))?></td>
           <td class="amount"><?=number_format((float)$row['total_abc'],2)?></td>
-          <td></td>
+          <td><?php
+            $strategyEntries = [];
+            foreach (($printUnitsByRow[$printRowKey] ?? []) as $printUnit) {
+                $unitSettings = $printUnitSettings[$printRowKey][(string)$printUnit['area_id']] ?? [];
+                $strategyValue = trim((string)($unitSettings['strategy'] ?? ''));
+                if ($strategyValue !== '') $strategyEntries[] = $strategyValue;
+            }
+            echo appPrintEscape($strategyEntries ? implode(' / ', array_unique($strategyEntries)) : ($printRowEdit['procurement_strategy'] ?? ''));
+          ?></td>
           <td><?=appPrintEscape($remarkEntries ? implode(' / ', array_unique($remarkEntries)) : ($row['remarks'] ?? ''))?></td>
         </tr>
       <?php endforeach; else: ?>
