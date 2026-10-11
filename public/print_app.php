@@ -69,12 +69,18 @@ $cseTotal = 0.0;
 foreach ($rows as $row) {
     $grandAbc += (float)$row['total_abc'];
     if (strcasecmp(trim((string)$row['epa']), 'Yes') === 0) $epaTotal += (float)$row['total_abc'];
+    $procurementModeKey = strtolower(trim((string)($row['procurement_mode'] ?? '')));
     $categoryKey = strtolower(trim((string)$row['category'].' '.(string)$row['procurement_type']));
-    if (strpos($categoryKey, 'cse') !== false || strpos($categoryKey, 'common-use') !== false || strpos($categoryKey, 'common use') !== false) {
-        $sections['cse']['rows'][] = $row;
-        $cseTotal += (float)$row['total_abc'];
+
+    // Direct Acquisition in the Mode of Procurement always takes priority:
+    // route the record to Miscellaneous Items, even if its category also matches CSE.
+    if (strpos($procurementModeKey, 'direct acquisition') !== false) {
+        $sections['misc']['rows'][] = $row;
     } elseif (strpos($categoryKey, 'miscellaneous') !== false || strpos($categoryKey, 'direct acquisition') !== false) {
         $sections['misc']['rows'][] = $row;
+    } elseif (strpos($categoryKey, 'cse') !== false || strpos($categoryKey, 'common-use') !== false || strpos($categoryKey, 'common use') !== false) {
+        $sections['cse']['rows'][] = $row;
+        $cseTotal += (float)$row['total_abc'];
     } else {
         $sections['general']['rows'][] = $row;
     }
