@@ -58,7 +58,7 @@ $st = $pdo->prepare($sql);
 $st->execute($args);
 $rows = $st->fetchAll();
 
-$printUnitStmt = $pdo->prepare('SELECT TRIM(LOWER(p.item_name)) item_key,p.unit,c.id category_id,p.unit_price,p.area_id,a.name area_name,MIN(p.procurement_mode) procurement_mode FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=? GROUP BY TRIM(LOWER(p.item_name)),p.unit,c.id,p.unit_price,p.area_id,a.name');
+$printUnitStmt = $pdo->prepare('SELECT TRIM(LOWER(p.item_name)) item_key,p.unit,c.id category_id,p.unit_price,p.area_id,a.name area_name,MIN(p.procurement_mode) procurement_mode,MIN(p.preprocurement_conference) epa,MIN(p.start_procurement) start_procurement,MIN(p.end_procurement) end_procurement,MIN(p.source_of_funds) source_of_funds,MIN(p.remarks) remarks FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=? GROUP BY TRIM(LOWER(p.item_name)),p.unit,c.id,p.unit_price,p.area_id,a.name');
 $printUnitStmt->execute([$year]);
 $printUnitsByRow = [];
 foreach ($printUnitStmt->fetchAll() as $unitRow) {
@@ -225,14 +225,34 @@ Adopted from GPPB Standard Form</div>
           }
           echo appPrintEscape($modeEntries ? implode(' / ', array_unique($modeEntries)) : ($row['procurement_mode'] ?? ''));
         ?></td>
-          <td class="number"><?=appPrintEscape($row['epa'])?></td>
+          <td><?php
+          $epaEntries = [];
+          $startEntries = [];
+          $endEntries = [];
+          $fundEntries = [];
+          $remarkEntries = [];
+          foreach (($printUnitsByRow[$printRowKey] ?? []) as $printUnit) {
+              $unitSettings = $printUnitSettings[$printRowKey][(string)$printUnit['area_id']] ?? [];
+              $epaValue = trim((string)($unitSettings['epa'] ?? $printUnit['epa'] ?? ''));
+              $startValue = trim((string)($unitSettings['start'] ?? (!empty($printUnit['start_procurement']) ? date('m/Y', strtotime($printUnit['start_procurement'])) : '')));
+              $endValue = trim((string)($unitSettings['end'] ?? (!empty($printUnit['end_procurement']) ? date('m/Y', strtotime($printUnit['end_procurement'])) : '')));
+              $fundValue = trim((string)($unitSettings['funds'] ?? $printUnit['source_of_funds'] ?? ''));
+              $remarkValue = trim((string)($unitSettings['remarks'] ?? $printUnit['remarks'] ?? ''));
+              if ($epaValue !== '' && (!isset($unitSettings['select_epa']) || !empty($unitSettings['select_epa']))) $epaEntries[] = $epaValue;
+              if ($startValue !== '' && (!isset($unitSettings['select_start']) || !empty($unitSettings['select_start']))) $startEntries[] = $startValue;
+              if ($endValue !== '' && (!isset($unitSettings['select_end']) || !empty($unitSettings['select_end']))) $endEntries[] = $endValue;
+              if ($fundValue !== '') $fundEntries[] = $fundValue;
+              if ($remarkValue !== '') $remarkEntries[] = $remarkValue;
+          }
+          echo appPrintEscape($epaEntries ? implode(' / ', array_unique($epaEntries)) : ($row['epa'] ?? ''));
+          ?></td>
           <td></td>
-          <td class="number"><?=appPrintEscape(appPrintDate($row['start_procurement']))?></td>
-          <td class="number"><?=appPrintEscape(appPrintDate($row['end_procurement']))?></td>
-          <td><?=appPrintEscape($row['source_of_funds'])?></td>
+          <td class="number"><?php echo appPrintEscape($startEntries ? implode(' / ', array_unique($startEntries)) : appPrintDate($row['start_procurement'])); ?></td>
+          <td class="number"><?php echo appPrintEscape($endEntries ? implode(' / ', array_unique($endEntries)) : appPrintDate($row['end_procurement'])); ?></td>
+          <td><?=appPrintEscape($fundEntries ? implode(' / ', array_unique($fundEntries)) : ($row['source_of_funds'] ?? ''))?></td>
           <td class="amount"><?=number_format((float)$row['total_abc'],2)?></td>
           <td></td>
-          <td><?=appPrintEscape($row['remarks'])?></td>
+          <td><?=appPrintEscape($remarkEntries ? implode(' / ', array_unique($remarkEntries)) : ($row['remarks'] ?? ''))?></td>
         </tr>
       <?php endforeach; else: ?>
         <tr class="data-row"><td class="number"></td><?php for($i=0;$i<12;$i++): ?><td></td><?php endfor; ?></tr>
