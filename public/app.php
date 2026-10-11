@@ -25,6 +25,11 @@ if($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['save_app_edits'])){
 					$st=$pdo->prepare($sql);
 					$st->execute($args);
 					$rows=$st->fetchAll();
+$editStmt=$pdo->prepare('SELECT row_key,project_title,bid_evaluation_criteria,procurement_strategy FROM app_consolidated_edits WHERE fiscal_year=?');
+$editStmt->execute([$year]);
+$savedEdits=[];
+foreach($editStmt->fetchAll() as $savedRow){$savedEdits[$savedRow['row_key']]=$savedRow;}
+
 					$grandQty=0;
 					$grandAbc=0;
 					foreach($rows as $r){
