@@ -170,7 +170,7 @@ Adopted from GPPB Standard Form</div>
         <th colspan="7">PROCUREMENT PROJECT DETAILS</th>
         <th colspan="2">PROJECTED TIMELINE (MM/YYYY)</th>
         <th colspan="2">FUNDING DETAILS</th>
-        <th>PROCUREMENT STRATEGY OR TOOLS</th>
+        <th rowspan="2" style="vertical-align:middle">PROCUREMENT STRATEGY OR TOOLS</th>
         <th rowspan="2" style="vertical-align:middle">REMARKS<br>(Other relevant description of the procurement project, if applicable)</th>
       </tr>
       <tr class="column-head">
@@ -185,10 +185,9 @@ Adopted from GPPB Standard Form</div>
         <th>End of Procurement Activity</th>
         <th>Source of Fund</th>
         <th>Estimated Budget / Approved Budget for the Contract (Php)</th>
-        <th>Column 11</th>
-      </tr>
+        </tr>
       <tr class="column-number">
-        <th></th><th>Column 1</th><th>Column 2</th><th></th><th>Column 3</th><th>Column 4</th><th>Column 5</th><th>Column 6</th><th>Column 7</th><th>Column 8</th><th>Column 9</th><th>Column 10</th><th>Column 11</th><th>Column 12</th>
+        <th></th><th>Column 1</th><th>Column 2</th><th></th><th>Column 3</th><th>Column 4</th><th>Column 5</th><th>Column 6</th><th>Column 7</th><th>Column 8</th><th>Column 9</th><th>Column 10</th><th>Column 12</th>
       </tr>
     </thead>
     <tbody>
