@@ -22,6 +22,7 @@ if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;r
 			<select class="input" name="year" aria-label="Calendar Year"><?php foreach($availableYears as $availableYear):?><option value="<?=$availableYear?>" <?=$year===$availableYear?'selected':''?>><?=$availableYear?></option><?php endforeach;?></select> <button class="btn" type="submit">View APP</button>
 		</form>
 		<span class="badge" style="display:inline-flex;align-items:center;justify-content:center;text-align:center;"><?=count($rows)?> consolidated lines</span>
+		<a class="btn" href="print_app.php?year=<?=$year?><?= $q!=='' ? '&amp;q='.rawurlencode($q) : '' ?>" target="_blank" rel="noopener">🖨 Print APP</a>
 		<span style="display:inline-flex;align-items:center;justify-content:center;text-align:center;font-size:16px;font-weight:700;">Total Approved Budget for the Contract (ABC): <span style="margin-left:6px;font-size:16px;font-weight:700;">₱<?=number_format($grandAbc,2)?></span></span>
 	</div>
 		<p style="font-size:12px;color:#6b7280">Equivalent items are consolidated using normalized item name + unit + category + unit price. The Contributing Areas/Units column shows each Area/Unit with its requested quantity; consolidated quantity and total ABC are summed.</p>
