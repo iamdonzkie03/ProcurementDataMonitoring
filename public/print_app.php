@@ -162,12 +162,12 @@ Adopted from GPPB Standard Form</div>
   </header>
   <table>
     <colgroup>
-      <col style="width:3%"><col style="width:10%"><col style="width:8%"><col style="width:5%"><col style="width:11%"><col style="width:7%"><col style="width:5%"><col style="width:10%"><col style="width:5%"><col style="width:5%"><col style="width:6%"><col style="width:7%"><col style="width:7%"><col style="width:11%">
+      <col style="width:3%"><col style="width:11%"><col style="width:9%"><col style="width:13%"><col style="width:8%"><col style="width:6%"><col style="width:11%"><col style="width:5%"><col style="width:5%"><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:8%">
     </colgroup>
     <thead>
       <tr class="group-head">
         <th rowspan="2" style="vertical-align:middle">#</th>
-        <th colspan="7">PROCUREMENT PROJECT DETAILS</th>
+        <th colspan="6">PROCUREMENT PROJECT DETAILS</th>
         <th colspan="2">PROJECTED TIMELINE (MM/YYYY)</th>
         <th colspan="2">FUNDING DETAILS</th>
         <th rowspan="2" style="vertical-align:middle">PROCUREMENT STRATEGY OR TOOLS</th>
@@ -176,7 +176,6 @@ Adopted from GPPB Standard Form</div>
       <tr class="column-head">
         <th>Project Title</th>
         <th>End-User or Implementing Unit</th>
-        <th>Category</th>
         <th>General Description of the Project</th>
         <th>Mode of Procurement</th>
         <th>To be covered by an Early Procurement Activity? (Yes/No)</th>
@@ -187,18 +186,17 @@ Adopted from GPPB Standard Form</div>
         <th>Estimated Budget / Approved Budget for the Contract (Php)</th>
         </tr>
       <tr class="column-number">
-        <th></th><th>Column 1</th><th>Column 2</th><th></th><th>Column 3</th><th>Column 4</th><th>Column 5</th><th>Column 6</th><th>Column 7</th><th>Column 8</th><th>Column 9</th><th>Column 10</th><th>Column 11</th><th>Column 12</th>
+        <th></th><th>Column 1</th><th>Column 2</th><th>Column 3</th><th>Column 4</th><th>Column 5</th><th>Column 6</th><th>Column 7</th><th>Column 8</th><th>Column 9</th><th>Column 10</th><th>Column 11</th><th>Column 12</th>
       </tr>
     </thead>
     <tbody>
     <?php $counter = 1; foreach ($sections as $sectionKey => $section): ?>
-      <tr class="section-row"><td><?=appPrintEscape($section['title'])?></td><?php for($i=0;$i<13;$i++): ?><td></td><?php endfor; ?></tr>
+      <tr class="section-row"><td><?=appPrintEscape($section['title'])?></td><?php for($i=0;$i<12;$i++): ?><td></td><?php endfor; ?></tr>
       <?php if ($section['rows']): foreach ($section['rows'] as $row): ?>
         <tr class="data-row">
           <td class="number"><?=$counter++?></td>
           <td><?=appPrintEscape($row['item_name'])?></td>
           <td><?=appPrintEscape($row['areas'])?></td>
-          <td><?=appPrintEscape($row['category'])?></td>
           <td><?=appPrintEscape(appPrintProjectDescription($row))?></td>
           <td><?=appPrintEscape($row['procurement_mode'])?></td>
           <td class="number"><?=appPrintEscape($row['epa'])?></td>
@@ -211,11 +209,11 @@ Adopted from GPPB Standard Form</div>
           <td><?=appPrintEscape($row['remarks'])?></td>
         </tr>
       <?php endforeach; else: ?>
-        <tr class="data-row"><td class="number"></td><?php for($i=0;$i<13;$i++): ?><td></td><?php endfor; ?></tr>
+        <tr class="data-row"><td class="number"></td><?php for($i=0;$i<12;$i++): ?><td></td><?php endfor; ?></tr>
       <?php endif; ?>
     <?php endforeach; ?>
-      <tr><td colspan="14" style="font-style:italic;border-top:0;border-bottom:0;background:#fff">Note: Insert additional rows as necessary.</td></tr>
-      <tr class="summary-row"><td colspan="8" class="summary-label">Total Amount of Estimated Budget for EPA Projects:</td><td colspan="4" class="amount"><?=number_format($epaTotal,2)?></td><td colspan="2"></td></tr>
+      <tr><td colspan="13" style="font-style:italic;border-top:0;border-bottom:0;background:#fff">Note: Insert additional rows as necessary.</td></tr>
+      <tr class="summary-row"><td colspan="7" class="summary-label">Total Amount of Estimated Budget for EPA Projects:</td><td colspan="4" class="amount"><?=number_format($epaTotal,2)?></td><td colspan="2"></td></tr>
       <tr class="summary-row"><td colspan="8" class="summary-label">Total Amount of CSEs to be purchased from PS-DBM:</td><td colspan="4" class="amount"><?=number_format($cseTotal,2)?></td><td colspan="2"></td></tr>
       <tr class="summary-row"><td colspan="8" class="summary-label">Total Amount of Estimated Budget for Non-EPA Projects:</td><td colspan="4" class="amount"><?=number_format($nonEpaTotal,2)?></td><td colspan="2"></td></tr>
       <tr class="summary-row"><td colspan="8" class="summary-label">Total Amount of Estimated Budget:</td><td colspan="4" class="amount"><?=number_format($grandAbc,2)?></td><td colspan="2"></td></tr>
