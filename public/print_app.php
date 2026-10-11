@@ -89,11 +89,15 @@ foreach ($rows as $row) {
     $procurementModeKey = strtolower(trim((string)($row['procurement_mode'] ?? '')));
     $categoryKey = strtolower(trim((string)$row['category'].' '.(string)$row['procurement_type']));
 
-    // Direct Acquisition in the Mode of Procurement always takes priority:
-    // route the record to Miscellaneous Items, even if its category also matches CSE.
-    if (strpos($procurementModeKey, 'direct acquisition') !== false) {
-        $sections['misc']['rows'][] = $row;
-    } elseif (strpos($categoryKey, 'miscellaneous') !== false || strpos($categoryKey, 'direct acquisition') !== false) {
+    // Procurement mode determines placement in the APP sections:
+    // Procurement of CSE goes to the CSE section; Direct Acquisition goes to Miscellaneous.
+    if (strpos($procurementModeKey, 'procurement of cse') !== false
+        || strpos($procurementModeKey, 'common-use supplies and equipment') !== false
+        || strpos($procurementModeKey, 'common use supplies and equipment') !== false) {
+        $sections['cse']['rows'][] = $row;
+    } elseif (strpos($procurementModeKey, 'direct acquisition') !== false
+        || strpos($categoryKey, 'miscellaneous') !== false
+        || strpos($categoryKey, 'direct acquisition') !== false) {
         $sections['misc']['rows'][] = $row;
     } elseif (strpos($categoryKey, 'cse') !== false || strpos($categoryKey, 'common-use') !== false || strpos($categoryKey, 'common use') !== false) {
         $sections['cse']['rows'][] = $row;
