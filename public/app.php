@@ -4,6 +4,20 @@ requireLogin();
 require_once __DIR__.'/../app/layout.php';$pdo=db();$currentYear=(int)date('Y');$availableYears=array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN));
 if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;rsort($availableYears);$year=(int)($_GET['year']??$currentYear);
 	if(!in_array($year,$availableYears,true))$year=$currentYear;$q=trim($_GET['q']??'');
+if($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['save_app_edits'])){
+ if(!$canEditApp){http_response_code(403);exit('403 - Access denied');}
+ checkCsrf();
+ $year=(int)($_POST['year']??$currentYear);
+ if(!in_array($year,$availableYears,true))$year=$currentYear;
+ $save=$pdo->prepare("INSERT INTO app_consolidated_edits(fiscal_year,row_key,project_title,bid_evaluation_criteria,procurement_strategy,updated_by) VALUES(?,?,?,?,?,?) ON DUPLICATE KEY UPDATE project_title=VALUES(project_title),bid_evaluation_criteria=VALUES(bid_evaluation_criteria),procurement_strategy=VALUES(procurement_strategy),updated_by=VALUES(updated_by)");
+ $u=currentUser();
+ foreach((array)($_POST['app_rows']??[]) as $key=>$v){
+  if(!is_string($key)||!preg_match('/^[a-f0-9]{64}$/',$key)||!is_array($v))continue;
+  $save->execute([$year,$key,mb_substr(trim((string)($v['title']??'')),0,500),trim((string)($v['criteria']??'')),trim((string)($v['strategy']??'')),isset($u['id'])?(int)$u['id']:null]);
+ }
+ flash('success','Consolidated APP edits saved successfully.');
+ header('Location: app.php?year='.$year.($q!==''?'&q='.rawurlencode($q):'').'#consolidated-app-table');exit;
+}
 		$sql='SELECT src.fiscal_year, src.item_key, MIN(src.item_name) item_name, src.unit, src.category_id, src.category, src.unit_price, SUM(src.area_qty) total_qty, SUM(src.area_abc) total_abc, GROUP_CONCAT(CONCAT(src.area_name, " (", FORMAT(src.area_qty, 2), ")") ORDER BY src.area_name SEPARATOR ", ") areas FROM (SELECT p.fiscal_year, TRIM(LOWER(p.item_name)) item_key, MIN(p.item_name) item_name, p.unit, c.id category_id, c.name category, p.unit_price, p.area_id, a.name area_name, SUM(p.quantity) area_qty, SUM(p.quantity*p.unit_price) area_abc FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=?';
 		$args=[$year];
 				if($q!==''){$sql.=' AND (p.item_name LIKE ? OR c.name LIKE ? OR a.name LIKE ?)';
