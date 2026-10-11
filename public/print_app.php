@@ -210,12 +210,11 @@ Adopted from GPPB Standard Form</div>
       <?php if ($section['rows']): foreach ($section['rows'] as $row): ?>
         <tr class="data-row">
           <td class="number"><?=$counter++?></td>
-          <?php $printRowEdit = $printRowEdits[$printRowKey] ?? []; ?>
+          <?php $printRowKey = hash('sha256', json_encode([$year,strtolower(trim((string)$row['item_name'])),(string)$row['unit'],(string)$row['category_id'],number_format((float)$row['unit_price'],4,'.','')], JSON_UNESCAPED_UNICODE)); $printRowEdit = $printRowEdits[$printRowKey] ?? []; ?>
           <td><?=appPrintEscape($printRowEdit['project_title'] ?? '')?></td>
           <td><?=appPrintEscape($row['areas'])?></td>
           <td><strong><?=appPrintEscape($row['item_name'])?></strong><?php if (appPrintProjectDescription($row) !== ''): ?><br><?=nl2br(appPrintEscape(appPrintProjectDescription($row)))?><?php endif; ?></td>
           <td><?php
-          $printRowKey = hash('sha256', json_encode([$year,strtolower(trim((string)$row['item_name'])),(string)$row['unit'],(string)$row['category_id'],number_format((float)$row['unit_price'],4,'.','')], JSON_UNESCAPED_UNICODE));
           $modeEntries = [];
           foreach (($printUnitsByRow[$printRowKey] ?? []) as $printUnit) {
               $unitModeSettings = $printUnitSettings[$printRowKey][(string)$printUnit['area_id']] ?? [];
