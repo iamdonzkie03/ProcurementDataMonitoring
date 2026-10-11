@@ -113,10 +113,7 @@ function appPrintDate($value): string {
     return $time ? date('m/Y', $time) : $value;
 }
 function appPrintProjectDescription(array $row): string {
-    $parts = [];
-    if (trim((string)($row['description'] ?? '')) !== '') $parts[] = trim((string)$row['description']);
-    $parts[] = 'Consolidated quantity: '.number_format((float)$row['total_qty'], 2).' '.trim((string)$row['unit']);
-    return implode("\n", $parts);
+    return trim((string)($row['description'] ?? ''));
 }
 ?>
 <!doctype html>
@@ -216,7 +213,7 @@ Adopted from GPPB Standard Form</div>
           <?php $printRowEdit = $printRowEdits[$printRowKey] ?? []; ?>
           <td><?=appPrintEscape($printRowEdit['project_title'] ?? '')?></td>
           <td><?=appPrintEscape($row['areas'])?></td>
-          <td><?=appPrintEscape(appPrintProjectDescription($row))?></td>
+          <td><strong><?=appPrintEscape($row['item_name'])?></strong><?php if (appPrintProjectDescription($row) !== ''): ?><br><?=nl2br(appPrintEscape(appPrintProjectDescription($row)))?><?php endif; ?></td>
           <td><?php
           $printRowKey = hash('sha256', json_encode([$year,strtolower(trim((string)$row['item_name'])),(string)$row['unit'],(string)$row['category_id'],number_format((float)$row['unit_price'],4,'.','')], JSON_UNESCAPED_UNICODE));
           $modeEntries = [];
