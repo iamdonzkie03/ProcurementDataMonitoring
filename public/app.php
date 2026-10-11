@@ -1,7 +1,10 @@
 <?php
 require_once __DIR__.'/../config/config.php';
 requireLogin(); 
-require_once __DIR__.'/../app/layout.php';$pdo=db();$currentYear=(int)date('Y');$availableYears=array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN));
+require_once __DIR__.'/../app/layout.php';$pdo=db();
+$canEditApp=hasRole(['Administrator','Editor']);
+$pdo->exec("CREATE TABLE IF NOT EXISTS app_consolidated_edits (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, fiscal_year SMALLINT NOT NULL, row_key CHAR(64) NOT NULL, project_title VARCHAR(500) NOT NULL DEFAULT '', bid_evaluation_criteria TEXT NULL, procurement_strategy TEXT NULL, updated_by INT NULL, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, UNIQUE KEY uq_app_edit_year_row (fiscal_year,row_key), INDEX idx_app_edit_year (fiscal_year)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+$currentYear=(int)date('Y');$availableYears=array_map('intval',$pdo->query('SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC')->fetchAll(PDO::FETCH_COLUMN));
 if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;rsort($availableYears);$year=(int)($_GET['year']??$currentYear);
 	if(!in_array($year,$availableYears,true))$year=$currentYear;$q=trim($_GET['q']??'');
 if($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['save_app_edits'])){
