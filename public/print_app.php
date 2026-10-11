@@ -58,7 +58,7 @@ $st = $pdo->prepare($sql);
 $st->execute($args);
 $rows = $st->fetchAll();
 
-$printUnitStmt = $pdo->prepare('SELECT TRIM(LOWER(p.item_name)) item_key,p.unit,c.id category_id,p.unit_price,p.area_id,a.name area_name,MIN(p.procurement_mode) procurement_mode,MIN(p.preprocurement_conference) epa,MIN(p.start_procurement) start_procurement,MIN(p.end_procurement) end_procurement,MIN(p.source_of_funds) source_of_funds,MIN(p.remarks) remarks FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=? GROUP BY TRIM(LOWER(p.item_name)),p.unit,c.id,p.unit_price,p.area_id,a.name');
+$printUnitStmt = $pdo->prepare('SELECT TRIM(LOWER(p.item_name)) item_key,p.unit,c.id category_id,p.unit_price,p.area_id,a.name area_name,MIN(p.procurement_mode) procurement_mode,MIN(p.preprocurement_conference) epa,SUM(p.quantity*p.unit_price) area_abc,MIN(p.start_procurement) start_procurement,MIN(p.end_procurement) end_procurement,MIN(p.source_of_funds) source_of_funds,MIN(p.remarks) remarks FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=? GROUP BY TRIM(LOWER(p.item_name)),p.unit,c.id,p.unit_price,p.area_id,a.name');
 $printUnitStmt->execute([$year]);
 $printUnitsByRow = [];
 foreach ($printUnitStmt->fetchAll() as $unitRow) {
@@ -86,7 +86,6 @@ $epaTotal = 0.0;
 $cseTotal = 0.0;
 foreach ($rows as $row) {
     $grandAbc += (float)$row['total_abc'];
-    if (strcasecmp(trim((string)$row['epa']), 'Yes') === 0) $epaTotal += (float)$row['total_abc'];
     $procurementModeKey = strtolower(trim((string)($row['procurement_mode'] ?? '')));
     $categoryKey = strtolower(trim((string)$row['category'].' '.(string)$row['procurement_type']));
 
@@ -101,6 +100,18 @@ foreach ($rows as $row) {
         $cseTotal += (float)$row['total_abc'];
     } else {
         $sections['general']['rows'][] = $row;
+    }
+}
+// Calculate EPA budget from individual end-user/unit entries, not the consolidated row's MIN(epa).
+// This ensures each unit budget is counted only when its EPA value is Yes.
+$epaTotal = 0.0;
+foreach ($printUnitsByRow as $rowKey => $unitEntries) {
+    foreach ($unitEntries as $unitEntry) {
+        $unitSettings = $printUnitSettings[$rowKey][(string)$unitEntry['area_id']] ?? [];
+        $epaValue = trim((string)($unitSettings['epa'] ?? $unitEntry['epa'] ?? ''));
+        if (strcasecmp($epaValue, 'Yes') === 0) {
+            $epaTotal += (float)($unitEntry['area_abc'] ?? 0);
+        }
     }
 }
 $nonEpaTotal = max(0, $grandAbc - $epaTotal);
