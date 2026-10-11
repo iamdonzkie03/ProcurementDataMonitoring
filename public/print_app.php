@@ -11,9 +11,34 @@ $year = (int)($_GET['year'] ?? $currentYear);
 if (!in_array($year, $availableYears, true)) $year = $currentYear;
 $q = trim((string)($_GET['q'] ?? ''));
 
-$sql = 'SELECT src.fiscal_year, src.item_key, MIN(src.item_name) item_name, src.unit, src.category_id, src.category, src.unit_price, SUM(src.area_qty) total_qty, SUM(src.area_abc) total_abc, GROUP_CONCAT(CONCAT(src.area_name, " (", FORMAT(src.area_qty, 2), ")") ORDER BY src.area_name SEPARATOR ", ") areas
+/*
+ * The print layout follows the headings and section structure in
+ * APP Format.xlsx (ZCMC-F-PROC-02, adopted from the GPPB standard form).
+ * Consolidated PPMP quantities are retained in the project description because
+ * the prescribed APP template does not have a separate quantity/unit column.
+ */
+$sql = 'SELECT
+          src.fiscal_year, src.item_key, MIN(src.item_name) item_name,
+          src.unit, src.category_id, src.category, src.unit_price,
+          SUM(src.area_qty) total_qty, SUM(src.area_abc) total_abc,
+          GROUP_CONCAT(CONCAT(src.area_name, " (", FORMAT(src.area_qty, 2), " ", src.unit, ")") ORDER BY src.area_name SEPARATOR "; ") areas,
+          MIN(src.description) description,
+          MIN(src.procurement_mode) procurement_mode,
+          MIN(src.epa) epa,
+          MIN(src.start_procurement) start_procurement,
+          MIN(src.end_procurement) end_procurement,
+          MIN(src.source_of_funds) source_of_funds,
+          MIN(src.remarks) remarks,
+          MIN(src.procurement_type) procurement_type
         FROM (
-          SELECT p.fiscal_year, TRIM(LOWER(p.item_name)) item_key, MIN(p.item_name) item_name, p.unit, c.id category_id, c.name category, p.unit_price, p.area_id, a.name area_name, SUM(p.quantity) area_qty, SUM(p.quantity*p.unit_price) area_abc
+          SELECT p.fiscal_year, TRIM(LOWER(p.item_name)) item_key,
+            MIN(p.item_name) item_name, p.unit, c.id category_id, c.name category,
+            p.unit_price, p.area_id, a.name area_name,
+            SUM(p.quantity) area_qty, SUM(p.quantity*p.unit_price) area_abc,
+            MIN(p.description) description, MIN(p.procurement_mode) procurement_mode,
+            MIN(p.preprocurement_conference) epa, MIN(p.start_procurement) start_procurement,
+            MIN(p.end_procurement) end_procurement, MIN(p.source_of_funds) source_of_funds,
+            MIN(p.remarks) remarks, MIN(p.procurement_type) procurement_type
           FROM ppmp_items p
           JOIN areas a ON a.id=p.area_id
           JOIN categories c ON c.id=p.category_id
@@ -32,43 +57,80 @@ $sql .= ' GROUP BY p.fiscal_year, TRIM(LOWER(p.item_name)), p.unit, c.id, c.name
 $st = $pdo->prepare($sql);
 $st->execute($args);
 $rows = $st->fetchAll();
-$grandQty = 0.0;
+
+$sections = [
+    'general' => ['title' => 'General Requirements', 'rows' => []],
+    'misc' => ['title' => 'Miscellaneous Items (for Direct Acquisition only) Sec. 32.2 of RA No. 12009', 'rows' => []],
+    'cse' => ['title' => 'Common-Use Supplies and Equipment (CSE) to be purchased from PS-DBM (kindly indicate the summary/total amounts only)', 'rows' => []],
+];
 $grandAbc = 0.0;
+$epaTotal = 0.0;
+$cseTotal = 0.0;
 foreach ($rows as $row) {
-    $grandQty += (float)$row['total_qty'];
     $grandAbc += (float)$row['total_abc'];
+    if (strcasecmp(trim((string)$row['epa']), 'Yes') === 0) $epaTotal += (float)$row['total_abc'];
+    $categoryKey = strtolower(trim((string)$row['category'].' '.(string)$row['procurement_type']));
+    if (strpos($categoryKey, 'cse') !== false || strpos($categoryKey, 'common-use') !== false || strpos($categoryKey, 'common use') !== false) {
+        $sections['cse']['rows'][] = $row;
+        $cseTotal += (float)$row['total_abc'];
+    } elseif (strpos($categoryKey, 'miscellaneous') !== false || strpos($categoryKey, 'direct acquisition') !== false) {
+        $sections['misc']['rows'][] = $row;
+    } else {
+        $sections['general']['rows'][] = $row;
+    }
 }
-$agencyName = defined('APP_AGENCY_NAME') ? APP_AGENCY_NAME : '';
+$nonEpaTotal = max(0, $grandAbc - $epaTotal);
+$agencyName = defined('APP_AGENCY_NAME') ? APP_AGENCY_NAME : 'ZAMBOANGA CITY MEDICAL CENTER';
 function appPrintEscape($value): string { return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'); }
+function appPrintDate($value): string {
+    $value = trim((string)$value);
+    if ($value === '' || $value === '0000-00-00') return '';
+    $time = strtotime($value);
+    return $time ? date('m/Y', $time) : $value;
+}
+function appPrintProjectDescription(array $row): string {
+    $parts = [];
+    if (trim((string)($row['description'] ?? '')) !== '') $parts[] = trim((string)$row['description']);
+    $parts[] = 'Consolidated quantity: '.number_format((float)$row['total_qty'], 2).' '.trim((string)$row['unit']);
+    return implode("\n", $parts);
+}
 ?>
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Annual Procurement Plan FY <?=appPrintEscape($year)?></title>
+<title>ANNUAL PROCUREMENT PLAN FOR FY <?=appPrintEscape($year)?></title>
 <style>
-@page{size:A4 landscape;margin:12mm}
+@page{size:A3 landscape;margin:12mm 8mm 12mm}
 *{box-sizing:border-box}
-body{font-family:Arial,Helvetica,sans-serif;color:#111827;margin:0;font-size:10pt}
-.toolbar{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin:0 0 16px}
-.btn{display:inline-block;border:1px solid #64748b;border-radius:4px;padding:8px 12px;background:#fff;color:#111827;text-decoration:none;font-size:10pt;cursor:pointer}
-.heading{text-align:center;margin:0 0 14px}
-.heading h1{font-size:16pt;letter-spacing:.3px;margin:0 0 4px}
-.heading h2{font-size:12pt;margin:0 0 4px;font-weight:600}
-.heading p{margin:3px 0}
-.meta{display:flex;justify-content:space-between;gap:16px;margin:12px 0 8px;font-size:9pt}
+body{font-family:"Century Gothic",Arial,sans-serif;color:#111;margin:0;font-size:7pt}
+.toolbar{display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin:0 0 14px}
+.btn{display:inline-block;border:1px solid #475569;border-radius:3px;padding:7px 11px;background:#fff;color:#111;text-decoration:none;font-size:10pt;cursor:pointer}
+.sheet{width:100%;margin:0 auto}
+.form-meta{font-size:7pt;text-align:right;line-height:1.35;margin:0 0 8px;white-space:pre-line}
+.heading{text-align:center;margin:0 0 12px}
+.heading h1{font-family:"Century Gothic",Arial,sans-serif;font-size:15pt;font-weight:700;margin:0;letter-spacing:.1px}
+.heading .agency{font-size:9pt;font-weight:700;margin-bottom:4px}
+.heading .sub{font-size:8pt;margin-top:4px}
 table{border-collapse:collapse;width:100%;table-layout:fixed}
-th,td{border:1px solid #374151;padding:5px 6px;vertical-align:top;overflow-wrap:anywhere}
-th{font-weight:700;text-align:center;background:#f3f4f6}
-td.num{text-align:right;white-space:nowrap}
-.total-row td{font-weight:700;background:#f9fafb}
-.note{font-size:8pt;margin-top:8px;color:#374151}
-.signatures{display:flex;justify-content:space-between;gap:30px;margin-top:30px;page-break-inside:avoid}
-.signature{width:32%;text-align:center;font-size:9pt}
-.signature .line{border-top:1px solid #111827;margin:28px 0 5px}
-@media print{.toolbar{display:none}.heading{margin-top:0}body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-@media screen{body{padding:22px;background:#f1f5f9}.sheet{background:white;padding:22px;max-width:1400px;margin:auto;box-shadow:0 2px 10px #00000012}}
+th,td{border:1px solid #222;padding:3px 3px;vertical-align:top;overflow-wrap:anywhere;white-space:pre-line}
+.group-head th{font-size:8pt;text-align:center;vertical-align:middle;height:26px}
+.column-head th{font-size:7pt;text-align:center;vertical-align:middle;height:88px;font-weight:700}
+.column-number th{font-size:6pt;text-align:center;height:17px;font-weight:400}
+td.number{text-align:center;vertical-align:middle}
+td.amount{text-align:right;white-space:nowrap}
+.section-row td{font-weight:700;background:#e9ecef;padding:5px 4px}
+.data-row td{height:35px}
+.summary-label{font-weight:700}
+.summary-row td{height:24px;vertical-align:middle}
+.summary-row .amount{font-weight:700}
+.note{font-size:7pt;font-style:italic;margin:7px 0 0}
+.signatures{display:flex;justify-content:space-between;gap:24px;margin-top:25px;page-break-inside:avoid}
+.signature{width:32%;text-align:center;font-size:8pt}
+.signature .line{border-top:1px solid #111;margin:24px 0 5px}
+@media print{.toolbar{display:none}.sheet{width:100%}body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+@media screen{body{padding:18px;background:#f1f5f9}.sheet{background:#fff;padding:18px;max-width:1800px;box-shadow:0 2px 10px #00000012}}
 </style>
 </head>
 <body>
@@ -78,51 +140,77 @@ td.num{text-align:right;white-space:nowrap}
   <button class="btn" type="button" onclick="window.close()">Close</button>
 </div>
 <div class="sheet">
+  <div class="form-meta">Form No: ZCMC-F-PROC-02
+Revision No: 0
+Effectivity Date: January 12, 2026
+Adopted from GPPB Standard Form</div>
   <header class="heading">
-    <?php if ($agencyName !== ''): ?><h2><?=appPrintEscape($agencyName)?></h2><?php endif; ?>
-    <h1>ANNUAL PROCUREMENT PLAN (APP)</h1>
-    <h2>FISCAL YEAR <?=appPrintEscape($year)?></h2>
+    <div class="agency"><?=appPrintEscape($agencyName)?></div>
+    <h1>ANNUAL PROCUREMENT PLAN FOR FY <?=appPrintEscape($year)?></h1>
+    <div class="sub">Consolidated from PPMP submissions · Date printed: <?=date('F d, Y')?></div>
   </header>
-  <div class="meta">
-    <span><strong>Consolidated Procurement Plan</strong></span>
-    <span><strong>Date Printed:</strong> <?=date('F d, Y')?></span>
-  </div>
   <table>
     <colgroup>
-      <col style="width:23%"><col style="width:11%"><col style="width:7%"><col style="width:9%"><col style="width:11%"><col style="width:12%"><col style="width:27%">
+      <col style="width:3%"><col style="width:10%"><col style="width:8%"><col style="width:5%"><col style="width:11%"><col style="width:7%"><col style="width:5%"><col style="width:10%"><col style="width:5%"><col style="width:5%"><col style="width:6%"><col style="width:7%"><col style="width:7%"><col style="width:11%">
     </colgroup>
-    <thead><tr>
-      <th>Procurement Item / Description</th>
-      <th>Category</th>
-      <th>Unit</th>
-      <th>Consolidated Quantity</th>
-      <th>Unit Price (₱)</th>
-      <th>Total ABC (₱)</th>
-      <th>Contributing Areas / Units</th>
-    </tr></thead>
-    <tbody>
-    <?php foreach ($rows as $row): ?>
-      <tr>
-        <td><?=appPrintEscape($row['item_name'])?></td>
-        <td><?=appPrintEscape($row['category'])?></td>
-        <td><?=appPrintEscape($row['unit'])?></td>
-        <td class="num"><?=number_format((float)$row['total_qty'], 2)?></td>
-        <td class="num"><?=number_format((float)$row['unit_price'], 2)?></td>
-        <td class="num"><?=number_format((float)$row['total_abc'], 2)?></td>
-        <td><?=appPrintEscape($row['areas'])?></td>
+    <thead>
+      <tr class="group-head">
+        <th rowspan="2">#</th>
+        <th colspan="7">PROCUREMENT PROJECT DETAILS</th>
+        <th colspan="2">PROJECTED TIMELINE (MM/YYYY)</th>
+        <th colspan="2">FUNDING DETAILS</th>
+        <th>PROCUREMENT STRATEGY OR TOOLS</th>
+        <th rowspan="2">REMARKS<br>(Other relevant description of the procurement project, if applicable)</th>
       </tr>
+      <tr class="column-head">
+        <th>Project Title</th>
+        <th>End-User or Implementing Unit</th>
+        <th>Category</th>
+        <th>General Description of the Project</th>
+        <th>Mode of Procurement</th>
+        <th>To be covered by an Early Procurement Activity? (Yes/No)</th>
+        <th>Criteria for Bid Evaluation (including Sustainability and Domestic Preference)</th>
+        <th>Start of Procurement Activity</th>
+        <th>End of Procurement Activity</th>
+        <th>Source of Fund</th>
+        <th>Estimated Budget / Approved Budget for the Contract (Php)</th>
+        <th>Column 11</th>
+      </tr>
+      <tr class="column-number">
+        <th></th><th>Column 1</th><th>Column 2</th><th>Column 3</th><th>Column 4</th><th>Column 5</th><th>Column 6</th><th>Column 7</th><th>Column 8</th><th>Column 9</th><th>Column 10</th><th>Column 11</th><th>Column 12</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+    <?php $counter = 1; foreach ($sections as $sectionKey => $section): ?>
+      <tr class="section-row"><td colspan="14"><?=appPrintEscape($section['title'])?></td></tr>
+      <?php if ($section['rows']): foreach ($section['rows'] as $row): ?>
+        <tr class="data-row">
+          <td class="number"><?=$counter++?></td>
+          <td><?=appPrintEscape($row['item_name'])?></td>
+          <td><?=appPrintEscape($row['areas'])?></td>
+          <td><?=appPrintEscape($row['category'])?></td>
+          <td><?=appPrintEscape(appPrintProjectDescription($row))?></td>
+          <td><?=appPrintEscape($row['procurement_mode'])?></td>
+          <td class="number"><?=appPrintEscape($row['epa'])?></td>
+          <td></td>
+          <td class="number"><?=appPrintEscape(appPrintDate($row['start_procurement']))?></td>
+          <td class="number"><?=appPrintEscape(appPrintDate($row['end_procurement']))?></td>
+          <td><?=appPrintEscape($row['source_of_funds'])?></td>
+          <td class="amount"><?=number_format((float)$row['total_abc'],2)?></td>
+          <td></td>
+          <td><?=appPrintEscape($row['remarks'])?></td>
+        </tr>
+      <?php endforeach; else: ?>
+        <tr class="data-row"><td class="number"></td><?php for($i=0;$i<13;$i++): ?><td></td><?php endfor; ?></tr>
+      <?php endif; ?>
     <?php endforeach; ?>
-    <?php if (!$rows): ?><tr><td colspan="7" style="text-align:center">No consolidated PPMP data found for Fiscal Year <?=appPrintEscape($year)?>.</td></tr><?php endif; ?>
+      <tr><td colspan="14" style="font-style:italic;border-top:0;border-bottom:0">Note: Insert additional rows as necessary.</td></tr>
+      <tr class="summary-row"><td colspan="8" class="summary-label">Total Amount of Estimated Budget for EPA Projects:</td><td colspan="4" class="amount"><?=number_format($epaTotal,2)?></td><td colspan="2"></td></tr>
+      <tr class="summary-row"><td colspan="8" class="summary-label">Total Amount of CSEs to be purchased from PS-DBM:</td><td colspan="4" class="amount"><?=number_format($cseTotal,2)?></td><td colspan="2"></td></tr>
+      <tr class="summary-row"><td colspan="8" class="summary-label">Total Amount of Estimated Budget for Non-EPA Projects:</td><td colspan="4" class="amount"><?=number_format($nonEpaTotal,2)?></td><td colspan="2"></td></tr>
+      <tr class="summary-row"><td colspan="8" class="summary-label">Total Amount of Estimated Budget:</td><td colspan="4" class="amount"><?=number_format($grandAbc,2)?></td><td colspan="2"></td></tr>
     </tbody>
-    <tfoot><tr class="total-row">
-      <td colspan="3">GRAND TOTAL</td>
-      <td class="num"><?=number_format($grandQty, 2)?></td>
-      <td></td>
-      <td class="num"><?=number_format($grandAbc, 2)?></td>
-      <td></td>
-    </tr></tfoot>
   </table>
-  <p class="note">Note: Equivalent items are consolidated using item name, unit, category and unit price. Items with different unit prices remain separate. The contributing areas/units column indicates each area's/unit's requested quantity.</p>
   <div class="signatures">
     <div class="signature"><div class="line"></div><strong>Prepared by</strong><br>Name / Position</div>
     <div class="signature"><div class="line"></div><strong>Reviewed by</strong><br>Name / Position</div>
