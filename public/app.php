@@ -21,7 +21,7 @@ if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;r
 		.consolidated-app-panel .app-panel-header{display:grid;grid-template-columns:1fr minmax(320px,2fr) 1fr;align-items:start;gap:12px;margin-bottom:16px}
 		.consolidated-app-panel .app-controls-left{display:flex;justify-content:flex-start;align-items:center;gap:8px;flex-wrap:wrap}
 		.consolidated-app-panel .app-controls-left form{display:flex;align-items:center;gap:8px;margin:0}
-		.consolidated-app-panel .app-controls-left .btn,.consolidated-app-panel .app-controls-right .btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:110px;height:38px;min-height:38px;padding:0;font-family:inherit;font-size:13px;font-weight:600;line-height:18px;white-space:nowrap}
+		.consolidated-app-panel .app-action-button{display:inline-flex!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;width:120px!important;min-width:120px!important;max-width:120px!important;height:38px!important;min-height:38px!important;max-height:38px!important;flex:0 0 120px!important;margin:0!important;padding:0 8px!important;border:0!important;font-family:inherit!important;font-size:13px!important;font-weight:600!important;line-height:18px!important;text-align:center!important;white-space:nowrap!important;vertical-align:middle!important}
 		.consolidated-app-panel .app-summary-center{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:8px;padding-top:2px}
 		.consolidated-app-panel .app-summary-center .badge{display:inline-flex;align-items:center;justify-content:center}
 		.consolidated-app-panel .app-budget-total{font-size:16px;font-weight:700;line-height:1.35}
@@ -32,7 +32,7 @@ if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;r
 		<div class="app-controls-left">
 			<form>
 				<select class="input" name="year" aria-label="Calendar Year"><?php foreach($availableYears as $availableYear):?><option value="<?=$availableYear?>" <?=$year===$availableYear?'selected':''?>><?=$availableYear?></option><?php endforeach;?></select>
-				<button class="btn" type="submit">View APP</button>
+				<button class="btn app-action-button" type="submit">View APP</button>
 			</form>
 		</div>
 		<div class="app-summary-center">
@@ -40,7 +40,7 @@ if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;r
 			<div class="app-budget-total">Total Approved Budget for the Contract (ABC): ₱<?=number_format($grandAbc,2)?></div>
 		</div>
 		<div class="app-controls-right">
-			<a class="btn" href="print_app.php?year=<?=$year?><?= $q!=='' ? '&amp;q='.rawurlencode($q) : '' ?>" target="_blank" rel="noopener">🖨 Print APP</a>
+			<a class="btn app-action-button" href="print_app.php?year=<?=$year?><?= $q!=='' ? '&amp;q='.rawurlencode($q) : '' ?>" target="_blank" rel="noopener">🖨 Print APP</a>
 		</div>
 	</div>
 		<p style="font-size:12px;color:#6b7280">Equivalent items are consolidated using normalized item name + unit + category + unit price. The Contributing Areas/Units column shows each Area/Unit with its requested quantity; consolidated quantity and total ABC are summed.</p>
