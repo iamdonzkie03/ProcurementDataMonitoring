@@ -63,25 +63,29 @@ foreach($editStmt->fetchAll() as $savedRow){$savedEdits[$savedRow['row_key']]=$s
 		</div>
 	</div>
 		<p style="font-size:12px;color:#6b7280">Equivalent items are consolidated using normalized item name + unit + category + unit price. The Contributing Areas/Units column shows each Area/Unit with its requested quantity; consolidated quantity and total ABC are summed.</p>
-		<div class="table-wrap">
-			<table class="table">
-				<tr><th>Item</th>
-					<th>Category</th><th>Unit</th>
-					<th>Consolidated Qty</th>
-					<th>Unit Price</th>
-					<th>Total ABC</th>
-					<th>Contributing Areas/Units</th>
-				</tr>
-				<?php foreach($rows as $r):?>
-				<tr>
-					<td><b><?=e($r['item_name'])?></b></td>
-					<td><?=e($r['category'])?></td><td><?=e($r['unit'])?></td>
-					<td><?=number_format($r['total_qty'],2)?></td>
-					<td>₱<?=number_format($r['unit_price'],2)?></td>
-					<td><b>₱<?=number_format($r['total_abc'],2)?></b></td>
-					<td><?=e($r['areas'])?></td>
-				</tr><?php endforeach;?><?php if(!$rows):?>
-				<tr><td colspan="7" class="empty">No PPMP data for FY <?=$year?>.</td></tr><?php endif;?>
-			</table>
+  <p style="font-size:12px;color:#6b7280">Edit only Project Title, Criteria for Bid Evaluation, and Procurement Strategy or Tools. All other fields are read-only. Editing is available to Administrators and Editors.</p>
+  <?php foreach(flashes() as $f): ?><div class="alert <?=e($f['type'])?>"><?=e($f['message'])?></div><?php endforeach; ?>
+  <div class="table-wrap" id="consolidated-app-table">
+  <form method="post">
+  <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+  <input type="hidden" name="year" value="<?=$year?>">
+  <input type="hidden" name="q" value="<?=e($q)?>">
+  <table class="table app-edit-table">
+  <thead><tr><th>#</th><th>Project Title</th><th>End-User or Implementing Unit</th><th>General Description of the Project</th><th>Mode of Procurement</th><th>To be covered by an Early Procurement Activity? (Yes/No)</th><th>Criteria for Bid Evaluation (including Sustainability and Domestic Preference)</th><th>Start of Procurement Activity</th><th>End of Procurement Activity</th><th>Source of Fund</th><th>Estimated Budget / Approved Budget for the Contract (Php)</th><th>PROCUREMENT STRATEGY OR TOOLS</th><th>REMARKS<br>(Other relevant description of the procurement project, if applicable)</th></tr></thead><tbody>
+  <?php foreach($rows as $i=>$r): $rowKey=hash('sha256',json_encode([$year,strtolower(trim((string)$r['item_name'])),(string)$r['unit'],(string)$r['category_id'],number_format((float)$r['unit_price'],4,'.','')],JSON_UNESCAPED_UNICODE)); $saved=$savedEdits[$rowKey]??null; $title=$saved!==null?(string)$saved['project_title']:(string)$r['item_name']; $criteria=$saved!==null?(string)($saved['bid_evaluation_criteria']??''):''; $strategy=$saved!==null?(string)($saved['procurement_strategy']??''):''; ?>
+  <tr><td><?=($i+1)?></td>
+  <td><?php if($canEditApp): ?><input class="app-edit-input" type="text" maxlength="500" name="app_rows[<?=e($rowKey)?>][title]" value="<?=e($title)?>"><?php else: ?><?=e($title)?><?php endif; ?></td>
+  <td><?=e($r['areas'])?></td>
+  <td><?=e(trim((string)($r['description']??''))."\nConsolidated quantity: ".number_format((float)$r['total_qty'],2)." ".trim((string)$r['unit']))?></td>
+  <td><?=e($r['procurement_mode']??'')?></td><td><?=e($r['epa']??'')?></td>
+  <td><?php if($canEditApp): ?><textarea class="app-edit-input" rows="2" name="app_rows[<?=e($rowKey)?>][criteria]"><?=e($criteria)?></textarea><?php else: ?><?=e($criteria)?><?php endif; ?></td>
+  <td><?=e(!empty($r['start_procurement'])?date('m/Y',strtotime($r['start_procurement'])):'')?></td><td><?=e(!empty($r['end_procurement'])?date('m/Y',strtotime($r['end_procurement'])):'')?></td>
+  <td><?=e($r['source_of_funds']??'')?></td><td style="text-align:right;white-space:nowrap">₱<?=number_format((float)$r['total_abc'],2)?></td>
+  <td><?php if($canEditApp): ?><textarea class="app-edit-input" rows="2" name="app_rows[<?=e($rowKey)?>][strategy]"><?=e($strategy)?></textarea><?php else: ?><?=e($strategy)?><?php endif; ?></td><td><?=e($r['remarks']??'')?></td></tr>
+  <?php endforeach; if(!$rows): ?><tr><td colspan="13" class="empty">No PPMP data for FY <?=$year?>.</td></tr><?php endif; ?>
+  </tbody><tfoot><tr><th colspan="10" style="text-align:right">Total Approved Budget for the Contract (ABC)</th><th style="text-align:right">₱<?=number_format($grandAbc,2)?></th><th colspan="2"></th></tr></tfoot></table>
+  <?php if($canEditApp&&$rows): ?><div style="padding-top:14px"><button class="btn btn-primary" type="submit" name="save_app_edits" value="1">Save APP Changes</button></div><?php endif; ?>
+  </form></div>
+  <style>.consolidated-app-panel .app-edit-table{min-width:1900px;table-layout:fixed}.consolidated-app-panel .app-edit-table th{background:#eaf0f8;vertical-align:middle;min-width:120px;white-space:normal;line-height:1.35}.consolidated-app-panel .app-edit-table th:nth-child(1){min-width:45px;width:45px}.consolidated-app-panel .app-edit-table th:nth-child(2){min-width:220px;width:220px}.consolidated-app-panel .app-edit-table th:nth-child(3){min-width:200px;width:200px}.consolidated-app-panel .app-edit-table th:nth-child(4){min-width:230px;width:230px}.consolidated-app-panel .app-edit-table th:nth-child(7),.consolidated-app-panel .app-edit-table th:nth-child(12){min-width:260px;width:260px}.consolidated-app-panel .app-edit-table td{vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere}.consolidated-app-panel .app-edit-input{width:100%;min-width:180px;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:5px;padding:7px;font:inherit;background:#fff}.consolidated-app-panel textarea.app-edit-input{min-width:230px;resize:vertical}</style>
 	</div>
 </div><?php pageEnd();
