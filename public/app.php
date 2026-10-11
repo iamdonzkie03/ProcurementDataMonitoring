@@ -20,7 +20,7 @@ if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;r
 	<style>
 		.consolidated-app-panel .app-panel-header{display:grid;grid-template-columns:1fr minmax(320px,2fr) 1fr;align-items:start;gap:12px;margin-bottom:16px}
 		.consolidated-app-panel .app-controls-left{display:flex;justify-content:flex-start;align-items:center;gap:8px;flex-wrap:wrap}
-		.consolidated-app-panel .app-controls-left form{display:flex;align-items:center;gap:8px;margin:0}
+		.consolidated-app-panel .app-controls-left form{display:flex;align-items:center;gap:8px;margin:0}\n\t\t.consolidated-app-panel .app-controls-left .btn,.consolidated-app-panel .app-controls-right .btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:36px;padding:8px 12px;font:inherit;line-height:18px;white-space:nowrap}
 		.consolidated-app-panel .app-summary-center{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:8px;padding-top:2px}
 		.consolidated-app-panel .app-summary-center .badge{display:inline-flex;align-items:center;justify-content:center}
 		.consolidated-app-panel .app-budget-total{font-size:16px;font-weight:700;line-height:1.35}
