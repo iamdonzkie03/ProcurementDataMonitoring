@@ -16,14 +16,31 @@ if(!in_array($currentYear,$availableYears,true))$availableYears[]=$currentYear;r
 					foreach($rows as $r){
 						$grandQty+=(float)$r['total_qty'];$grandAbc+=(float)$r['total_abc'];}pageStart('Consolidated Annual Procurement Plan');
 ?>
-<div class="panel">
-	<div class="toolbar consolidated-app-toolbar" style="justify-content:center;text-align:center;gap:12px;flex-wrap:wrap;">
-		<form>
-			<select class="input" name="year" aria-label="Calendar Year"><?php foreach($availableYears as $availableYear):?><option value="<?=$availableYear?>" <?=$year===$availableYear?'selected':''?>><?=$availableYear?></option><?php endforeach;?></select> <button class="btn" type="submit">View APP</button>
-		</form>
-		<span class="badge" style="display:inline-flex;align-items:center;justify-content:center;text-align:center;"><?=count($rows)?> consolidated lines</span>
-		<a class="btn" href="print_app.php?year=<?=$year?><?= $q!=='' ? '&amp;q='.rawurlencode($q) : '' ?>" target="_blank" rel="noopener">🖨 Print APP</a>
-		<span style="display:inline-flex;align-items:center;justify-content:center;text-align:center;font-size:16px;font-weight:700;">Total Approved Budget for the Contract (ABC): <span style="margin-left:6px;font-size:16px;font-weight:700;">₱<?=number_format($grandAbc,2)?></span></span>
+<div class="consolidated-app-panel">
+	<style>
+		.consolidated-app-panel .app-panel-header{display:grid;grid-template-columns:1fr minmax(320px,2fr) 1fr;align-items:start;gap:12px;margin-bottom:16px}
+		.consolidated-app-panel .app-controls-left{display:flex;justify-content:flex-start;align-items:center;gap:8px;flex-wrap:wrap}
+		.consolidated-app-panel .app-controls-left form{display:flex;align-items:center;gap:8px;margin:0}
+		.consolidated-app-panel .app-summary-center{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:8px;padding-top:2px}
+		.consolidated-app-panel .app-summary-center .badge{display:inline-flex;align-items:center;justify-content:center}
+		.consolidated-app-panel .app-budget-total{font-size:16px;font-weight:700;line-height:1.35}
+		.consolidated-app-panel .app-controls-right{display:flex;justify-content:flex-end;align-items:flex-start}
+		@media(max-width:900px){.consolidated-app-panel .app-panel-header{grid-template-columns:1fr;gap:10px}.consolidated-app-panel .app-summary-center{grid-row:2}.consolidated-app-panel .app-controls-right{justify-content:flex-start}}
+	</style>
+	<div class="app-panel-header">
+		<div class="app-controls-left">
+			<form>
+				<select class="input" name="year" aria-label="Calendar Year"><?php foreach($availableYears as $availableYear):?><option value="<?=$availableYear?>" <?=$year===$availableYear?'selected':''?>><?=$availableYear?></option><?php endforeach;?></select>
+				<button class="btn" type="submit">View APP</button>
+			</form>
+		</div>
+		<div class="app-summary-center">
+			<span class="badge"><?=count($rows)?> consolidated lines</span>
+			<div class="app-budget-total">Total Approved Budget for the Contract (ABC): ₱<?=number_format($grandAbc,2)?></div>
+		</div>
+		<div class="app-controls-right">
+			<a class="btn" href="print_app.php?year=<?=$year?><?= $q!=='' ? '&amp;q='.rawurlencode($q) : '' ?>" target="_blank" rel="noopener">🖨 Print APP</a>
+		</div>
 	</div>
 		<p style="font-size:12px;color:#6b7280">Equivalent items are consolidated using normalized item name + unit + category + unit price. The Contributing Areas/Units column shows each Area/Unit with its requested quantity; consolidated quantity and total ABC are summed.</p>
 		<div class="table-wrap">
