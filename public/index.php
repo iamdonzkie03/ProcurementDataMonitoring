@@ -202,11 +202,11 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
     <div class="metric"><?=number_format($masterlistCount)?></div>
     <div class="hint">Total items available in the procurement masterlist</div>
   </div>
-  <div class="dashboard-mini-card dashboard-pastel-sky">
-    <div class="label">Manuals</div>
-    <div class="metric">Guides</div>
-    <div class="hint">Procurement planning, purchasing, and system workflow references</div>
-  </div>
+  <a class="dashboard-mini-card dashboard-pastel-sky" href="role_functions_guide.php" style="display:block;color:inherit;text-decoration:none" aria-label="Open Role and Functions Access Matrix guide">
+    <div class="label">Guides</div>
+    <div class="metric">Role &amp; Functions</div>
+    <div class="hint">Open the Role and Functions Access Matrix <span aria-hidden="true">→</span></div>
+  </a>
 </div>
 <div class="grid">
 <div class="panel"><h2>Recent Purchase Request</h2><?php if($recentPrDashboard):?><p><b><?=e($recentPrDashboard['pr_no'])?></b></p><p><b>Area/Unit:</b> <?=e($recentPrDashboard['area']??'')?></p><p><b>Division/Department:</b> <?=e($recentPrDashboard['division']??'')?></p><p><b>Total Amount:</b> ₱<?=number_format((float)$recentPrDashboard['total_amount'],2)?></p><p><b>Created:</b> <?=e(date('M d, Y h:i A',strtotime($recentPrDashboard['created_at'])))?></p><?php else:?><p class="empty">No Purchase Request has been created.</p><?php endif;?></div>
