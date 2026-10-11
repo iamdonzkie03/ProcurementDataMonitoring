@@ -97,7 +97,6 @@ foreach ($rows as $row) {
         $sections['misc']['rows'][] = $row;
     } elseif (strpos($categoryKey, 'cse') !== false || strpos($categoryKey, 'common-use') !== false || strpos($categoryKey, 'common use') !== false) {
         $sections['cse']['rows'][] = $row;
-        $cseTotal += (float)$row['total_abc'];
     } else {
         $sections['general']['rows'][] = $row;
     }
@@ -113,6 +112,11 @@ foreach ($printUnitsByRow as $rowKey => $unitEntries) {
             $epaTotal += (float)($unitEntry['area_abc'] ?? 0);
         }
     }
+}
+// The CSE summary must equal the sum of all records actually listed in the CSE section.
+$cseTotal = 0.0;
+foreach ($sections['cse']['rows'] as $cseRow) {
+    $cseTotal += (float)($cseRow['total_abc'] ?? 0);
 }
 $nonEpaTotal = max(0, $grandAbc - $epaTotal);
 $agencyName = defined('APP_AGENCY_NAME') ? APP_AGENCY_NAME : 'ZAMBOANGA CITY MEDICAL CENTER';
