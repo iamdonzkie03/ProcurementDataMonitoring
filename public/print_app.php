@@ -233,7 +233,7 @@ Adopted from GPPB Standard Form</div>
           $modeEntries = [];
           foreach (($printUnitsByRow[$printRowKey] ?? []) as $printUnit) {
               $unitModeSettings = $printUnitSettings[$printRowKey][(string)$printUnit['area_id']] ?? [];
-              $mode = trim((string)($unitModeSettings['mode'] ?? $printUnit['procurement_mode'] ?? ''));
+              $mode = trim((string)($printUnit['procurement_mode'] ?? ''));
               if ($mode !== '' && (!isset($unitModeSettings['select_mode']) || !empty($unitModeSettings['select_mode']))) {
                   $modeEntries[] = $mode;
               }
