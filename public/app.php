@@ -79,7 +79,7 @@ foreach($editStmt->fetchAll() as $savedRow){$savedEdits[$savedRow['row_key']]=$s
   <tr><td><?=($i+1)?></td>
   <td><?php if($canEditApp): ?><input class="app-edit-input" type="text" maxlength="500" name="app_rows[<?=e($rowKey)?>][title]" value="<?=e($title)?>"><?php else: ?><?=e($title)?><?php endif; ?></td>
   <td><?=e($r['areas'])?></td>
-  <td><?=e(trim((string)($r['description']??''))."\nConsolidated quantity: ".number_format((float)$r['total_qty'],2)." ".trim((string)$r['unit']))?></td>
+  <td><?=e($title)?></td>
   <td><?=e($r['procurement_mode']??'')?></td><td><?=e($r['epa']??'')?></td>
   <td><?php if($canEditApp): ?><textarea class="app-edit-input" rows="2" name="app_rows[<?=e($rowKey)?>][criteria]"><?=e($criteria)?></textarea><?php else: ?><?=e($criteria)?><?php endif; ?></td>
   <td><?=e(!empty($r['start_procurement'])?date('m/Y',strtotime($r['start_procurement'])):'')?></td><td><?=e(!empty($r['end_procurement'])?date('m/Y',strtotime($r['end_procurement'])):'')?></td>
