@@ -58,7 +58,7 @@ $st = $pdo->prepare($sql);
 $st->execute($args);
 $rows = $st->fetchAll();
 
-$printUnitStmt = $pdo->prepare('SELECT TRIM(LOWER(p.item_name)) item_key,p.unit,c.id category_id,p.unit_price,p.area_id,a.name area_name,MIN(p.procurement_mode) procurement_mode,MIN(p.preprocurement_conference) epa,SUM(p.quantity*p.unit_price) area_abc,MIN(p.start_procurement) start_procurement,MIN(p.end_procurement) end_procurement,MIN(p.source_of_funds) source_of_funds,MIN(p.remarks) remarks FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=? GROUP BY TRIM(LOWER(p.item_name)),p.unit,c.id,p.unit_price,p.area_id,a.name');
+$printUnitStmt = $pdo->prepare('SELECT TRIM(LOWER(p.item_name)) item_key,p.unit,c.id category_id,p.unit_price,p.area_id,a.name area_name,MIN(p.procurement_mode) procurement_mode,MIN(p.preprocurement_conference) epa,SUM(p.quantity) area_qty,SUM(p.quantity*p.unit_price) area_abc,MIN(p.start_procurement) start_procurement,MIN(p.end_procurement) end_procurement,MIN(p.source_of_funds) source_of_funds,MIN(p.remarks) remarks FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=? GROUP BY TRIM(LOWER(p.item_name)),p.unit,c.id,p.unit_price,p.area_id,a.name');
 $printUnitStmt->execute([$year]);
 $printUnitsByRow = [];
 foreach ($printUnitStmt->fetchAll() as $unitRow) {
@@ -86,30 +86,46 @@ $epaTotal = 0.0;
 $cseTotal = 0.0;
 foreach ($rows as $row) {
     $grandAbc += (float)$row['total_abc'];
-    $procurementModeKey = strtolower(trim((string)($row['procurement_mode'] ?? '')));
-    $categoryKey = strtolower(trim((string)$row['category'].' '.(string)$row['procurement_type']));
-
-    // Use the consolidated Mode of Procurement text to route rows into their
-    // dedicated APP listings. If a row contains both modes, include it in both
-    // dedicated listings; do not leave it in General Requirements.
-    $isDirectAcquisition = strpos($procurementModeKey, 'direct acquisition') !== false;
-    $isProcurementCse = strpos($procurementModeKey, 'procurement of cse') !== false
-        || strpos($procurementModeKey, 'common-use supplies and equipment') !== false
-        || strpos($procurementModeKey, 'common use supplies and equipment') !== false;
-
-    if ($isDirectAcquisition) {
-        $sections['misc']['rows'][] = $row;
+    $rowKeyForModes = hash('sha256', json_encode([$year,strtolower(trim((string)$row['item_name'])),(string)$row['unit'],(string)$row['category_id'],number_format((float)$row['unit_price'],4,'.','')], JSON_UNESCAPED_UNICODE));
+    $unitEntries = $printUnitsByRow[$rowKeyForModes] ?? [];
+    $modeGroups = [];
+    foreach ($unitEntries as $unitEntry) {
+        $unitSettings = $printUnitSettings[$rowKeyForModes][(string)$unitEntry['area_id']] ?? [];
+        if (isset($unitSettings['select_mode']) && empty($unitSettings['select_mode'])) continue;
+        $mode = trim((string)($unitEntry['procurement_mode'] ?? ''));
+        if ($mode === '') $mode = trim((string)($row['procurement_mode'] ?? ''));
+        if ($mode === '') $mode = 'Unspecified';
+        $modeKey = strtolower($mode);
+        if (!isset($modeGroups[$modeKey])) $modeGroups[$modeKey] = ['mode' => $mode, 'entries' => []];
+        $modeGroups[$modeKey]['entries'][] = $unitEntry;
     }
-    if ($isProcurementCse) {
-        $sections['cse']['rows'][] = $row;
+    if (!$modeGroups) {
+        $fallbackMode = trim((string)($row['procurement_mode'] ?? '')) ?: 'Unspecified';
+        $modeGroups[strtolower($fallbackMode)] = ['mode' => $fallbackMode, 'entries' => []];
     }
-    if (!$isDirectAcquisition && !$isProcurementCse) {
-        if (strpos($categoryKey, 'miscellaneous') !== false || strpos($categoryKey, 'direct acquisition') !== false) {
-            $sections['misc']['rows'][] = $row;
-        } elseif (strpos($categoryKey, 'cse') !== false || strpos($categoryKey, 'common-use') !== false || strpos($categoryKey, 'common use') !== false) {
-            $sections['cse']['rows'][] = $row;
+    foreach ($modeGroups as $modeGroup) {
+        $splitRow = $row;
+        $splitRow['procurement_mode'] = $modeGroup['mode'];
+        if ($modeGroup['entries']) {
+            $splitRow['total_qty'] = 0;
+            $splitRow['total_abc'] = 0;
+            $areaLabels = [];
+            foreach ($modeGroup['entries'] as $entry) {
+                $splitRow['total_qty'] += (float)($entry['area_qty'] ?? 0);
+                $splitRow['total_abc'] += (float)($entry['area_abc'] ?? 0);
+                $areaLabels[] = $entry['area_name'].' ('.number_format((float)($entry['area_qty'] ?? 0), 2).' '.$row['unit'].')';
+            }
+            $splitRow['areas'] = implode('; ', $areaLabels);
+        }
+        $modeKey = strtolower(trim((string)$modeGroup['mode']));
+        if (strpos($modeKey, 'direct acquisition') !== false) {
+            $sections['misc']['rows'][] = $splitRow;
+        } elseif (strpos($modeKey, 'procurement of cse') !== false
+            || strpos($modeKey, 'common-use supplies and equipment') !== false
+            || strpos($modeKey, 'common use supplies and equipment') !== false) {
+            $sections['cse']['rows'][] = $splitRow;
         } else {
-            $sections['general']['rows'][] = $row;
+            $sections['general']['rows'][] = $splitRow;
         }
     }
 }
@@ -241,17 +257,7 @@ Adopted from GPPB Standard Form</div>
           <td><?=appPrintEscape($printRowEdit['project_title'] ?? '')?></td>
           <td><?=appPrintEscape($row['areas'])?></td>
           <td><strong><?=appPrintEscape($row['item_name'])?></strong><?php if (appPrintProjectDescription($row) !== ''): ?><br><?=nl2br(appPrintEscape(appPrintProjectDescription($row)))?><?php endif; ?></td>
-          <td><?php
-          $modeEntries = [];
-          foreach (($printUnitsByRow[$printRowKey] ?? []) as $printUnit) {
-              $unitModeSettings = $printUnitSettings[$printRowKey][(string)$printUnit['area_id']] ?? [];
-              $mode = trim((string)($printUnit['procurement_mode'] ?? ''));
-              if ($mode !== '' && (!isset($unitModeSettings['select_mode']) || !empty($unitModeSettings['select_mode']))) {
-                  $modeEntries[] = $mode;
-              }
-          }
-          echo appPrintEscape($modeEntries ? implode(' / ', array_unique($modeEntries)) : ($row['procurement_mode'] ?? ''));
-        ?></td>
+          <td><?=appPrintEscape($row['procurement_mode'] ?? '')?></td>
           <td><?php
           $epaEntries = [];
           $startEntries = [];
