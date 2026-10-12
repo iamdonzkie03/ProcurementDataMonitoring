@@ -251,7 +251,7 @@ Adopted from GPPB Standard Form</div>
     </thead>
     <tbody>
     <?php $counter = 1; foreach ($sections as $sectionKey => $section): ?>
-      <tr class="section-row"><td><?=appPrintEscape($section['title'])?></td><?php for($i=0;$i<13;$i++): ?><td></td><?php endfor; ?></tr>
+      <tr class="section-row"><td colspan="14"><?=appPrintEscape($section['title'])?></td></tr>
       <?php if ($section['rows']): foreach ($section['rows'] as $row): ?>
         <tr class="data-row">
           <td class="number"><?=$counter++?></td>
