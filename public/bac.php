@@ -17,8 +17,8 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS bac_committee_members (
   INDEX idx_bac_member_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
-$tab=$_GET['tab']??'bac-members';
-if(!in_array($tab,['bac-members','technical-working-group'],true)) $tab='bac-members';
+$tab=$_GET['tab']??'hierarchy';
+if(!in_array($tab,['hierarchy','bac-members','technical-working-group'],true)) $tab='hierarchy';
 
 if($_SERVER['REQUEST_METHOD']==='POST'){
   requireRole(['Administrator','Editor']);
@@ -72,9 +72,25 @@ pageStart('Bids and Awards Committee');
     </div>
   </div>
   <nav class="bac-tabs" aria-label="Bids and Awards Committee sections">
+    <a class="btn <?=$tab==='hierarchy'?'':'secondary'?>" href="bac.php?tab=hierarchy" <?=$tab==='hierarchy'?'aria-current="page"':''?>>Hierarchy</a>
     <a class="btn <?=$tab==='bac-members'?'':'secondary'?>" href="bac.php?tab=bac-members" <?=$tab==='bac-members'?'aria-current="page"':''?>>BAC Members</a>
     <a class="btn <?=$tab==='technical-working-group'?'':'secondary'?>" href="bac.php?tab=technical-working-group" <?=$tab==='technical-working-group'?'aria-current="page"':''?>>Technical Working Group</a>
   </nav>
+  <?php if($tab==='hierarchy'): ?>
+  <section class="bac-hierarchy-content" aria-label="BAC organizational hierarchy">
+    <h3>BAC Organizational Hierarchy</h3>
+    <p class="bac-hierarchy-intro">Organizational structure of the Bids and Awards Committee and its Technical Working Group.</p>
+    <div class="bac-hierarchy-chart">
+      <div class="bac-hierarchy-node bac-hierarchy-top"><span class="bac-hierarchy-role">Head of the Procuring Entity</span><strong>HoPE</strong></div>
+      <div class="bac-hierarchy-connector"></div>
+      <div class="bac-hierarchy-node bac-hierarchy-chair"><span class="bac-hierarchy-role">Committee Leadership</span><strong>BAC Chairperson</strong><small>Leads BAC proceedings and committee deliberations</small></div>
+      <div class="bac-hierarchy-branch"><div class="bac-hierarchy-node"><span class="bac-hierarchy-role">Committee Leadership</span><strong>BAC Vice-Chairperson</strong></div><div class="bac-hierarchy-node"><span class="bac-hierarchy-role">Committee</span><strong>BAC Members</strong><small>Committee members supporting procurement proceedings</small></div></div>
+      <div class="bac-hierarchy-connector"></div>
+      <div class="bac-hierarchy-node bac-hierarchy-twg"><span class="bac-hierarchy-role">Technical Support</span><strong>Technical Working Group (TWG)</strong><small>Provides technical and administrative support to the BAC</small></div>
+      <p class="bac-hierarchy-note">Illustrative structure only. Confirm official appointments and applicable procurement rules when assigning positions.</p>
+    </div>
+  </section>
+  <?php else: ?>
   <section class="bac-tab-content">
     <div class="bac-list-toolbar">
       <h3><?=$tab==='bac-members'?'BAC Members':'Technical Working Group'?></h3>
@@ -100,6 +116,7 @@ pageStart('Bids and Awards Committee');
       </table>
     </div>
   </section>
+  <?php endif; ?>
 </div>
 <style>
 .content:has(.bac-page-panel){max-width:none!important;width:100%;padding:20px 28px 28px!important;min-height:calc(100vh - 170px);display:flex;flex-direction:column}
@@ -111,6 +128,25 @@ pageStart('Bids and Awards Committee');
 .bac-tabs .btn{font-size:13px;text-decoration:none}
 .bac-tabs .btn.secondary{background:#f3f4f6;color:#374151;border:1px solid #d1d5db}
 .bac-tab-content{flex:1;min-height:180px;padding-top:20px}
+.bac-hierarchy-content{padding-top:22px;max-width:1100px;margin:0 auto;width:100%}
+.bac-hierarchy-content h3{margin:0;color:#102a43;font-size:18px;text-align:center}
+.bac-hierarchy-intro{text-align:center;color:#6b7280;font-size:13px;margin:8px 0 24px}
+.bac-hierarchy-chart{display:flex;flex-direction:column;align-items:center;padding:10px 0 20px}
+.bac-hierarchy-node{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 4px 12px rgba(16,42,67,.07);padding:17px 22px;min-width:220px;max-width:100%;box-sizing:border-box}
+.bac-hierarchy-node strong{color:#102a43;font-size:15px}
+.bac-hierarchy-node small{color:#64748b;font-size:12px;line-height:1.5}
+.bac-hierarchy-role{font-size:10px;text-transform:uppercase;letter-spacing:.07em;font-weight:700;color:#64748b}
+.bac-hierarchy-top{background:#f8fafc;border-color:#94a3b8}
+.bac-hierarchy-chair{background:#102a43;border-color:#102a43;min-width:280px}
+.bac-hierarchy-chair strong,.bac-hierarchy-chair .bac-hierarchy-role,.bac-hierarchy-chair small{color:#fff}
+.bac-hierarchy-connector{width:2px;height:28px;background:#94a3b8}
+.bac-hierarchy-branch{position:relative;display:flex;justify-content:center;gap:22px;width:100%;padding-top:20px}
+.bac-hierarchy-branch:before{content:"";position:absolute;top:0;left:25%;right:25%;height:2px;background:#94a3b8}
+.bac-hierarchy-branch .bac-hierarchy-node:before{content:"";position:absolute;top:-21px;width:2px;height:20px;background:#94a3b8}
+.bac-hierarchy-branch .bac-hierarchy-node{position:relative;flex:1;max-width:340px}
+.bac-hierarchy-twg{margin-top:0;background:#eff6ff;border-color:#93c5fd;min-width:min(360px,100%)}
+.bac-hierarchy-note{font-size:11px;color:#64748b;text-align:center;margin-top:22px}
+@media(max-width:700px){.bac-hierarchy-branch{flex-direction:column;align-items:center;gap:22px;padding-top:0}.bac-hierarchy-branch:before,.bac-hierarchy-branch .bac-hierarchy-node:before{display:none}.bac-hierarchy-branch .bac-hierarchy-node{width:100%;max-width:360px}.bac-hierarchy-chair{min-width:0;width:100%;max-width:360px}.bac-hierarchy-node{min-width:0;width:100%;max-width:360px}}
 .bac-tab-content h3{margin:0;color:#102a43;font-size:17px}
 .bac-list-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
 .bac-list-toolbar .btn,.bac-form-actions .btn{white-space:nowrap}
