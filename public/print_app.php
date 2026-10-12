@@ -197,10 +197,15 @@ td.amount{text-align:center;white-space:nowrap}
 .summary-row td{height:24px;vertical-align:middle}
 .summary-row .amount{font-weight:700;background:#f2f2f2}
 .note{font-size:7pt;font-style:italic;margin:7px 0 0}
-.signatures{margin-top:25px;page-break-inside:avoid}
-.signature-table{border-collapse:collapse;width:100%;table-layout:fixed;border:0}
-.signature-table td{border:0;padding:0;height:26px}
-.signature-table .signature-space{height:25px}
+.signatures{margin-top:18px;page-break-inside:avoid;font-size:7pt}
+.signature-table{border-collapse:collapse;width:100%;table-layout:fixed;border:0;outline:0}
+.signature-table,.signature-table tr,.signature-table td{border:0!important;outline:0!important;box-shadow:none!important}
+.signature-table td{padding:0 3px;height:15px;vertical-align:bottom}
+.signature-table .signature-space{height:27px}
+.signature-table .sig-label{vertical-align:bottom}
+.signature-table .sig-center{text-align:center}
+.signature-table .sig-date{white-space:nowrap}
+.signature-table .sig-line{display:inline-block;min-width:72px;border-bottom:1px solid #111;height:9px;vertical-align:bottom}
 @media print{.toolbar{display:none}.sheet{width:100%}body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 @media screen{body{padding:18px;background:#f1f5f9}.sheet{background:#fff;padding:18px;max-width:1800px;box-shadow:0 2px 10px #00000012}}
 </style>
@@ -311,11 +316,13 @@ Adopted from GPPB Standard Form</div>
       <tr class="summary-row"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of Estimated Budget:</td><td colspan="2" class="amount"><?=number_format($grandAbc,2)?></td><td colspan="2"></td></tr>
     </tbody>
   </table>
-  <div class="signatures" aria-label="Signature area matching APP Format.xlsx">
-    <table class="signature-table"><tbody>
-      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td colspan="14" class="signature-space"></td></tr>
-      <tr><td colspan="14" class="signature-space"></td></tr>
+  <div class="signatures" aria-label="APP signatories">
+    <table class="signature-table"><colgroup><?php for($i=0;$i<14;$i++): ?><col><?php endfor; ?></colgroup><tbody>
+      <tr><td colspan="3" class="sig-label">Prepared by:</td><td colspan="5" class="sig-label">Recommended by:<br>By the Authority of Bids and Awards Committee:</td><td colspan="3"></td><td colspan="3" class="sig-label">Approved by:</td></tr>
+      <tr><td colspan="3" class="signature-space"></td><td colspan="5" class="signature-space"></td><td colspan="3" class="signature-space"></td><td colspan="3" class="signature-space"></td></tr>
+      <tr><td colspan="3" class="sig-center">Signature over Printed Name</td><td colspan="2"></td><td colspan="3" class="sig-center">Signature over Printed Name</td><td colspan="3" class="sig-center">Signature over Printed Name</td><td colspan="3" class="sig-center">Signature over Printed Name</td></tr>
+      <tr><td colspan="3" class="sig-center">Position/Designation</td><td colspan="2"></td><td colspan="3" class="sig-center">Position/Designation</td><td colspan="3" class="sig-center">Position/Designation</td><td colspan="3" class="sig-center">Position/Designation<br>Head of the Procuring Entity</td></tr>
+      <tr><td colspan="3" class="sig-center sig-date">Date: <span class="sig-line"></span></td><td colspan="2"></td><td colspan="3" class="sig-center sig-date">Date: <span class="sig-line"></span></td><td colspan="3" class="sig-center sig-date">Date: <span class="sig-line"></span></td><td colspan="3" class="sig-center sig-date">Date: <span class="sig-line"></span></td></tr>
     </tbody></table>
   </div>
 </div>
