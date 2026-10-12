@@ -177,7 +177,11 @@ body{font-family:"Century Gothic",Arial,sans-serif;color:#111;margin:0;font-size
 .heading h1{font-family:"Century Gothic",Arial,sans-serif;font-size:15pt;font-weight:700;margin:0;letter-spacing:.1px}
 .heading .agency{font-size:9pt;font-weight:700;margin-bottom:4px}
 .heading .sub{font-size:8pt;margin-top:4px}
-table{border-collapse:collapse;width:100%;table-layout:fixed;border:1.3px solid #222}
+table{border-collapse:collapse;width:100%;table-layout:fixed;border:0}
+/* The APP form grid ends after the Common-Use Supplies and Equipment section. */
+.sheet > table{border:0}
+.sheet > table thead{border:1.3px solid #222}
+.sheet > table tbody tr.section-row:last-of-type td{border-bottom:1.3px solid #222}
 th,td{border:1px solid #222;padding:3px 3px;vertical-align:top;overflow-wrap:anywhere;white-space:pre-line}
 .group-head th{background:#d9e2f3;color:#111;border:1px solid #222;font-weight:700}
 .column-head th{background:#d9e2f3;color:#111;border:1px solid #222}
