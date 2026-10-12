@@ -52,8 +52,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     // already assigned to one BAC code/tag cannot be assigned to another.
     $normalizeTag=static function($value){return mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$value)));};
     $normalizeName=static function($value){return mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$value)));};
-    $isChair=static function($designation){return in_array(mb_strtolower(trim((string)$designation)),['bac chairman','ad-hoc chairman'],true);};
-    $isVice=static function($designation){return in_array(mb_strtolower(trim((string)$designation)),['bac vice-chairman','ad-hoc vice-chairman'],true);};
+    $validTags=['bac a','bac b','bac c','bac d','bac e'];
+    $allowedDesignations=['bac chairman','bac vice-chairman','bac member','ad-hoc chairman','ad-hoc vice-chairman','ad-hoc member'];
     $existingStmt=$pdo->prepare('SELECT name,designation,code_tag FROM bac_committee_members WHERE member_type=\'BAC\'');
     $existingStmt->execute();
     $existing=$existingStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -64,15 +64,17 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     foreach($all as $person){
       $tag=$normalizeTag($person['code_tag']??'');
       $name=$normalizeName($person['name']??'');
-      $designation=trim((string)($person['designation']??''));
+      $designation=mb_strtolower(trim((string)($person['designation']??'')));
       if($tag===''||$name==='')continue;
-      if($isChair($designation)||$isVice($designation)){
-        $role=$isChair($designation)?'Chairman':'Vice-Chairman';
-        $key=$tag.'|'.$role;
-        if(isset($seenRoles[$key]))$errors[]='BAC code/tag "'.trim((string)$person['code_tag']).'" may have only one '.$role.'.';
-        else $seenRoles[$key]=true;
+      if(!in_array($tag,$validTags,true))$errors[]='Invalid BAC Code/Tag "'.trim((string)$person['code_tag']).'". Choose BAC A, BAC B, BAC C, BAC D, or BAC E.';
+      if(!in_array($designation,$allowedDesignations,true))$errors[]='Invalid BAC designation for '.$person['name'].'.';
+      if(in_array($designation,['bac chairman','bac vice-chairman','ad-hoc chairman','ad-hoc vice-chairman'],true)){
+        $roleKey=$tag.'|'.$designation;
+        if(isset($seenRoles[$roleKey]))$errors[]='BAC code/tag "'.trim((string)$person['code_tag']).'" may have only one '.trim((string)$person['designation']).'.';
+        else $seenRoles[$roleKey]=true;
       }
-      if(isset($seenNames[$name])&&$seenNames[$name]!==$tag)$errors[]=''.$person['name'].' is already assigned to a different BAC code/tag and cannot be added again.';
+      // A named BAC person may belong to only one code/tag, even if repeated in the current batch.
+      if(isset($seenNames[$name])&&$seenNames[$name]!==$tag)$errors[]=$person['name'].' is already assigned to a different BAC code/tag and cannot be added again.';
       else $seenNames[$name]=$tag;
     }
     if($errors){
@@ -163,7 +165,7 @@ pageStart('Bids and Awards Committee');
     <form method="post" id="addMemberForm" class="bac-member-form" hidden>
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="member_type" value="<?=e($type)?>">
-      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><?php if($type==='TWG'): ?><th>Area of Expertise*</th><?php endif; ?><th>Area/Unit*</th><th>Code/Tag*</th><th>Action</th></tr></thead><tbody id="bacEntryRows"><tr class="bac-entry-row"><td><div class="bac-person-autocomplete"><input class="input bac-person-name" type="text" name="name[]" maxlength="180" placeholder="Search name..." autocomplete="off" aria-label="Name" required><div class="bac-person-suggestions" role="listbox"></div></div></td><td><?php if($type==='BAC'): ?><select class="input" name="designation[]" aria-label="BAC Designation" required><option value="">Select BAC Designation</option><option value="BAC Chairman">BAC Chairman</option><option value="BAC Vice-Chairman">BAC Vice-Chairman</option><option value="BAC Member">BAC Member</option><option value="Ad-Hoc Chairman">Ad-Hoc Chairman</option><option value="Ad-Hoc Vice-Chairman">Ad-Hoc Vice-Chairman</option><option value="Ad-Hoc Member">Ad-Hoc Member</option></select><?php else: ?><input class="input" type="text" name="designation[]" maxlength="180" placeholder="TWG Designation" aria-label="TWG Designation" required><?php endif; ?></td><?php if($type==='TWG'): ?><td><input class="input" type="text" name="area_expertise[]" maxlength="180" placeholder="Area of Expertise" aria-label="Area of Expertise" required></td><?php endif; ?><td><input class="input bac-area-unit-input" type="text" name="area_unit[]" maxlength="180" placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly required></td><td><input class="input" type="text" name="code_tag[]" maxlength="100" placeholder="Code/Tag" aria-label="Code/Tag" required></td><td class="bac-entry-action"><button class="btn secondary" type="button" id="addMemberRow">Add Row</button></td></tr></tbody></table></div>
+      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><?php if($type==='TWG'): ?><th>Area of Expertise*</th><?php endif; ?><th>Area/Unit*</th><th>Code/Tag*</th><th>Action</th></tr></thead><tbody id="bacEntryRows"><tr class="bac-entry-row"><td><div class="bac-person-autocomplete"><input class="input bac-person-name" type="text" name="name[]" maxlength="180" placeholder="Search name..." autocomplete="off" aria-label="Name" required><div class="bac-person-suggestions" role="listbox"></div></div></td><td><?php if($type==='BAC'): ?><select class="input" name="designation[]" aria-label="BAC Designation" required><option value="">Select BAC Designation</option><option value="BAC Chairman">BAC Chairman</option><option value="BAC Vice-Chairman">BAC Vice-Chairman</option><option value="BAC Member">BAC Member</option><option value="Ad-Hoc Chairman">Ad-Hoc Chairman</option><option value="Ad-Hoc Vice-Chairman">Ad-Hoc Vice-Chairman</option><option value="Ad-Hoc Member">Ad-Hoc Member</option></select><?php else: ?><input class="input" type="text" name="designation[]" maxlength="180" placeholder="TWG Designation" aria-label="TWG Designation" required><?php endif; ?></td><?php if($type==='TWG'): ?><td><input class="input" type="text" name="area_expertise[]" maxlength="180" placeholder="Area of Expertise" aria-label="Area of Expertise" required></td><?php endif; ?><td><input class="input bac-area-unit-input" type="text" name="area_unit[]" maxlength="180" placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly required></td><td><?php if($type==='BAC'): ?><select class="input" name="code_tag[]" aria-label="BAC Code/Tag" required><option value="">Select BAC Code/Tag</option><?php foreach(['BAC A','BAC B','BAC C','BAC D','BAC E'] as $bacTag): ?><option value="<?=e($bacTag)?>"><?=e($bacTag)?></option><?php endforeach; ?></select><?php else: ?><input class="input" type="text" name="code_tag[]" maxlength="100" placeholder="Code/Tag" aria-label="Code/Tag" required><?php endif; ?></td><td class="bac-entry-action"><button class="btn secondary" type="button" id="addMemberRow">Add Row</button></td></tr></tbody></table></div>
       <div class="bac-form-actions"><button class="btn" type="submit" id="saveMemberItems">Save Member</button><button class="btn secondary" type="button" id="cancelAddMember">Cancel</button></div>
     </form>
     <?php endif; ?>
