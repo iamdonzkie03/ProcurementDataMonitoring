@@ -24,18 +24,33 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   requireRole(['Administrator','Editor']);
   checkCsrf();
   $type=($_POST['member_type']??'')==='TWG'?'TWG':'BAC';
-  $name=trim((string)($_POST['name']??''));
-  $designation=trim((string)($_POST['designation']??''));
-  $expertise=trim((string)($_POST['area_expertise']??''));
-  $areaUnit=trim((string)($_POST['area_unit']??''));
-  $codeTag=trim((string)($_POST['code_tag']??''));
   $returnTab=$type==='TWG'?'technical-working-group':'bac-members';
-  if($name===''||$designation===''||$areaUnit===''||$codeTag===''||($type==='TWG'&&$expertise==='')){
-    flash('error','Please complete all required member fields.');
-  }else{
+  $names=(array)($_POST['name']??[]);
+  $designations=(array)($_POST['designation']??[]);
+  $expertises=(array)($_POST['area_expertise']??[]);
+  $areaUnits=(array)($_POST['area_unit']??[]);
+  $codeTags=(array)($_POST['code_tag']??[]);
+  $count=max(count($names),count($designations),count($expertises),count($areaUnits),count($codeTags));
+  $entries=[];
+  for($i=0;$i<$count;$i++){
+    $name=trim((string)($names[$i]??''));
+    $designation=trim((string)($designations[$i]??''));
+    $expertise=trim((string)($expertises[$i]??''));
+    $areaUnit=trim((string)($areaUnits[$i]??''));
+    $codeTag=trim((string)($codeTags[$i]??''));
+    if($name===''&&$designation===''&&$expertise===''&&$areaUnit===''&&$codeTag==='') continue;
+    if($name===''||$designation===''||$areaUnit===''||$codeTag===''||($type==='TWG'&&$expertise==='')){
+      flash('error','Complete every required field in each member row. No members were saved.');
+      header('Location:bac.php?tab='.$returnTab);exit;
+    }
+    $entries[]=[$type,$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag];
+  }
+  if(!$entries){flash('error','Enter at least one member before saving.');}
+  else{
     $st=$pdo->prepare('INSERT INTO bac_committee_members(member_type,name,designation,area_expertise,area_unit,code_tag) VALUES(?,?,?,?,?,?)');
-    $st->execute([$type,$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag]);
-    flash('success',$type==='TWG'?'Technical Working Group member added.':'BAC member added.');
+    $pdo->beginTransaction();
+    try{foreach($entries as $entry)$st->execute($entry);$pdo->commit();flash('success',count($entries)===1?'Member added.':count($entries).' members added.');}
+    catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
   }
   header('Location:bac.php?tab='.$returnTab);exit;
 }
@@ -69,14 +84,8 @@ pageStart('Bids and Awards Committee');
     <form method="post" id="addMemberForm" class="bac-member-form" hidden>
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="member_type" value="<?=e($type)?>">
-      <div class="bac-member-fields">
-        <div class="field"><label for="memberName">Name*</label><input class="input" id="memberName" name="name" maxlength="180" required></div>
-        <div class="field"><label for="memberDesignation"><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</label><input class="input" id="memberDesignation" name="designation" maxlength="180" required></div>
-        <?php if($type==='TWG'): ?><div class="field"><label for="memberExpertise">Area of Expertise*</label><input class="input" id="memberExpertise" name="area_expertise" maxlength="180" required></div><?php endif; ?>
-        <div class="field"><label for="memberAreaUnit">Area/Unit*</label><input class="input" id="memberAreaUnit" name="area_unit" maxlength="180" required></div>
-        <div class="field"><label for="memberCodeTag">Code/Tag*</label><input class="input" id="memberCodeTag" name="code_tag" maxlength="100" required></div>
-      </div>
-      <div class="bac-form-actions"><button class="btn" type="submit">Save Member</button><button class="btn secondary" type="button" id="cancelAddMember">Cancel</button></div>
+      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><?php if($type==='TWG'): ?><th>Area of Expertise*</th><?php endif; ?><th>Area/Unit*</th><th>Code/Tag*</th><th>Action</th></tr></thead><tbody id="bacEntryRows"></tbody></table></div>
+      <div class="bac-form-actions"><button class="btn secondary" type="button" id="addMemberRow">+ Add Row</button><button class="btn" type="submit">Save Member(s)</button><button class="btn secondary" type="button" id="cancelAddMember">Cancel</button></div>
     </form>
     <?php endif; ?>
     <div class="table-wrap bac-members-table-wrap">
@@ -106,10 +115,12 @@ pageStart('Bids and Awards Committee');
 .bac-list-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
 .bac-list-toolbar .btn,.bac-form-actions .btn{white-space:nowrap}
 .bac-member-form{padding:18px;margin-bottom:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px}
-.bac-member-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.bac-member-fields .field{margin:0}
-.bac-member-fields label{display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:#374151}
-.bac-member-fields .input{width:100%;box-sizing:border-box}
+.bac-entry-table-wrap{width:100%;overflow-x:auto}
+.bac-entry-table{width:100%;min-width:<?=$type==='BAC'?'850px':'1050px'?>;table-layout:fixed}
+.bac-entry-table th,.bac-entry-table td{padding:7px;vertical-align:top}
+.bac-entry-table th{font-size:12px;white-space:nowrap}
+.bac-entry-table .input{width:100%;min-width:0;box-sizing:border-box;font-size:12px;padding:8px}
+.bac-entry-table .bac-row-remove{padding:7px 10px;font-size:12px;background:#dc3545;color:#fff;border-color:#dc3545}
 .bac-form-actions{display:flex;gap:8px;margin-top:16px}
 .bac-members-table-wrap{width:100%;overflow-x:auto}
 .bac-members-table{width:100%;border-collapse:collapse}
@@ -124,8 +135,31 @@ document.addEventListener('DOMContentLoaded',function(){
   const form=document.getElementById('addMemberForm');
   const show=document.getElementById('showAddMember');
   const cancel=document.getElementById('cancelAddMember');
-  if(show&&form)show.addEventListener('click',function(){form.hidden=false;show.hidden=true;const first=form.querySelector('input[name="name"]');if(first)first.focus();});
-  if(cancel&&form&&show)cancel.addEventListener('click',function(){form.reset();form.hidden=true;show.hidden=false;});
+  const rows=document.getElementById('bacEntryRows');
+  const addRow=document.getElementById('addMemberRow');
+  const isTwg=<?=json_encode($type==='TWG')?>;
+  let rowCounter=0;
+  function addMemberRow(){
+    if(!rows)return;
+    rowCounter++;
+    const tr=document.createElement('tr');
+    const fields=[['name','Name','180'],['designation',isTwg?'TWG Designation':'BAC Designation','180']];
+    if(isTwg)fields.push(['area_expertise','Area of Expertise','180']);
+    fields.push(['area_unit','Area/Unit','180'],['code_tag','Code/Tag','100']);
+    fields.forEach(function(field){
+      const td=document.createElement('td');
+      const input=document.createElement('input');
+      input.type='text';input.className='input';input.name=field[0]+'[]';input.maxLength=Number(field[2]);input.required=true;
+      input.setAttribute('aria-label',field[1]);input.placeholder=field[1];
+      td.appendChild(input);tr.appendChild(td);
+    });
+    const action=document.createElement('td');
+    const remove=document.createElement('button');remove.type='button';remove.className='btn bac-row-remove';remove.textContent='Remove';remove.addEventListener('click',function(){tr.remove();});
+    action.appendChild(remove);tr.appendChild(action);rows.appendChild(tr);
+  }
+  if(show&&form)show.addEventListener('click',function(){form.hidden=false;show.hidden=true;if(rows&&!rows.children.length)addMemberRow();const first=form.querySelector('input[name="name[]"]');if(first)first.focus();});
+  if(addRow)addRow.addEventListener('click',addMemberRow);
+  if(cancel&&form&&show)cancel.addEventListener('click',function(){form.reset();if(rows)rows.innerHTML='';form.hidden=true;show.hidden=false;});
 });
 </script>
 <?php pageEnd(); ?>
