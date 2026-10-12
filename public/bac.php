@@ -84,8 +84,8 @@ pageStart('Bids and Awards Committee');
     <form method="post" id="addMemberForm" class="bac-member-form" hidden>
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="member_type" value="<?=e($type)?>">
-      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><?php if($type==='TWG'): ?><th>Area of Expertise*</th><?php endif; ?><th>Area/Unit*</th><th>Code/Tag*</th><th>Action</th></tr></thead><tbody id="bacEntryRows"></tbody></table></div>
-      <div class="bac-form-actions"><button class="btn secondary" type="button" id="addMemberRow">+ Add Row</button><button class="btn" type="submit">Save Member(s)</button><button class="btn secondary" type="button" id="cancelAddMember">Cancel</button></div>
+      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><?php if($type==='TWG'): ?><th>Area of Expertise*</th><?php endif; ?><th>Area/Unit*</th><th>Code/Tag*</th><th>Action</th></tr></thead><tbody id="bacEntryRows"><tr class="bac-entry-row"><td><input class="input" type="text" name="name[]" maxlength="180" placeholder="Name" aria-label="Name" required></td><td><input class="input" type="text" name="designation[]" maxlength="180" placeholder="<?=$type==='BAC'?'BAC Designation':'TWG Designation'?>" aria-label="<?=$type==='BAC'?'BAC Designation':'TWG Designation'?>" required></td><?php if($type==='TWG'): ?><td><input class="input" type="text" name="area_expertise[]" maxlength="180" placeholder="Area of Expertise" aria-label="Area of Expertise" required></td><?php endif; ?><td><input class="input" type="text" name="area_unit[]" maxlength="180" placeholder="Area/Unit" aria-label="Area/Unit" required></td><td><input class="input" type="text" name="code_tag[]" maxlength="100" placeholder="Code/Tag" aria-label="Code/Tag" required></td><td class="bac-entry-action"><button class="btn secondary" type="button" id="addMemberRow">Add Row</button></td></tr></tbody></table></div>
+      <div class="bac-form-actions"><button class="btn" type="submit" id="saveMemberItems">Save Member</button><button class="btn secondary" type="button" id="cancelAddMember">Cancel</button></div>
     </form>
     <?php endif; ?>
     <div class="table-wrap bac-members-table-wrap">
@@ -120,7 +120,7 @@ pageStart('Bids and Awards Committee');
 .bac-entry-table th,.bac-entry-table td{padding:7px;vertical-align:top}
 .bac-entry-table th{font-size:12px;white-space:nowrap}
 .bac-entry-table .input{width:100%;min-width:0;box-sizing:border-box;font-size:12px;padding:8px}
-.bac-entry-table .bac-row-remove{padding:7px 10px;font-size:12px;background:#dc3545;color:#fff;border-color:#dc3545}
+.bac-entry-table .bac-entry-action{white-space:nowrap}.bac-entry-table .bac-row-remove{padding:7px 10px;font-size:12px;background:#dc3545;color:#fff;border-color:#dc3545}
 .bac-form-actions{display:flex;gap:8px;margin-top:16px}
 .bac-members-table-wrap{width:100%;overflow-x:auto}
 .bac-members-table{width:100%;border-collapse:collapse}
@@ -137,29 +137,29 @@ document.addEventListener('DOMContentLoaded',function(){
   const cancel=document.getElementById('cancelAddMember');
   const rows=document.getElementById('bacEntryRows');
   const addRow=document.getElementById('addMemberRow');
-  const isTwg=<?=json_encode($type==='TWG')?>;
-  let rowCounter=0;
+  const save=document.getElementById('saveMemberItems');
+  function updateSaveLabel(){
+    if(save&&rows)save.textContent=rows.querySelectorAll('.bac-entry-row').length>1?'Save Members':'Save Member';
+  }
   function addMemberRow(){
     if(!rows)return;
-    rowCounter++;
-    const tr=document.createElement('tr');
-    const fields=[['name','Name','180'],['designation',isTwg?'TWG Designation':'BAC Designation','180']];
-    if(isTwg)fields.push(['area_expertise','Area of Expertise','180']);
-    fields.push(['area_unit','Area/Unit','180'],['code_tag','Code/Tag','100']);
-    fields.forEach(function(field){
-      const td=document.createElement('td');
-      const input=document.createElement('input');
-      input.type='text';input.className='input';input.name=field[0]+'[]';input.maxLength=Number(field[2]);input.required=true;
-      input.setAttribute('aria-label',field[1]);input.placeholder=field[1];
-      td.appendChild(input);tr.appendChild(td);
-    });
-    const action=document.createElement('td');
-    const remove=document.createElement('button');remove.type='button';remove.className='btn bac-row-remove';remove.textContent='Remove';remove.addEventListener('click',function(){tr.remove();});
-    action.appendChild(remove);tr.appendChild(action);rows.appendChild(tr);
+    const first=rows.querySelector('.bac-entry-row');
+    if(!first)return;
+    const row=first.cloneNode(true);
+    row.querySelectorAll('input').forEach(function(input){input.value='';});
+    const action=row.querySelector('.bac-entry-action');
+    if(action){
+      action.innerHTML='<button class="btn danger bac-row-remove" type="button">Remove</button>';
+      action.querySelector('.bac-row-remove').addEventListener('click',function(){row.remove();updateSaveLabel();});
+    }
+    rows.appendChild(row);
+    updateSaveLabel();
+    const input=row.querySelector('input');if(input)input.focus();
   }
-  if(show&&form)show.addEventListener('click',function(){form.hidden=false;show.hidden=true;if(rows&&!rows.children.length)addMemberRow();const first=form.querySelector('input[name="name[]"]');if(first)first.focus();});
+  if(show&&form)show.addEventListener('click',function(){form.hidden=false;show.hidden=true;const first=form.querySelector('input[name="name[]"]');if(first)first.focus();});
   if(addRow)addRow.addEventListener('click',addMemberRow);
   if(cancel&&form&&show)cancel.addEventListener('click',function(){form.reset();if(rows)rows.innerHTML='';form.hidden=true;show.hidden=false;});
+  updateSaveLabel();
 });
 </script>
 <?php pageEnd(); ?>
