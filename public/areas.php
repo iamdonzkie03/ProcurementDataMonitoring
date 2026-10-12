@@ -13,6 +13,8 @@ try{
   if(!$cols) $pdo->exec("ALTER TABLE divisions ADD COLUMN ppmp_supervisor_enabled TINYINT(1) NOT NULL DEFAULT 0 AFTER electronic_signature");
   $cols=$pdo->query("SHOW COLUMNS FROM area_personnel LIKE 'position_designation'")->fetch();
   if(!$cols) $pdo->exec("ALTER TABLE area_personnel ADD COLUMN position_designation VARCHAR(150) NULL AFTER name");
+  $cols=$pdo->query("SHOW COLUMNS FROM area_personnel LIKE 'role'")->fetch();
+  if(!$cols) $pdo->exec("ALTER TABLE area_personnel ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'Staff' AFTER position_designation");
   $cols=$pdo->query("SHOW COLUMNS FROM area_personnel LIKE 'electronic_signature'")->fetch();
   if(!$cols) $pdo->exec("ALTER TABLE area_personnel ADD COLUMN electronic_signature VARCHAR(255) NULL AFTER position_designation");
 }catch(PDOException $e){ /* Migration can also be applied manually. */ }
@@ -272,13 +274,21 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
   $names=array_map('trim',$_POST['names']??[]);
   $positions=array_map('trim',$_POST['positions']??[]);
+  $roles=array_map('trim',$_POST['roles']??[]);
   $personnel=[];
+  $headCount=0;
   foreach($names as $i=>$personName){
-    if($personName!=='') $personnel[]=[
-      'name'=>$personName,
-      'position'=>$positions[$i]??'',
-      'signature'=>$signaturePathsByIndex[$i]??null
-    ];
+    if($personName!==''){
+      $role=strcasecmp($roles[$i]??'Staff','Head')===0?'Head':'Staff';
+      if($role==='Head') $headCount++;
+      $personnel[]=['name'=>$personName,'position'=>$positions[$i]??'','role'=>$role,'signature'=>$signaturePathsByIndex[$i]??null];
+    }
+  }
+  if($headCount>1){
+    foreach($signaturePathsByIndex as $savedPath) deleteStoredSignature($savedPath);
+    flash('error','Only one person may be designated as Head for an Area/Unit.');
+    header('Location:'.($embedded ? 'settings.php?tab=area-unit'.($action==='edit'&&$id?'&edit='.$id:'') : 'areas.php'.($action==='edit'&&$id?'?edit='.$id:'')));
+    exit;
   }
   $unique=[];
   foreach($personnel as $person){
@@ -317,12 +327,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $st->execute([$areaId]);
 
     if($personnel){
-      $ins=$pdo->prepare('INSERT INTO area_personnel(area_id,name,position_designation,electronic_signature) VALUES(?,?,?,?)');
+      $ins=$pdo->prepare('INSERT INTO area_personnel(area_id,name,position_designation,role,electronic_signature) VALUES(?,?,?,?,?)');
       foreach($personnel as $person){
         $key=mb_strtolower(trim($person['name']));
         $signature=$person['signature'];
         if($signature===null && isset($existingPeopleByName[$key])) $signature=$existingPeopleByName[$key] ?: null;
-        $ins->execute([$areaId,$person['name'],$person['position'],$signature]);
+        $ins->execute([$areaId,$person['name'],$person['position'],$person['role'],$signature]);
       }
     }
 
@@ -461,18 +471,18 @@ if(!$embedded) pageStart('Area/Unit Management');
           <div class="field"><label>Code <small>(optional)</small></label><input class="input" name="code" placeholder="e.g. OR" value="<?=e($editing['code']??'')?>"></div>
 
           <div class="field full"><label>Names Under This Area/Unit</label><div id="area-names-list">
-          <?php $editingPeople=[]; if($editing){$stPeople=$pdo->prepare('SELECT id,name,position_designation,electronic_signature FROM area_personnel WHERE area_id=? ORDER BY name');$stPeople->execute([$editing['id']]);$editingPeople=$stPeople->fetchAll();} ?>
+          <?php $editingPeople=[]; if($editing){$stPeople=$pdo->prepare('SELECT id,name,position_designation,role,electronic_signature FROM area_personnel WHERE area_id=? ORDER BY name');$stPeople->execute([$editing['id']]);$editingPeople=$stPeople->fetchAll();} ?>
           <?php if($editingPeople): foreach($editingPeople as $person): ?>
-          <div class="area-name-row" style="display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:8px;margin-bottom:8px;align-items:start">
+          <div class="area-name-row" style="display:grid;grid-template-columns:1fr 1fr 170px 1.2fr auto;gap:8px;margin-bottom:8px;align-items:start">
             <input class="input" name="names[]" value="<?=e($person['name'])?>" placeholder="e.g. Maria Santos">
-            <input class="input" name="positions[]" value="<?=e($person['position_designation']??'')?>" placeholder="e.g. Nurse / Administrative Officer">
+            <input class="input" name="positions[]" value="<?=e($person['position_designation']??'')?>" placeholder="e.g. Nurse / Administrative Officer"><div class="area-person-role"><label><input type="radio" name="roles[<?=e($person['id'])?>]" value="Head" <?=strcasecmp((string)($person['role']??'Staff'),'Head')===0?'checked':''?>> Head</label><label><input type="radio" name="roles[<?=e($person['id'])?>]" value="Staff" <?=strcasecmp((string)($person['role']??'Staff'),'Head')!==0?'checked':''?>> Staff</label></div>
             <div><input class="input" type="file" name="electronic_signature_file[]" accept="image/png,image/jpeg"><input type="hidden" name="electronic_signature_data[]" value=""><small class="muted">Electronic Signature (PNG/JPG, max 2 MB)</small><?php if(!empty($person['electronic_signature'])): ?><div class="signature-preview"><img src="<?=e($person['electronic_signature'])?>" alt="Electronic signature"></div><?php endif; ?></div>
             <button class="btn danger remove-area-name" type="button">Remove</button>
           </div>
           <?php endforeach; else: ?>
           <div class="area-name-row" style="display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:8px;margin-bottom:8px;align-items:start">
             <input class="input" name="names[]" placeholder="e.g. Maria Santos">
-            <input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer">
+            <input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer"><div class="area-person-role"><label><input type="radio" name="roles[new0]" value="Head"> Head</label><label><input type="radio" name="roles[new0]" value="Staff" checked> Staff</label></div>
             <div><input class="input" type="file" name="electronic_signature_file[]" accept="image/png,image/jpeg"><input type="hidden" name="electronic_signature_data[]" value=""><small class="muted">Electronic Signature (PNG/JPG, max 2 MB)</small></div>
             <button class="btn danger remove-area-name" type="button">Remove</button>
           </div>
@@ -596,7 +606,8 @@ document.addEventListener('DOMContentLoaded',function(){
     const row=document.createElement('div');
     row.className='area-name-row';
     row.style.cssText='display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:8px;margin-bottom:8px;align-items:start';
-    row.innerHTML='<input class="input" name="names[]" placeholder="e.g. Maria Santos"><input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer"><div><input class="input" type="file" name="electronic_signature_file[]" accept="image/png,image/jpeg"><input type="hidden" name="electronic_signature_data[]" value=""><small class="muted">Electronic Signature (PNG/JPG, max 2 MB)</small></div><button class="btn danger remove-area-name" type="button">Remove</button>';
+    const roleKey='new'+Date.now()+Math.random().toString(16).slice(2);
+    row.innerHTML='<input class="input" name="names[]" placeholder="e.g. Maria Santos"><input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer"><div class="area-person-role"><label><input type="radio" name="roles['+roleKey+']" value="Head"> Head</label><label><input type="radio" name="roles['+roleKey+']" value="Staff" checked> Staff</label></div><div><input class="input" type="file" name="electronic_signature_file[]" accept="image/png,image/jpeg"><input type="hidden" name="electronic_signature_data[]" value=""><small class="muted">Electronic Signature (PNG/JPG, max 2 MB)</small></div><button class="btn danger remove-area-name" type="button">Remove</button>';
     list.appendChild(row);
   });
   list.addEventListener('click',function(e){
@@ -846,6 +857,7 @@ document.addEventListener('DOMContentLoaded',function(){
 .management-column:nth-child(2) .management-list-content .table .actions{display:flex;gap:3px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap;width:100%;max-width:100%}
 .management-column:nth-child(2) .management-list-content .table .master-action{width:42px;min-width:42px;height:28px;padding:2px 3px;font-size:10px}
 .management-column:nth-child(2) .management-list-content .table .master-action-form{margin:0;display:inline-flex;flex:0 0 auto}
+ .area-person-role{display:flex;gap:10px;align-items:center;min-height:38px;white-space:nowrap}.area-person-role label{display:flex;gap:4px;align-items:center;font-size:12px;margin:0}
 .signature-preview{margin-top:8px;padding:8px;border:1px solid #ddd;background:#fff;display:inline-block}
 .signature-preview img{display:block;max-width:240px;max-height:90px;object-fit:contain}
 </style>
