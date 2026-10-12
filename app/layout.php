@@ -51,6 +51,7 @@ function pageStart(string $title): void { $u=currentUser(); touchCurrentUserActi
 <?php endif; ?>
 <div class="sidebar-divider"></div>
 <?php if(hasRole(['Administrator','Editor'])): ?><a href="users.php">♙ <span>User Management</span></a><?php endif; ?>
+<a href="bac.php">⚖ <span>Bids and Awards Committee</span></a>
 </nav><div class="side-foot"><small>Fiscal year</small><strong><?=date('Y')?></strong></div></aside>
 <main class="main"><section class="page-heading"><div><h1><?=e($title)?></h1><p>Procurement planning and monitoring</p></div></section><section class="content"><?php foreach(flashes() as $f): ?><div class="alert <?=$f['type']?>"><?=e($f['message'])?></div><?php endforeach; ?>
 <?php }
