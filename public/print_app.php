@@ -89,20 +89,28 @@ foreach ($rows as $row) {
     $procurementModeKey = strtolower(trim((string)($row['procurement_mode'] ?? '')));
     $categoryKey = strtolower(trim((string)$row['category'].' '.(string)$row['procurement_type']));
 
-    // Procurement mode determines placement in the APP sections:
-    // Procurement of CSE goes to the CSE section; Direct Acquisition goes to Miscellaneous.
-    if (strpos($procurementModeKey, 'procurement of cse') !== false
+    // Use the consolidated Mode of Procurement text to route rows into their
+    // dedicated APP listings. If a row contains both modes, include it in both
+    // dedicated listings; do not leave it in General Requirements.
+    $isDirectAcquisition = strpos($procurementModeKey, 'direct acquisition') !== false;
+    $isProcurementCse = strpos($procurementModeKey, 'procurement of cse') !== false
         || strpos($procurementModeKey, 'common-use supplies and equipment') !== false
-        || strpos($procurementModeKey, 'common use supplies and equipment') !== false) {
-        $sections['cse']['rows'][] = $row;
-    } elseif (strpos($procurementModeKey, 'direct acquisition') !== false
-        || strpos($categoryKey, 'miscellaneous') !== false
-        || strpos($categoryKey, 'direct acquisition') !== false) {
+        || strpos($procurementModeKey, 'common use supplies and equipment') !== false;
+
+    if ($isDirectAcquisition) {
         $sections['misc']['rows'][] = $row;
-    } elseif (strpos($categoryKey, 'cse') !== false || strpos($categoryKey, 'common-use') !== false || strpos($categoryKey, 'common use') !== false) {
+    }
+    if ($isProcurementCse) {
         $sections['cse']['rows'][] = $row;
-    } else {
-        $sections['general']['rows'][] = $row;
+    }
+    if (!$isDirectAcquisition && !$isProcurementCse) {
+        if (strpos($categoryKey, 'miscellaneous') !== false || strpos($categoryKey, 'direct acquisition') !== false) {
+            $sections['misc']['rows'][] = $row;
+        } elseif (strpos($categoryKey, 'cse') !== false || strpos($categoryKey, 'common-use') !== false || strpos($categoryKey, 'common use') !== false) {
+            $sections['cse']['rows'][] = $row;
+        } else {
+            $sections['general']['rows'][] = $row;
+        }
     }
 }
 // Calculate EPA budget from individual end-user/unit entries, not the consolidated row's MIN(epa).
