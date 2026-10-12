@@ -258,42 +258,42 @@ Adopted from GPPB Standard Form</div>
           <td><?=appPrintEscape($row['areas'])?></td>
           <td><strong><?=appPrintEscape($row['item_name'])?></strong><?php if (appPrintProjectDescription($row) !== ''): ?><br><?=nl2br(appPrintEscape(appPrintProjectDescription($row)))?><?php endif; ?></td>
           <td><?=appPrintEscape($row['procurement_mode'] ?? '')?></td>
-          <td><?php
+          <?php
+          // Carry every end-user's selected column values with the split procurement-mode row.
           $epaEntries = [];
           $startEntries = [];
           $endEntries = [];
           $fundEntries = [];
           $remarkEntries = [];
+          $strategyEntries = [];
           foreach (($printUnitsByRow[$printRowKey] ?? []) as $printUnit) {
               $unitSettings = $printUnitSettings[$printRowKey][(string)$printUnit['area_id']] ?? [];
+              $unitMode = trim((string)($printUnit['procurement_mode'] ?? ''));
+              if ($unitMode === '') $unitMode = trim((string)($row['procurement_mode'] ?? ''));
+              if (strcasecmp($unitMode, (string)($row['procurement_mode'] ?? '')) !== 0) continue;
+              if (isset($unitSettings['select_mode']) && empty($unitSettings['select_mode'])) continue;
               $epaValue = trim((string)($unitSettings['epa'] ?? $printUnit['epa'] ?? ''));
               $startValue = trim((string)($unitSettings['start'] ?? (!empty($printUnit['start_procurement']) ? date('m/Y', strtotime($printUnit['start_procurement'])) : '')));
               $endValue = trim((string)($unitSettings['end'] ?? (!empty($printUnit['end_procurement']) ? date('m/Y', strtotime($printUnit['end_procurement'])) : '')));
               $fundValue = trim((string)($unitSettings['funds'] ?? $printUnit['source_of_funds'] ?? ''));
               $remarkValue = trim((string)($unitSettings['remarks'] ?? $printUnit['remarks'] ?? ''));
+              $strategyValue = trim((string)($unitSettings['strategy'] ?? ''));
               if ($epaValue !== '' && (!isset($unitSettings['select_epa']) || !empty($unitSettings['select_epa']))) $epaEntries[] = $epaValue;
               if ($startValue !== '' && (!isset($unitSettings['select_start']) || !empty($unitSettings['select_start']))) $startEntries[] = $startValue;
               if ($endValue !== '' && (!isset($unitSettings['select_end']) || !empty($unitSettings['select_end']))) $endEntries[] = $endValue;
               if ($fundValue !== '') $fundEntries[] = $fundValue;
               if ($remarkValue !== '') $remarkEntries[] = $remarkValue;
+              if ($strategyValue !== '') $strategyEntries[] = $strategyValue;
           }
-          echo appPrintEscape($epaEntries ? implode(' / ', array_unique($epaEntries)) : ($row['epa'] ?? ''));
-          ?></td>
+          ?>
+          <td><?=appPrintEscape($epaEntries ? implode(' / ', array_unique($epaEntries)) : '')?></td>
           <td><?=appPrintEscape($printRowEdit['bid_evaluation_criteria'] ?? '')?></td>
-          <td class="number"><?php echo appPrintEscape($startEntries ? implode(' / ', array_unique($startEntries)) : appPrintDate($row['start_procurement'])); ?></td>
-          <td class="number"><?php echo appPrintEscape($endEntries ? implode(' / ', array_unique($endEntries)) : appPrintDate($row['end_procurement'])); ?></td>
-          <td><?=appPrintEscape($fundEntries ? implode(' / ', array_unique($fundEntries)) : ($row['source_of_funds'] ?? ''))?></td>
+          <td class="number"><?=appPrintEscape($startEntries ? implode(' / ', array_unique($startEntries)) : '')?></td>
+          <td class="number"><?=appPrintEscape($endEntries ? implode(' / ', array_unique($endEntries)) : '')?></td>
+          <td><?=appPrintEscape($fundEntries ? implode(' / ', array_unique($fundEntries)) : '')?></td>
           <td class="amount"><?=number_format((float)$row['total_abc'],2)?></td>
-          <td><?php
-            $strategyEntries = [];
-            foreach (($printUnitsByRow[$printRowKey] ?? []) as $printUnit) {
-                $unitSettings = $printUnitSettings[$printRowKey][(string)$printUnit['area_id']] ?? [];
-                $strategyValue = trim((string)($unitSettings['strategy'] ?? ''));
-                if ($strategyValue !== '') $strategyEntries[] = $strategyValue;
-            }
-            echo appPrintEscape($strategyEntries ? implode(' / ', array_unique($strategyEntries)) : ($printRowEdit['procurement_strategy'] ?? ''));
-          ?></td>
-          <td><?=appPrintEscape($remarkEntries ? implode(' / ', array_unique($remarkEntries)) : ($row['remarks'] ?? ''))?></td>
+          <td><?=appPrintEscape($strategyEntries ? implode(' / ', array_unique($strategyEntries)) : ($printRowEdit['procurement_strategy'] ?? ''))?></td>
+          <td><?=appPrintEscape($remarkEntries ? implode(' / ', array_unique($remarkEntries)) : '')?></td>
         </tr>
       <?php endforeach; else: ?>
         <tr class="data-row"><td class="number"></td><?php for($i=0;$i<12;$i++): ?><td></td><?php endfor; ?></tr>
