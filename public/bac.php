@@ -12,10 +12,12 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS bac_committee_members (
   area_expertise VARCHAR(180) NULL,
   area_unit VARCHAR(180) NOT NULL,
   code_tag VARCHAR(100) NOT NULL,
+  assigned_member VARCHAR(180) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_bac_member_type (member_type),
   INDEX idx_bac_member_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+try { $pdo->exec("ALTER TABLE bac_committee_members ADD COLUMN assigned_member VARCHAR(180) NULL AFTER code_tag"); } catch (PDOException $e) { if ((int)($e->errorInfo[1]??0)!==1060) throw $e; }
 
 $tab=$_GET['tab']??'hierarchy';
 if(!in_array($tab,['hierarchy','bac-members','technical-working-group'],true)) $tab='hierarchy';
@@ -30,7 +32,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $expertises=(array)($_POST['area_expertise']??[]);
   $areaUnits=(array)($_POST['area_unit']??[]);
   $codeTags=(array)($_POST['code_tag']??[]);
-  $count=max(count($names),count($designations),count($expertises),count($areaUnits),count($codeTags));
+  $assignedMembers=(array)($_POST['assigned_member']??[]);
+  $count=max(count($names),count($designations),count($expertises),count($areaUnits),count($codeTags),count($assignedMembers));
   $entries=[];
   for($i=0;$i<$count;$i++){
     $name=trim((string)($names[$i]??''));
@@ -38,12 +41,15 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $expertise=trim((string)($expertises[$i]??''));
     $areaUnit=trim((string)($areaUnits[$i]??''));
     $codeTag=trim((string)($codeTags[$i]??''));
-    if($name===''&&$designation===''&&$expertise===''&&$areaUnit===''&&$codeTag==='') continue;
+    $assignedMember=trim((string)($assignedMembers[$i]??''));
+    if($name===''&&$designation===''&&$expertise===''&&$areaUnit===''&&$codeTag===''&&$assignedMember==='') continue;
     if($name===''||$designation===''||$areaUnit===''||$codeTag===''||($type==='TWG'&&$expertise==='')){
       flash('error','Complete every required field in each member row. No members were saved.');
       header('Location:bac.php?tab='.$returnTab);exit;
     }
-    $entries[]=[$type,$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag];
+    if($type==='BAC'&&mb_strtolower($designation)==='ad-hoc member'&&$assignedMember===''){flash('error','Select the BAC Member assigned to each Ad-Hoc Member. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
+    if(($type!=='BAC'||mb_strtolower($designation)!=='ad-hoc member')&&$assignedMember!==''){flash('error','Only Ad-Hoc Members may have an Assigned BAC Member. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
+    $entries[]=[$type,$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag,$assignedMember!==''?$assignedMember:null];
   }
   if(!$entries){flash('error','Enter at least one member before saving.');}
   else{
@@ -57,10 +63,12 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $existingStmt=$pdo->prepare('SELECT name,designation,code_tag FROM bac_committee_members WHERE member_type=\'BAC\'');
     $existingStmt->execute();
     $existing=$existingStmt->fetchAll(PDO::FETCH_ASSOC);
-    $all=array_merge($existing,$type==='BAC'?array_map(static function($entry){return ['name'=>$entry[1],'designation'=>$entry[2],'code_tag'=>$entry[5]];},$entries):[]);
+    $all=array_merge($existing,$type==='BAC'?array_map(static function($entry){return ['name'=>$entry[1],'designation'=>$entry[2],'code_tag'=>$entry[5],'assigned_member'=>$entry[6]??null];},$entries):[]);
     $errors=[];
     $seenNames=[];
     $seenRoles=[];
+    $bacMemberNames=[];
+    foreach($all as $person){ if(mb_strtolower(trim((string)($person['designation']??'')))==='bac member')$bacMemberNames[$normalizeTag($person['code_tag']??'')][$normalizeName($person['name']??'')]=trim((string)($person['name']??'')); }
     foreach($all as $person){
       $tag=$normalizeTag($person['code_tag']??'');
       $name=$normalizeName($person['name']??'');
@@ -73,6 +81,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if(isset($seenRoles[$roleKey]))$errors[]='BAC code/tag "'.trim((string)$person['code_tag']).'" may have only one '.trim((string)$person['designation']).'.';
         else $seenRoles[$roleKey]=true;
       }
+      if($designation==='ad-hoc member'){$assigned=$normalizeName($person['assigned_member']??'');if($assigned===''||!isset($bacMemberNames[$tag][$assigned]))$errors[]='Ad-Hoc Member '.$person['name'].' must be assigned to a BAC Member under the same Code/Tag.';}
       // A named BAC person may belong to only one code/tag, even if repeated in the current batch.
       if(isset($seenNames[$name])&&$seenNames[$name]!==$tag)$errors[]=$person['name'].' is already assigned to a different BAC code/tag and cannot be added again.';
       else $seenNames[$name]=$tag;
@@ -80,7 +89,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if($errors){
       flash('error',implode(' ',$errors).' No members were saved.');
     }else{
-      $st=$pdo->prepare('INSERT INTO bac_committee_members(member_type,name,designation,area_expertise,area_unit,code_tag) VALUES(?,?,?,?,?,?)');
+      $st=$pdo->prepare('INSERT INTO bac_committee_members(member_type,name,designation,area_expertise,area_unit,code_tag,assigned_member) VALUES(?,?,?,?,?,?,?)');
       $pdo->beginTransaction();
       try{foreach($entries as $entry)$st->execute($entry);$pdo->commit();flash('success',count($entries)===1?'Member added.':count($entries).' members added.');}
       catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
@@ -90,7 +99,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 }
 
 $type=$tab==='technical-working-group'?'TWG':'BAC';
-$st=$pdo->prepare('SELECT id,name,designation,area_expertise,area_unit,code_tag FROM bac_committee_members WHERE member_type=? ORDER BY name,id');
+$st=$pdo->prepare('SELECT id,name,designation,area_expertise,area_unit,code_tag,assigned_member FROM bac_committee_members WHERE member_type=? ORDER BY name,id');
 $st->execute([$type]);
 $members=$st->fetchAll();
 $canManage=hasRole(['Administrator','Editor']);
@@ -165,16 +174,16 @@ pageStart('Bids and Awards Committee');
     <form method="post" id="addMemberForm" class="bac-member-form" hidden>
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="member_type" value="<?=e($type)?>">
-      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><?php if($type==='TWG'): ?><th>Area of Expertise*</th><?php endif; ?><th>Area/Unit*</th><th>Code/Tag*</th><th>Action</th></tr></thead><tbody id="bacEntryRows"><tr class="bac-entry-row"><td><div class="bac-person-autocomplete"><input class="input bac-person-name" type="text" name="name[]" maxlength="180" placeholder="Search name..." autocomplete="off" aria-label="Name" required><div class="bac-person-suggestions" role="listbox"></div></div></td><td><?php if($type==='BAC'): ?><select class="input" name="designation[]" aria-label="BAC Designation" required><option value="">Select BAC Designation</option><option value="BAC Chairman">BAC Chairman</option><option value="BAC Vice-Chairman">BAC Vice-Chairman</option><option value="BAC Member">BAC Member</option><option value="Ad-Hoc Chairman">Ad-Hoc Chairman</option><option value="Ad-Hoc Vice-Chairman">Ad-Hoc Vice-Chairman</option><option value="Ad-Hoc Member">Ad-Hoc Member</option></select><?php else: ?><input class="input" type="text" name="designation[]" maxlength="180" placeholder="TWG Designation" aria-label="TWG Designation" required><?php endif; ?></td><?php if($type==='TWG'): ?><td><input class="input" type="text" name="area_expertise[]" maxlength="180" placeholder="Area of Expertise" aria-label="Area of Expertise" required></td><?php endif; ?><td><input class="input bac-area-unit-input" type="text" name="area_unit[]" maxlength="180" placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly required></td><td><?php if($type==='BAC'): ?><select class="input" name="code_tag[]" aria-label="BAC Code/Tag" required><option value="">Select BAC Code/Tag</option><?php foreach(['BAC A','BAC B','BAC C','BAC D','BAC E'] as $bacTag): ?><option value="<?=e($bacTag)?>"><?=e($bacTag)?></option><?php endforeach; ?></select><?php else: ?><input class="input" type="text" name="code_tag[]" maxlength="100" placeholder="Code/Tag" aria-label="Code/Tag" required><?php endif; ?></td><td class="bac-entry-action"><button class="btn secondary" type="button" id="addMemberRow">Add Row</button></td></tr></tbody></table></div>
+      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><?php if($type==='TWG'): ?><th>Area of Expertise*</th><?php endif; ?><th>Area/Unit*</th><th>Code/Tag*</th><?php if($type==='BAC'): ?><th>Assigned BAC Member</th><?php endif; ?><th>Action</th></tr></thead><tbody id="bacEntryRows"><tr class="bac-entry-row"><td><div class="bac-person-autocomplete"><input class="input bac-person-name" type="text" name="name[]" maxlength="180" placeholder="Search name..." autocomplete="off" aria-label="Name" required><div class="bac-person-suggestions" role="listbox"></div></div></td><td><?php if($type==='BAC'): ?><select class="input" name="designation[]" aria-label="BAC Designation" required><option value="">Select BAC Designation</option><option value="BAC Chairman">BAC Chairman</option><option value="BAC Vice-Chairman">BAC Vice-Chairman</option><option value="BAC Member">BAC Member</option><option value="Ad-Hoc Chairman">Ad-Hoc Chairman</option><option value="Ad-Hoc Vice-Chairman">Ad-Hoc Vice-Chairman</option><option value="Ad-Hoc Member">Ad-Hoc Member</option></select><?php else: ?><input class="input" type="text" name="designation[]" maxlength="180" placeholder="TWG Designation" aria-label="TWG Designation" required><?php endif; ?></td><?php if($type==='TWG'): ?><td><input class="input" type="text" name="area_expertise[]" maxlength="180" placeholder="Area of Expertise" aria-label="Area of Expertise" required></td><?php endif; ?><td><input class="input bac-area-unit-input" type="text" name="area_unit[]" maxlength="180" placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly required></td><td><?php if($type==='BAC'): ?><select class="input" name="code_tag[]" aria-label="BAC Code/Tag" required><option value="">Select BAC Code/Tag</option><?php foreach(['BAC A','BAC B','BAC C','BAC D','BAC E'] as $bacTag): ?><option value="<?=e($bacTag)?>"><?=e($bacTag)?></option><?php endforeach; ?></select><?php else: ?><input class="input" type="text" name="code_tag[]" maxlength="100" placeholder="Code/Tag" aria-label="Code/Tag" required><?php endif; ?></td><?php if($type==='BAC'): ?><td><select class="input bac-assigned-member" name="assigned_member[]" aria-label="Assigned BAC Member" disabled><option value="">Only required for Ad-Hoc Member</option></select></td><?php endif; ?><td class="bac-entry-action"><button class="btn secondary" type="button" id="addMemberRow">Add Row</button></td></tr></tbody></table></div>
       <div class="bac-form-actions"><button class="btn" type="submit" id="saveMemberItems">Save Member</button><button class="btn secondary" type="button" id="cancelAddMember">Cancel</button></div>
     </form>
     <?php endif; ?>
     <div class="table-wrap bac-members-table-wrap">
       <table class="table bac-members-table">
-        <thead><tr><th>Name</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?></th><?php if($type==='TWG'): ?><th>Area of Expertise</th><?php endif; ?><th>Area/Unit</th><th>Code/Tag</th></tr></thead>
+        <thead><tr><th>Name</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?></th><?php if($type==='TWG'): ?><th>Area of Expertise</th><?php endif; ?><th>Area/Unit</th><th>Code/Tag</th><?php if($type==='BAC'): ?><th>Assigned BAC Member</th><?php endif; ?></tr></thead>
         <tbody>
         <?php foreach($members as $member): ?>
-          <tr><td><?=e($member['name'])?></td><td><?=e($member['designation'])?></td><?php if($type==='TWG'): ?><td><?=e($member['area_expertise']??'')?></td><?php endif; ?><td><?=e($member['area_unit'])?></td><td><?=e($member['code_tag'])?></td></tr>
+          <tr><td><?=e($member['name'])?></td><td><?=e($member['designation'])?></td><?php if($type==='TWG'): ?><td><?=e($member['area_expertise']??'')?></td><?php endif; ?><td><?=e($member['area_unit'])?></td><td><?=e($member['code_tag'])?></td><?php if($type==='BAC'): ?><td><?=e($member['assigned_member']??'')?></td><?php endif; ?></tr>
         <?php endforeach; ?>
         <?php if(!$members): ?><tr><td colspan="<?=$type==='BAC'?4:5?>" class="empty">No members have been added yet.</td></tr><?php endif; ?>
         </tbody>
@@ -317,6 +326,41 @@ document.addEventListener('DOMContentLoaded',function(){
       rows.querySelectorAll('.bac-person-autocomplete').forEach(function(box){if(!box.contains(event.target))closePersonSuggestions(box);});
     });
   }
+  function refreshAssignedMembers(){
+    if(!rows)return;
+    rows.querySelectorAll('.bac-entry-row').forEach(function(row){
+      const designation=row.querySelector('select[name="designation[]"]');
+      const tag=row.querySelector('select[name="code_tag[]"]');
+      const assigned=row.querySelector('.bac-assigned-member');
+      if(!designation||!tag||!assigned)return;
+      const isAdHoc=designation.value==='Ad-Hoc Member';
+      const selected=assigned.value;
+      assigned.innerHTML='';
+      const placeholder=document.createElement('option');
+      placeholder.value='';
+      placeholder.textContent=isAdHoc?'Select assigned BAC Member':'Only required for Ad-Hoc Member';
+      assigned.appendChild(placeholder);
+      const tagValue=tag.value;
+      rows.querySelectorAll('.bac-entry-row').forEach(function(memberRow){
+        if(memberRow===row)return;
+        const role=memberRow.querySelector('select[name="designation[]"]');
+        const memberTag=memberRow.querySelector('select[name="code_tag[]"]');
+        const nameInput=memberRow.querySelector('.bac-person-name');
+        const name=nameInput?nameInput.value.trim():'';
+        if(role&&memberTag&&name&&role.value==='BAC Member'&&memberTag.value===tagValue){
+          const option=document.createElement('option');option.value=name;option.textContent=name;assigned.appendChild(option);
+        }
+      });
+      assigned.disabled=!isAdHoc;
+      assigned.required=isAdHoc;
+      if(isAdHoc&&Array.from(assigned.options).some(function(option){return option.value===selected;}))assigned.value=selected;
+      else assigned.value='';
+    });
+  }
+  if(rows){
+    rows.addEventListener('change',function(event){if(event.target.matches('select[name="designation[]"],select[name="code_tag[]"]'))refreshAssignedMembers();});
+    rows.addEventListener('input',function(event){if(event.target.classList.contains('bac-person-name'))refreshAssignedMembers();});
+  }
   function addMemberRow(){
     if(!rows)return;
     const first=rows.querySelector('.bac-entry-row');
@@ -331,12 +375,14 @@ document.addEventListener('DOMContentLoaded',function(){
     }
     rows.appendChild(row);
     updateSaveLabel();
+    refreshAssignedMembers();
     const input=row.querySelector('input');if(input)input.focus();
   }
   if(show&&form)show.addEventListener('click',function(){form.hidden=false;show.hidden=true;const first=form.querySelector('input[name="name[]"]');if(first)first.focus();});
   if(addRow)addRow.addEventListener('click',addMemberRow);
   if(cancel&&form&&show)cancel.addEventListener('click',function(){form.reset();if(rows)rows.innerHTML='';form.hidden=true;show.hidden=false;});
   updateSaveLabel();
+  refreshAssignedMembers();
 });
 </script>
 <?php pageEnd(); ?>
