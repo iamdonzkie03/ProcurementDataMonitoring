@@ -489,9 +489,10 @@ if(!$embedded) pageStart('Area/Unit Management');
             <button class="btn danger remove-area-name" type="button">Remove</button>
           </div>
           <?php endif; ?>
-          </div><div class="area-name-actions"><button class="btn secondary" type="button" id="add-area-name">+ Add Another Name</button></div><small class="muted">Add as many names as needed for this Area/Unit.</small></div>
+          </div><div class="area-name-actions"><button class="btn secondary" type="button" id="add-area-name">+ Add Another Name</button></div></div>
         </div>
         <div class="actions"><button class="btn" type="submit"><?= $editing ? 'Save Changes' : '+ Add Area/Unit' ?></button><?php if($editing): ?><a class="btn secondary" href="<?=e($embedded?'settings.php?tab=area-unit':'areas.php')?>">Cancel</a><?php endif; ?></div>
+        <small class="muted area-name-help">Add as many names as needed for this Area/Unit.</small>
       </form>
     </div>
     <div class="management-inner-list">
