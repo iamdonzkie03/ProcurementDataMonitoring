@@ -3001,3 +3001,11 @@ html body .ppmp-actions-row .ppmp-print-form-btn:hover{
   border-color:#0b2543 !important;
   color:#fff !important;
 }
+
+/* BAC button: keep it fully inside the header, with the navigation below it. */
+.site-header{height:auto!important;min-height:92px!important;align-items:center!important;gap:18px!important;padding:12px 28px!important;overflow:visible!important}
+.site-header-actions{flex:0 0 auto!important;display:flex!important;flex-direction:column!important;align-items:flex-end!important;justify-content:center!important;gap:8px!important;max-width:100%!important}
+.site-header-actions .site-user{max-width:100%;flex-wrap:wrap;justify-content:flex-end}
+.site-header-actions .bac-header-button{position:static!important;float:none!important;display:inline-flex!important;flex-shrink:0!important;margin:0!important;max-width:100%;white-space:normal!important;text-align:center;box-sizing:border-box;z-index:auto!important}
+.sidebar{clear:both!important;position:relative!important;top:auto!important;margin-top:0!important}
+@media(max-width:700px){.site-header{min-height:0!important;padding:10px 14px!important;gap:8px!important;align-items:flex-start!important}.site-brand{min-width:0;max-width:55%}.site-brand b{overflow-wrap:anywhere}.site-header-actions{max-width:45%!important}.site-header-actions .site-user{gap:5px}.site-header-actions .bac-header-button{max-width:100%;font-size:10px!important}}
