@@ -188,7 +188,7 @@ th,td{border:1px solid #222;padding:3px 3px;vertical-align:top;overflow-wrap:any
 tbody tr.data-row td:not(:nth-child(2)){text-align:center;vertical-align:middle}
 tbody tr.data-row td:nth-child(2){text-align:left;vertical-align:middle}
 td.number{text-align:center;vertical-align:middle}
-td.amount{text-align:center;white-space:nowrap}
+td.amount{text-align:right!important;white-space:nowrap}
 .section-row td{font-weight:700;background:#e2f0d9;padding:5px 4px;vertical-align:middle;border-top:1px solid #222;border-bottom:1px solid #222}
 .section-row td:first-child{text-align:left}
 .data-row td{background:#fff}
@@ -309,7 +309,7 @@ Adopted from GPPB Standard Form</div>
         <tr class="data-row"><td class="number"></td><?php for($i=0;$i<13;$i++): ?><td></td><?php endfor; ?></tr>
       <?php endif; ?>
     <?php endforeach; ?>
-      <tr><td colspan="14" style="font-style:italic;border-top:0;border-bottom:0;background:#fff">Note: Insert additional rows as necessary.</td></tr>
+      <tr class="note-row"><td colspan="14" style="font-style:italic;border:0!important;background:#fff">Note: Insert additional rows as necessary.</td></tr>
       <tr class="summary-row"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of Estimated Budget for EPA Projects:</td><td colspan="2" class="amount"><?=number_format($epaTotal,2)?></td><td colspan="2"></td></tr>
       <tr class="summary-row"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of CSEs to be purchased from PS-DBM:</td><td colspan="2" class="amount"><?=number_format($cseTotal,2)?></td><td colspan="2"></td></tr>
       <tr class="summary-row"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of Estimated Budget for Non-EPA Projects:</td><td colspan="2" class="amount"><?=number_format($nonEpaTotal,2)?></td><td colspan="2"></td></tr>
