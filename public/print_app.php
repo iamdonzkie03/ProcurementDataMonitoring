@@ -193,9 +193,10 @@ td.amount{text-align:right!important;white-space:nowrap}
 .section-row td:first-child{text-align:left}
 .data-row td{background:#fff}
 .data-row td{height:35px}
-.summary-label{font-weight:700;background:#eaf0f8}
+.summary-label{font-weight:700;background:#fff}
 .summary-row td{height:24px;vertical-align:middle}
-.summary-row .amount{font-weight:700;background:#f2f2f2}
+.summary-row.no-borders td{border:0!important;outline:0!important;box-shadow:none!important;background:#fff}
+.summary-row .amount{font-weight:700;background:#fff}
 .note{font-size:7pt;font-style:italic;margin:7px 0 0}
 .signatures{margin-top:18px;page-break-inside:avoid;font-size:7pt}
 .signature-table{border-collapse:collapse;width:100%;table-layout:fixed;border:0;outline:0}
@@ -310,10 +311,10 @@ Adopted from GPPB Standard Form</div>
       <?php endif; ?>
     <?php endforeach; ?>
       <tr class="note-row"><td colspan="14" style="font-style:italic;border:0!important;background:#fff">Note: Insert additional rows as necessary.</td></tr>
-      <tr class="summary-row"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of Estimated Budget for EPA Projects:</td><td colspan="2" class="amount"><?=number_format($epaTotal,2)?></td><td colspan="2"></td></tr>
-      <tr class="summary-row"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of CSEs to be purchased from PS-DBM:</td><td colspan="2" class="amount"><?=number_format($cseTotal,2)?></td><td colspan="2"></td></tr>
-      <tr class="summary-row"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of Estimated Budget for Non-EPA Projects:</td><td colspan="2" class="amount"><?=number_format($nonEpaTotal,2)?></td><td colspan="2"></td></tr>
-      <tr class="summary-row"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of Estimated Budget:</td><td colspan="2" class="amount"><?=number_format($grandAbc,2)?></td><td colspan="2"></td></tr>
+      <tr class="summary-row no-borders"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of Estimated Budget for EPA Projects:</td><td colspan="2" class="amount"><?=number_format($epaTotal,2)?></td><td colspan="2"></td></tr>
+      <tr class="summary-row no-borders"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of CSEs to be purchased from PS-DBM:</td><td colspan="2" class="amount"><?=number_format($cseTotal,2)?></td><td colspan="2"></td></tr>
+      <tr class="summary-row no-borders"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of Estimated Budget for Non-EPA Projects:</td><td colspan="2" class="amount"><?=number_format($nonEpaTotal,2)?></td><td colspan="2"></td></tr>
+      <tr class="summary-row no-borders"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of Estimated Budget:</td><td colspan="2" class="amount"><?=number_format($grandAbc,2)?></td><td colspan="2"></td></tr>
     </tbody>
   </table>
   <div class="signatures" aria-label="APP signatories">
