@@ -47,10 +47,42 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   }
   if(!$entries){flash('error','Enter at least one member before saving.');}
   else{
-    $st=$pdo->prepare('INSERT INTO bac_committee_members(member_type,name,designation,area_expertise,area_unit,code_tag) VALUES(?,?,?,?,?,?)');
-    $pdo->beginTransaction();
-    try{foreach($entries as $entry)$st->execute($entry);$pdo->commit();flash('success',count($entries)===1?'Member added.':count($entries).' members added.');}
-    catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
+    // BAC code tags are compared case-insensitively with repeated spaces normalized.
+    // A BAC code/tag can have only one Chairman and one Vice-Chairman, and a person
+    // already assigned to one BAC code/tag cannot be assigned to another.
+    $normalizeTag=static function($value){return mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$value)));};
+    $normalizeName=static function($value){return mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$value)));};
+    $isChair=static function($designation){return in_array(mb_strtolower(trim((string)$designation)),['bac chairman','ad-hoc chairman'],true);};
+    $isVice=static function($designation){return in_array(mb_strtolower(trim((string)$designation)),['bac vice-chairman','ad-hoc vice-chairman'],true);};
+    $existingStmt=$pdo->prepare('SELECT name,designation,code_tag FROM bac_committee_members WHERE member_type=\'BAC\'');
+    $existingStmt->execute();
+    $existing=$existingStmt->fetchAll(PDO::FETCH_ASSOC);
+    $all=array_merge($existing,$type==='BAC'?array_map(static function($entry){return ['name'=>$entry[1],'designation'=>$entry[2],'code_tag'=>$entry[5]];},$entries):[]);
+    $errors=[];
+    $seenNames=[];
+    $seenRoles=[];
+    foreach($all as $person){
+      $tag=$normalizeTag($person['code_tag']??'');
+      $name=$normalizeName($person['name']??'');
+      $designation=trim((string)($person['designation']??''));
+      if($tag===''||$name==='')continue;
+      if($isChair($designation)||$isVice($designation)){
+        $role=$isChair($designation)?'Chairman':'Vice-Chairman';
+        $key=$tag.'|'.$role;
+        if(isset($seenRoles[$key]))$errors[]='BAC code/tag "'.trim((string)$person['code_tag']).'" may have only one '.$role.'.';
+        else $seenRoles[$key]=true;
+      }
+      if(isset($seenNames[$name])&&$seenNames[$name]!==$tag)$errors[]=''.$person['name'].' is already assigned to a different BAC code/tag and cannot be added again.';
+      else $seenNames[$name]=$tag;
+    }
+    if($errors){
+      flash('error',implode(' ',$errors).' No members were saved.');
+    }else{
+      $st=$pdo->prepare('INSERT INTO bac_committee_members(member_type,name,designation,area_expertise,area_unit,code_tag) VALUES(?,?,?,?,?,?)');
+      $pdo->beginTransaction();
+      try{foreach($entries as $entry)$st->execute($entry);$pdo->commit();flash('success',count($entries)===1?'Member added.':count($entries).' members added.');}
+      catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
+    }
   }
   header('Location:bac.php?tab='.$returnTab);exit;
 }
