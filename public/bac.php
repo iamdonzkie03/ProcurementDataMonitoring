@@ -204,7 +204,7 @@ pageStart('Bids and Awards Committee');
 .bac-entry-table .input{width:100%;min-width:0;box-sizing:border-box;font-size:12px;padding:8px}
 .bac-entry-table .bac-area-unit-input{background:#e9ecef!important;color:#6b7280;cursor:not-allowed;opacity:1}
 .bac-person-autocomplete{position:relative;width:100%;min-width:0}
-.bac-person-suggestions{position:absolute;left:0;right:auto;top:100%;width:300px;max-width:min(420px,calc(100vw - 32px));z-index:99999;background:#fff;border:1px solid #94a3b8;border-radius:6px;box-shadow:0 10px 28px rgba(15,23,42,.24);max-height:260px;overflow-y:auto;display:none}
+.bac-person-suggestions{position:absolute;left:0;right:auto;top:auto;bottom:100%;margin-bottom:4px;width:300px;max-width:min(420px,calc(100vw - 32px));z-index:99999;background:#fff;border:1px solid #94a3b8;border-radius:6px;box-shadow:0 10px 28px rgba(15,23,42,.24);max-height:260px;overflow-y:auto;display:none}
 .bac-person-suggestion{display:block;width:100%;box-sizing:border-box;padding:9px 11px;border:0;border-bottom:1px solid #e5e7eb;background:#fff;text-align:left;cursor:pointer;font-size:12px;white-space:normal;overflow-wrap:anywhere}
 .bac-person-suggestion:hover,.bac-person-suggestion:focus{background:#eef5ff}
 .bac-person-suggestion small{display:block;color:#6b7280;margin-top:3px;font-size:11px}
