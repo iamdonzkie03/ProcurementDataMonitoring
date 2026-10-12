@@ -472,17 +472,17 @@ if(!$embedded) pageStart('Area/Unit Management');
 
           <div class="field full"><label>Names Under This Area/Unit</label><div id="area-names-list">
           <?php $editingPeople=[]; if($editing){$stPeople=$pdo->prepare('SELECT id,name,position_designation,role,electronic_signature FROM area_personnel WHERE area_id=? ORDER BY name');$stPeople->execute([$editing['id']]);$editingPeople=$stPeople->fetchAll();} ?>
-          <?php if($editingPeople): foreach($editingPeople as $person): ?>
+          <?php if($editingPeople): foreach($editingPeople as $personIndex=>$person): ?>
           <div class="area-name-row" style="display:grid;grid-template-columns:1fr 1fr 170px 1.2fr auto;gap:8px;margin-bottom:8px;align-items:start">
             <input class="input" name="names[]" value="<?=e($person['name'])?>" placeholder="e.g. Maria Santos">
-            <input class="input" name="positions[]" value="<?=e($person['position_designation']??'')?>" placeholder="e.g. Nurse / Administrative Officer"><div class="area-person-role"><label><input type="radio" name="roles[<?=e($person['id'])?>]" value="Head" <?=strcasecmp((string)($person['role']??'Staff'),'Head')===0?'checked':''?>> Head</label><label><input type="radio" name="roles[<?=e($person['id'])?>]" value="Staff" <?=strcasecmp((string)($person['role']??'Staff'),'Head')!==0?'checked':''?>> Staff</label></div>
+            <input class="input" name="positions[]" value="<?=e($person['position_designation']??'')?>" placeholder="e.g. Nurse / Administrative Officer"><div class="area-person-role"><label><input type="radio" name="roles[<?=e($personIndex)?>]" value="Head" <?=strcasecmp((string)($person['role']??'Staff'),'Head')===0?'checked':''?>> Head</label><label><input type="radio" name="roles[<?=e($person['id'])?>]" value="Staff" <?=strcasecmp((string)($person['role']??'Staff'),'Head')!==0?'checked':''?>> Staff</label></div>
             <div><input class="input" type="file" name="electronic_signature_file[]" accept="image/png,image/jpeg"><input type="hidden" name="electronic_signature_data[]" value=""><small class="muted">Electronic Signature (PNG/JPG, max 2 MB)</small><?php if(!empty($person['electronic_signature'])): ?><div class="signature-preview"><img src="<?=e($person['electronic_signature'])?>" alt="Electronic signature"></div><?php endif; ?></div>
             <button class="btn danger remove-area-name" type="button">Remove</button>
           </div>
           <?php endforeach; else: ?>
           <div class="area-name-row" style="display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:8px;margin-bottom:8px;align-items:start">
             <input class="input" name="names[]" placeholder="e.g. Maria Santos">
-            <input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer"><div class="area-person-role"><label><input type="radio" name="roles[new0]" value="Head"> Head</label><label><input type="radio" name="roles[new0]" value="Staff" checked> Staff</label></div>
+            <input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer"><div class="area-person-role"><label><input type="radio" name="roles[0]" value="Head"> Head</label><label><input type="radio" name="roles[new0]" value="Staff" checked> Staff</label></div>
             <div><input class="input" type="file" name="electronic_signature_file[]" accept="image/png,image/jpeg"><input type="hidden" name="electronic_signature_data[]" value=""><small class="muted">Electronic Signature (PNG/JPG, max 2 MB)</small></div>
             <button class="btn danger remove-area-name" type="button">Remove</button>
           </div>
@@ -606,7 +606,7 @@ document.addEventListener('DOMContentLoaded',function(){
     const row=document.createElement('div');
     row.className='area-name-row';
     row.style.cssText='display:grid;grid-template-columns:1fr 1fr 1.2fr auto;gap:8px;margin-bottom:8px;align-items:start';
-    const roleKey='new'+Date.now()+Math.random().toString(16).slice(2);
+    const roleKey=String(Array.from(list.querySelectorAll('.area-name-row')).indexOf(row));
     row.innerHTML='<input class="input" name="names[]" placeholder="e.g. Maria Santos"><input class="input" name="positions[]" placeholder="e.g. Nurse / Administrative Officer"><div class="area-person-role"><label><input type="radio" name="roles['+roleKey+']" value="Head"> Head</label><label><input type="radio" name="roles['+roleKey+']" value="Staff" checked> Staff</label></div><div><input class="input" type="file" name="electronic_signature_file[]" accept="image/png,image/jpeg"><input type="hidden" name="electronic_signature_data[]" value=""><small class="muted">Electronic Signature (PNG/JPG, max 2 MB)</small></div><button class="btn danger remove-area-name" type="button">Remove</button>';
     list.appendChild(row);
   });
