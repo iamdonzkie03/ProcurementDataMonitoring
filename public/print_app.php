@@ -179,15 +179,15 @@ body{font-family:"Century Gothic",Arial,sans-serif;color:#111;margin:0;font-size
 .heading .sub{font-size:8pt;margin-top:4px}
 table{border-collapse:collapse;width:100%;table-layout:fixed;border:1.3px solid #222}
 th,td{border:1px solid #222;padding:3px 3px;vertical-align:top;overflow-wrap:anywhere;white-space:pre-line}
-.group-head th{background:#fff;color:#111;border:1px solid #222;font-weight:700}
-.column-head th{background:#fff;color:#111;border:1px solid #222}
-.column-number th{background:#fff;color:#111;border:1px solid #777}
+.group-head th{background:#d9e2f3;color:#111;border:1px solid #222;font-weight:700}
+.column-head th{background:#d9e2f3;color:#111;border:1px solid #222}
+.column-number th{background:#fce4d6;color:#111;border:1px solid #777}
 .group-head th{font-size:8pt;text-align:center;vertical-align:middle;height:26px}
 .column-head th{font-size:7pt;text-align:center;vertical-align:middle;height:88px;font-weight:700}
 .column-number th{font-size:6pt;text-align:center;height:17px;font-weight:400}
 td.number{text-align:center;vertical-align:middle}
 td.amount{text-align:right;white-space:nowrap}
-.section-row td{font-weight:700;background:#fff;padding:5px 4px;vertical-align:middle;border-top:1px solid #222;border-bottom:1px solid #222}
+.section-row td{font-weight:700;background:#e2f0d9;padding:5px 4px;vertical-align:middle;border-top:1px solid #222;border-bottom:1px solid #222}
 .section-row td:first-child{text-align:left}
 .data-row td{background:#fff}
 .data-row td{height:35px}
@@ -195,9 +195,10 @@ td.amount{text-align:right;white-space:nowrap}
 .summary-row td{height:24px;vertical-align:middle}
 .summary-row .amount{font-weight:700;background:#f2f2f2}
 .note{font-size:7pt;font-style:italic;margin:7px 0 0}
-.signatures{display:flex;justify-content:space-between;gap:24px;margin-top:25px;page-break-inside:avoid}
-.signature{width:32%;text-align:center;font-size:8pt}
-.signature .line{border-top:1px solid #111;margin:24px 0 5px}
+.signatures{margin-top:25px;page-break-inside:avoid}
+.signature-table{border-collapse:collapse;width:100%;table-layout:fixed;border:0}
+.signature-table td{border:0;padding:0;height:26px}
+.signature-table .signature-space{height:25px}
 @media print{.toolbar{display:none}.sheet{width:100%}body{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 @media screen{body{padding:18px;background:#f1f5f9}.sheet{background:#fff;padding:18px;max-width:1800px;box-shadow:0 2px 10px #00000012}}
 </style>
@@ -308,10 +309,12 @@ Adopted from GPPB Standard Form</div>
       <tr class="summary-row"><td colspan="7"></td><td colspan="3" class="summary-label">Total Amount of Estimated Budget:</td><td colspan="2" class="amount"><?=number_format($grandAbc,2)?></td><td colspan="2"></td></tr>
     </tbody>
   </table>
-  <div class="signatures">
-    <div class="signature"><div class="line"></div><strong>Prepared by</strong><br>Name / Position</div>
-    <div class="signature"><div class="line"></div><strong>Reviewed by</strong><br>Name / Position</div>
-    <div class="signature"><div class="line"></div><strong>Approved by</strong><br>Name / Position</div>
+  <div class="signatures" aria-label="Signature area matching APP Format.xlsx">
+    <table class="signature-table"><tbody>
+      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td colspan="14" class="signature-space"></td></tr>
+      <tr><td colspan="14" class="signature-space"></td></tr>
+    </tbody></table>
   </div>
 </div>
 </body>
