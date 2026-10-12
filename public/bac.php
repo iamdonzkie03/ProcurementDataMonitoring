@@ -62,7 +62,7 @@ $members=$st->fetchAll();
 $canManage=hasRole(['Administrator','Editor']);
 
 // Build the BAC name list from configured Division/Department supervisors and Area/Unit Heads.
-$bacEligiblePeople=$pdo->query("SELECT d.division_head AS name,d.name AS area_unit,'Division/Department Supervisor' AS source_role FROM divisions d WHERE TRIM(COALESCE(d.division_head,''))<>'' UNION SELECT ap.name AS name,a.name AS area_unit,'Area/Unit Head' AS source_role FROM area_personnel ap JOIN areas a ON a.id=ap.area_id WHERE ap.role='Head' AND TRIM(COALESCE(ap.name,''))<>'' ORDER BY name,area_unit")->fetchAll(PDO::FETCH_ASSOC);
+$bacEligiblePeople=$pdo->query("SELECT d.division_head AS name,d.name AS area_unit,'Division/Department Supervisor' AS source_role FROM divisions d WHERE TRIM(COALESCE(d.division_head,''))<>'' UNION SELECT ap.name AS name,a.name AS area_unit,'Area/Unit Personnel' AS source_role FROM area_personnel ap JOIN areas a ON a.id=ap.area_id WHERE TRIM(COALESCE(ap.name,''))<>'' ORDER BY name,area_unit")->fetchAll(PDO::FETCH_ASSOC);
 $bacPeopleByName=[];
 foreach($bacEligiblePeople as $person){
   $personName=trim((string)$person['name']);
@@ -131,7 +131,7 @@ pageStart('Bids and Awards Committee');
     <form method="post" id="addMemberForm" class="bac-member-form" hidden>
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="member_type" value="<?=e($type)?>">
-      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><?php if($type==='TWG'): ?><th>Area of Expertise*</th><?php endif; ?><th>Area/Unit*</th><th>Code/Tag*</th><th>Action</th></tr></thead><tbody id="bacEntryRows"><tr class="bac-entry-row"><td><select class="input bac-person-select" name="name[]" aria-label="Name" required><option value="">Select supervisor or Area/Unit Head</option><?php foreach($bacPeopleOptions as $person): ?><option value="<?=e($person['name'])?>" data-area-units="<?=e(json_encode($person['area_units'],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES))?>"><?=e($person['name'])?></option><?php endforeach; ?></select></td><td><input class="input" type="text" name="designation[]" maxlength="180" placeholder="<?=$type==='BAC'?'BAC Designation':'TWG Designation'?>" aria-label="<?=$type==='BAC'?'BAC Designation':'TWG Designation'?>" required></td><?php if($type==='TWG'): ?><td><input class="input" type="text" name="area_expertise[]" maxlength="180" placeholder="Area of Expertise" aria-label="Area of Expertise" required></td><?php endif; ?><td><input class="input bac-area-unit-input" type="text" name="area_unit[]" maxlength="180" placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly required></td><td><input class="input" type="text" name="code_tag[]" maxlength="100" placeholder="Code/Tag" aria-label="Code/Tag" required></td><td class="bac-entry-action"><button class="btn secondary" type="button" id="addMemberRow">Add Row</button></td></tr></tbody></table></div>
+      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><?php if($type==='TWG'): ?><th>Area of Expertise*</th><?php endif; ?><th>Area/Unit*</th><th>Code/Tag*</th><th>Action</th></tr></thead><tbody id="bacEntryRows"><tr class="bac-entry-row"><td><div class="bac-person-autocomplete"><input class="input bac-person-name" type="text" name="name[]" maxlength="180" placeholder="Search name..." autocomplete="off" aria-label="Name" required><div class="bac-person-suggestions" role="listbox"></div></div></td><td><input class="input" type="text" name="designation[]" maxlength="180" placeholder="<?=$type==='BAC'?'BAC Designation':'TWG Designation'?>" aria-label="<?=$type==='BAC'?'BAC Designation':'TWG Designation'?>" required></td><?php if($type==='TWG'): ?><td><input class="input" type="text" name="area_expertise[]" maxlength="180" placeholder="Area of Expertise" aria-label="Area of Expertise" required></td><?php endif; ?><td><input class="input bac-area-unit-input" type="text" name="area_unit[]" maxlength="180" placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly required></td><td><input class="input" type="text" name="code_tag[]" maxlength="100" placeholder="Code/Tag" aria-label="Code/Tag" required></td><td class="bac-entry-action"><button class="btn secondary" type="button" id="addMemberRow">Add Row</button></td></tr></tbody></table></div>
       <div class="bac-form-actions"><button class="btn" type="submit" id="saveMemberItems">Save Member</button><button class="btn secondary" type="button" id="cancelAddMember">Cancel</button></div>
     </form>
     <?php endif; ?>
@@ -203,6 +203,12 @@ pageStart('Bids and Awards Committee');
 .bac-entry-table th{font-size:12px;white-space:nowrap}
 .bac-entry-table .input{width:100%;min-width:0;box-sizing:border-box;font-size:12px;padding:8px}
 .bac-entry-table .bac-area-unit-input{background:#e9ecef!important;color:#6b7280;cursor:not-allowed;opacity:1}
+.bac-person-autocomplete{position:relative;width:100%;min-width:0}
+.bac-person-suggestions{position:absolute;left:0;right:auto;top:100%;width:300px;max-width:min(420px,calc(100vw - 32px));z-index:99999;background:#fff;border:1px solid #94a3b8;border-radius:6px;box-shadow:0 10px 28px rgba(15,23,42,.24);max-height:260px;overflow-y:auto;display:none}
+.bac-person-suggestion{display:block;width:100%;box-sizing:border-box;padding:9px 11px;border:0;border-bottom:1px solid #e5e7eb;background:#fff;text-align:left;cursor:pointer;font-size:12px;white-space:normal;overflow-wrap:anywhere}
+.bac-person-suggestion:hover,.bac-person-suggestion:focus{background:#eef5ff}
+.bac-person-suggestion small{display:block;color:#6b7280;margin-top:3px;font-size:11px}
+
 .bac-entry-table .bac-entry-action{white-space:nowrap}.bac-entry-table .bac-row-remove{padding:7px 10px;font-size:12px;background:#dc3545;color:#fff;border-color:#dc3545}
 .bac-form-actions{display:flex;gap:8px;margin-top:16px}
 .bac-members-table-wrap{width:100%;overflow-x:auto}
@@ -224,18 +230,45 @@ document.addEventListener('DOMContentLoaded',function(){
   function updateSaveLabel(){
     if(save&&rows)save.textContent=rows.querySelectorAll('.bac-entry-row').length>1?'Save Members':'Save Member';
   }
-  function updateAreaUnit(row){
-    const nameSelect=row.querySelector('.bac-person-select');
+  const personOptions=<?=json_encode($bacPeopleOptions,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
+  function closePersonSuggestions(box){const list=box.querySelector('.bac-person-suggestions');if(list){list.innerHTML='';list.style.display='none';}}
+  function choosePerson(row,person){
+    const input=row.querySelector('.bac-person-name');
     const areaInput=row.querySelector('.bac-area-unit-input');
-    if(!nameSelect||!areaInput)return;
-    const option=nameSelect.options[nameSelect.selectedIndex];
-    let units=[];
-    try{units=JSON.parse(option&&option.dataset.areaUnits||'[]');}catch(e){units=[];}
-    areaInput.value=units.length===1?units[0]:(units.length>1?units.join(', '):'');
+    if(input)input.value=person.name;
+    if(areaInput)areaInput.value=(person.area_units||[]).join(', ');
+    const box=row.querySelector('.bac-person-autocomplete');if(box)closePersonSuggestions(box);
+  }
+  function renderPersonSuggestions(input){
+    const box=input.closest('.bac-person-autocomplete');
+    const list=box&&box.querySelector('.bac-person-suggestions');
+    const row=input.closest('.bac-entry-row');
+    if(!list||!row)return;
+    const term=input.value.trim().toLocaleLowerCase();
+    const matches=personOptions.filter(function(person){return !term||person.name.toLocaleLowerCase().includes(term)||person.area_units.some(function(unit){return unit.toLocaleLowerCase().includes(term);});}).slice(0,30);
+    list.innerHTML='';
+    if(!matches.length){list.style.display='none';return;}
+    matches.forEach(function(person){
+      const button=document.createElement('button');button.type='button';button.className='bac-person-suggestion';button.setAttribute('role','option');
+      const strong=document.createElement('strong');strong.textContent=person.name;button.appendChild(strong);
+      const small=document.createElement('small');small.textContent=(person.area_units||[]).join(', ');button.appendChild(small);
+      button.addEventListener('click',function(){choosePerson(row,person);});
+      list.appendChild(button);
+    });
+    list.style.display='block';
   }
   if(rows){
-    rows.addEventListener('change',function(event){
-      if(event.target.classList.contains('bac-person-select'))updateAreaUnit(event.target.closest('.bac-entry-row'));
+    rows.addEventListener('input',function(event){
+      if(event.target.classList.contains('bac-person-name'))renderPersonSuggestions(event.target);
+    });
+    rows.addEventListener('focusin',function(event){
+      if(event.target.classList.contains('bac-person-name'))renderPersonSuggestions(event.target);
+    });
+    rows.addEventListener('keydown',function(event){
+      if(event.target.classList.contains('bac-person-name')&&event.key==='Escape')closePersonSuggestions(event.target.closest('.bac-person-autocomplete'));
+    });
+    document.addEventListener('click',function(event){
+      rows.querySelectorAll('.bac-person-autocomplete').forEach(function(box){if(!box.contains(event.target))closePersonSuggestions(box);});
     });
   }
   function addMemberRow(){
