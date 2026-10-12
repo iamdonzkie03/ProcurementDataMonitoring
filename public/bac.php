@@ -83,10 +83,12 @@ pageStart('Bids and Awards Committee');
     <div class="bac-hierarchy-chart">
       <div class="bac-hierarchy-node bac-hierarchy-top"><span class="bac-hierarchy-role">Head of the Procuring Entity</span><strong>HoPE</strong></div>
       <div class="bac-hierarchy-connector"></div>
-      <div class="bac-hierarchy-node bac-hierarchy-chair"><span class="bac-hierarchy-role">Committee Leadership</span><strong>BAC Chairperson</strong><small>Leads BAC proceedings and committee deliberations</small></div>
-      <div class="bac-hierarchy-branch"><div class="bac-hierarchy-node"><span class="bac-hierarchy-role">Committee Leadership</span><strong>BAC Vice-Chairperson</strong></div><div class="bac-hierarchy-node"><span class="bac-hierarchy-role">Committee</span><strong>BAC Members</strong><small>Committee members supporting procurement proceedings</small></div><div class="bac-hierarchy-node"><span class="bac-hierarchy-role">Secretariat</span><strong>BAC Secretariat</strong><small>Provides secretariat and procurement process support</small></div></div>
+      <div class="bac-hierarchy-branch bac-hierarchy-hope-branch">
+        <div class="bac-hierarchy-node"><span class="bac-hierarchy-role">Committee</span><strong>BAC Members</strong><small>Committee members supporting procurement proceedings</small></div>
+        <div class="bac-hierarchy-node"><span class="bac-hierarchy-role">Secretariat</span><strong>BAC Secretariat</strong><small>Provides secretariat and procurement process support</small></div>
+      </div>
       <div class="bac-hierarchy-connector"></div>
-      <div class="bac-hierarchy-node bac-hierarchy-twg"><span class="bac-hierarchy-role">Technical Support</span><strong>Technical Working Group (TWG)</strong><small>Provides technical and administrative support to the BAC</small></div>
+      <div class="bac-hierarchy-node bac-hierarchy-twg"><span class="bac-hierarchy-role">Technical Support</span><strong>Technical Working Group (TWG)</strong><small>Supports the BAC with technical evaluation and related tasks</small></div>
       <p class="bac-hierarchy-note">Illustrative structure only. Confirm official appointments and applicable procurement rules when assigning positions.</p>
     </div>
   </section>
@@ -144,6 +146,8 @@ pageStart('Bids and Awards Committee');
 .bac-hierarchy-branch:before{content:"";position:absolute;top:0;left:25%;right:25%;height:2px;background:#94a3b8}
 .bac-hierarchy-branch .bac-hierarchy-node:before{content:"";position:absolute;top:-21px;width:2px;height:20px;background:#94a3b8}
 .bac-hierarchy-branch .bac-hierarchy-node{position:relative;flex:1;max-width:340px}
+.bac-hierarchy-hope-branch:before{left:25%;right:25%}
+.bac-hierarchy-hope-branch .bac-hierarchy-node{max-width:360px}
 .bac-hierarchy-twg{margin-top:0;background:#eff6ff;border-color:#93c5fd;min-width:min(360px,100%)}
 .bac-hierarchy-note{font-size:11px;color:#64748b;text-align:center;margin-top:22px}
 @media(max-width:700px){.bac-hierarchy-branch{flex-direction:column;align-items:center;gap:22px;padding-top:0}.bac-hierarchy-branch:before,.bac-hierarchy-branch .bac-hierarchy-node:before{display:none}.bac-hierarchy-branch .bac-hierarchy-node{width:100%;max-width:360px}.bac-hierarchy-chair{min-width:0;width:100%;max-width:360px}.bac-hierarchy-node{min-width:0;width:100%;max-width:360px}}
