@@ -13,15 +13,6 @@ pageStart('Bids and Awards Committee');
       <p>Committee workspace for procurement activities and related records.</p>
     </div>
   </div>
-  <div class="bac-page-notice">
-    <strong>BAC Workspace</strong>
-    <p>This page is now connected to the Bids and Awards Committee button. Committee-specific tools and records can be added here as the workflow is defined.</p>
-  </div>
-  <div class="bac-page-links">
-    <a class="btn" href="pr.php">Purchase Requests</a>
-    <a class="btn" href="po.php">Purchase Orders</a>
-    <a class="btn" href="supplier_registry.php">Supplier Registry</a>
-  </div>
 </div>
 <style>
 .content:has(.bac-page-panel){max-width:none!important;width:100%;padding:20px 28px 28px!important;min-height:calc(100vh - 170px);display:flex;flex-direction:column}
