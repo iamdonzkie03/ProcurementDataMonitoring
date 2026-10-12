@@ -185,8 +185,10 @@ th,td{border:1px solid #222;padding:3px 3px;vertical-align:top;overflow-wrap:any
 .group-head th{font-size:8pt;text-align:center;vertical-align:middle;height:26px}
 .column-head th{font-size:7pt;text-align:center;vertical-align:middle;height:88px;font-weight:700}
 .column-number th{font-size:6pt;text-align:center;height:17px;font-weight:400}
+tbody tr.data-row td:not(:nth-child(2)){text-align:center;vertical-align:middle}
+tbody tr.data-row td:nth-child(2){text-align:left;vertical-align:middle}
 td.number{text-align:center;vertical-align:middle}
-td.amount{text-align:right;white-space:nowrap}
+td.amount{text-align:center;white-space:nowrap}
 .section-row td{font-weight:700;background:#e2f0d9;padding:5px 4px;vertical-align:middle;border-top:1px solid #222;border-bottom:1px solid #222}
 .section-row td:first-child{text-align:left}
 .data-row td{background:#fff}
