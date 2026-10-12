@@ -61,6 +61,19 @@ $st->execute([$type]);
 $members=$st->fetchAll();
 $canManage=hasRole(['Administrator','Editor']);
 
+// Build the BAC name list from configured Division/Department supervisors and Area/Unit Heads.
+$bacEligiblePeople=$pdo->query("SELECT d.division_head AS name,d.name AS area_unit,'Division/Department Supervisor' AS source_role FROM divisions d WHERE TRIM(COALESCE(d.division_head,''))<>'' UNION SELECT ap.name AS name,a.name AS area_unit,'Area/Unit Head' AS source_role FROM area_personnel ap JOIN areas a ON a.id=ap.area_id WHERE ap.role='Head' AND TRIM(COALESCE(ap.name,''))<>'' ORDER BY name,area_unit")->fetchAll(PDO::FETCH_ASSOC);
+$bacPeopleByName=[];
+foreach($bacEligiblePeople as $person){
+  $personName=trim((string)$person['name']);
+  if($personName==='') continue;
+  $key=mb_strtolower($personName);
+  if(!isset($bacPeopleByName[$key])) $bacPeopleByName[$key]=['name'=>$personName,'area_units'=>[]];
+  $unit=trim((string)$person['area_unit']);
+  if($unit!==''&&!in_array($unit,$bacPeopleByName[$key]['area_units'],true)) $bacPeopleByName[$key]['area_units'][]=$unit;
+}
+$bacPeopleOptions=array_values($bacPeopleByName);
+
 pageStart('Bids and Awards Committee');
 ?>
 <div class="panel bac-page-panel">
@@ -118,7 +131,7 @@ pageStart('Bids and Awards Committee');
     <form method="post" id="addMemberForm" class="bac-member-form" hidden>
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="member_type" value="<?=e($type)?>">
-      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><?php if($type==='TWG'): ?><th>Area of Expertise*</th><?php endif; ?><th>Area/Unit*</th><th>Code/Tag*</th><th>Action</th></tr></thead><tbody id="bacEntryRows"><tr class="bac-entry-row"><td><input class="input" type="text" name="name[]" maxlength="180" placeholder="Name" aria-label="Name" required></td><td><input class="input" type="text" name="designation[]" maxlength="180" placeholder="<?=$type==='BAC'?'BAC Designation':'TWG Designation'?>" aria-label="<?=$type==='BAC'?'BAC Designation':'TWG Designation'?>" required></td><?php if($type==='TWG'): ?><td><input class="input" type="text" name="area_expertise[]" maxlength="180" placeholder="Area of Expertise" aria-label="Area of Expertise" required></td><?php endif; ?><td><input class="input" type="text" name="area_unit[]" maxlength="180" placeholder="Area/Unit" aria-label="Area/Unit" required></td><td><input class="input" type="text" name="code_tag[]" maxlength="100" placeholder="Code/Tag" aria-label="Code/Tag" required></td><td class="bac-entry-action"><button class="btn secondary" type="button" id="addMemberRow">Add Row</button></td></tr></tbody></table></div>
+      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><?php if($type==='TWG'): ?><th>Area of Expertise*</th><?php endif; ?><th>Area/Unit*</th><th>Code/Tag*</th><th>Action</th></tr></thead><tbody id="bacEntryRows"><tr class="bac-entry-row"><td><select class="input bac-person-select" name="name[]" aria-label="Name" required><option value="">Select supervisor or Area/Unit Head</option><?php foreach($bacPeopleOptions as $person): ?><option value="<?=e($person['name'])?>" data-area-units="<?=e(json_encode($person['area_units'],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES))?>"><?=e($person['name'])?></option><?php endforeach; ?></select></td><td><input class="input" type="text" name="designation[]" maxlength="180" placeholder="<?=$type==='BAC'?'BAC Designation':'TWG Designation'?>" aria-label="<?=$type==='BAC'?'BAC Designation':'TWG Designation'?>" required></td><?php if($type==='TWG'): ?><td><input class="input" type="text" name="area_expertise[]" maxlength="180" placeholder="Area of Expertise" aria-label="Area of Expertise" required></td><?php endif; ?><td><input class="input bac-area-unit-input" type="text" name="area_unit[]" maxlength="180" placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly required></td><td><input class="input" type="text" name="code_tag[]" maxlength="100" placeholder="Code/Tag" aria-label="Code/Tag" required></td><td class="bac-entry-action"><button class="btn secondary" type="button" id="addMemberRow">Add Row</button></td></tr></tbody></table></div>
       <div class="bac-form-actions"><button class="btn" type="submit" id="saveMemberItems">Save Member</button><button class="btn secondary" type="button" id="cancelAddMember">Cancel</button></div>
     </form>
     <?php endif; ?>
@@ -189,6 +202,7 @@ pageStart('Bids and Awards Committee');
 .bac-entry-table th,.bac-entry-table td{padding:7px;vertical-align:top}
 .bac-entry-table th{font-size:12px;white-space:nowrap}
 .bac-entry-table .input{width:100%;min-width:0;box-sizing:border-box;font-size:12px;padding:8px}
+.bac-entry-table .bac-area-unit-input{background:#e9ecef!important;color:#6b7280;cursor:not-allowed;opacity:1}
 .bac-entry-table .bac-entry-action{white-space:nowrap}.bac-entry-table .bac-row-remove{padding:7px 10px;font-size:12px;background:#dc3545;color:#fff;border-color:#dc3545}
 .bac-form-actions{display:flex;gap:8px;margin-top:16px}
 .bac-members-table-wrap{width:100%;overflow-x:auto}
@@ -210,12 +224,27 @@ document.addEventListener('DOMContentLoaded',function(){
   function updateSaveLabel(){
     if(save&&rows)save.textContent=rows.querySelectorAll('.bac-entry-row').length>1?'Save Members':'Save Member';
   }
+  function updateAreaUnit(row){
+    const nameSelect=row.querySelector('.bac-person-select');
+    const areaInput=row.querySelector('.bac-area-unit-input');
+    if(!nameSelect||!areaInput)return;
+    const option=nameSelect.options[nameSelect.selectedIndex];
+    let units=[];
+    try{units=JSON.parse(option&&option.dataset.areaUnits||'[]');}catch(e){units=[];}
+    areaInput.value=units.length===1?units[0]:(units.length>1?units.join(', '):'');
+  }
+  if(rows){
+    rows.addEventListener('change',function(event){
+      if(event.target.classList.contains('bac-person-select'))updateAreaUnit(event.target.closest('.bac-entry-row'));
+    });
+  }
   function addMemberRow(){
     if(!rows)return;
     const first=rows.querySelector('.bac-entry-row');
     if(!first)return;
     const row=first.cloneNode(true);
     row.querySelectorAll('input').forEach(function(input){input.value='';});
+    row.querySelectorAll('select').forEach(function(select){select.selectedIndex=0;});
     const action=row.querySelector('.bac-entry-action');
     if(action){
       action.innerHTML='<button class="btn danger bac-row-remove" type="button">Remove</button>';
