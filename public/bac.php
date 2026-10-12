@@ -84,18 +84,20 @@ pageStart('Bids and Awards Committee');
       <div class="bac-hierarchy-node bac-hierarchy-top"><span class="bac-hierarchy-role">Head of the Procuring Entity</span><strong>HoPE</strong></div>
       <div class="bac-hierarchy-connector"></div>
       <div class="bac-hierarchy-branch bac-hierarchy-hope-branch">
-        <div class="bac-hierarchy-node bac-hierarchy-group bac-hierarchy-bac">
-          <span class="bac-hierarchy-role">Committee</span><strong>Bids and Awards Committee</strong>
-          <div class="bac-hierarchy-subnodes">
-            <div class="bac-hierarchy-subnode">BAC Chairperson</div>
-            <div class="bac-hierarchy-subnode">BAC Vice-Chairperson</div>
-            <div class="bac-hierarchy-subnode">BAC Members</div>
+        <div class="bac-hierarchy-bac-column">
+          <div class="bac-hierarchy-node bac-hierarchy-group bac-hierarchy-bac">
+            <span class="bac-hierarchy-role">Committee</span><strong>Bids and Awards Committee</strong>
+            <div class="bac-hierarchy-subnodes">
+              <div class="bac-hierarchy-subnode">BAC Chairperson</div>
+              <div class="bac-hierarchy-subnode">BAC Vice-Chairperson</div>
+              <div class="bac-hierarchy-subnode">BAC Members</div>
+            </div>
+          </div>
+          <div class="bac-hierarchy-twg-branch">
+            <div class="bac-hierarchy-node bac-hierarchy-twg"><span class="bac-hierarchy-role">Technical Support</span><strong>Technical Working Group (TWG)</strong><small>Supports the BAC with technical evaluation and related tasks</small></div>
           </div>
         </div>
-        <div class="bac-hierarchy-twg-branch">
-          <div class="bac-hierarchy-node bac-hierarchy-twg"><span class="bac-hierarchy-role">Technical Support</span><strong>Technical Working Group (TWG)</strong><small>Supports the BAC with technical evaluation and related tasks</small></div>
-        </div>
-        <div class="bac-hierarchy-node bac-hierarchy-group">
+        <div class="bac-hierarchy-node bac-hierarchy-group bac-hierarchy-secretariat">
           <span class="bac-hierarchy-role">Secretariat</span><strong>BAC Secretariat</strong>
           <div class="bac-hierarchy-subnodes">
             <div class="bac-hierarchy-subnode">BAC Secretariat Head</div>
@@ -162,10 +164,13 @@ pageStart('Bids and Awards Committee');
 .bac-hierarchy-branch .bac-hierarchy-node{position:relative;flex:1;max-width:340px}
 .bac-hierarchy-hope-branch:before{left:25%;right:25%}
 .bac-hierarchy-hope-branch .bac-hierarchy-node{max-width:440px;align-self:stretch}
-.bac-hierarchy-hope-branch>.bac-hierarchy-bac{flex:1}
-.bac-hierarchy-twg-branch{position:relative;display:flex;justify-content:center;width:100%;padding-top:28px;margin-top:-22px}
-.bac-hierarchy-twg-branch:before{content:"";position:absolute;top:0;left:25%;width:2px;height:28px;background:#94a3b8}
-.bac-hierarchy-twg-branch .bac-hierarchy-twg{width:min(440px,100%);max-width:440px}
+.bac-hierarchy-bac-column{position:relative;display:flex;flex-direction:column;align-items:center;flex:1;max-width:440px;min-width:0}
+.bac-hierarchy-hope-branch>.bac-hierarchy-bac-column{flex:1}
+.bac-hierarchy-bac-column>.bac-hierarchy-bac{width:100%;max-width:440px!important}
+.bac-hierarchy-twg-branch{position:relative;display:flex;justify-content:center;width:100%;padding-top:28px;margin-top:0}
+.bac-hierarchy-twg-branch:before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:2px;height:28px;background:#94a3b8}
+.bac-hierarchy-twg-branch .bac-hierarchy-twg{width:100%;max-width:440px}
+.bac-hierarchy-secretariat{align-self:stretch;flex:1}
 .bac-hierarchy-group{gap:12px}
 .bac-hierarchy-subnodes{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:4px}
 .bac-hierarchy-subnode{border:1px solid #dbe3ec;background:#f8fafc;border-radius:7px;padding:10px 12px;color:#334155;font-size:13px;font-weight:600;width:100%;box-sizing:border-box}
@@ -174,7 +179,7 @@ pageStart('Bids and Awards Committee');
 .bac-hierarchy-twg strong{font-size:14px}
 
 .bac-hierarchy-note{font-size:11px;color:#64748b;text-align:center;margin-top:22px}
-@media(max-width:700px){.bac-hierarchy-twg-branch{margin-top:0;padding-top:20px}.bac-hierarchy-twg-branch:before{left:50%;height:20px}.bac-hierarchy-branch{flex-direction:column;align-items:center;gap:22px;padding-top:0}.bac-hierarchy-branch:before,.bac-hierarchy-branch .bac-hierarchy-node:before{display:none}.bac-hierarchy-branch .bac-hierarchy-node{width:100%;max-width:360px}.bac-hierarchy-chair{min-width:0;width:100%;max-width:360px}.bac-hierarchy-node{min-width:0;width:100%;max-width:360px}}
+@media(max-width:700px){.bac-hierarchy-bac-column{width:100%;max-width:360px}.bac-hierarchy-twg-branch{margin-top:0;padding-top:20px}.bac-hierarchy-twg-branch:before{left:50%;height:20px}.bac-hierarchy-branch{flex-direction:column;align-items:center;gap:22px;padding-top:0}.bac-hierarchy-branch:before,.bac-hierarchy-branch .bac-hierarchy-node:before{display:none}.bac-hierarchy-branch .bac-hierarchy-node{width:100%;max-width:360px}.bac-hierarchy-chair{min-width:0;width:100%;max-width:360px}.bac-hierarchy-node{min-width:0;width:100%;max-width:360px}}
 .bac-tab-content h3{margin:0;color:#102a43;font-size:17px}
 .bac-list-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}
 .bac-list-toolbar .btn,.bac-form-actions .btn{white-space:nowrap}
