@@ -437,10 +437,14 @@ document.addEventListener('DOMContentLoaded',function(){
         if(memberRow!==row&&role&&name&&['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'].includes(role.value))occupied.add(normalizeBacName(name));
         if(memberRow!==row&&assignedInput&&assignedInput.value)occupied.add(normalizeBacName(assignedInput.value));
       });
-      const eligibleDesignations=['BAC Chairman','BAC Vice-Chairman','BAC Member'];
+      const requiredAssigneeDesignation={
+        'Ad-Hoc Chairman':'BAC Chairman',
+        'Ad-Hoc Vice-Chairman':'BAC Vice-Chairman',
+        'Ad-Hoc Member':'BAC Member'
+      }[designation.value]||'';
       const available=savedBacRoster.filter(function(person){
         const name=String(person.name||'').trim();
-        return name&&eligibleDesignations.includes(person.designation)&&(!occupied.has(normalizeBacName(name))||normalizeBacName(name)===normalizeBacName(selected));
+        return name&&person.designation===requiredAssigneeDesignation&&(!occupied.has(normalizeBacName(name))||normalizeBacName(name)===normalizeBacName(selected));
       });
       available.forEach(function(person){
         const option=document.createElement('option');
