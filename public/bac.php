@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded',function(){
       const tag=row.querySelector('select[name="code_tag[]"]');
       const assigned=row.querySelector('.bac-assigned-member');
       if(!designation||!tag||!assigned)return;
-      const isAdHoc=designation.value==='Ad-Hoc Member';
+      const isAdHoc=['Ad-Hoc Member','Ad-Hoc Vice-Chairman','Ad-Hoc Chairman'].includes(designation.value);
       const selected=assigned.value;
       assigned.innerHTML='';
       const placeholder=document.createElement('option');
