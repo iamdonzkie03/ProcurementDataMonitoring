@@ -99,8 +99,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $allowedDesignations=['bac chairman','bac vice-chairman','bac member','ad-hoc chairman','ad-hoc vice-chairman','ad-hoc member'];
     $existingStmt=$pdo->prepare('SELECT name,designation,code_tag,area_unit FROM bac_committee_members WHERE member_type=\'BAC\'');
     $existingStmt->execute();
-    $existing=$existingStmt->fetchAll(PDO::FETCH_ASSOC);
-    $all=array_merge($existing,$type==='BAC'?array_map(static function($entry){return ['name'=>$entry[1],'designation'=>$entry[2],'code_tag'=>$entry[5],'assigned_member'=>$entry[6]??null,'area_unit'=>$entry[4]];},$entries):[]);
+    $existing=$existingStmt->fetchAll(PDO::FETCH_ASSOC); foreach($existing as &$existingPerson){$existingPerson['_new_entry']=false;} unset($existingPerson);
+    $all=array_merge($existing,$type==='BAC'?array_map(static function($entry){return ['name'=>$entry[1],'designation'=>$entry[2],'code_tag'=>$entry[5],'assigned_member'=>$entry[6]??null,'area_unit'=>$entry[4],'_new_entry'=>true];},$entries):[]);
     $errors=[];
     $seenNames=[];
     $seenRoles=[];
@@ -119,7 +119,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if(isset($seenRoles[$roleKey]))$errors[]='BAC code/tag "'.trim((string)$person['code_tag']).'" may have only one '.trim((string)$person['designation']).'.';
         else $seenRoles[$roleKey]=true;
       }
-      if(in_array($designation,['ad-hoc chairman','ad-hoc vice-chairman','ad-hoc member'],true)){$assigned=$normalizeName($person['assigned_member']??'');$requiredRole=['ad-hoc chairman'=>'bac chairman','ad-hoc vice-chairman'=>'bac vice-chairman','ad-hoc member'=>'bac member'][$designation];$eligible=false;foreach($all as $candidate){if($normalizeTag($candidate['code_tag']??'')===$tag&&mb_strtolower(trim((string)($candidate['designation']??'')))===$requiredRole&&$normalizeName($candidate['name']??'')===$assigned){$eligible=true;break;}}if($assigned===''||!$eligible)$errors[]=$person['designation'].' '.$person['name'].' must be assigned to a '.$requiredRole.' under the same Code/Tag.';}
+      if(!empty($person['_new_entry'])&&in_array($designation,['ad-hoc chairman','ad-hoc vice-chairman','ad-hoc member'],true)){$assigned=$normalizeName($person['assigned_member']??'');$requiredRole=['ad-hoc chairman'=>'bac chairman','ad-hoc vice-chairman'=>'bac vice-chairman','ad-hoc member'=>'bac member'][$designation];$eligible=false;foreach($all as $candidate){if($normalizeTag($candidate['code_tag']??'')===$tag&&mb_strtolower(trim((string)($candidate['designation']??'')))===$requiredRole&&$normalizeName($candidate['name']??'')===$assigned){$eligible=true;break;}}if($assigned===''||!$eligible)$errors[]=$person['designation'].' '.$person['name'].' must be assigned to a '.$requiredRole.' under the same Code/Tag.';}
       // A named BAC person may belong to only one code/tag, even if repeated in the current batch.
       if(isset($seenNames[$name])&&$seenNames[$name]!==$tag)$errors[]=$person['name'].' is already assigned to a different BAC code/tag and cannot be added again.';
       else $seenNames[$name]=$tag;
