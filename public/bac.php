@@ -425,22 +425,29 @@ document.addEventListener('DOMContentLoaded',function(){
       assigned.appendChild(placeholder);
       const tagValue=tag.value;
       const occupied=new Set();
+      // Exclude personnel already assigned to an Ad-Hoc designation, and BAC personnel already chosen as an Ad-Hoc assignee.
       savedBacRoster.forEach(function(person){
-        if(['BAC Chairman','BAC Vice-Chairman','BAC Member','Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'].includes(person.designation))occupied.add(normalizeBacName(person.name));
+        if(['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'].includes(person.designation))occupied.add(normalizeBacName(person.name));
+        if(person.assigned_member)occupied.add(normalizeBacName(person.assigned_member));
       });
       rows.querySelectorAll('.bac-entry-row').forEach(function(memberRow){
         const role=memberRow.querySelector('select[name="designation[]"]');
-        const memberTag=memberRow.querySelector('select[name="code_tag[]"]');
         const nameInput=memberRow.querySelector('.bac-person-name');
+        const assignedInput=memberRow.querySelector('.bac-assigned-member');
         const name=nameInput?nameInput.value.trim():'';
-        if(memberRow!==row&&role&&name&&['BAC Chairman','BAC Vice-Chairman','BAC Member','Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'].includes(role.value))occupied.add(normalizeBacName(name));
+        if(memberRow!==row&&role&&name&&['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'].includes(role.value))occupied.add(normalizeBacName(name));
+        if(assignedInput&&assignedInput.value)occupied.add(normalizeBacName(assignedInput.value));
       });
-      const available=personOptions.filter(function(person){
-        const name=person.name.trim();
-        return name&& !occupied.has(normalizeBacName(name));
+      const eligibleDesignations=['BAC Chairman','BAC Vice-Chairman','BAC Member'];
+      const available=savedBacRoster.filter(function(person){
+        const name=String(person.name||'').trim();
+        return name&&eligibleDesignations.includes(person.designation)&&!occupied.has(normalizeBacName(name));
       });
       available.forEach(function(person){
-        const option=document.createElement('option');option.value=person.name;option.textContent=person.name+' — '+(person.area_units||[]).join(', ');assigned.appendChild(option);
+        const option=document.createElement('option');
+        option.value=person.name;
+        option.textContent=person.name+' — '+person.designation+' ('+person.code_tag+')';
+        assigned.appendChild(option);
       });
       assigned.disabled=!isAdHoc;
       assigned.required=isAdHoc;
