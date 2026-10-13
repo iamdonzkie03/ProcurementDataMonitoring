@@ -447,16 +447,36 @@ document.addEventListener('DOMContentLoaded',function(){
         const option=document.createElement('option');
         option.value=person.name;
         option.textContent=person.name+' — '+person.designation+' ('+person.code_tag+')';
+        option.dataset.codeTag=person.code_tag||'';
         assigned.appendChild(option);
       });
       assigned.disabled=!isAdHoc;
+      // Ad-Hoc roles inherit the Code/Tag of the selected BAC Chairman/Vice-Chairman/Member.
+      if(isAdHoc){
+        tag.disabled=true;
+        const chosen=Array.from(assigned.options).find(function(option){return option.value===assigned.value;});
+        if(chosen&&chosen.dataset.codeTag)tag.value=chosen.dataset.codeTag;
+        else tag.value='';
+      }else{
+        tag.disabled=false;
+      }
       assigned.required=isAdHoc;
       if(isAdHoc&&Array.from(assigned.options).some(function(option){return option.value===selected;}))assigned.value=selected;
       else assigned.value='';
     });
   }
   if(rows){
-    rows.addEventListener('change',function(event){if(event.target.matches('select[name="designation[]"],select[name="code_tag[]"]'))refreshAssignedMembers();});
+    rows.addEventListener('change',function(event){
+      if(event.target.matches('select[name="designation[]"],select[name="code_tag[]"],select[name="assigned_member[]"]')){
+        if(event.target.matches('select[name="assigned_member[]"]')){
+          const row=event.target.closest('.bac-entry-row');
+          const tag=row&&row.querySelector('select[name="code_tag[]"]');
+          const chosen=event.target.options[event.target.selectedIndex];
+          if(tag&&chosen&&chosen.dataset.codeTag)tag.value=chosen.dataset.codeTag;
+        }
+        refreshAssignedMembers();
+      }
+    });
     rows.addEventListener('input',function(event){if(event.target.classList.contains('bac-person-name'))refreshAssignedMembers();});
   }
   function addMemberRow(){
