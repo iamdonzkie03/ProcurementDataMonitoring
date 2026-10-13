@@ -77,7 +77,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       if($tag===''||$name==='')continue;
       if(!in_array($tag,$validTags,true))$errors[]='Invalid BAC Code/Tag "'.trim((string)$person['code_tag']).'". Choose BAC A, BAC B, BAC C, BAC D, or BAC E.';
       if(!in_array($designation,$allowedDesignations,true))$errors[]='Invalid BAC designation for '.$person['name'].'.';
-      if(preg_match('/\\bprocurement\\b/i',(string)($person['area_unit']??'')))$errors[]=$person['name'].' belongs to the Procurement Area/Unit and cannot be assigned to a BAC designation.');
+      if(preg_match('/\\bprocurement\\b/i',(string)($person['area_unit']??'')))$errors[]=$person['name'].' belongs to the Procurement Area/Unit and cannot be assigned to a BAC designation.';
       if(in_array($designation,['bac chairman','bac vice-chairman','ad-hoc chairman','ad-hoc vice-chairman'],true)){
         $roleKey=$tag.'|'.$designation;
         if(isset($seenRoles[$roleKey]))$errors[]='BAC code/tag "'.trim((string)$person['code_tag']).'" may have only one '.trim((string)$person['designation']).'.';
