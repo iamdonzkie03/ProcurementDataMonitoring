@@ -53,11 +53,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       flash('error','Personnel from the Procurement Area/Unit cannot be assigned to a BAC designation.');
     }elseif($type==='BAC'&&!in_array($designation,['BAC Chairman','BAC Vice-Chairman','BAC Member','Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'],true)){
       flash('error','Select a valid BAC designation.');
-    }elseif($type==='BAC'&&$designation==='Ad-Hoc Member'&&$assigned===''){
+    }elseif($type==='BAC'&&in_array($designation,['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'],true)&&$assigned===''){
       flash('error','Select the BAC Member assigned to this Ad-Hoc Member.');
     }else{
       $st=$pdo->prepare('UPDATE bac_committee_members SET name=?,designation=?,area_expertise=?,area_unit=?,code_tag=?,assigned_member=? WHERE id=? AND member_type=?');
-      $st->execute([$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag,$type==='BAC'&&$designation==='Ad-Hoc Member'?$assigned:null,$id,$type]);
+      $st->execute([$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag,$type==='BAC'&&in_array($designation,['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'],true)?$assigned:null,$id,$type]);
       flash('success','Member updated.');
     }
     header('Location:bac.php?tab='.$returnTab);exit;
@@ -84,8 +84,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       header('Location:bac.php?tab='.$returnTab);exit;
     }
     if($type==='BAC'&&preg_match('/\\bprocurement\\b/i',$areaUnit)){flash('error','Personnel from the Procurement Area/Unit cannot be added to any BAC designation, including Ad-Hoc roles. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
-    if($type==='BAC'&&mb_strtolower($designation)==='ad-hoc member'&&$assignedMember===''){flash('error','Select the BAC Member assigned to each Ad-Hoc Member. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
-    if(($type!=='BAC'||mb_strtolower($designation)!=='ad-hoc member')&&$assignedMember!==''){flash('error','Only Ad-Hoc Members may have an Assigned BAC Member. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
+    if($type==='BAC'&&in_array(mb_strtolower($designation),['ad-hoc chairman','ad-hoc vice-chairman','ad-hoc member'],true)&&$assignedMember===''){flash('error','Select an assigned BAC Chairman, BAC Vice-Chairman, or BAC Member for each Ad-Hoc role. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
+    if(($type!=='BAC'||!in_array(mb_strtolower($designation),['ad-hoc chairman','ad-hoc vice-chairman','ad-hoc member'],true))&&$assignedMember!==''){flash('error','Only Ad-Hoc roles may have an Assigned BAC Member. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
     $entries[]=[$type,$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag,$assignedMember!==''?$assignedMember:null];
   }
   if(!$entries){flash('error','Enter at least one member before saving.');}
@@ -119,7 +119,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if(isset($seenRoles[$roleKey]))$errors[]='BAC code/tag "'.trim((string)$person['code_tag']).'" may have only one '.trim((string)$person['designation']).'.';
         else $seenRoles[$roleKey]=true;
       }
-      if($designation==='ad-hoc member'){$assigned=$normalizeName($person['assigned_member']??'');if($assigned===''||!isset($bacMemberNames[$tag][$assigned]))$errors[]='Ad-Hoc Member '.$person['name'].' must be assigned to a BAC Member under the same Code/Tag.';}
+      if(in_array($designation,['ad-hoc chairman','ad-hoc vice-chairman','ad-hoc member'],true)){$assigned=$normalizeName($person['assigned_member']??'');$requiredRole=['ad-hoc chairman'=>'bac chairman','ad-hoc vice-chairman'=>'bac vice-chairman','ad-hoc member'=>'bac member'][$designation];$eligible=false;foreach($all as $candidate){if($normalizeTag($candidate['code_tag']??'')===$tag&&mb_strtolower(trim((string)($candidate['designation']??'')))===$requiredRole&&$normalizeName($candidate['name']??'')===$assigned){$eligible=true;break;}}if($assigned===''||!$eligible)$errors[]=$person['designation'].' '.$person['name'].' must be assigned to a '.$requiredRole.' under the same Code/Tag.';}
       // A named BAC person may belong to only one code/tag, even if repeated in the current batch.
       if(isset($seenNames[$name])&&$seenNames[$name]!==$tag)$errors[]=$person['name'].' is already assigned to a different BAC code/tag and cannot be added again.';
       else $seenNames[$name]=$tag;
