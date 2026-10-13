@@ -221,7 +221,7 @@ pageStart('Bids and Awards Committee');
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="member_type" value="<?=e($type)?>">
       <input type="hidden" name="action" value="delete_selected">
-      <div class="bac-bulk-actions"><button class="btn danger" type="submit">Delete Selected</button><span>Select one or more rows to delete.</span></div>
+      <div class="bac-bulk-actions"><button class="btn danger" type="submit">Delete Selected</button></div>
     </form>
     <form method="post" id="editMemberForm" class="bac-edit-form" hidden>
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
