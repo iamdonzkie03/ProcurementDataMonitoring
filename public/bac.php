@@ -423,9 +423,8 @@ document.addEventListener('DOMContentLoaded',function(){
       placeholder.value='';
       placeholder.textContent=isAdHoc?'Select available BAC personnel':'Only required for Ad-Hoc Member';
       assigned.appendChild(placeholder);
-      const tagValue=tag.value;
       const occupied=new Set();
-      // Exclude personnel already assigned to an Ad-Hoc designation, and BAC personnel already chosen as an Ad-Hoc assignee.
+      // Exclude saved Ad-Hoc members and assignees, but preserve the current row's selected assignee.
       savedBacRoster.forEach(function(person){
         if(['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'].includes(person.designation))occupied.add(normalizeBacName(person.name));
         if(person.assigned_member)occupied.add(normalizeBacName(person.assigned_member));
@@ -436,12 +435,12 @@ document.addEventListener('DOMContentLoaded',function(){
         const assignedInput=memberRow.querySelector('.bac-assigned-member');
         const name=nameInput?nameInput.value.trim():'';
         if(memberRow!==row&&role&&name&&['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'].includes(role.value))occupied.add(normalizeBacName(name));
-        if(assignedInput&&assignedInput.value)occupied.add(normalizeBacName(assignedInput.value));
+        if(memberRow!==row&&assignedInput&&assignedInput.value)occupied.add(normalizeBacName(assignedInput.value));
       });
       const eligibleDesignations=['BAC Chairman','BAC Vice-Chairman','BAC Member'];
       const available=savedBacRoster.filter(function(person){
         const name=String(person.name||'').trim();
-        return name&&eligibleDesignations.includes(person.designation)&&!occupied.has(normalizeBacName(name));
+        return name&&eligibleDesignations.includes(person.designation)&&(!occupied.has(normalizeBacName(name))||normalizeBacName(name)===normalizeBacName(selected));
       });
       available.forEach(function(person){
         const option=document.createElement('option');
@@ -451,18 +450,17 @@ document.addEventListener('DOMContentLoaded',function(){
         assigned.appendChild(option);
       });
       assigned.disabled=!isAdHoc;
-      // Ad-Hoc roles inherit the Code/Tag of the selected BAC Chairman/Vice-Chairman/Member.
-      if(isAdHoc){
-        tag.disabled=true;
-        const chosen=Array.from(assigned.options).find(function(option){return option.value===assigned.value;});
-        if(chosen&&chosen.dataset.codeTag)tag.value=chosen.dataset.codeTag;
-        else tag.value='';
-      }else{
-        tag.disabled=false;
-      }
       assigned.required=isAdHoc;
       if(isAdHoc&&Array.from(assigned.options).some(function(option){return option.value===selected;}))assigned.value=selected;
       else assigned.value='';
+      // Set Code/Tag only after restoring the selected assignee, using that roster member's stored tag.
+      if(isAdHoc){
+        tag.disabled=true;
+        const chosen=assigned.options[assigned.selectedIndex];
+        tag.value=chosen&&chosen.value?(chosen.dataset.codeTag||''):'';
+      }else{
+        tag.disabled=false;
+      }
     });
   }
   if(rows){
