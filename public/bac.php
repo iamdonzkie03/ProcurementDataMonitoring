@@ -25,7 +25,43 @@ if(!in_array($tab,['hierarchy','bac-members','technical-working-group'],true)) $
 if($_SERVER['REQUEST_METHOD']==='POST'){
   requireRole(['Administrator','Editor']);
   checkCsrf();
+  $action=(string)($_POST['action']??'add');
   $type=($_POST['member_type']??'')==='TWG'?'TWG':'BAC';
+  $returnTab=$type==='TWG'?'technical-working-group':'bac-members';
+  if($action==='delete_selected'){
+    $ids=array_values(array_unique(array_filter(array_map('intval',(array)($_POST['selected_ids']??[])),static fn($id)=>$id>0)));
+    if(!$ids){flash('error','Select at least one member to delete.');}
+    else{
+      $marks=implode(',',array_fill(0,count($ids),'?'));
+      $st=$pdo->prepare("DELETE FROM bac_committee_members WHERE member_type=? AND id IN ($marks)");
+      $st->execute(array_merge([$type],$ids));
+      flash('success',$st->rowCount().' member(s) deleted.');
+    }
+    header('Location:bac.php?tab='.$returnTab);exit;
+  }
+  if($action==='update_member'){
+    $id=(int)($_POST['id']??0);
+    $name=trim((string)($_POST['name']??''));
+    $designation=trim((string)($_POST['designation']??''));
+    $expertise=trim((string)($_POST['area_expertise']??''));
+    $areaUnit=trim((string)($_POST['area_unit']??''));
+    $codeTag=trim((string)($_POST['code_tag']??''));
+    $assigned=trim((string)($_POST['assigned_member']??''));
+    if($id<1||$name===''||$designation===''||$areaUnit===''||$codeTag===''||($type==='TWG'&&$expertise==='')){
+      flash('error','Complete all required fields.');
+    }elseif($type==='BAC'&&preg_match('/\bprocurement\b/i',$areaUnit)){
+      flash('error','Personnel from the Procurement Area/Unit cannot be assigned to a BAC designation.');
+    }elseif($type==='BAC'&&!in_array($designation,['BAC Chairman','BAC Vice-Chairman','BAC Member','Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'],true)){
+      flash('error','Select a valid BAC designation.');
+    }elseif($type==='BAC'&&$designation==='Ad-Hoc Member'&&$assigned===''){
+      flash('error','Select the BAC Member assigned to this Ad-Hoc Member.');
+    }else{
+      $st=$pdo->prepare('UPDATE bac_committee_members SET name=?,designation=?,area_expertise=?,area_unit=?,code_tag=?,assigned_member=? WHERE id=? AND member_type=?');
+      $st->execute([$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag,$type==='BAC'&&$designation==='Ad-Hoc Member'?$assigned:null,$id,$type]);
+      flash('success','Member updated.');
+    }
+    header('Location:bac.php?tab='.$returnTab);exit;
+  }
   $returnTab=$type==='TWG'?'technical-working-group':'bac-members';
   $names=(array)($_POST['name']??[]);
   $designations=(array)($_POST['designation']??[]);
@@ -180,14 +216,41 @@ pageStart('Bids and Awards Committee');
       <div class="bac-form-actions"><button class="btn" type="submit" id="saveMemberItems">Save Member</button><button class="btn secondary" type="button" id="cancelAddMember">Cancel</button></div>
     </form>
     <?php endif; ?>
+    <?php if($canManage): ?>
+    <form method="post" id="bulkDeleteMembers" onsubmit="return confirm('Delete the selected member(s)? This cannot be undone.');">
+      <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+      <input type="hidden" name="member_type" value="<?=e($type)?>">
+      <input type="hidden" name="action" value="delete_selected">
+      <div class="bac-bulk-actions"><button class="btn danger" type="submit">Delete Selected</button><span>Select one or more rows to delete.</span></div>
+    </form>
+    <form method="post" id="editMemberForm" class="bac-edit-form" hidden>
+      <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+      <input type="hidden" name="member_type" value="<?=e($type)?>">
+      <input type="hidden" name="action" value="update_member">
+      <input type="hidden" name="id" id="editMemberId">
+      <div class="bac-edit-grid">
+        <label>Name<input class="input" name="name" id="editMemberName" required></label>
+        <label><?=$type==='BAC'?'BAC Designation':'TWG Designation'?><?php if($type==='BAC'): ?>
+          <select class="input" name="designation" id="editMemberDesignation" required><option>BAC Chairman</option><option>BAC Vice-Chairman</option><option>BAC Member</option><option>Ad-Hoc Chairman</option><option>Ad-Hoc Vice-Chairman</option><option>Ad-Hoc Member</option></select>
+        <?php else: ?><input class="input" name="designation" id="editMemberDesignation" required><?php endif; ?></label>
+        <?php if($type==='TWG'): ?><label>Area of Expertise<input class="input" name="area_expertise" id="editMemberExpertise" required></label><?php endif; ?>
+        <label>Area/Unit<input class="input" name="area_unit" id="editMemberAreaUnit" required readonly></label>
+        <label>Code/Tag<?php if($type==='BAC'): ?>
+          <select class="input" name="code_tag" id="editMemberCodeTag" required><option>BAC A</option><option>BAC B</option><option>BAC C</option><option>BAC D</option><option>BAC E</option></select>
+        <?php else: ?><input class="input" name="code_tag" id="editMemberCodeTag" required><?php endif; ?></label>
+        <?php if($type==='BAC'): ?><label>Assigned BAC Member<input class="input" name="assigned_member" id="editMemberAssigned"></label><?php endif; ?>
+      </div>
+      <div class="bac-form-actions"><button class="btn" type="submit">Save Changes</button><button class="btn secondary" type="button" id="cancelEditMember">Cancel</button></div>
+    </form>
+    <?php endif; ?>
     <div class="table-wrap bac-members-table-wrap">
       <table class="table bac-members-table">
-        <thead><tr><th>Name</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?></th><?php if($type==='TWG'): ?><th>Area of Expertise</th><?php endif; ?><th>Area/Unit</th><th>Code/Tag</th><?php if($type==='BAC'): ?><th>Assigned BAC Member</th><?php endif; ?></tr></thead>
+        <thead><tr><?php if($canManage): ?><th><input type="checkbox" id="selectAllMembers" aria-label="Select all members"></th><?php endif; ?><th>Name</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?></th><?php if($type==='TWG'): ?><th>Area of Expertise</th><?php endif; ?><th>Area/Unit</th><th>Code/Tag</th><?php if($type==='BAC'): ?><th>Assigned BAC Member</th><?php endif; ?><?php if($canManage): ?><th>Actions</th><?php endif; ?></tr></thead>
         <tbody>
         <?php foreach($members as $member): ?>
-          <tr><td><?=e($member['name'])?></td><td><?=e($member['designation'])?></td><?php if($type==='TWG'): ?><td><?=e($member['area_expertise']??'')?></td><?php endif; ?><td><?=e($member['area_unit'])?></td><td><?=e($member['code_tag'])?></td><?php if($type==='BAC'): ?><td><?=e($member['assigned_member']??'')?></td><?php endif; ?></tr>
+          <tr><?php if($canManage): ?><td><input type="checkbox" class="member-select" name="selected_ids[]" value="<?=e($member['id'])?>" form="bulkDeleteMembers" aria-label="Select <?=e($member['name'])?>"></td><?php endif; ?><td><?=e($member['name'])?></td><td><?=e($member['designation'])?></td><?php if($type==='TWG'): ?><td><?=e($member['area_expertise']??'')?></td><?php endif; ?><td><?=e($member['area_unit'])?></td><td><?=e($member['code_tag'])?></td><?php if($type==='BAC'): ?><td><?=e($member['assigned_member']??'')?></td><?php endif; ?><?php if($canManage): ?><td><button class="btn secondary edit-member-btn" type="button" data-member="<?=e(json_encode($member,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button></td><?php endif; ?></tr>
         <?php endforeach; ?>
-        <?php if(!$members): ?><tr><td colspan="<?=$type==='BAC'?4:5?>" class="empty">No members have been added yet.</td></tr><?php endif; ?>
+        <?php if(!$members): ?><tr><td colspan="<?=($type==='BAC'?5:5)+($canManage?2:0)?>" class="empty">No members have been added yet.</td></tr><?php endif; ?>
         </tbody>
       </table>
     </div>
@@ -260,7 +323,7 @@ pageStart('Bids and Awards Committee');
 .bac-members-table{width:100%;border-collapse:collapse}
 .bac-members-table th,.bac-members-table td{padding:11px 12px;text-align:left;border-bottom:1px solid #e5e7eb}
 .bac-members-table th{background:#f8fafc;color:#334155;font-size:13px;white-space:nowrap}
-.bac-members-table td{font-size:13px}
+.bac-members-table td{font-size:13px}.bac-bulk-actions{display:flex;align-items:center;gap:12px;margin:14px 0}.bac-bulk-actions span{font-size:12px;color:#64748b}.bac-edit-form{margin:14px 0 20px;padding:16px;border:1px solid #dbe3ec;border-radius:10px;background:#f8fafc}.bac-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.bac-edit-grid label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600}.bac-edit-form[hidden]{display:none}
 .bac-page-heading p{margin:0;color:#6b7280;font-size:13px;line-height:1.6}
 @media(max-width:700px){.content:has(.bac-page-panel){padding:14px!important;min-height:calc(100vh - 150px)}.bac-page-panel{min-height:calc(100vh - 190px);padding:17px}.bac-page-heading h2{font-size:18px}.bac-page-icon{width:44px;height:44px;flex-basis:44px}.bac-member-fields{grid-template-columns:1fr}.bac-list-toolbar{align-items:flex-start;flex-wrap:wrap}}
 </style>
@@ -275,6 +338,21 @@ document.addEventListener('DOMContentLoaded',function(){
   function updateSaveLabel(){
     if(save&&rows)save.textContent=rows.querySelectorAll('.bac-entry-row').length>1?'Save Members':'Save Member';
   }
+  const bulkSelectAll=document.getElementById('selectAllMembers');
+  if(bulkSelectAll)bulkSelectAll.addEventListener('change',function(){document.querySelectorAll('.member-select').forEach(function(box){box.checked=bulkSelectAll.checked;});});
+  const editForm=document.getElementById('editMemberForm');
+  document.querySelectorAll('.edit-member-btn').forEach(function(button){
+    button.addEventListener('click',function(){
+      const m=JSON.parse(button.dataset.member||'{}');
+      if(!editForm)return;
+      const fields={id:'id',name:'name',designation:'designation',area_expertise:'expertise',area_unit:'areaUnit',code_tag:'codeTag',assigned_member:'assigned'};
+      Object.keys(fields).forEach(function(key){const el=document.getElementById('editMember'+fields[key].charAt(0).toUpperCase()+fields[key].slice(1));if(el)el.value=m[key]||'';});
+      editForm.hidden=false;
+      editForm.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+  });
+  const cancelEdit=document.getElementById('cancelEditMember');
+  if(cancelEdit)cancelEdit.addEventListener('click',function(){editForm.hidden=true;});
   const personOptions=<?=json_encode($bacPeopleOptions,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
   function closePersonSuggestions(box){const list=box.querySelector('.bac-person-suggestions');if(list){list.innerHTML='';list.style.display='none';list.style.left='';list.style.top='';list.style.width='';}}
   function positionPersonSuggestions(input,list){
