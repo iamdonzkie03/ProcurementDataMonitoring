@@ -154,6 +154,7 @@ foreach($bacEligiblePeople as $person){
   if($unit!==''&&!in_array($unit,$bacPeopleByName[$key]['area_units'],true)) $bacPeopleByName[$key]['area_units'][]=$unit;
 }
 $bacPeopleOptions=array_values($bacPeopleByName);
+$bacRoster=$pdo->query("SELECT name,designation,code_tag,assigned_member FROM bac_committee_members WHERE member_type='BAC' ORDER BY name,id")->fetchAll(PDO::FETCH_ASSOC);
 
 pageStart('Bids and Awards Committee');
 ?>
@@ -406,6 +407,8 @@ document.addEventListener('DOMContentLoaded',function(){
       rows.querySelectorAll('.bac-person-autocomplete').forEach(function(box){if(!box.contains(event.target))closePersonSuggestions(box);});
     });
   }
+  const savedBacRoster=<?=json_encode($bacRoster,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
+  function normalizeBacName(value){return String(value||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase();}
   function refreshAssignedMembers(){
     if(!rows)return;
     rows.querySelectorAll('.bac-entry-row').forEach(function(row){
@@ -418,18 +421,26 @@ document.addEventListener('DOMContentLoaded',function(){
       assigned.innerHTML='';
       const placeholder=document.createElement('option');
       placeholder.value='';
-      placeholder.textContent=isAdHoc?'Select assigned BAC Member':'Only required for Ad-Hoc Member';
+      placeholder.textContent=isAdHoc?'Select available BAC personnel':'Only required for Ad-Hoc Member';
       assigned.appendChild(placeholder);
       const tagValue=tag.value;
+      const occupied=new Set();
+      savedBacRoster.forEach(function(person){
+        if(['BAC Chairman','BAC Vice-Chairman','BAC Member','Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'].includes(person.designation))occupied.add(normalizeBacName(person.name));
+      });
       rows.querySelectorAll('.bac-entry-row').forEach(function(memberRow){
-        if(memberRow===row)return;
         const role=memberRow.querySelector('select[name="designation[]"]');
         const memberTag=memberRow.querySelector('select[name="code_tag[]"]');
         const nameInput=memberRow.querySelector('.bac-person-name');
         const name=nameInput?nameInput.value.trim():'';
-        if(role&&memberTag&&name&&role.value==='BAC Member'&&memberTag.value===tagValue){
-          const option=document.createElement('option');option.value=name;option.textContent=name;assigned.appendChild(option);
-        }
+        if(memberRow!==row&&role&&name&&['BAC Chairman','BAC Vice-Chairman','BAC Member','Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'].includes(role.value))occupied.add(normalizeBacName(name));
+      });
+      const available=personOptions.filter(function(person){
+        const name=person.name.trim();
+        return name&& !occupied.has(normalizeBacName(name));
+      });
+      available.forEach(function(person){
+        const option=document.createElement('option');option.value=person.name;option.textContent=person.name+' — '+(person.area_units||[]).join(', ');assigned.appendChild(option);
       });
       assigned.disabled=!isAdHoc;
       assigned.required=isAdHoc;
