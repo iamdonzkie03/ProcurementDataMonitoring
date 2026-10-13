@@ -47,6 +47,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       flash('error','Complete every required field in each member row. No members were saved.');
       header('Location:bac.php?tab='.$returnTab);exit;
     }
+    if($type==='BAC'&&preg_match('/\\bprocurement\\b/i',$areaUnit)){flash('error','Personnel from the Procurement Area/Unit cannot be added to any BAC designation, including Ad-Hoc roles. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
     if($type==='BAC'&&mb_strtolower($designation)==='ad-hoc member'&&$assignedMember===''){flash('error','Select the BAC Member assigned to each Ad-Hoc Member. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
     if(($type!=='BAC'||mb_strtolower($designation)!=='ad-hoc member')&&$assignedMember!==''){flash('error','Only Ad-Hoc Members may have an Assigned BAC Member. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
     $entries[]=[$type,$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag,$assignedMember!==''?$assignedMember:null];
@@ -60,10 +61,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $normalizeName=static function($value){return mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$value)));};
     $validTags=['bac a','bac b','bac c','bac d','bac e'];
     $allowedDesignations=['bac chairman','bac vice-chairman','bac member','ad-hoc chairman','ad-hoc vice-chairman','ad-hoc member'];
-    $existingStmt=$pdo->prepare('SELECT name,designation,code_tag FROM bac_committee_members WHERE member_type=\'BAC\'');
+    $existingStmt=$pdo->prepare('SELECT name,designation,code_tag,area_unit FROM bac_committee_members WHERE member_type=\'BAC\'');
     $existingStmt->execute();
     $existing=$existingStmt->fetchAll(PDO::FETCH_ASSOC);
-    $all=array_merge($existing,$type==='BAC'?array_map(static function($entry){return ['name'=>$entry[1],'designation'=>$entry[2],'code_tag'=>$entry[5],'assigned_member'=>$entry[6]??null];},$entries):[]);
+    $all=array_merge($existing,$type==='BAC'?array_map(static function($entry){return ['name'=>$entry[1],'designation'=>$entry[2],'code_tag'=>$entry[5],'assigned_member'=>$entry[6]??null,'area_unit'=>$entry[4]];},$entries):[]);
     $errors=[];
     $seenNames=[];
     $seenRoles=[];
@@ -76,6 +77,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       if($tag===''||$name==='')continue;
       if(!in_array($tag,$validTags,true))$errors[]='Invalid BAC Code/Tag "'.trim((string)$person['code_tag']).'". Choose BAC A, BAC B, BAC C, BAC D, or BAC E.';
       if(!in_array($designation,$allowedDesignations,true))$errors[]='Invalid BAC designation for '.$person['name'].'.';
+      if(preg_match('/\\bprocurement\\b/i',(string)($person['area_unit']??'')))$errors[]=$person['name'].' belongs to the Procurement Area/Unit and cannot be assigned to a BAC designation.');
       if(in_array($designation,['bac chairman','bac vice-chairman','ad-hoc chairman','ad-hoc vice-chairman'],true)){
         $roleKey=$tag.'|'.$designation;
         if(isset($seenRoles[$roleKey]))$errors[]='BAC code/tag "'.trim((string)$person['code_tag']).'" may have only one '.trim((string)$person['designation']).'.';
@@ -105,7 +107,7 @@ $members=$st->fetchAll();
 $canManage=hasRole(['Administrator','Editor']);
 
 // Build the BAC name list from configured Division/Department supervisors and Area/Unit Heads.
-$bacEligiblePeople=$pdo->query("SELECT d.division_head AS name,d.name AS area_unit,'Division/Department Supervisor' AS source_role FROM divisions d WHERE TRIM(COALESCE(d.division_head,''))<>'' UNION SELECT ap.name AS name,a.name AS area_unit,'Area/Unit Personnel' AS source_role FROM area_personnel ap JOIN areas a ON a.id=ap.area_id WHERE TRIM(COALESCE(ap.name,''))<>'' ORDER BY name,area_unit")->fetchAll(PDO::FETCH_ASSOC);
+$bacEligiblePeople=$pdo->query("SELECT d.division_head AS name,d.name AS area_unit,'Division/Department Supervisor' AS source_role FROM divisions d WHERE TRIM(COALESCE(d.division_head,''))<>'' AND LOWER(d.name) NOT LIKE '%procurement%' UNION SELECT ap.name AS name,a.name AS area_unit,'Area/Unit Personnel' AS source_role FROM area_personnel ap JOIN areas a ON a.id=ap.area_id WHERE TRIM(COALESCE(ap.name,''))<>'' AND LOWER(a.name) NOT LIKE '%procurement%' ORDER BY name,area_unit")->fetchAll(PDO::FETCH_ASSOC);
 $bacPeopleByName=[];
 foreach($bacEligiblePeople as $person){
   $personName=trim((string)$person['name']);
