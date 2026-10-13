@@ -455,11 +455,17 @@ document.addEventListener('DOMContentLoaded',function(){
       else assigned.value='';
       // Set Code/Tag only after restoring the selected assignee, using that roster member's stored tag.
       if(isAdHoc){
-        tag.disabled=true;
+        // Keep the select enabled so its value is submitted with the form.
+        // Any manual change is overwritten by refreshAssignedMembers() using the selected member's stored tag.
+        tag.disabled=false;
+        tag.style.pointerEvents='none';
+        tag.tabIndex=-1;
         const chosen=assigned.options[assigned.selectedIndex];
         tag.value=chosen&&chosen.value?(chosen.dataset.codeTag||''):'';
       }else{
         tag.disabled=false;
+        tag.style.pointerEvents='';
+        tag.tabIndex=0;
       }
     });
   }
