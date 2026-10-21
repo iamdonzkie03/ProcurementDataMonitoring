@@ -708,10 +708,17 @@ document.addEventListener('DOMContentLoaded',function(){
       if(name)name.value='';
       if(area)area.value='';
       [designation,tag,assigned,area].forEach(function(field){if(field){field.classList.remove('bac-locked-field');field.style.pointerEvents='';field.tabIndex=0;}});
-      if(designation)designation.value=button.dataset.designation||'BAC Member';
-      if(tag)tag.value=button.dataset.codeTag||'BAC A';
-      refreshAssignedMembers();
       const isAdHoc=button.classList.contains('bac-add-adhoc');
+      const targetTag=button.dataset.codeTag||'BAC A';
+      if(designation)designation.value=button.dataset.designation||'BAC Member';
+      if(tag){
+        // Ensure the selected team's option exists even when the dropdown was built
+        // from a filtered list of currently available teams.
+        let tagOption=Array.from(tag.options).find(function(option){return option.value===targetTag;});
+        if(!tagOption){tagOption=document.createElement('option');tagOption.value=targetTag;tagOption.textContent=targetTag;tag.appendChild(tagOption);}
+        tag.value=targetTag;
+      }
+      refreshAssignedMembers();
       if(isAdHoc){
         if(area)area.value=button.dataset.areaUnit||'';
         if(assigned&&button.dataset.assignedName){
@@ -719,6 +726,8 @@ document.addEventListener('DOMContentLoaded',function(){
           const option=Array.from(assigned.options).find(function(o){return o.value===target;});
           if(option){assigned.value=target;assigned.disabled=false;}
         }
+        // Re-apply the tag after refreshing dependent controls, and keep it selected.
+        if(tag){tag.value=targetTag;tag.dispatchEvent(new Event('change',{bubbles:true}));}
         [designation,area,assigned,tag].forEach(function(field){if(field){field.classList.add('bac-locked-field');field.style.pointerEvents='none';field.tabIndex=-1;}});
       }
       form.scrollIntoView({behavior:'smooth',block:'start'});
