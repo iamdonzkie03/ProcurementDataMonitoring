@@ -30,9 +30,30 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $returnTab=$type==='TWG'?'technical-working-group':'bac-members';
   if($action==='delete_member'){
     $id=(int)($_POST['id']??0);
-    $st=$pdo->prepare('DELETE FROM bac_committee_members WHERE id=? AND member_type=?');
-    $st->execute([$id,$type]);
-    flash($st->rowCount()?'success':'error',$st->rowCount()?'Member deleted.':'Member could not be found.');
+    if($type==='BAC'){
+      // Deleting an original member also removes any Ad-Hoc member assigned to that person.
+      $personStmt=$pdo->prepare("SELECT name,designation,code_tag FROM bac_committee_members WHERE id=? AND member_type='BAC' LIMIT 1");
+      $personStmt->execute([$id]);
+      $person=$personStmt->fetch(PDO::FETCH_ASSOC);
+      if(!$person){
+        flash('error','Member could not be found.');
+      }else{
+        $adhocForRole=['BAC Chairman'=>'Ad-Hoc Chairman','BAC Vice-Chairman'=>'Ad-Hoc Vice-Chairman','BAC Member'=>'Ad-Hoc Member'];
+        $deletedAdHocs=0;
+        if(isset($adhocForRole[$person['designation']])){
+          $adhocStmt=$pdo->prepare("DELETE FROM bac_committee_members WHERE member_type='BAC' AND code_tag=? AND designation=? AND LOWER(TRIM(assigned_member))=LOWER(TRIM(?))");
+          $adhocStmt->execute([$person['code_tag'],$adhocForRole[$person['designation']],$person['name']]);
+          $deletedAdHocs=$adhocStmt->rowCount();
+        }
+        $st=$pdo->prepare('DELETE FROM bac_committee_members WHERE id=? AND member_type=?');
+        $st->execute([$id,$type]);
+        flash('success','Original BAC member deleted.'.($deletedAdHocs?' '.$deletedAdHocs.' assigned Ad-Hoc member(s) deleted as well.':''));
+      }
+    }else{
+      $st=$pdo->prepare('DELETE FROM bac_committee_members WHERE id=? AND member_type=?');
+      $st->execute([$id,$type]);
+      flash($st->rowCount()?'success':'error',$st->rowCount()?'Member deleted.':'Member could not be found.');
+    }
     header('Location:bac.php?tab='.$returnTab);exit;
   }
   if($action==='delete_team'&&$type==='BAC'){
