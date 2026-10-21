@@ -114,10 +114,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         }
         $countErrors=[];
         foreach($counts as $data){
-          if($data['total']<5) $countErrors[]='BAC Code/Tag "'.$data['label'].'" must have at least 5 total members.';
           if($data['total']>7) $countErrors[]='BAC Code/Tag "'.$data['label'].'" cannot have more than 7 total members.';
-          if($data['chairman']<1) $countErrors[]='BAC Code/Tag "'.$data['label'].'" must have at least 1 BAC Chairman.';
-          if($data['vice']<1) $countErrors[]='BAC Code/Tag "'.$data['label'].'" must have at least 1 BAC Vice-Chairman.';
           if($data['members']>5) $countErrors[]='BAC Code/Tag "'.$data['label'].'" cannot have more than 5 BAC Members.';
         }
         if($countErrors){
@@ -193,9 +190,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       if(isset($seenNames[$name])&&$seenNames[$name]!==$tag)$errors[]=$person['name'].' is already assigned to a different BAC code/tag and cannot be added again.';
       else $seenNames[$name]=$tag;
     }
-    // Enforce the required committee size for every BAC Code/Tag.
-    // Each tag must contain 5–7 people, including at least one regular Chairman,
-    // one regular Vice-Chairman, and no more than five regular BAC Members.
+    // Allow a BAC team to be built one member at a time. Enforce upper limits
+    // during each save, but do not require the Chairman, Vice-Chairman, or five
+    // total members to exist before an individual can be added.
     $membersByTag=[];
     foreach($all as $person){
       $tag=$normalizeTag($person['code_tag']??'');
@@ -209,10 +206,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
     foreach($membersByTag as $tagData){
       $tagLabel=$tagData['label'];
-      if($tagData['total']<5) $errors[]='BAC Code/Tag "'.$tagLabel.'" must have at least 5 total members (including at least 1 BAC Chairman, 1 BAC Vice-Chairman, and other committee members).';
       if($tagData['total']>7) $errors[]='BAC Code/Tag "'.$tagLabel.'" cannot have more than 7 total members.';
-      if($tagData['chairman']<1) $errors[]='BAC Code/Tag "'.$tagLabel.'" must have at least 1 BAC Chairman.';
-      if($tagData['vice']<1) $errors[]='BAC Code/Tag "'.$tagLabel.'" must have at least 1 BAC Vice-Chairman.';
       if($tagData['members']>5) $errors[]='BAC Code/Tag "'.$tagLabel.'" cannot have more than 5 BAC Members.';
     }
     if($errors){
@@ -254,7 +248,7 @@ pageStart('Bids and Awards Committee');
     <div class="bac-page-icon" aria-hidden="true">⚖</div>
     <div>
       <h2>Bids and Awards Committee</h2>
-      <p>Manage BAC Members and the Technical Working Group. Each BAC Code/Tag must have 5–7 total members, at least one BAC Chairman and one BAC Vice-Chairman, and no more than five BAC Members.</p>
+      <p>Manage BAC Members and the Technical Working Group. Add BAC roles one at a time; each Code/Tag allows up to 7 total records and a maximum of 5 regular BAC Members. Add one Chairman and one Vice-Chairman as needed.</p>
     </div>
   </div>
   <nav class="bac-tabs" aria-label="Bids and Awards Committee sections">
