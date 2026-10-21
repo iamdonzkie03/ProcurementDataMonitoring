@@ -384,7 +384,7 @@ pageStart('Bids and Awards Committee');
                   <?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($adhoc,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><form method="post" onsubmit="return confirm('Delete <?=e(addslashes($adhoc['name']))?>?');" style="display:inline;margin:0"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="BAC"><input type="hidden" name="action" value="delete_member"><input type="hidden" name="id" value="<?=(int)$adhoc['id']?>"><button class="btn danger bac-card-edit" type="submit">Delete</button></form><?php endif; ?>
                 </div>
                 <?php endforeach; ?>
-                <?php if($canManage&&$total<7&&count($assignedAdHocs)===0): ?><button class="bac-add-adhoc" type="button" data-code-tag="<?=e($tagLabel)?>" data-designation="<?=e($adHocRoles[$roleName])?>" data-assigned-name="<?=e($person['name'])?>">+ Add <?=e($adHocRoles[$roleName])?></button><?php endif; ?>
+                <?php if($canManage&&$total<7&&count($assignedAdHocs)===0): ?><button class="bac-add-adhoc" type="button" data-code-tag="<?=e($tagLabel)?>" data-designation="<?=e($adHocRoles[$roleName])?>" data-assigned-name="<?=e($person['name'])?>" data-area-unit="<?=e($person['area_unit']??'')?>">+ Add <?=e($adHocRoles[$roleName])?></button><?php endif; ?>
               </div>
             </div>
             <?php endforeach; ?>
@@ -461,7 +461,7 @@ pageStart('Bids and Awards Committee');
 .bac-entry-table th,.bac-entry-table td{padding:7px;vertical-align:top}
 .bac-entry-table th{font-size:12px;white-space:nowrap}
 .bac-entry-table .input{width:100%;min-width:0;box-sizing:border-box;font-size:12px;padding:8px}
-.bac-entry-table .bac-area-unit-input{background:#e9ecef!important;color:#6b7280;cursor:not-allowed;opacity:1}
+ .bac-entry-table .bac-area-unit-input{background:#e9ecef!important;color:#6b7280;cursor:not-allowed;opacity:1}.bac-entry-table .bac-locked-field{background:#e9ecef!important;color:#6b7280!important;cursor:not-allowed;opacity:1;pointer-events:none}
 .bac-person-autocomplete{position:relative;width:100%;min-width:0}
 .bac-person-suggestions{position:fixed;left:0;top:0;width:300px;max-width:min(420px,calc(100vw - 32px));z-index:100000;background:#fff;border:1px solid #94a3b8;border-radius:6px;box-shadow:0 10px 28px rgba(15,23,42,.24);max-height:260px;overflow-y:auto;display:none}
 .bac-person-suggestion{display:block;width:100%;box-sizing:border-box;padding:9px 11px;border:0;border-bottom:1px solid #e5e7eb;background:#fff;text-align:left;cursor:pointer;font-size:12px;white-space:normal;overflow-wrap:anywhere}
@@ -707,13 +707,19 @@ document.addEventListener('DOMContentLoaded',function(){
       const assigned=row.querySelector('.bac-assigned-member');
       if(name)name.value='';
       if(area)area.value='';
+      [designation,tag,assigned,area].forEach(function(field){if(field){field.classList.remove('bac-locked-field');field.style.pointerEvents='';field.tabIndex=0;}});
       if(designation)designation.value=button.dataset.designation||'BAC Member';
       if(tag)tag.value=button.dataset.codeTag||'BAC A';
       refreshAssignedMembers();
-      if(assigned&&button.dataset.assignedName){
-        const target=button.dataset.assignedName;
-        const option=Array.from(assigned.options).find(function(o){return o.value===target;});
-        if(option){assigned.value=target;assigned.disabled=false;}
+      const isAdHoc=button.classList.contains('bac-add-adhoc');
+      if(isAdHoc){
+        if(area)area.value=button.dataset.areaUnit||'';
+        if(assigned&&button.dataset.assignedName){
+          const target=button.dataset.assignedName;
+          const option=Array.from(assigned.options).find(function(o){return o.value===target;});
+          if(option){assigned.value=target;assigned.disabled=false;}
+        }
+        [designation,area,assigned,tag].forEach(function(field){if(field){field.classList.add('bac-locked-field');field.style.pointerEvents='none';field.tabIndex=-1;}});
       }
       form.scrollIntoView({behavior:'smooth',block:'start'});
       if(name)name.focus();
