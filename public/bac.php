@@ -259,6 +259,17 @@ pageStart('Bids and Awards Committee');
   <section class="bac-tab-content">
     <div class="bac-list-toolbar">
       <h3><?=$tab==='bac-members'?'BAC Members':'Technical Working Group'?></h3>
+      <?php if($canManage&&$type==='BAC'):
+        $usedTeamTags=[];
+        foreach($members as $existingTeamMember){$usedTeamTags[]=mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$existingTeamMember['code_tag'])));}
+        $availableTeamTags=array_values(array_filter(['BAC A','BAC B','BAC C','BAC D','BAC E'],static function($candidate)use($usedTeamTags){return !in_array(mb_strtolower($candidate),$usedTeamTags,true);}));
+        $requestedTeam=trim((string)($_GET['add_team']??''));
+        $validRequestedTeam=in_array($requestedTeam,['BAC A','BAC B','BAC C','BAC D','BAC E'],true)&&!in_array(mb_strtolower($requestedTeam),$usedTeamTags,true);
+        if($validRequestedTeam){$availableTeamTags=array_values(array_filter($availableTeamTags,static fn($candidate)=>$candidate!==$requestedTeam));}
+        $nextTeam=$validRequestedTeam?$requestedTeam:($availableTeamTags[0]??'');
+      ?>
+        <?php if($nextTeam!==''): ?><a class="btn" href="bac.php?tab=bac-members&amp;add_team=<?=rawurlencode($nextTeam)?>">Add Team</a><?php endif; ?>
+      <?php endif; ?>
     </div>
     <?php if($canManage): ?>
     <form method="post" id="addMemberForm" class="bac-member-form" hidden>
@@ -294,10 +305,13 @@ pageStart('Bids and Awards Committee');
         $membersByCode=[];
         foreach($members as $member){$tagKey=mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$member['code_tag'])));if(!isset($membersByCode[$tagKey]))$membersByCode[$tagKey]=['label'=>$member['code_tag'],'members'=>[]];$membersByCode[$tagKey]['members'][]=$member;}
         $tagOrder=['BAC A','BAC B','BAC C','BAC D','BAC E'];
+        $requestedTeam=trim((string)($_GET['add_team']??''));
         foreach($tagOrder as $tagLabel):
           $tagKey=mb_strtolower($tagLabel);
           $group=$membersByCode[$tagKey]??['label'=>$tagLabel,'members'=>[]];
           $groupMembers=$group['members'];$total=count($groupMembers);
+          // Keep unused teams hidden until the user chooses Add Team for that Code/Tag.
+          if($total===0&&$requestedTeam!==$tagLabel) continue;
           $roles=['BAC Chairman'=>[],'BAC Vice-Chairman'=>[],'BAC Member'=>[]];
           foreach($groupMembers as $gm){if(isset($roles[$gm['designation']]))$roles[$gm['designation']][]=$gm;}
           $adHocRoles=['BAC Chairman'=>'Ad-Hoc Chairman','BAC Vice-Chairman'=>'Ad-Hoc Vice-Chairman','BAC Member'=>'Ad-Hoc Member'];
