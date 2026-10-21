@@ -70,6 +70,39 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
     header('Location:bac.php?tab='.$returnTab);exit;
   }
+  if($action==='delete_twg_teams'&&$type==='TWG'){
+    $teamIds=array_values(array_unique(array_filter(array_map('intval',(array)($_POST['team_ids']??[])),static fn($id)=>$id>0)));
+    if(!$teamIds){
+      flash('error','Select at least one TWG Team to delete.');
+    }else{
+      $marks=implode(',',array_fill(0,count($teamIds),'?'));
+      $pdo->beginTransaction();
+      try{
+        $teamStmt=$pdo->prepare("SELECT id,team_name FROM bac_twg_teams WHERE id IN ($marks)");
+        $teamStmt->execute($teamIds);
+        $selectedTeams=$teamStmt->fetchAll(PDO::FETCH_ASSOC);
+        if(!$selectedTeams){
+          $pdo->rollBack();
+          flash('error','The selected TWG Team(s) could not be found.');
+        }else{
+          $teamNames=array_column($selectedTeams,'team_name');
+          $memberMarks=implode(',',array_fill(0,count($teamNames),'?'));
+          $deleteMembers=$pdo->prepare("DELETE FROM bac_committee_members WHERE member_type='TWG' AND code_tag IN ($memberMarks)");
+          $deleteMembers->execute($teamNames);
+          $deleteTeams=$pdo->prepare("DELETE FROM bac_twg_teams WHERE id IN ($marks)");
+          $deleteTeams->execute(array_column($selectedTeams,'id'));
+          $deletedTeamCount=$deleteTeams->rowCount();
+          $deletedMemberCount=$deleteMembers->rowCount();
+          $pdo->commit();
+          flash('success',$deletedTeamCount.' TWG Team(s) and '.$deletedMemberCount.' member(s) deleted.');
+        }
+      }catch(Throwable $e){
+        if($pdo->inTransaction())$pdo->rollBack();
+        throw $e;
+      }
+    }
+    header('Location:bac.php?tab=technical-working-group');exit;
+  }
   if($action==='delete_team'&&$type==='BAC'){
     $tag=trim((string)($_POST['code_tag']??''));
     if(!in_array($tag,['BAC A','BAC B','BAC C','BAC D','BAC E'],true)){
@@ -254,7 +287,7 @@ foreach($bacEligiblePeople as $person){
 }
 $bacPeopleOptions=array_values($bacPeopleByName);
 $bacRoster=$pdo->query("SELECT name,designation,code_tag,assigned_member FROM bac_committee_members WHERE member_type='BAC' ORDER BY name,id")->fetchAll(PDO::FETCH_ASSOC);
-$twgTeams=$pdo->query("SELECT team_name FROM bac_twg_teams ORDER BY team_name")->fetchAll(PDO::FETCH_COLUMN);
+$twgTeams=$pdo->query("SELECT id,team_name FROM bac_twg_teams ORDER BY team_name")->fetchAll(PDO::FETCH_ASSOC);
 
 pageStart('Bids and Awards Committee');
 ?>
@@ -364,10 +397,18 @@ pageStart('Bids and Awards Committee');
     </form>
     <?php endif; ?>
     <?php if($type==='TWG'): ?>
-      <div class="bac-twg-team-grid">
-      <?php foreach($twgTeams as $twgTeamName): ?>
-        <article class="bac-code-box bac-twg-team-box">
-          <header class="bac-code-box-header"><div><span class="bac-code-eyebrow">TECHNICAL WORKING GROUP</span><h4><?=e($twgTeamName)?></h4><p>TWG Team</p></div></header>
+      <?php if($canManage&&$twgTeams): ?>
+      <form method="post" id="deleteTwgTeamsForm" onsubmit="return confirm('Delete the selected TWG Team(s) and all members inside them? This cannot be undone.');">
+        <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+        <input type="hidden" name="member_type" value="TWG">
+        <input type="hidden" name="action" value="delete_twg_teams">
+        <div class="bac-form-actions" style="justify-content:flex-end;margin:0 0 12px">
+          <button class="btn danger" type="submit">Delete Selected TWG Teams</button>
+        </div>
+        <div class="bac-twg-team-grid">
+        <?php foreach($twgTeams as $twgTeam): $twgTeamName=$twgTeam['team_name']; ?>
+          <article class="bac-code-box bac-twg-team-box">
+            <header class="bac-code-box-header"><label style="display:flex;align-items:flex-start;gap:8px"><input type="checkbox" name="team_ids[]" value="<?= (int)$twgTeam['id'] ?>" aria-label="Select <?=e($twgTeamName)?> for deletion"><span><span class="bac-code-eyebrow">TECHNICAL WORKING GROUP</span><h4><?=e($twgTeamName)?></h4><p>TWG Team</p></span></label></header>
           <div class="bac-twg-team-actions">
             <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Chairman">Add TWG Chairman</button>
             <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Vice-Chairman">Add TWG Vice-Chairman</button>
@@ -379,9 +420,34 @@ pageStart('Bids and Awards Committee');
               <?php foreach($teamMembers as $teamMember): ?><div class="bac-person-box"><div class="bac-person-box-details"><strong><?=e($teamMember['name'])?></strong><span><?=e($teamMember['designation'])?> · <?=e($teamMember['area_unit'])?></span></div><?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($teamMember,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><?php endif; ?></div><?php endforeach; ?>
             <?php endif; ?>
           </div>
-        </article>
-      <?php endforeach; ?>
-      </div>
+          </article>
+        <?php endforeach; ?>
+        </div>
+      </form>
+      <?php elseif($twgTeams): ?>
+        <div class="bac-twg-team-grid">
+        <?php foreach($twgTeams as $twgTeam): $twgTeamName=$twgTeam['team_name']; ?>
+          <article class="bac-code-box bac-twg-team-box">
+            <header class="bac-code-box-header"><div><span class="bac-code-eyebrow">TECHNICAL WORKING GROUP</span><h4><?=e($twgTeamName)?></h4><p>TWG Team</p></div></header>
+            <div class="bac-twg-team-actions">
+              <?php if($canManage): ?>
+              <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Chairman">Add TWG Chairman</button>
+              <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Vice-Chairman">Add TWG Vice-Chairman</button>
+              <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Member">Add TWG Members</button>
+              <?php endif; ?>
+            </div>
+            <div class="bac-twg-team-members">
+              <?php $teamMembers=array_values(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName))); ?>
+              <?php if(!$teamMembers): ?><div class="bac-role-empty">No TWG members added yet</div><?php else: ?>
+                <?php foreach($teamMembers as $teamMember): ?><div class="bac-person-box"><div class="bac-person-box-details"><strong><?=e($teamMember['name'])?></strong><span><?=e($teamMember['designation'])?> · <?=e($teamMember['area_unit'])?></span></div><?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($teamMember,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><?php endif; ?></div><?php endforeach; ?>
+              <?php endif; ?>
+            </div>
+          </article>
+        <?php endforeach; ?>
+        </div>
+      <?php else: ?>
+        <p class="bac-role-empty">No TWG Teams have been created yet.</p>
+      <?php endif; ?>
     <?php endif; ?>
     <div class="bac-roster-boxes">
       <?php if($type==='BAC'):
