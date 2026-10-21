@@ -124,6 +124,28 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       if(isset($seenNames[$name])&&$seenNames[$name]!==$tag)$errors[]=$person['name'].' is already assigned to a different BAC code/tag and cannot be added again.';
       else $seenNames[$name]=$tag;
     }
+    // Enforce the required committee size for every BAC Code/Tag.
+    // Each tag must contain 5–7 people, including at least one regular Chairman,
+    // one regular Vice-Chairman, and no more than five regular BAC Members.
+    $membersByTag=[];
+    foreach($all as $person){
+      $tag=$normalizeTag($person['code_tag']??'');
+      if($tag==='') continue;
+      if(!isset($membersByTag[$tag])) $membersByTag[$tag]=['label'=>trim((string)($person['code_tag']??'')),'total'=>0,'chairman'=>0,'vice'=>0,'members'=>0];
+      $membersByTag[$tag]['total']++;
+      $role=mb_strtolower(trim((string)($person['designation']??'')));
+      if($role==='bac chairman') $membersByTag[$tag]['chairman']++;
+      elseif($role==='bac vice-chairman') $membersByTag[$tag]['vice']++;
+      elseif($role==='bac member') $membersByTag[$tag]['members']++;
+    }
+    foreach($membersByTag as $tagData){
+      $tagLabel=$tagData['label'];
+      if($tagData['total']<5) $errors[]='BAC Code/Tag "'.$tagLabel.'" must have at least 5 total members (including at least 1 BAC Chairman, 1 BAC Vice-Chairman, and other committee members).';
+      if($tagData['total']>7) $errors[]='BAC Code/Tag "'.$tagLabel.'" cannot have more than 7 total members.';
+      if($tagData['chairman']<1) $errors[]='BAC Code/Tag "'.$tagLabel.'" must have at least 1 BAC Chairman.';
+      if($tagData['vice']<1) $errors[]='BAC Code/Tag "'.$tagLabel.'" must have at least 1 BAC Vice-Chairman.';
+      if($tagData['members']>5) $errors[]='BAC Code/Tag "'.$tagLabel.'" cannot have more than 5 BAC Members.';
+    }
     if($errors){
       flash('error',implode(' ',$errors).' No members were saved.');
     }else{
