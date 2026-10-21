@@ -56,6 +56,36 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }elseif($type==='BAC'&&in_array($designation,['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'],true)&&$assigned===''){
       flash('error','Select the BAC Member assigned to this Ad-Hoc Member.');
     }else{
+      if($type==='BAC'){
+        $normalizeUpdateTag=static function($value){return mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$value)));};
+        $rosterStmt=$pdo->prepare("SELECT id,name,designation,code_tag FROM bac_committee_members WHERE member_type='BAC' AND id<>?");
+        $rosterStmt->execute([$id]);
+        $rosterForUpdate=$rosterStmt->fetchAll(PDO::FETCH_ASSOC);
+        $rosterForUpdate[]=['id'=>$id,'name'=>$name,'designation'=>$designation,'code_tag'=>$codeTag];
+        $counts=[];
+        foreach($rosterForUpdate as $person){
+          $tagKey=$normalizeUpdateTag($person['code_tag']??'');
+          if($tagKey==='') continue;
+          if(!isset($counts[$tagKey])) $counts[$tagKey]=['label'=>trim((string)$person['code_tag']),'total'=>0,'chairman'=>0,'vice'=>0,'members'=>0];
+          $counts[$tagKey]['total']++;
+          $role=mb_strtolower(trim((string)($person['designation']??'')));
+          if($role==='bac chairman') $counts[$tagKey]['chairman']++;
+          elseif($role==='bac vice-chairman') $counts[$tagKey]['vice']++;
+          elseif($role==='bac member') $counts[$tagKey]['members']++;
+        }
+        $countErrors=[];
+        foreach($counts as $data){
+          if($data['total']<5) $countErrors[]='BAC Code/Tag "'.$data['label'].'" must have at least 5 total members.';
+          if($data['total']>7) $countErrors[]='BAC Code/Tag "'.$data['label'].'" cannot have more than 7 total members.';
+          if($data['chairman']<1) $countErrors[]='BAC Code/Tag "'.$data['label'].'" must have at least 1 BAC Chairman.';
+          if($data['vice']<1) $countErrors[]='BAC Code/Tag "'.$data['label'].'" must have at least 1 BAC Vice-Chairman.';
+          if($data['members']>5) $countErrors[]='BAC Code/Tag "'.$data['label'].'" cannot have more than 5 BAC Members.';
+        }
+        if($countErrors){
+          flash('error',implode(' ',$countErrors).' Member was not updated.');
+          header('Location:bac.php?tab='.$returnTab);exit;
+        }
+      }
       $st=$pdo->prepare('UPDATE bac_committee_members SET name=?,designation=?,area_expertise=?,area_unit=?,code_tag=?,assigned_member=? WHERE id=? AND member_type=?');
       $st->execute([$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag,$type==='BAC'&&in_array($designation,['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'],true)?$assigned:null,$id,$type]);
       flash('success','Member updated.');
@@ -185,7 +215,7 @@ pageStart('Bids and Awards Committee');
     <div class="bac-page-icon" aria-hidden="true">⚖</div>
     <div>
       <h2>Bids and Awards Committee</h2>
-      <p>Manage BAC Members and the Technical Working Group.</p>
+      <p>Manage BAC Members and the Technical Working Group. Each BAC Code/Tag must have 5–7 total members, at least one BAC Chairman and one BAC Vice-Chairman, and no more than five BAC Members.</p>
     </div>
   </div>
   <nav class="bac-tabs" aria-label="Bids and Awards Committee sections">
