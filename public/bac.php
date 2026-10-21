@@ -352,13 +352,16 @@ pageStart('Bids and Awards Committee');
           if($total===0&&$requestedTeam!==$tagLabel) continue;
           $roles=['BAC Chairman'=>[],'BAC Vice-Chairman'=>[],'BAC Member'=>[]];
           foreach($groupMembers as $gm){if(isset($roles[$gm['designation']]))$roles[$gm['designation']][]=$gm;}
+          // Roster readiness is based on original BAC members only; Ad-Hoc members
+          // count toward the seven-person capacity, but not toward the minimum of five.
+          $originalCount=count($roles['BAC Chairman'])+count($roles['BAC Vice-Chairman'])+count($roles['BAC Member']);
           $adHocRoles=['BAC Chairman'=>'Ad-Hoc Chairman','BAC Vice-Chairman'=>'Ad-Hoc Vice-Chairman','BAC Member'=>'Ad-Hoc Member'];
       ?>
       <article class="bac-code-box">
         <header class="bac-code-box-header">
           <div><span class="bac-code-eyebrow">BAC COMMITTEE</span><h4><?=e($tagLabel)?></h4><p><?=$total?> of 7 total members</p></div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <div class="bac-code-box-status <?=$total>=5&&$total<=7?'is-valid':'is-incomplete'?>"><?=$total>=5&&$total<=7?'Roster size '.$total.'/7':($total<5?'Needs '.(5-$total).' more':'Exceeds limit')?></div>
+            <div class="bac-code-box-status <?=$originalCount>=5&&$total<=7?'is-valid':'is-incomplete'?>"><?=$originalCount<5?'Needs '.(5-$originalCount).' more':($total<=7?'Roster size '.$total.'/7':'Exceeds limit')?></div>
             <?php if($canManage): ?><form method="post" onsubmit="return confirm('Delete <?=e($tagLabel)?> and all members assigned to this team? This cannot be undone.');" style="margin:0"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="BAC"><input type="hidden" name="action" value="delete_team"><input type="hidden" name="code_tag" value="<?=e($tagLabel)?>"><button class="btn danger" type="submit">Delete Team</button></form><?php endif; ?>
           </div>
         </header>
@@ -393,7 +396,7 @@ pageStart('Bids and Awards Committee');
           <?php endforeach; ?>
         </div>
         <footer class="bac-code-box-footer"><span><?=count($roles['BAC Chairman'])?> Chairman · <?=count($roles['BAC Vice-Chairman'])?> Vice-Chairman · <?=count($roles['BAC Member'])?> BAC Members</span>
-          <?php if($canManage&&$total<5): ?><span class="bac-roster-guidance">Add original BAC members until this roster has at least 5 total members.</span><?php endif; ?>
+          <?php if($canManage&&$originalCount<5): ?><span class="bac-roster-guidance">Add original BAC members until this roster has at least 5 original members.</span><?php endif; ?>
         </footer>
       </article>
       <?php endforeach; ?>
