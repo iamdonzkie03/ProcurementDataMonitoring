@@ -586,7 +586,7 @@ pageStart('Bids and Awards Committee');
 .bac-form-actions{display:flex;gap:8px;margin-top:16px}
 .bac-members-table-wrap{width:100%;overflow-x:auto}
 .bac-members-table{width:100%;border-collapse:collapse}
-.bac-twg-team-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:18px}.bac-twg-team-actions{display:flex;flex-direction:column;gap:8px;padding:14px}.bac-twg-team-actions .btn{width:100%;white-space:normal}.bac-twg-team-members{padding:0 14px 12px}.bac-twg-team-box .bac-code-box-header{min-height:88px}.bac-roster-boxes{display:grid;grid-template-columns:1fr;gap:18px}
+.bac-twg-team-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:18px}.bac-twg-team-box .bac-code-box-header h4{font-size:12px!important}.bac-twg-team-actions{display:flex;flex-direction:column;gap:8px;padding:14px}.bac-twg-team-actions .btn{width:100%;white-space:normal}.bac-twg-team-members{padding:0 14px 12px}.bac-twg-team-box .bac-code-box-header{min-height:88px}.bac-roster-boxes{display:grid;grid-template-columns:1fr;gap:18px}
 .bac-original-member-box{border:1px solid #dbeafe;background:#f8fbff;border-radius:9px;padding:9px;margin-top:10px}
 .bac-assigned-adhocs{margin:7px 0 0 13px;padding:9px 0 0 11px;border-left:2px solid #bfdbfe}
 .bac-assigned-adhocs-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#475569;font-weight:700}
