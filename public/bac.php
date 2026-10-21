@@ -445,7 +445,7 @@ pageStart('Bids and Awards Committee');
         </footer>
       </article>
       <?php endforeach; ?>
-      <?php else: ?>
+      <?php elseif($type!=='TWG'): ?>
       <div class="table-wrap bac-members-table-wrap"><table class="table bac-members-table">
         <thead><tr><th>Name</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?></th><?php if($type==='TWG'): ?><th>Area of Expertise</th><?php endif; ?><th>Area/Unit</th><th>Code/Tag</th><?php if($canManage): ?><th>Actions</th><?php endif; ?></tr></thead><tbody>
         <?php foreach($members as $member): ?><tr><td><?=e($member['name'])?></td><td><?=e($member['designation'])?></td><?php if($type==='TWG'): ?><td><?=e($member['area_expertise']??'')?></td><?php endif; ?><td><?=e($member['area_unit'])?></td><td><?=e($member['code_tag'])?></td><?php if($canManage): ?><td><button class="btn secondary edit-member-btn" type="button" data-member="<?=e(json_encode($member,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button></td><?php endif; ?></tr><?php endforeach; ?>
