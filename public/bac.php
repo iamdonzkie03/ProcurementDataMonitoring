@@ -558,9 +558,11 @@ document.addEventListener('DOMContentLoaded',function(){
         'Ad-Hoc Vice-Chairman':'BAC Vice-Chairman',
         'Ad-Hoc Member':'BAC Member'
       }[designation.value]||'';
+      const selectedTag=String(tag.value||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase();
       const available=savedBacRoster.filter(function(person){
         const name=String(person.name||'').trim();
-        return name&&person.designation===requiredAssigneeDesignation&&(!occupied.has(normalizeBacName(name))||normalizeBacName(name)===normalizeBacName(selected));
+        const personTag=String(person.code_tag||'').trim().replace(/\\s+/g,' ').toLocaleLowerCase();
+        return name&&personTag===selectedTag&&person.designation===requiredAssigneeDesignation&&(!occupied.has(normalizeBacName(name))||normalizeBacName(name)===normalizeBacName(selected));
       });
       available.forEach(function(person){
         const option=document.createElement('option');
