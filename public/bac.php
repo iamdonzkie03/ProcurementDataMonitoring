@@ -18,6 +18,11 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS bac_committee_members (
   INDEX idx_bac_member_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 try { $pdo->exec("ALTER TABLE bac_committee_members ADD COLUMN assigned_member VARCHAR(180) NULL AFTER code_tag"); } catch (PDOException $e) { if ((int)($e->errorInfo[1]??0)!==1060) throw $e; }
+$pdo->exec("CREATE TABLE IF NOT EXISTS bac_twg_teams (
+ id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ team_name VARCHAR(180) NOT NULL UNIQUE,
+ created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
 $tab=$_GET['tab']??'hierarchy';
 if(!in_array($tab,['hierarchy','bac-members','technical-working-group'],true)) $tab='hierarchy';
@@ -28,6 +33,15 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $action=(string)($_POST['action']??'add');
   $type=($_POST['member_type']??'')==='TWG'?'TWG':'BAC';
   $returnTab=$type==='TWG'?'technical-working-group':'bac-members';
+  if($type==='TWG'&&$action==='create_twg_team'){
+    $teamName=trim((string)($_POST['team_name']??''));
+    if($teamName===''){flash('error','Enter a Team Name.');}
+    else{
+      try{$teamStmt=$pdo->prepare('INSERT INTO bac_twg_teams(team_name) VALUES(?)');$teamStmt->execute([$teamName]);flash('success','TWG Team created.');}
+      catch(PDOException $e){if((int)($e->errorInfo[1]??0)===1062)flash('error','That TWG Team Name already exists.');else throw $e;}
+    }
+    header('Location:bac.php?tab=technical-working-group');exit;
+  }
   if($action==='delete_member'){
     $id=(int)($_POST['id']??0);
     if($type==='BAC'){
@@ -240,6 +254,7 @@ foreach($bacEligiblePeople as $person){
 }
 $bacPeopleOptions=array_values($bacPeopleByName);
 $bacRoster=$pdo->query("SELECT name,designation,code_tag,assigned_member FROM bac_committee_members WHERE member_type='BAC' ORDER BY name,id")->fetchAll(PDO::FETCH_ASSOC);
+$twgTeams=$pdo->query("SELECT team_name FROM bac_twg_teams ORDER BY team_name")->fetchAll(PDO::FETCH_COLUMN);
 
 pageStart('Bids and Awards Committee');
 ?>
@@ -292,6 +307,7 @@ pageStart('Bids and Awards Committee');
   <section class="bac-tab-content">
     <div class="bac-list-toolbar">
       <h3><?=$tab==='bac-members'?'BAC Members':'Technical Working Group'?></h3>
+      <?php if($canManage&&$type==='TWG'): ?><button class="btn" type="button" id="showAddTwgTeam">TWG Team</button><?php endif; ?>
       <?php if($canManage&&$type==='BAC'):
         $usedTeamTags=[];
         foreach($members as $existingTeamMember){$usedTeamTags[]=mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$existingTeamMember['code_tag'])));}
@@ -309,6 +325,15 @@ pageStart('Bids and Awards Committee');
         <?php if($nextTeam!==''): ?><a class="btn" href="bac.php?tab=bac-members&amp;add_team=<?=rawurlencode($nextTeam)?>">Add Team</a><?php endif; ?>
       <?php endif; ?>
     </div>
+    <?php if($canManage&&$type==='TWG'): ?>
+    <form method="post" id="addTwgTeamForm" class="bac-member-form" hidden>
+      <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+      <input type="hidden" name="member_type" value="TWG">
+      <input type="hidden" name="action" value="create_twg_team">
+      <div class="bac-edit-grid"><label>Team Name*<input class="input" name="team_name" maxlength="180" required placeholder="Enter TWG Team Name"></label></div>
+      <div class="bac-form-actions"><button class="btn" type="submit">Save Team</button><button class="btn secondary" type="button" id="cancelAddTwgTeam">Cancel</button></div>
+    </form>
+    <?php endif; ?>
     <?php if($canManage): ?>
     <form method="post" id="addMemberForm" class="bac-member-form" hidden>
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
@@ -337,6 +362,26 @@ pageStart('Bids and Awards Committee');
       </div>
       <div class="bac-form-actions"><button class="btn" type="submit">Save Changes</button><button class="btn secondary" type="button" id="cancelEditMember">Cancel</button></div>
     </form>
+    <?php endif; ?>
+    <?php if($type==='TWG'): ?>
+      <div class="bac-twg-team-grid">
+      <?php foreach($twgTeams as $twgTeamName): ?>
+        <article class="bac-code-box bac-twg-team-box">
+          <header class="bac-code-box-header"><div><span class="bac-code-eyebrow">TECHNICAL WORKING GROUP</span><h4><?=e($twgTeamName)?></h4><p>TWG Team</p></div></header>
+          <div class="bac-twg-team-actions">
+            <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Chairman">Add TWG Chairman</button>
+            <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Vice-Chairman">Add TWG Vice-Chairman</button>
+            <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Member">Add TWG Members</button>
+          </div>
+          <div class="bac-twg-team-members">
+            <?php $teamMembers=array_values(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName))); ?>
+            <?php if(!$teamMembers): ?><div class="bac-role-empty">No TWG members added yet</div><?php else: ?>
+              <?php foreach($teamMembers as $teamMember): ?><div class="bac-person-box"><div class="bac-person-box-details"><strong><?=e($teamMember['name'])?></strong><span><?=e($teamMember['designation'])?> · <?=e($teamMember['area_unit'])?></span></div><?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($teamMember,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><?php endif; ?></div><?php endforeach; ?>
+            <?php endif; ?>
+          </div>
+        </article>
+      <?php endforeach; ?>
+      </div>
     <?php endif; ?>
     <div class="bac-roster-boxes">
       <?php if($type==='BAC'):
@@ -475,7 +520,7 @@ pageStart('Bids and Awards Committee');
 .bac-form-actions{display:flex;gap:8px;margin-top:16px}
 .bac-members-table-wrap{width:100%;overflow-x:auto}
 .bac-members-table{width:100%;border-collapse:collapse}
-.bac-roster-boxes{display:grid;grid-template-columns:1fr;gap:18px}
+.bac-twg-team-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:18px}.bac-twg-team-actions{display:flex;flex-direction:column;gap:8px;padding:14px}.bac-twg-team-actions .btn{width:100%;white-space:normal}.bac-twg-team-members{padding:0 14px 12px}.bac-twg-team-box .bac-code-box-header{min-height:88px}.bac-roster-boxes{display:grid;grid-template-columns:1fr;gap:18px}
 .bac-original-member-box{border:1px solid #dbeafe;background:#f8fbff;border-radius:9px;padding:9px;margin-top:10px}
 .bac-assigned-adhocs{margin:7px 0 0 13px;padding:9px 0 0 11px;border-left:2px solid #bfdbfe}
 .bac-assigned-adhocs-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#475569;font-weight:700}
@@ -511,8 +556,8 @@ pageStart('Bids and Awards Committee');
 .bac-roster-empty{padding:36px 20px;text-align:center;border:1px dashed #cbd5e1;border-radius:12px;color:#64748b}
 .bac-roster-empty strong{color:#102a43}
 .bac-roster-empty p{font-size:12px}
-@media(max-width:1000px){.bac-code-box-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:650px){.bac-code-box-grid{grid-template-columns:1fr;padding:10px}.bac-code-box-header{padding:14px}.bac-code-box-footer{align-items:flex-start;flex-direction:column}.bac-code-box-status{white-space:normal}}
+@media(max-width:1000px){.bac-code-box-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.bac-twg-team-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.bac-twg-team-grid{grid-template-columns:1fr}.bac-code-box-grid{grid-template-columns:1fr;padding:10px}.bac-code-box-header{padding:14px}.bac-code-box-footer{align-items:flex-start;flex-direction:column}.bac-code-box-status{white-space:normal}}
 
 .bac-members-table th,.bac-members-table td{padding:11px 12px;text-align:left;border-bottom:1px solid #e5e7eb}
 .bac-members-table th{background:#f8fafc;color:#334155;font-size:13px;white-space:nowrap}
@@ -523,6 +568,26 @@ pageStart('Bids and Awards Committee');
 <script>
 document.addEventListener('DOMContentLoaded',function(){
   const form=document.getElementById('addMemberForm');
+  const showTwgTeam=document.getElementById('showAddTwgTeam');
+  const addTwgTeamForm=document.getElementById('addTwgTeamForm');
+  const cancelTwgTeam=document.getElementById('cancelAddTwgTeam');
+  if(showTwgTeam&&addTwgTeamForm)showTwgTeam.addEventListener('click',function(){addTwgTeamForm.hidden=false;const input=addTwgTeamForm.querySelector('[name="team_name"]');if(input)input.focus();});
+  if(cancelTwgTeam&&addTwgTeamForm)cancelTwgTeam.addEventListener('click',function(){addTwgTeamForm.reset();addTwgTeamForm.hidden=true;});
+  document.querySelectorAll('.twg-add-role').forEach(function(button){button.addEventListener('click',function(){
+    if(!form||!rows)return;
+    form.hidden=false;
+    const row=rows.querySelector('.bac-entry-row');if(!row)return;
+    const designation=row.querySelector('[name="designation[]"]');
+    const tag=row.querySelector('[name="code_tag[]"]');
+    const area=row.querySelector('[name="area_unit[]"]');
+    const expertise=row.querySelector('[name="area_expertise[]"]');
+    if(designation)designation.value=button.dataset.role||'TWG Member';
+    if(tag)tag.value=button.dataset.team||'';
+    if(area)area.value='';
+    if(expertise)expertise.value='';
+    form.scrollIntoView({behavior:'smooth',block:'start'});
+    const name=row.querySelector('.bac-person-name');if(name)name.focus();
+  });});
   const show=document.getElementById('showAddMember');
   const cancel=document.getElementById('cancelAddMember');
   const rows=document.getElementById('bacEntryRows');
