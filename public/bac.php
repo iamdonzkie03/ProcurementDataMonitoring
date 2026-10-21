@@ -26,6 +26,7 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS bac_twg_teams (
 try { $pdo->exec("ALTER TABLE bac_twg_teams ADD COLUMN bac_code_tag VARCHAR(100) NULL AFTER team_name"); } catch (PDOException $e) { if ((int)($e->errorInfo[1]??0)!==1060) throw $e; }
 try { $pdo->exec("ALTER TABLE bac_committee_members ADD COLUMN bac_team VARCHAR(100) NULL AFTER code_tag"); } catch (PDOException $e) { if ((int)($e->errorInfo[1]??0)!==1060) throw $e; }
 $bacTeamOptions=$pdo->query("SELECT DISTINCT code_tag FROM bac_committee_members WHERE member_type='BAC' AND code_tag<>'' ORDER BY code_tag")->fetchAll(PDO::FETCH_COLUMN);
+$twgTeamNames=$pdo->query("SELECT team_name FROM bac_twg_teams ORDER BY team_name")->fetchAll(PDO::FETCH_COLUMN);
 
 $tab=$_GET['tab']??'hierarchy';
 if(!in_array($tab,['hierarchy','bac-members','technical-working-group'],true)) $tab='hierarchy';
