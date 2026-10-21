@@ -259,7 +259,6 @@ pageStart('Bids and Awards Committee');
   <section class="bac-tab-content">
     <div class="bac-list-toolbar">
       <h3><?=$tab==='bac-members'?'BAC Members':'Technical Working Group'?></h3>
-      <?php if($canManage): ?><button class="btn" type="button" id="showAddMember">+ Add Member</button><?php endif; ?>
     </div>
     <?php if($canManage): ?>
     <form method="post" id="addMemberForm" class="bac-member-form" hidden>
@@ -270,12 +269,6 @@ pageStart('Bids and Awards Committee');
     </form>
     <?php endif; ?>
     <?php if($canManage): ?>
-    <form method="post" id="bulkDeleteMembers" onsubmit="return confirm('Delete the selected member(s)? This cannot be undone.');">
-      <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-      <input type="hidden" name="member_type" value="<?=e($type)?>">
-      <input type="hidden" name="action" value="delete_selected">
-      <div class="bac-bulk-actions"><button class="btn danger" type="submit">Delete Selected</button></div>
-    </form>
     <form method="post" id="editMemberForm" class="bac-edit-form" hidden>
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="member_type" value="<?=e($type)?>">
@@ -300,44 +293,60 @@ pageStart('Bids and Awards Committee');
       <?php if($type==='BAC'):
         $membersByCode=[];
         foreach($members as $member){$tagKey=mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$member['code_tag'])));if(!isset($membersByCode[$tagKey]))$membersByCode[$tagKey]=['label'=>$member['code_tag'],'members'=>[]];$membersByCode[$tagKey]['members'][]=$member;}
-        $tagOrder=['bac a'=>0,'bac b'=>1,'bac c'=>2,'bac d'=>3,'bac e'=>4];
-        uksort($membersByCode,static function($a,$b)use($tagOrder){return ($tagOrder[$a]??99)<=>($tagOrder[$b]??99);});
-        foreach($membersByCode as $group):
-          $groupMembers=$group['members'];$total=count($groupMembers);$roles=['BAC Chairman'=>[],'BAC Vice-Chairman'=>[],'BAC Member'=>[],'Ad-Hoc Chairman'=>[],'Ad-Hoc Vice-Chairman'=>[],'Ad-Hoc Member'=>[]];
+        $tagOrder=['BAC A','BAC B','BAC C','BAC D','BAC E'];
+        foreach($tagOrder as $tagLabel):
+          $tagKey=mb_strtolower($tagLabel);
+          $group=$membersByCode[$tagKey]??['label'=>$tagLabel,'members'=>[]];
+          $groupMembers=$group['members'];$total=count($groupMembers);
+          $roles=['BAC Chairman'=>[],'BAC Vice-Chairman'=>[],'BAC Member'=>[]];
           foreach($groupMembers as $gm){if(isset($roles[$gm['designation']]))$roles[$gm['designation']][]=$gm;}
+          $adHocRoles=['BAC Chairman'=>'Ad-Hoc Chairman','BAC Vice-Chairman'=>'Ad-Hoc Vice-Chairman','BAC Member'=>'Ad-Hoc Member'];
       ?>
       <article class="bac-code-box">
         <header class="bac-code-box-header">
-          <div><span class="bac-code-eyebrow">BAC COMMITTEE</span><h4><?=e($group['label'])?></h4><p><?=$total?> of 7 members</p></div>
-          <div class="bac-code-box-status <?=$total>=5&&$total<=7?'is-valid':'is-incomplete'?>"><?=$total>=5&&$total<=7?'Roster size '.$total.'/7':'Needs '.max(0,5-$total).' more'?></div>
+          <div><span class="bac-code-eyebrow">BAC COMMITTEE</span><h4><?=e($tagLabel)?></h4><p><?=$total?> of 7 total members</p></div>
+          <div class="bac-code-box-status <?=$total>=5&&$total<=7?'is-valid':'is-incomplete'?>"><?=$total>=5&&$total<=7?'Roster size '.$total.'/7':($total<5?'Needs '.(5-$total).' more':'Exceeds limit')?></div>
         </header>
         <div class="bac-code-box-grid">
-          <?php foreach(['BAC Chairman','BAC Vice-Chairman','BAC Member','Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'] as $roleName): ?>
+          <?php foreach($roles as $roleName=>$roleMembers): ?>
           <section class="bac-role-box">
-            <div class="bac-role-box-title"><strong><?=e($roleName)?></strong><span><?=count($roles[$roleName])?></span></div>
-            <?php if(!$roles[$roleName]): ?><div class="bac-role-empty">No one assigned</div><?php endif; ?>
-            <?php foreach($roles[$roleName] as $person): ?>
-            <div class="bac-person-box">
-              <?php if($canManage): ?><input type="checkbox" class="member-select" name="selected_ids[]" value="<?=e($person['id'])?>" form="bulkDeleteMembers" aria-label="Select <?=e($person['name'])?>"><?php endif; ?>
-              <div class="bac-person-box-details"><strong><?=e($person['name'])?></strong><span><?=e($person['area_unit'])?></span><?php if(!empty($person['assigned_member'])): ?><small>Assigned to: <?=e($person['assigned_member'])?></small><?php endif; ?></div>
-              <?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($person,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><?php endif; ?>
+            <div class="bac-role-box-title"><strong><?=e($roleName)?></strong><span><?=count($roleMembers)?></span></div>
+            <?php if(!$roleMembers): ?><div class="bac-role-empty">No original BAC member assigned</div><?php endif; ?>
+            <?php foreach($roleMembers as $person):
+              $assignedAdHocs=array_values(array_filter($groupMembers,static function($candidate)use($person,$adHocRoles,$roleName){return $candidate['designation']===($adHocRoles[$roleName]??'')&&mb_strtolower(trim((string)($candidate['assigned_member']??'')))===mb_strtolower(trim((string)$person['name']));}));
+            ?>
+            <div class="bac-original-member-box">
+              <div class="bac-person-box">
+                <div class="bac-person-box-details"><strong><?=e($person['name'])?></strong><span><?=e($person['area_unit'])?></span></div>
+                <?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($person,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><?php endif; ?>
+              </div>
+              <div class="bac-assigned-adhocs">
+                <div class="bac-assigned-adhocs-heading">Assigned Ad-Hoc Members <span><?=count($assignedAdHocs)?></span></div>
+                <?php if(!$assignedAdHocs): ?><div class="bac-role-empty">No Ad-Hoc assigned</div><?php endif; ?>
+                <?php foreach($assignedAdHocs as $adhoc): ?>
+                <div class="bac-adhoc-person">
+                  <div class="bac-person-box-details"><strong><?=e($adhoc['name'])?></strong><span><?=e($adhoc['area_unit'])?></span></div>
+                  <?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($adhoc,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+                <?php if($canManage&&$total<7): ?><button class="bac-add-adhoc" type="button" data-code-tag="<?=e($tagLabel)?>" data-designation="<?=e($adHocRoles[$roleName])?>" data-assigned-name="<?=e($person['name'])?>">+ Add Ad-Hoc</button><?php endif; ?>
+              </div>
             </div>
             <?php endforeach; ?>
-            <?php if($canManage&&$total<7&&in_array($roleName,['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'],true)&&count($roles[$roleName])===0): ?>
-              <button class="bac-add-adhoc" type="button" data-code-tag="<?=e($group['label'])?>" data-designation="<?=e($roleName)?>">+ Add <?=e($roleName)?></button>
-            <?php endif; ?>
+            <?php if($canManage&&count($roleMembers)===0&&$total<7): ?><button class="bac-add-original" type="button" data-code-tag="<?=e($tagLabel)?>" data-designation="<?=e($roleName)?>">+ Add <?=e($roleName)?></button><?php endif; ?>
           </section>
           <?php endforeach; ?>
         </div>
-        <footer class="bac-code-box-footer"><span><?=count($roles['BAC Chairman'])?> Chairman · <?=count($roles['BAC Vice-Chairman'])?> Vice-Chairman · <?=count($roles['BAC Member'])?> BAC Members</span><?php if($canManage&&$total<7): ?><button class="btn secondary bac-add-adhoc" type="button" data-code-tag="<?=e($group['label'])?>" data-designation="Ad-Hoc Member">+ Add Ad-Hoc</button><?php endif; ?></footer>
+        <footer class="bac-code-box-footer"><span><?=count($roles['BAC Chairman'])?> Chairman · <?=count($roles['BAC Vice-Chairman'])?> Vice-Chairman · <?=count($roles['BAC Member'])?> BAC Members</span>
+          <?php if($canManage&&$total<5): ?><span class="bac-roster-guidance">Add original BAC members until this roster has at least 5 total members.</span><?php endif; ?>
+        </footer>
       </article>
       <?php endforeach; ?>
-      <?php if(!$members): ?><div class="bac-roster-empty"><strong>No BAC Code/Tag boxes yet</strong><p>Add the initial 5–7 members for a Code/Tag to create its committee box.</p></div><?php endif; ?>
       <?php else: ?>
       <div class="table-wrap bac-members-table-wrap"><table class="table bac-members-table">
-        <thead><tr><?php if($canManage): ?><th><input type="checkbox" id="selectAllMembers" aria-label="Select all members"></th><?php endif; ?><th>Name</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?></th><?php if($type==='TWG'): ?><th>Area of Expertise</th><?php endif; ?><th>Area/Unit</th><th>Code/Tag</th><?php if($canManage): ?><th>Actions</th><?php endif; ?></tr></thead><tbody>
-        <?php foreach($members as $member): ?><tr><?php if($canManage): ?><td><input type="checkbox" class="member-select" name="selected_ids[]" value="<?=e($member['id'])?>" form="bulkDeleteMembers" aria-label="Select <?=e($member['name'])?>"></td><?php endif; ?><td><?=e($member['name'])?></td><td><?=e($member['designation'])?></td><?php if($type==='TWG'): ?><td><?=e($member['area_expertise']??'')?></td><?php endif; ?><td><?=e($member['area_unit'])?></td><td><?=e($member['code_tag'])?></td><?php if($canManage): ?><td><button class="btn secondary edit-member-btn" type="button" data-member="<?=e(json_encode($member,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button></td><?php endif; ?></tr><?php endforeach; ?>
-        <?php if(!$members): ?><tr><td colspan="<?=($canManage?6:4)?>" class="empty">No members have been added yet.</td></tr><?php endif; ?>
+        <thead><tr><th>Name</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?></th><?php if($type==='TWG'): ?><th>Area of Expertise</th><?php endif; ?><th>Area/Unit</th><th>Code/Tag</th><?php if($canManage): ?><th>Actions</th><?php endif; ?></tr></thead><tbody>
+        <?php foreach($members as $member): ?><tr><td><?=e($member['name'])?></td><td><?=e($member['designation'])?></td><?php if($type==='TWG'): ?><td><?=e($member['area_expertise']??'')?></td><?php endif; ?><td><?=e($member['area_unit'])?></td><td><?=e($member['code_tag'])?></td><?php if($canManage): ?><td><button class="btn secondary edit-member-btn" type="button" data-member="<?=e(json_encode($member,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button></td><?php endif; ?></tr><?php endforeach; ?>
+        <?php if(!$members): ?><tr><td colspan="<?=($canManage?5:4)?>" class="empty">No members have been added yet.</td></tr><?php endif; ?>
         </tbody></table></div>
       <?php endif; ?>
     </div>
@@ -409,6 +418,15 @@ pageStart('Bids and Awards Committee');
 .bac-members-table-wrap{width:100%;overflow-x:auto}
 .bac-members-table{width:100%;border-collapse:collapse}
 .bac-roster-boxes{display:grid;grid-template-columns:1fr;gap:18px}
+.bac-original-member-box{border:1px solid #dbeafe;background:#f8fbff;border-radius:9px;padding:9px;margin-top:10px}
+.bac-assigned-adhocs{margin:7px 0 0 13px;padding:9px 0 0 11px;border-left:2px solid #bfdbfe}
+.bac-assigned-adhocs-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#475569;font-weight:700}
+.bac-assigned-adhocs-heading span{background:#dbeafe;color:#1e40af;border-radius:12px;padding:2px 7px}
+.bac-adhoc-person{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #eaf0f8}
+.bac-add-original{display:block;width:100%;margin-top:10px;padding:10px;border:1px dashed #94a3b8;border-radius:7px;background:#f8fafc;color:#334155;font-size:11px;font-weight:700;cursor:pointer}
+.bac-add-original:hover{background:#eff6ff;border-color:#3b82f6;color:#1d4ed8}
+.bac-roster-guidance{font-size:11px;color:#92400e}
+
 .bac-code-box{border:1px solid #dbe3ec;border-radius:14px;background:#f8fafc;overflow:hidden;box-shadow:0 4px 14px rgba(16,42,67,.05)}
 .bac-code-box-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 20px;background:#102a43;color:#fff}
 .bac-code-box-header h4{margin:3px 0;font-size:19px;color:#fff}
@@ -622,27 +640,31 @@ document.addEventListener('DOMContentLoaded',function(){
     refreshAssignedMembers();
     const input=row.querySelector('input');if(input)input.focus();
   }
-  document.querySelectorAll('.bac-add-adhoc').forEach(function(button){
+  document.querySelectorAll('.bac-add-adhoc,.bac-add-original').forEach(function(button){
     button.addEventListener('click',function(){
       if(!form||!rows)return;
       form.hidden=false;
-      if(show)show.hidden=true;
       const row=rows.querySelector('.bac-entry-row');
       if(!row)return;
       const designation=row.querySelector('select[name="designation[]"]');
       const tag=row.querySelector('select[name="code_tag[]"]');
       const name=row.querySelector('.bac-person-name');
       const area=row.querySelector('.bac-area-unit-input');
+      const assigned=row.querySelector('.bac-assigned-member');
       if(name)name.value='';
       if(area)area.value='';
-      if(designation)designation.value=button.dataset.designation||'Ad-Hoc Member';
-      if(tag)tag.value=button.dataset.codeTag||'';
+      if(designation)designation.value=button.dataset.designation||'BAC Member';
+      if(tag)tag.value=button.dataset.codeTag||'BAC A';
       refreshAssignedMembers();
+      if(assigned&&button.dataset.assignedName){
+        const target=button.dataset.assignedName;
+        const option=Array.from(assigned.options).find(function(o){return o.value===target;});
+        if(option){assigned.value=target;assigned.disabled=false;}
+      }
       form.scrollIntoView({behavior:'smooth',block:'start'});
       if(name)name.focus();
     });
   });
-  if(show&&form)show.addEventListener('click',function(){form.hidden=false;show.hidden=true;const first=form.querySelector('input[name="name[]"]');if(first)first.focus();});
   if(addRow)addRow.addEventListener('click',addMemberRow);
   if(cancel&&form&&show)cancel.addEventListener('click',function(){form.reset();if(rows)rows.innerHTML='';form.hidden=true;show.hidden=false;});
   updateSaveLabel();
