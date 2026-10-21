@@ -28,6 +28,24 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $action=(string)($_POST['action']??'add');
   $type=($_POST['member_type']??'')==='TWG'?'TWG':'BAC';
   $returnTab=$type==='TWG'?'technical-working-group':'bac-members';
+  if($action==='delete_member'){
+    $id=(int)($_POST['id']??0);
+    $st=$pdo->prepare('DELETE FROM bac_committee_members WHERE id=? AND member_type=?');
+    $st->execute([$id,$type]);
+    flash($st->rowCount()?'success':'error',$st->rowCount()?'Member deleted.':'Member could not be found.');
+    header('Location:bac.php?tab='.$returnTab);exit;
+  }
+  if($action==='delete_team'&&$type==='BAC'){
+    $tag=trim((string)($_POST['code_tag']??''));
+    if(!in_array($tag,['BAC A','BAC B','BAC C','BAC D','BAC E'],true)){
+      flash('error','Select a valid BAC team to delete.');
+    }else{
+      $st=$pdo->prepare("DELETE FROM bac_committee_members WHERE member_type='BAC' AND code_tag=?");
+      $st->execute([$tag]);
+      flash('success',$st->rowCount()?'BAC Team '.$tag.' and its '.$st->rowCount().' member(s) deleted.':'BAC Team '.$tag.' deleted.');
+    }
+    header('Location:bac.php?tab=bac-members');exit;
+  }
   if($action==='delete_selected'){
     $ids=array_values(array_unique(array_filter(array_map('intval',(array)($_POST['selected_ids']??[])),static fn($id)=>$id>0)));
     if(!$ids){flash('error','Select at least one member to delete.');}
@@ -324,7 +342,10 @@ pageStart('Bids and Awards Committee');
       <article class="bac-code-box">
         <header class="bac-code-box-header">
           <div><span class="bac-code-eyebrow">BAC COMMITTEE</span><h4><?=e($tagLabel)?></h4><p><?=$total?> of 7 total members</p></div>
-          <div class="bac-code-box-status <?=$total>=5&&$total<=7?'is-valid':'is-incomplete'?>"><?=$total>=5&&$total<=7?'Roster size '.$total.'/7':($total<5?'Needs '.(5-$total).' more':'Exceeds limit')?></div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div class="bac-code-box-status <?=$total>=5&&$total<=7?'is-valid':'is-incomplete'?>"><?=$total>=5&&$total<=7?'Roster size '.$total.'/7':($total<5?'Needs '.(5-$total).' more':'Exceeds limit')?></div>
+            <?php if($canManage): ?><form method="post" onsubmit="return confirm('Delete <?=e($tagLabel)?> and all members assigned to this team? This cannot be undone.');" style="margin:0"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="BAC"><input type="hidden" name="action" value="delete_team"><input type="hidden" name="code_tag" value="<?=e($tagLabel)?>"><button class="btn danger" type="submit">Delete Team</button></form><?php endif; ?>
+          </div>
         </header>
         <div class="bac-code-box-grid">
           <?php foreach($roles as $roleName=>$roleMembers): ?>
@@ -337,7 +358,7 @@ pageStart('Bids and Awards Committee');
             <div class="bac-original-member-box">
               <div class="bac-person-box">
                 <div class="bac-person-box-details"><strong><?=e($person['name'])?></strong><span><?=e($person['area_unit'])?></span></div>
-                <?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($person,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><?php endif; ?>
+                <?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($person,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><form method="post" onsubmit="return confirm('Delete <?=e(addslashes($person['name']))?>?');" style="display:inline;margin:0"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="BAC"><input type="hidden" name="action" value="delete_member"><input type="hidden" name="id" value="<?=(int)$person['id']?>"><button class="btn danger bac-card-edit" type="submit">Delete</button></form><?php endif; ?>
               </div>
               <div class="bac-assigned-adhocs">
                 <div class="bac-assigned-adhocs-heading">Assigned Ad-Hoc Members <span><?=count($assignedAdHocs)?></span></div>
@@ -345,7 +366,7 @@ pageStart('Bids and Awards Committee');
                 <?php foreach($assignedAdHocs as $adhoc): ?>
                 <div class="bac-adhoc-person">
                   <div class="bac-person-box-details"><strong><?=e($adhoc['name'])?></strong><span><?=e($adhoc['area_unit'])?></span></div>
-                  <?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($adhoc,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><?php endif; ?>
+                  <?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($adhoc,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><form method="post" onsubmit="return confirm('Delete <?=e(addslashes($adhoc['name']))?>?');" style="display:inline;margin:0"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="BAC"><input type="hidden" name="action" value="delete_member"><input type="hidden" name="id" value="<?=(int)$adhoc['id']?>"><button class="btn danger bac-card-edit" type="submit">Delete</button></form><?php endif; ?>
                 </div>
                 <?php endforeach; ?>
                 <?php if($canManage&&$total<7&&count($assignedAdHocs)===0): ?><button class="bac-add-adhoc" type="button" data-code-tag="<?=e($tagLabel)?>" data-designation="<?=e($adHocRoles[$roleName])?>" data-assigned-name="<?=e($person['name'])?>">+ Add <?=e($adHocRoles[$roleName])?></button><?php endif; ?>
