@@ -24,6 +24,7 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS bac_twg_teams (
  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 try { $pdo->exec("ALTER TABLE bac_twg_teams ADD COLUMN bac_code_tag VARCHAR(100) NULL AFTER team_name"); } catch (PDOException $e) { if ((int)($e->errorInfo[1]??0)!==1060) throw $e; }
+try { $pdo->exec("ALTER TABLE bac_committee_members ADD COLUMN bac_team VARCHAR(100) NULL AFTER code_tag"); } catch (PDOException $e) { if ((int)($e->errorInfo[1]??0)!==1060) throw $e; }
 $bacTeamOptions=$pdo->query("SELECT DISTINCT code_tag FROM bac_committee_members WHERE member_type='BAC' AND code_tag<>'' ORDER BY code_tag")->fetchAll(PDO::FETCH_COLUMN);
 
 $tab=$_GET['tab']??'hierarchy';
@@ -136,8 +137,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $expertise=trim((string)($_POST['area_expertise']??''));
     $areaUnit=trim((string)($_POST['area_unit']??''));
     $codeTag=trim((string)($_POST['code_tag']??''));
+    $bacTeam=trim((string)($_POST['bac_team']??''));
     $assigned=trim((string)($_POST['assigned_member']??''));
-    if($id<1||$name===''||$designation===''||$areaUnit===''||$codeTag===''||($type==='TWG'&&$expertise==='')){
+    if($id<1||$name===''||$designation===''||$areaUnit===''||$codeTag===''||($type==='TWG'&&($expertise===''||$bacTeam===''||!in_array($codeTag,$twgTeamNames??[],true)||!in_array($bacTeam,$bacTeamOptions,true)))){
       flash('error','Complete all required fields.');
     }elseif($type==='BAC'&&preg_match('/\bprocurement\b/i',$areaUnit)){
       flash('error','Personnel from the Procurement Area/Unit cannot be assigned to a BAC designation.');
@@ -173,8 +175,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
           header('Location:bac.php?tab='.$returnTab);exit;
         }
       }
-      $st=$pdo->prepare('UPDATE bac_committee_members SET name=?,designation=?,area_expertise=?,area_unit=?,code_tag=?,assigned_member=? WHERE id=? AND member_type=?');
-      $st->execute([$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag,$type==='BAC'&&in_array($designation,['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'],true)?$assigned:null,$id,$type]);
+      $st=$pdo->prepare('UPDATE bac_committee_members SET name=?,designation=?,area_expertise=?,area_unit=?,code_tag=?,bac_team=?,assigned_member=? WHERE id=? AND member_type=?');
+      $st->execute([$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag,$type==='TWG'?$bacTeam:null,$type==='BAC'&&in_array($designation,['Ad-Hoc Chairman','Ad-Hoc Vice-Chairman','Ad-Hoc Member'],true)?$assigned:null,$id,$type]);
       flash('success','Member updated.');
     }
     header('Location:bac.php?tab='.$returnTab);exit;
@@ -185,8 +187,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $expertises=(array)($_POST['area_expertise']??[]);
   $areaUnits=(array)($_POST['area_unit']??[]);
   $codeTags=(array)($_POST['code_tag']??[]);
+  $bacTeams=(array)($_POST['bac_team']??[]);
   $assignedMembers=(array)($_POST['assigned_member']??[]);
-  $count=max(count($names),count($designations),count($expertises),count($areaUnits),count($codeTags),count($assignedMembers));
+  $count=max(count($names),count($designations),count($expertises),count($areaUnits),count($codeTags),count($bacTeams),count($assignedMembers));
   $entries=[];
   for($i=0;$i<$count;$i++){
     $name=trim((string)($names[$i]??''));
@@ -194,16 +197,17 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $expertise=trim((string)($expertises[$i]??''));
     $areaUnit=trim((string)($areaUnits[$i]??''));
     $codeTag=trim((string)($codeTags[$i]??''));
+    $bacTeam=trim((string)($bacTeams[$i]??''));
     $assignedMember=trim((string)($assignedMembers[$i]??''));
-    if($name===''&&$designation===''&&$expertise===''&&$areaUnit===''&&$codeTag===''&&$assignedMember==='') continue;
-    if($name===''||$designation===''||$areaUnit===''||$codeTag===''){
+    if($name===''&&$designation===''&&$expertise===''&&$areaUnit===''&&$codeTag===''&&$bacTeam===''&&$assignedMember==='') continue;
+    if($name===''||$designation===''||$areaUnit===''||$codeTag===''||($type==='TWG'&&($bacTeam===''||!in_array($bacTeam,$bacTeamOptions,true)||!in_array($codeTag,$twgTeamNames??[],true)))){
       flash('error','Complete every required field in each member row. No members were saved.');
       header('Location:bac.php?tab='.$returnTab);exit;
     }
     if($type==='BAC'&&preg_match('/\\bprocurement\\b/i',$areaUnit)){flash('error','Personnel from the Procurement Area/Unit cannot be added to any BAC designation, including Ad-Hoc roles. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
     if($type==='BAC'&&in_array(mb_strtolower($designation),['ad-hoc chairman','ad-hoc vice-chairman','ad-hoc member'],true)&&$assignedMember===''){flash('error','Select an assigned BAC Chairman, BAC Vice-Chairman, or BAC Member for each Ad-Hoc role. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
     if(($type!=='BAC'||!in_array(mb_strtolower($designation),['ad-hoc chairman','ad-hoc vice-chairman','ad-hoc member'],true))&&$assignedMember!==''){flash('error','Only Ad-Hoc roles may have an Assigned BAC Member. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
-    $entries[]=[$type,$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag,$assignedMember!==''?$assignedMember:null];
+    $entries[]=[$type,$name,$designation,$type==='TWG'?$expertise:null,$areaUnit,$codeTag,$type==='TWG'?$bacTeam:null,$assignedMember!==''?$assignedMember:null];
   }
   if(!$entries){flash('error','Enter at least one member before saving.');}
   else{
@@ -263,7 +267,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     if($errors){
       flash('error',implode(' ',$errors).' No members were saved.');
     }else{
-      $st=$pdo->prepare('INSERT INTO bac_committee_members(member_type,name,designation,area_expertise,area_unit,code_tag,assigned_member) VALUES(?,?,?,?,?,?,?)');
+      $st=$pdo->prepare('INSERT INTO bac_committee_members(member_type,name,designation,area_expertise,area_unit,code_tag,bac_team,assigned_member) VALUES(?,?,?,?,?,?,?,?)');
       $pdo->beginTransaction();
       try{foreach($entries as $entry)$st->execute($entry);$pdo->commit();flash('success',count($entries)===1?'Member added.':count($entries).' members added.');}
       catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
@@ -273,7 +277,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 }
 
 $type=$tab==='technical-working-group'?'TWG':'BAC';
-$st=$pdo->prepare('SELECT id,name,designation,area_expertise,area_unit,code_tag,assigned_member FROM bac_committee_members WHERE member_type=? ORDER BY name,id');
+$st=$pdo->prepare('SELECT id,name,designation,area_expertise,area_unit,code_tag,bac_team,assigned_member FROM bac_committee_members WHERE member_type=? ORDER BY name,id');
 $st->execute([$type]);
 $members=$st->fetchAll();
 $canManage=hasRole(['Administrator','Editor']);
@@ -292,6 +296,7 @@ foreach($bacEligiblePeople as $person){
 $bacPeopleOptions=array_values($bacPeopleByName);
 $bacRoster=$pdo->query("SELECT name,designation,code_tag,assigned_member FROM bac_committee_members WHERE member_type='BAC' ORDER BY name,id")->fetchAll(PDO::FETCH_ASSOC);
 $twgTeams=$pdo->query("SELECT id,team_name,bac_code_tag FROM bac_twg_teams ORDER BY team_name")->fetchAll(PDO::FETCH_ASSOC);
+$twgTeamNames=array_values(array_map(static fn($team)=>$team['team_name'],$twgTeams));
 
 pageStart('Bids and Awards Committee');
 ?>
@@ -375,7 +380,7 @@ pageStart('Bids and Awards Committee');
     <form method="post" id="addMemberForm" class="bac-member-form" hidden>
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="member_type" value="<?=e($type)?>">
-      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><th>Area/Unit*</th><?php if($type==='BAC'): ?><th>Assigned BAC Member</th><?php endif; ?><th>Code/Tag*</th></tr></thead><tbody id="bacEntryRows"><tr class="bac-entry-row"><td><div class="bac-person-autocomplete"><input class="input bac-person-name" type="text" name="name[]" maxlength="180" placeholder="Search name..." autocomplete="off" aria-label="Name" required><div class="bac-person-suggestions" role="listbox"></div></div></td><td><?php if($type==='BAC'): ?><select class="input" name="designation[]" aria-label="BAC Designation" required><option value="">Select BAC Designation</option><option value="BAC Chairman">BAC Chairman</option><option value="BAC Vice-Chairman">BAC Vice-Chairman</option><option value="BAC Member">BAC Member</option><option value="Ad-Hoc Chairman">Ad-Hoc Chairman</option><option value="Ad-Hoc Vice-Chairman">Ad-Hoc Vice-Chairman</option><option value="Ad-Hoc Member">Ad-Hoc Member</option></select><?php else: ?><input class="input" type="text" name="designation[]" maxlength="180" placeholder="TWG Designation" aria-label="TWG Designation" required><?php endif; ?></td><td><input class="input bac-area-unit-input" type="text" name="area_unit[]" maxlength="180" placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly required></td><?php if($type==='BAC'): ?><td><select class="input bac-assigned-member" name="assigned_member[]" aria-label="Assigned BAC Member" disabled><option value="">Only required for Ad-Hoc Member</option></select></td><?php endif; ?><td><?php if($type==='BAC'): ?><select class="input" name="code_tag[]" aria-label="BAC Code/Tag" required><option value="">Select BAC Code/Tag</option><?php foreach(($teamTagsForDropdown??[]) as $bacTag): ?><option value="<?=e($bacTag)?>"><?=e($bacTag)?></option><?php endforeach; ?></select><?php else: ?><input class="input" type="text" name="code_tag[]" maxlength="100" placeholder="Code/Tag" aria-label="Code/Tag" required><?php endif; ?></td></tr></tbody></table></div>
+      <div class="table-wrap bac-entry-table-wrap"><table class="table bac-entry-table"><thead><tr><th>Name*</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?>*</th><th>Area/Unit*</th><?php if($type==='BAC'): ?><th>Assigned BAC Member</th><?php endif; ?><th><?=$type==='BAC'?'Code/Tag*':'TWG Name*'?></th><?php if($type==='TWG'): ?><th>BAC Team*</th><?php endif; ?></tr></thead><tbody id="bacEntryRows"><tr class="bac-entry-row"><td><div class="bac-person-autocomplete"><input class="input bac-person-name" type="text" name="name[]" maxlength="180" placeholder="Search name..." autocomplete="off" aria-label="Name" required><div class="bac-person-suggestions" role="listbox"></div></div></td><td><?php if($type==='BAC'): ?><select class="input" name="designation[]" aria-label="BAC Designation" required><option value="">Select BAC Designation</option><option value="BAC Chairman">BAC Chairman</option><option value="BAC Vice-Chairman">BAC Vice-Chairman</option><option value="BAC Member">BAC Member</option><option value="Ad-Hoc Chairman">Ad-Hoc Chairman</option><option value="Ad-Hoc Vice-Chairman">Ad-Hoc Vice-Chairman</option><option value="Ad-Hoc Member">Ad-Hoc Member</option></select><?php else: ?><input class="input" type="text" name="designation[]" maxlength="180" placeholder="TWG Designation" aria-label="TWG Designation" required><?php endif; ?></td><td><input class="input bac-area-unit-input" type="text" name="area_unit[]" maxlength="180" placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly required></td><?php if($type==='BAC'): ?><td><select class="input bac-assigned-member" name="assigned_member[]" aria-label="Assigned BAC Member" disabled><option value="">Only required for Ad-Hoc Member</option></select></td><?php endif; ?><td><?php if($type==='BAC'): ?><select class="input" name="code_tag[]" aria-label="BAC Code/Tag" required><option value="">Select BAC Code/Tag</option><?php foreach(($teamTagsForDropdown??[]) as $bacTag): ?><option value="<?=e($bacTag)?>"><?=e($bacTag)?></option><?php endforeach; ?></select><?php else: ?><select class="input" name="code_tag[]" aria-label="TWG Name" required><option value="">Select TWG Name</option><?php foreach($twgTeams as $twgTeamOption): ?><option value="<?=e($twgTeamOption['team_name'])?>"><?=e($twgTeamOption['team_name'])?></option><?php endforeach; ?></select><?php endif; ?></td><?php if($type==='TWG'): ?><td><select class="input" name="bac_team[]" aria-label="BAC Team" required><option value="">Select BAC Team</option><?php foreach($bacTeamOptions as $bacTeamOption): ?><option value="<?=e($bacTeamOption)?>"><?=e($bacTeamOption)?></option><?php endforeach; ?></select></td><?php endif; ?></tr></tbody></table></div>
       <div class="bac-form-actions"><button class="btn" type="submit" id="saveMemberItems">Save Member</button><button class="btn secondary" type="button" id="cancelAddMember">Cancel</button></div>
     </form>
     <?php endif; ?>
@@ -392,9 +397,9 @@ pageStart('Bids and Awards Committee');
         <?php else: ?><input class="input" name="designation" id="editMemberDesignation" required><?php endif; ?></label>
         <?php if($type==='TWG'): ?><label>Area of Expertise<input class="input" name="area_expertise" id="editMemberExpertise" required></label><?php endif; ?>
         <label>Area/Unit<input class="input" name="area_unit" id="editMemberAreaUnit" required readonly></label>
-        <label>Code/Tag<?php if($type==='BAC'): ?>
+        <label><?=$type==='BAC'?'Code/Tag':'TWG Name'?><?php if($type==='BAC'): ?>
           <select class="input" name="code_tag" id="editMemberCodeTag" required><?php foreach(($teamTagsForDropdown??[]) as $bacTag): ?><option value="<?=e($bacTag)?>"><?=e($bacTag)?></option><?php endforeach; ?></select>
-        <?php else: ?><input class="input" name="code_tag" id="editMemberCodeTag" required><?php endif; ?></label>
+        <?php else: ?><select class="input" name="code_tag" id="editMemberCodeTag" required><option value="">Select TWG Name</option><?php foreach($twgTeams as $twgTeamOption): ?><option value="<?=e($twgTeamOption['team_name'])?>"><?=e($twgTeamOption['team_name'])?></option><?php endforeach; ?></select><?php endif; ?></label><?php if($type==='TWG'): ?><label>BAC Team<select class="input" name="bac_team" id="editMemberBacTeam" required><option value="">Select BAC Team</option><?php foreach($bacTeamOptions as $bacTeamOption): ?><option value="<?=e($bacTeamOption)?>"><?=e($bacTeamOption)?></option><?php endforeach; ?></select></label><?php endif; ?>
         <?php if($type==='BAC'): ?><label>Assigned BAC Member<input class="input" name="assigned_member" id="editMemberAssigned"></label><?php endif; ?>
       </div>
       <div class="bac-form-actions"><button class="btn" type="submit">Save Changes</button><button class="btn secondary" type="button" id="cancelEditMember">Cancel</button></div>
@@ -517,8 +522,8 @@ pageStart('Bids and Awards Committee');
       <?php endforeach; ?>
       <?php elseif($type!=='TWG'): ?>
       <div class="table-wrap bac-members-table-wrap"><table class="table bac-members-table">
-        <thead><tr><th>Name</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?></th><?php if($type==='TWG'): ?><th>Area of Expertise</th><?php endif; ?><th>Area/Unit</th><th>Code/Tag</th><?php if($canManage): ?><th>Actions</th><?php endif; ?></tr></thead><tbody>
-        <?php foreach($members as $member): ?><tr><td><?=e($member['name'])?></td><td><?=e($member['designation'])?></td><?php if($type==='TWG'): ?><td><?=e($member['area_expertise']??'')?></td><?php endif; ?><td><?=e($member['area_unit'])?></td><td><?=e($member['code_tag'])?></td><?php if($canManage): ?><td><button class="btn secondary edit-member-btn" type="button" data-member="<?=e(json_encode($member,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button></td><?php endif; ?></tr><?php endforeach; ?>
+        <thead><tr><th>Name</th><th><?=$type==='BAC'?'BAC Designation':'TWG Designation'?></th><?php if($type==='TWG'): ?><th>Area of Expertise</th><?php endif; ?><th>Area/Unit</th><th><?=$type==='BAC'?'Code/Tag':'TWG Name'?></th><?php if($type==='TWG'): ?><th>BAC Team</th><?php endif; ?><?php if($canManage): ?><th>Actions</th><?php endif; ?></tr></thead><tbody>
+        <?php foreach($members as $member): ?><tr><td><?=e($member['name'])?></td><td><?=e($member['designation'])?></td><?php if($type==='TWG'): ?><td><?=e($member['area_expertise']??'')?></td><?php endif; ?><td><?=e($member['area_unit'])?></td><td><?=e($member['code_tag'])?></td><?php if($type==='TWG'): ?><td><?=e($member['bac_team']??'')?></td><?php endif; ?><?php if($canManage): ?><td><button class="btn secondary edit-member-btn" type="button" data-member="<?=e(json_encode($member,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button></td><?php endif; ?></tr><?php endforeach; ?>
         <?php if(!$members): ?><tr><td colspan="<?=($canManage?5:4)?>" class="empty">No members have been added yet.</td></tr><?php endif; ?>
         </tbody></table></div>
       <?php endif; ?>
@@ -673,6 +678,7 @@ document.addEventListener('DOMContentLoaded',function(){
       const m=JSON.parse(button.dataset.member||'{}');
       if(!editForm)return;
       const fields={id:'id',name:'name',designation:'designation',area_expertise:'expertise',area_unit:'areaUnit',code_tag:'codeTag',assigned_member:'assigned'};
+      const bacTeamEl=document.getElementById('editMemberBacTeam');if(bacTeamEl)bacTeamEl.value=m.bac_team||'';
       Object.keys(fields).forEach(function(key){const el=document.getElementById('editMember'+fields[key].charAt(0).toUpperCase()+fields[key].slice(1));if(el)el.value=m[key]||'';});
       editForm.hidden=false;
       editForm.scrollIntoView({behavior:'smooth',block:'nearest'});
