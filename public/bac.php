@@ -408,7 +408,7 @@ pageStart('Bids and Awards Committee');
         <div class="bac-twg-team-grid">
         <?php foreach($twgTeams as $twgTeam): $twgTeamName=$twgTeam['team_name']; ?>
           <article class="bac-code-box bac-twg-team-box">
-            <header class="bac-code-box-header"><label style="display:flex;align-items:flex-start;gap:8px"><input type="checkbox" name="team_ids[]" value="<?= (int)$twgTeam['id'] ?>" aria-label="Select <?=e($twgTeamName)?> for deletion"><span><h4><?=e($twgTeamName)?></h4><p>Members Count: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></span></label></header>
+            <header class="bac-code-box-header"><label style="display:flex;align-items:flex-start;gap:8px"><input type="checkbox" name="team_ids[]" value="<?= (int)$twgTeam['id'] ?>" aria-label="Select <?=e($twgTeamName)?> for deletion"><span><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></span></label></header>
           <div class="bac-twg-team-actions">
             <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Chairman">Add TWG Chairman</button>
             <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Vice-Chairman">Add TWG Vice-Chairman</button>
@@ -428,7 +428,7 @@ pageStart('Bids and Awards Committee');
         <div class="bac-twg-team-grid">
         <?php foreach($twgTeams as $twgTeam): $twgTeamName=$twgTeam['team_name']; ?>
           <article class="bac-code-box bac-twg-team-box">
-            <header class="bac-code-box-header"><div><h4><?=e($twgTeamName)?></h4><p>Members Count: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></div></header>
+            <header class="bac-code-box-header"><div><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></div></header>
             <div class="bac-twg-team-actions">
               <?php if($canManage): ?>
               <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Chairman">Add TWG Chairman</button>
