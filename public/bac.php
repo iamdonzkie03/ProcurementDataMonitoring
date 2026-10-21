@@ -266,7 +266,7 @@ pageStart('Bids and Awards Committee');
         $requestedTeam=trim((string)($_GET['add_team']??''));
         $validRequestedTeam=in_array($requestedTeam,['BAC A','BAC B','BAC C','BAC D','BAC E'],true)&&!in_array(mb_strtolower($requestedTeam),$usedTeamTags,true);
         if($validRequestedTeam){$availableTeamTags=array_values(array_filter($availableTeamTags,static fn($candidate)=>$candidate!==$requestedTeam));}
-        $nextTeam=$validRequestedTeam?$requestedTeam:($availableTeamTags[0]??'');
+        $nextTeam=$availableTeamTags[0]??'';
       ?>
         <?php if($nextTeam!==''): ?><a class="btn" href="bac.php?tab=bac-members&amp;add_team=<?=rawurlencode($nextTeam)?>">Add Team</a><?php endif; ?>
       <?php endif; ?>
