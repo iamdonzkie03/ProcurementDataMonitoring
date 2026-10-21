@@ -23,6 +23,8 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS bac_twg_teams (
  team_name VARCHAR(180) NOT NULL UNIQUE,
  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+try { $pdo->exec("ALTER TABLE bac_twg_teams ADD COLUMN bac_code_tag VARCHAR(100) NULL AFTER team_name"); } catch (PDOException $e) { if ((int)($e->errorInfo[1]??0)!==1060) throw $e; }
+$bacTeamOptions=$pdo->query("SELECT DISTINCT code_tag FROM bac_committee_members WHERE member_type='BAC' AND code_tag<>'' ORDER BY code_tag")->fetchAll(PDO::FETCH_COLUMN);
 
 $tab=$_GET['tab']??'hierarchy';
 if(!in_array($tab,['hierarchy','bac-members','technical-working-group'],true)) $tab='hierarchy';
@@ -35,9 +37,11 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   $returnTab=$type==='TWG'?'technical-working-group':'bac-members';
   if($type==='TWG'&&$action==='create_twg_team'){
     $teamName=trim((string)($_POST['team_name']??''));
+    $bacCodeTag=trim((string)($_POST['bac_code_tag']??''));
     if($teamName===''){flash('error','Enter a Team Name.');}
+    elseif($bacCodeTag===''||!in_array($bacCodeTag,$bacTeamOptions,true)){flash('error','Select a valid BAC Team for this TWG Team.');}
     else{
-      try{$teamStmt=$pdo->prepare('INSERT INTO bac_twg_teams(team_name) VALUES(?)');$teamStmt->execute([$teamName]);flash('success','TWG Team created.');}
+      try{$teamStmt=$pdo->prepare('INSERT INTO bac_twg_teams(team_name,bac_code_tag) VALUES(?,?)');$teamStmt->execute([$teamName,$bacCodeTag]);flash('success','TWG Team created and assigned to '.$bacCodeTag.'.');}
       catch(PDOException $e){if((int)($e->errorInfo[1]??0)===1062)flash('error','That TWG Team Name already exists.');else throw $e;}
     }
     header('Location:bac.php?tab=technical-working-group');exit;
@@ -287,7 +291,7 @@ foreach($bacEligiblePeople as $person){
 }
 $bacPeopleOptions=array_values($bacPeopleByName);
 $bacRoster=$pdo->query("SELECT name,designation,code_tag,assigned_member FROM bac_committee_members WHERE member_type='BAC' ORDER BY name,id")->fetchAll(PDO::FETCH_ASSOC);
-$twgTeams=$pdo->query("SELECT id,team_name FROM bac_twg_teams ORDER BY team_name")->fetchAll(PDO::FETCH_ASSOC);
+$twgTeams=$pdo->query("SELECT id,team_name,bac_code_tag FROM bac_twg_teams ORDER BY team_name")->fetchAll(PDO::FETCH_ASSOC);
 
 pageStart('Bids and Awards Committee');
 ?>
@@ -363,8 +367,8 @@ pageStart('Bids and Awards Committee');
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="member_type" value="TWG">
       <input type="hidden" name="action" value="create_twg_team">
-      <div class="bac-edit-grid"><label>Team Name*<input class="input" name="team_name" maxlength="180" required placeholder="Enter TWG Team Name"></label></div>
-      <div class="bac-form-actions"><button class="btn" type="submit">Save Team</button><button class="btn secondary" type="button" id="cancelAddTwgTeam">Cancel</button></div>
+      <div class="bac-edit-grid"><label>Team Name*<input class="input" name="team_name" maxlength="180" required placeholder="Enter TWG Team Name"></label><label>BAC Team*<select class="input" name="bac_code_tag" required><option value="">Select BAC Team</option><?php foreach($bacTeamOptions as $bacTeamOption): ?><option value="<?=e($bacTeamOption)?>"><?=e($bacTeamOption)?></option><?php endforeach; ?></select></label></div><?php if(!$bacTeamOptions): ?><p class="bac-role-empty">Create a BAC Team and add at least one BAC member before creating a TWG Team.</p><?php endif; ?>
+      <div class="bac-form-actions"><button class="btn" type="submit" <?=!$bacTeamOptions?'disabled':''?>>Save Team</button><button class="btn secondary" type="button" id="cancelAddTwgTeam">Cancel</button></div>
     </form>
     <?php endif; ?>
     <?php if($canManage): ?>
@@ -408,7 +412,7 @@ pageStart('Bids and Awards Committee');
         <div class="bac-twg-team-grid">
         <?php foreach($twgTeams as $twgTeam): $twgTeamName=$twgTeam['team_name']; ?>
           <article class="bac-code-box bac-twg-team-box">
-            <header class="bac-code-box-header"><label style="display:flex;align-items:flex-start;gap:8px"><input type="checkbox" name="team_ids[]" value="<?= (int)$twgTeam['id'] ?>" aria-label="Select <?=e($twgTeamName)?> for deletion"><span><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></span></label></header>
+            <header class="bac-code-box-header"><label style="display:flex;align-items:flex-start;gap:8px"><input type="checkbox" name="team_ids[]" value="<?= (int)$twgTeam['id'] ?>" aria-label="Select <?=e($twgTeamName)?> for deletion"><span><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">BAC Team: <?=e($twgTeam['bac_code_tag']??'Not assigned')?></p><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></span></label></header>
           <div class="bac-twg-team-actions">
             <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Chairman">Add TWG Chairman</button>
             <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Vice-Chairman">Add TWG Vice-Chairman</button>
@@ -428,7 +432,7 @@ pageStart('Bids and Awards Committee');
         <div class="bac-twg-team-grid">
         <?php foreach($twgTeams as $twgTeam): $twgTeamName=$twgTeam['team_name']; ?>
           <article class="bac-code-box bac-twg-team-box">
-            <header class="bac-code-box-header"><div><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></div></header>
+            <header class="bac-code-box-header"><div><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">BAC Team: <?=e($twgTeam['bac_code_tag']??'Not assigned')?></p><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></div></header>
             <div class="bac-twg-team-actions">
               <?php if($canManage): ?>
               <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Chairman">Add TWG Chairman</button>
