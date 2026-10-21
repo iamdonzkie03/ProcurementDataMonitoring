@@ -680,7 +680,23 @@ document.addEventListener('DOMContentLoaded',function(){
     });
   });
   if(addRow)addRow.addEventListener('click',addMemberRow);
-  if(cancel&&form&&show)cancel.addEventListener('click',function(){form.reset();if(rows)rows.innerHTML='';form.hidden=true;show.hidden=false;});
+  if(cancel&&form)cancel.addEventListener('click',function(){
+    form.reset();
+    if(rows){
+      const entryRows=Array.from(rows.querySelectorAll('.bac-entry-row'));
+      entryRows.slice(1).forEach(function(row){row.remove();});
+      const firstRow=rows.querySelector('.bac-entry-row');
+      if(firstRow){
+        firstRow.querySelectorAll('input').forEach(function(input){input.value='';});
+        firstRow.querySelectorAll('select').forEach(function(select){select.selectedIndex=0;});
+        firstRow.querySelectorAll('.bac-person-suggestions').forEach(function(list){list.innerHTML='';list.style.display='none';});
+      }
+    }
+    form.hidden=true;
+    if(show)show.hidden=false;
+    updateSaveLabel();
+    refreshAssignedMembers();
+  });
   updateSaveLabel();
   refreshAssignedMembers();
 });
