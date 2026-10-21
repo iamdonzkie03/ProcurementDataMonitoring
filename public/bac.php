@@ -201,7 +201,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $bacTeam=trim((string)($bacTeams[$i]??''));
     $assignedMember=trim((string)($assignedMembers[$i]??''));
     if($name===''&&$designation===''&&$expertise===''&&$areaUnit===''&&$codeTag===''&&$bacTeam===''&&$assignedMember==='') continue;
-    if($name===''||$designation===''||$areaUnit===''||$codeTag===''||($type==='TWG'&&($bacTeam===''||!in_array($bacTeam,$bacTeamOptions,true)||!in_array($codeTag,$twgTeamNames??[],true)))){
+    if($type==='TWG'&&isset($existingBacNameKeys[mb_strtolower(preg_replace('/\\s+/u',' ',trim($name)))])){flash('error','A person who is already a BAC member cannot be assigned to a TWG. No members were saved.');header('Location:bac.php?tab='.$returnTab);exit;}
+     if($name===''||$designation===''||$areaUnit===''||$codeTag===''||($type==='TWG'&&($bacTeam===''||!in_array($bacTeam,$bacTeamOptions,true)||!in_array($codeTag,$twgTeamNames??[],true)))){
       flash('error','Complete every required field in each member row. No members were saved.');
       header('Location:bac.php?tab='.$returnTab);exit;
     }
@@ -295,6 +296,10 @@ foreach($bacEligiblePeople as $person){
   if($unit!==''&&!in_array($unit,$bacPeopleByName[$key]['area_units'],true)) $bacPeopleByName[$key]['area_units'][]=$unit;
 }
 $bacPeopleOptions=array_values($bacPeopleByName);
+// People already registered as BAC members are not eligible for TWG assignment.
+$existingBacNames=$pdo->query("SELECT name FROM bac_committee_members WHERE member_type='BAC'")->fetchAll(PDO::FETCH_COLUMN);
+$existingBacNameKeys=array_fill_keys(array_map(static fn($name)=>mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$name))),$existingBacNames),true);
+$bacPeopleOptions=array_values(array_filter($bacPeopleOptions,static fn($person)=>!isset($existingBacNameKeys[mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$person['name'])))])));
 $bacRoster=$pdo->query("SELECT name,designation,code_tag,assigned_member FROM bac_committee_members WHERE member_type='BAC' ORDER BY name,id")->fetchAll(PDO::FETCH_ASSOC);
 $twgTeams=$pdo->query("SELECT id,team_name,bac_code_tag FROM bac_twg_teams ORDER BY team_name")->fetchAll(PDO::FETCH_ASSOC);
 $twgTeamNames=array_values(array_map(static fn($team)=>$team['team_name'],$twgTeams));
