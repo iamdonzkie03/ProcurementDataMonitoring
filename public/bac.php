@@ -333,7 +333,7 @@ pageStart('Bids and Awards Committee');
               </div>
             </div>
             <?php endforeach; ?>
-            <?php if($canManage&&count($roleMembers)===0&&$total<7): ?><button class="bac-add-original" type="button" data-code-tag="<?=e($tagLabel)?>" data-designation="<?=e($roleName)?>">+ Add <?=e($roleName)?></button><?php endif; ?>
+            <?php if($canManage&&$total<7&&(($roleName==='BAC Member'&&count($roleMembers)<5)||($roleName!=='BAC Member'&&count($roleMembers)===0))): ?><button class="bac-add-original" type="button" data-code-tag="<?=e($tagLabel)?>" data-designation="<?=e($roleName)?>">+ Add <?=e($roleName)?></button><?php endif; ?>
           </section>
           <?php endforeach; ?>
         </div>
