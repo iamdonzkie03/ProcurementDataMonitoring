@@ -343,7 +343,7 @@ pageStart('Bids and Awards Committee');
                   <?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($adhoc,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><?php endif; ?>
                 </div>
                 <?php endforeach; ?>
-                <?php if($canManage&&$total<7&&count($assignedAdHocs)===0): ?><button class="bac-add-adhoc" type="button" data-code-tag="<?=e($tagLabel)?>" data-designation="<?=e($adHocRoles[$roleName])?>" data-assigned-name="<?=e($person['name'])?>">+ Add Ad-Hoc <?=e($adHocRoles[$roleName])?></button><?php endif; ?>
+                <?php if($canManage&&$total<7&&count($assignedAdHocs)===0): ?><button class="bac-add-adhoc" type="button" data-code-tag="<?=e($tagLabel)?>" data-designation="<?=e($adHocRoles[$roleName])?>" data-assigned-name="<?=e($person['name'])?>">+ Add <?=e($adHocRoles[$roleName])?></button><?php endif; ?>
               </div>
             </div>
             <?php endforeach; ?>
