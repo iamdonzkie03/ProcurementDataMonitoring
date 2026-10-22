@@ -731,6 +731,10 @@ pageStart('Bids and Awards Committee');
 .bac-tab-content{flex:1;min-height:180px;padding-top:20px}
 .bac-secretariat-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
 .bac-secretariat-panels>.panel{min-width:0;margin:0}
+.bac-secretariat-panels>.panel:first-child>.bac-list-toolbar{background:#dbeafe;border-bottom:2px solid #93c5fd;padding:14px 16px;border-radius:9px 9px 0 0}
+.bac-secretariat-panels>.panel:first-child>.bac-list-toolbar h3{color:#1e40af}
+.bac-secretariat-panels>.panel:last-child>.bac-list-toolbar{background:#fce7f3;border-bottom:2px solid #f9a8d4;padding:14px 16px;border-radius:9px 9px 0 0}
+.bac-secretariat-panels>.panel:last-child>.bac-list-toolbar h3{color:#9d174d}
 @media(max-width:800px){.bac-secretariat-panels{grid-template-columns:1fr}}
 .bac-hierarchy-content{padding-top:22px;max-width:1100px;margin:0 auto;width:100%}
 .bac-hierarchy-content h3{margin:0;color:#102a43;font-size:18px;text-align:center}
