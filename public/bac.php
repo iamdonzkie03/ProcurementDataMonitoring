@@ -477,7 +477,8 @@ pageStart('Bids and Awards Committee');
     $adhocSecretariatRows=$pdo->query("SELECT id,name,designation,area_unit FROM bac_committee_members WHERE member_type='SECRETARIAT' AND LOWER(TRIM(area_unit))<>'procurement' AND designation<>'Head BAC Secretariat' ORDER BY name,id")->fetchAll(PDO::FETCH_ASSOC);
   ?>
   <section class="bac-tab-content">
-    <div class="panel" style="margin-bottom:20px">
+    <div class="bac-secretariat-panels">
+    <div class="panel">
       <div class="bac-list-toolbar"><h3>Procurement BAC Secretariat</h3><span class="bac-role-empty">Supervisor and listed Procurement staff</span></div>
       <?php if($secretariatRows): ?>
       <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th></tr></thead><tbody>
@@ -516,6 +517,7 @@ pageStart('Bids and Awards Committee');
       <?php endforeach; ?>
       </tbody></table></div>
       <?php else: ?><p class="bac-role-empty">No Ad-Hoc Secretariat Members have been added.</p><?php endif; ?>
+    </div>
     </div>
   </section>
   <?php else: ?>
@@ -727,6 +729,9 @@ pageStart('Bids and Awards Committee');
 .bac-tabs .btn{font-size:13px;text-decoration:none}
 .bac-tabs .btn.secondary{background:#f3f4f6;color:#374151;border:1px solid #d1d5db}
 .bac-tab-content{flex:1;min-height:180px;padding-top:20px}
+.bac-secretariat-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+.bac-secretariat-panels>.panel{min-width:0;margin:0}
+@media(max-width:800px){.bac-secretariat-panels{grid-template-columns:1fr}}
 .bac-hierarchy-content{padding-top:22px;max-width:1100px;margin:0 auto;width:100%}
 .bac-hierarchy-content h3{margin:0;color:#102a43;font-size:18px;text-align:center}
 .bac-hierarchy-intro{text-align:center;color:#6b7280;font-size:13px;margin:8px 0 24px}
