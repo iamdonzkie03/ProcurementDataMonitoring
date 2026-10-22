@@ -512,10 +512,29 @@ if(!$embedded) pageStart('Area/Unit Management');
           <button class="btn danger" type="submit" id="deleteSelectedAreas" disabled>Delete Selected</button>
         </div>
         <div class="table-wrap"><table class="table" id="areaTable">
-          <tr><th style="width:34px">Select</th><th>Division/Department</th><th>Division/Department Head</th><th>Area/Unit</th><th>Code</th><th>Names</th><th>Created</th><th>Actions</th></tr>
-          <?php foreach($rows as $r): ?><?php $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id'])); ?>
-          <tr data-management-search-id="<?=e((string)$r['id'])?>" data-management-search-name="<?=e($r['name'])?>" data-management-search-division="<?=e($r['division_name'])?>"><td><input type="checkbox" class="area-select" name="selected_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['name'])?>"></td><td><?=e($r['division_name'])?></td><td><?=e($r['division_head'])?></td><td><?=e($r['name'])?></td><td><?=e($r['code']??'')?></td><td><?php if($areaPeople): ?><ul style="margin:0;padding-left:18px"><?php foreach($areaPeople as $p): ?><li><?=e($p['name'])?><?php if(!empty($p['position_designation'])): ?> — <span class="muted"><?=e($p['position_designation'])?></span><?php endif; ?></li><?php endforeach; ?></ul><?php else: ?><span class="muted">No names yet</span><?php endif; ?></td><td><?=e($r['created_at'])?></td><td><div class="actions"><a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=area-unit&edit='.(int)$r['id'] : 'areas.php?edit='.(int)$r['id'])?>">Edit</a></div></td></tr>
-          <?php endforeach; ?><?php if(!$rows): ?><tr><td colspan="8">No Area/Unit records found.</td></tr><?php endif; ?>
+          <thead><tr><th style="width:34px">Select</th><th>Area/Unit</th><th>Department/Division</th><th>Code</th><th>Actions</th></tr></thead>
+          <tbody>
+          <?php foreach($rows as $r): ?><?php
+            $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id']));
+            $areaSupervisor=null;
+            $areaStaff=[];
+            foreach($areaPeople as $areaPerson){
+              if(strcasecmp(trim((string)($areaPerson['role']??'Staff')),'Head')===0){ if($areaSupervisor===null)$areaSupervisor=$areaPerson; }
+              else {$areaStaff[]=$areaPerson;}
+            }
+          ?>
+          <tr data-management-search-id="<?=e((string)$r['id'])?>" data-management-search-name="<?=e($r['name'])?>" data-management-search-division="<?=e($r['division_name'])?>">
+            <td><input type="checkbox" class="area-select" name="selected_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['name'])?>"></td>
+            <td><strong><?=e($r['name'])?></strong>
+              <div class="muted" style="margin-top:4px;font-size:12px">Supervisor: <?=e($areaSupervisor['name']??'Not assigned')?></div>
+              <?php if($areaStaff): ?><div style="margin-top:3px;font-size:12px"><span class="muted">Staff:</span> <?=e(implode(', ',array_map(static fn($p)=>$p['name'],$areaStaff)))?></div><?php else: ?><div class="muted" style="margin-top:3px;font-size:12px">Staff: None assigned</div><?php endif; ?>
+            </td>
+            <td><strong><?=e($r['division_name'])?></strong><div class="muted" style="margin-top:4px;font-size:12px">Head: <?=e($r['division_head']?:'Not assigned')?></div></td>
+            <td><?=e($r['code']??'')?></td>
+            <td><div class="actions"><a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=area-unit&edit='.(int)$r['id'] : 'areas.php?edit='.(int)$r['id'])?>">Edit</a></div></td>
+          </tr>
+          <?php endforeach; ?><?php if(!$rows): ?><tr><td colspan="5">No Area/Unit records found.</td></tr><?php endif; ?>
+          </tbody>
         </table></div>
         </form>
       </div>
