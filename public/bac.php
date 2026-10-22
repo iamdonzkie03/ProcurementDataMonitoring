@@ -480,9 +480,9 @@ pageStart('Bids and Awards Committee');
     <div class="panel" style="margin-bottom:20px">
       <div class="bac-list-toolbar"><h3>Procurement BAC Secretariat</h3><span class="bac-role-empty">Supervisor and listed Procurement staff</span></div>
       <?php if($secretariatRows): ?>
-      <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th><th>Area/Unit</th></tr></thead><tbody>
+      <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th></tr></thead><tbody>
       <?php foreach($secretariatRows as $secretariatRow): ?>
-        <tr><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td><td><?=e($secretariatRow['area_unit'])?></td></tr>
+        <tr><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td></tr>
       <?php endforeach; ?>
       </tbody></table></div>
       <?php else: ?><p class="bac-role-empty">No Procurement supervisor or staff are currently listed.</p><?php endif; ?>
