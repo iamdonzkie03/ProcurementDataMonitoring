@@ -18,6 +18,7 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS bac_committee_members (
   INDEX idx_bac_member_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 try { $pdo->exec("ALTER TABLE bac_committee_members ADD COLUMN assigned_member VARCHAR(180) NULL AFTER code_tag"); } catch (PDOException $e) { if ((int)($e->errorInfo[1]??0)!==1060) throw $e; }
+$pdo->exec("ALTER TABLE bac_committee_members MODIFY COLUMN member_type ENUM('BAC','TWG','SECRETARIAT') NOT NULL");
 $pdo->exec("CREATE TABLE IF NOT EXISTS bac_twg_teams (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
  team_name VARCHAR(180) NOT NULL UNIQUE,
@@ -29,14 +30,15 @@ $bacTeamOptions=$pdo->query("SELECT DISTINCT code_tag FROM bac_committee_members
 $twgTeamNames=$pdo->query("SELECT team_name FROM bac_twg_teams ORDER BY team_name")->fetchAll(PDO::FETCH_COLUMN);
 
 $tab=$_GET['tab']??'hierarchy';
-if(!in_array($tab,['hierarchy','bac-members','technical-working-group'],true)) $tab='hierarchy';
+if(!in_array($tab,['hierarchy','bac-members','technical-working-group','bac-secretariat'],true)) $tab='hierarchy';
 
 if($_SERVER['REQUEST_METHOD']==='POST'){
   requireRole(['Administrator','Editor']);
   checkCsrf();
   $action=(string)($_POST['action']??'add');
-  $type=($_POST['member_type']??'')==='TWG'?'TWG':'BAC';
-  $returnTab=$type==='TWG'?'technical-working-group':'bac-members';
+  $postedType=(string)($_POST['member_type']??'BAC');
+  $type=in_array($postedType,['BAC','TWG','SECRETARIAT'],true)?$postedType:'BAC';
+  $returnTab=$type==='TWG'?'technical-working-group':($type==='SECRETARIAT'?'bac-secretariat':'bac-members');
   if($type==='TWG'&&$action==='create_twg_team'){
     $teamName=trim((string)($_POST['team_name']??''));
     $bacCodeTag=trim((string)($_POST['bac_code_tag']??''));
@@ -88,6 +90,36 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
       }
     }
     header('Location:bac.php?tab=technical-working-group');exit;
+  }
+  if($type==='SECRETARIAT'&&$action==='add_secretariat_member'){
+    $name=trim((string)($_POST['name']??''));
+    $areaUnit=trim((string)($_POST['area_unit']??''));
+    if($name===''||$areaUnit===''){flash('error','Enter the Secretariat member name and Area/Unit.');}
+    else{
+      $dupe=$pdo->prepare("SELECT COUNT(*) FROM bac_committee_members WHERE member_type='SECRETARIAT' AND LOWER(TRIM(name))=LOWER(TRIM(?))");
+      $dupe->execute([$name]);
+      if((int)$dupe->fetchColumn()>0){flash('error','This person is already listed in the BAC Secretariat.');}
+      else{
+        $ins=$pdo->prepare("INSERT INTO bac_committee_members(member_type,name,designation,area_unit,code_tag) VALUES('SECRETARIAT',?,'Secretariat Member',?,'BAC Secretariat')");
+        $ins->execute([$name,$areaUnit]);flash('success','BAC Secretariat member added.');
+      }
+    }
+    header('Location:bac.php?tab=bac-secretariat');exit;
+  }
+  if($type==='SECRETARIAT'&&$action==='set_secretariat_head'){
+    $id=(int)($_POST['id']??0);
+    $check=$pdo->prepare("SELECT id,name FROM bac_committee_members WHERE id=? AND member_type='SECRETARIAT' LIMIT 1");
+    $check->execute([$id]);$target=$check->fetch(PDO::FETCH_ASSOC);
+    if(!$target){flash('error','Select a valid Secretariat member.');}
+    else{
+      $pdo->beginTransaction();
+      try{
+        $pdo->prepare("UPDATE bac_committee_members SET designation='Secretariat Member' WHERE member_type='SECRETARIAT'")->execute();
+        $pdo->prepare("UPDATE bac_committee_members SET designation='Head BAC Secretariat' WHERE id=? AND member_type='SECRETARIAT'")->execute([$id]);
+        $pdo->commit();flash('success',$target['name'].' is assigned as Head BAC Secretariat.');
+      }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
+    }
+    header('Location:bac.php?tab=bac-secretariat');exit;
   }
   if($action==='delete_member'){
     $id=(int)($_POST['id']??0);
@@ -319,7 +351,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   header('Location:bac.php?tab='.$returnTab);exit;
 }
 
-$type=$tab==='technical-working-group'?'TWG':'BAC';
+$type=$tab==='technical-working-group'?'TWG':($tab==='bac-secretariat'?'SECRETARIAT':'BAC');
 $st=$pdo->prepare('SELECT id,name,designation,area_expertise,area_unit,code_tag,bac_team,assigned_member FROM bac_committee_members WHERE member_type=? ORDER BY name,id');
 $st->execute([$type]);
 $members=$st->fetchAll();
@@ -358,6 +390,7 @@ pageStart('Bids and Awards Committee');
   <nav class="bac-tabs" aria-label="Bids and Awards Committee sections">
     <a class="btn <?=$tab==='hierarchy'?'':'secondary'?>" href="bac.php?tab=hierarchy" <?=$tab==='hierarchy'?'aria-current="page"':''?>>Hierarchy</a>
     <a class="btn <?=$tab==='bac-members'?'':'secondary'?>" href="bac.php?tab=bac-members" <?=$tab==='bac-members'?'aria-current="page"':''?>>BAC Members</a>
+    <a class="btn <?=$tab==='bac-secretariat'?'':'secondary'?>" href="bac.php?tab=bac-secretariat" <?=$tab==='bac-secretariat'?'aria-current="page"':''?>>BAC Secretariat</a>
     <a class="btn <?=$tab==='technical-working-group'?'':'secondary'?>" href="bac.php?tab=technical-working-group" <?=$tab==='technical-working-group'?'aria-current="page"':''?>>Technical Working Group</a>
   </nav>
   <?php if($tab==='hierarchy'): ?>
@@ -391,6 +424,41 @@ pageStart('Bids and Awards Committee');
       </div>
       <p class="bac-hierarchy-note">Illustrative structure only. Confirm official appointments and applicable procurement rules when assigning positions.</p>
     </div>
+  </section>
+  <?php elseif($tab==='bac-secretariat'): ?>
+  <?php
+    $secretariatRows=$pdo->query("SELECT id,name,designation,area_unit FROM bac_committee_members WHERE member_type='SECRETARIAT' ORDER BY CASE WHEN designation='Head BAC Secretariat' THEN 0 ELSE 1 END,name,id")->fetchAll(PDO::FETCH_ASSOC);
+    $secretariatHeadCount=count(array_filter($secretariatRows,static fn($row)=>$row['designation']==='Head BAC Secretariat'));
+  ?>
+  <section class="bac-tab-content">
+    <div class="bac-list-toolbar"><h3>BAC Secretariat Team</h3><?php if($canManage): ?><button class="btn" type="button" id="showAddSecretariatMember">Add BAC Secretariat Member</button><?php endif; ?></div>
+    <?php if($canManage): ?>
+    <form method="post" id="addSecretariatMemberForm" class="bac-member-form" hidden>
+      <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+      <input type="hidden" name="member_type" value="SECRETARIAT">
+      <input type="hidden" name="action" value="add_secretariat_member">
+      <div class="bac-edit-grid">
+        <label>Name*<input class="input" name="name" maxlength="180" required placeholder="Enter Secretariat member name"></label>
+        <label>Area/Unit*<input class="input" name="area_unit" maxlength="180" required placeholder="Enter Area/Unit"></label>
+      </div>
+      <div class="bac-form-actions"><button class="btn" type="submit">Save Member</button><button class="btn secondary" type="button" id="cancelAddSecretariatMember">Cancel</button></div>
+    </form>
+    <?php endif; ?>
+    <?php if($canManage&&$secretariatRows): ?>
+    <form method="post" id="deleteSecretariatMembersForm" onsubmit="if(!confirm('Delete the selected BAC Secretariat member(s)? This cannot be undone.'))return false;return Array.from(this.querySelectorAll('input[name=&quot;selected_ids[]&quot;]')).some(function(box){return box.checked;})||(alert('Select at least one member to delete.'),false);">
+      <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+      <input type="hidden" name="member_type" value="SECRETARIAT">
+      <input type="hidden" name="action" value="delete_selected">
+      <div class="bac-bulk-actions"><label><input type="checkbox" id="selectAllSecretariatMembers"> Select All</label><button class="btn danger" type="submit">Delete Selected Members</button></div>
+      <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Select</th><th>Name</th><th>Designation</th><th>Area/Unit</th><?php if($canManage): ?><th>Actions</th><?php endif; ?></tr></thead><tbody>
+      <?php foreach($secretariatRows as $secretariatRow): ?>
+        <tr><td><input type="checkbox" name="selected_ids[]" value="<?=(int)$secretariatRow['id']?>" aria-label="Select <?=e($secretariatRow['name'])?>"></td><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td><td><?=e($secretariatRow['area_unit'])?></td><td><?php if($secretariatRow['designation']!=='Head BAC Secretariat'): ?><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="SECRETARIAT"><input type="hidden" name="action" value="set_secretariat_head"><input type="hidden" name="id" value="<?=(int)$secretariatRow['id']?>"><button class="btn secondary" type="submit">Assign as Head</button></form><?php else: ?><span class="bac-role-empty">Current Head</span><?php endif; ?></td></tr>
+      <?php endforeach; ?>
+      </tbody></table></div>
+    </form>
+    <?php elseif($secretariatRows): ?>
+      <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th><th>Area/Unit</th></tr></thead><tbody><?php foreach($secretariatRows as $secretariatRow): ?><tr><td><?=e($secretariatRow['name'])?></td><td><?=e($secretariatRow['designation'])?></td><td><?=e($secretariatRow['area_unit'])?></td></tr><?php endforeach; ?></tbody></table></div>
+    <?php else: ?><p class="bac-role-empty">No BAC Secretariat members have been added yet.</p><?php endif; ?>
   </section>
   <?php else: ?>
   <section class="bac-tab-content">
@@ -708,6 +776,15 @@ pageStart('Bids and Awards Committee');
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
+  const showSecretariatMember=document.getElementById('showAddSecretariatMember');
+  const addSecretariatMemberForm=document.getElementById('addSecretariatMemberForm');
+  const cancelSecretariatMember=document.getElementById('cancelAddSecretariatMember');
+  if(showSecretariatMember&&addSecretariatMemberForm)showSecretariatMember.addEventListener('click',function(){addSecretariatMemberForm.hidden=false;const nameInput=addSecretariatMemberForm.querySelector('[name="name"]');if(nameInput)nameInput.focus();});
+  if(cancelSecretariatMember&&addSecretariatMemberForm)cancelSecretariatMember.addEventListener('click',function(){addSecretariatMemberForm.reset();addSecretariatMemberForm.hidden=true;});
+  const selectAllSecretariatMembers=document.getElementById('selectAllSecretariatMembers');
+  const secretariatMemberCheckboxes=Array.from(document.querySelectorAll('#deleteSecretariatMembersForm input[name="selected_ids[]"]'));
+  if(selectAllSecretariatMembers){selectAllSecretariatMembers.addEventListener('change',function(){secretariatMemberCheckboxes.forEach(function(box){box.checked=selectAllSecretariatMembers.checked;});});secretariatMemberCheckboxes.forEach(function(box){box.addEventListener('change',function(){selectAllSecretariatMembers.checked=secretariatMemberCheckboxes.length>0&&secretariatMemberCheckboxes.every(function(box){return box.checked;});});});}
+
   const twgTeamDeleteForm=document.getElementById('deleteTwgTeamsForm');
   if(twgTeamDeleteForm){
     const selectAllTwgTeams=document.getElementById('selectAllTwgTeams');
