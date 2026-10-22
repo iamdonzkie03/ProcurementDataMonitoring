@@ -498,7 +498,7 @@ pageStart('Bids and Awards Committee');
       <?php if($secretariatRows): ?>
       <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th><?php if($canManage): ?><th>Status</th><?php endif; ?></tr></thead><tbody>
       <?php foreach($secretariatRows as $secretariatRow): ?>
-        <tr><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td><?php if($canManage): ?><td><?php if($secretariatRow['designation']!=='Head BAC Secretariat'): ?><form method="post" class="bac-secretariat-status-form"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="SECRETARIAT"><input type="hidden" name="action" value="toggle_procurement_secretariat_status"><input type="hidden" name="id" value="<?=(int)$secretariatRow['id']?>"><button type="submit" class="btn <?=((int)$secretariatRow['is_active']===1)?'success':'danger'?>"><?=((int)$secretariatRow['is_active']===1)?'Active — Set Inactive':'Inactive — Set Active'?></button></form><?php endif; ?></td><?php endif; ?></tr>
+        <tr><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td><?php if($canManage): ?><td><?php if($secretariatRow['designation']!=='Head BAC Secretariat'): ?><form method="post" class="bac-secretariat-status-form"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="SECRETARIAT"><input type="hidden" name="action" value="toggle_procurement_secretariat_status"><input type="hidden" name="id" value="<?=(int)$secretariatRow['id']?>"><button type="submit" class="secretariat-status-switch <?=((int)$secretariatRow['is_active']===1)?'is-active':'is-inactive'?>" role="switch" aria-checked="<?=((int)$secretariatRow['is_active']===1)?'true':'false'?>" aria-label="<?=((int)$secretariatRow['is_active']===1)?'Active — click to set inactive':'Inactive — click to set active'?>" title="<?=((int)$secretariatRow['is_active']===1)?'Click to set inactive':'Click to set active'?>"><span class="secretariat-switch-track"><span class="secretariat-switch-thumb"></span></span><span class="secretariat-switch-label"><?=((int)$secretariatRow['is_active']===1)?'Active':'Inactive'?></span></button></form><?php endif; ?></td><?php endif; ?></tr>
       <?php endforeach; ?>
       </tbody></table></div>
       <?php else: ?><p class="bac-role-empty">No Procurement supervisor or staff are currently listed.</p><?php endif; ?>
@@ -747,6 +747,17 @@ pageStart('Bids and Awards Committee');
 .bac-secretariat-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
 .bac-secretariat-card{min-width:0;margin:0}
 .bac-secretariat-procurement{border:2px solid #60a5fa;background:#eff6ff}
+.bac-secretariat-status-form{margin:0}
+.secretariat-status-switch{display:inline-flex;align-items:center;gap:8px;border:0;background:transparent;padding:4px 0;cursor:pointer;font:inherit}
+.secretariat-switch-track{position:relative;display:inline-block;flex:0 0 44px;width:44px;height:24px;border-radius:999px;transition:background-color .18s ease;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.secretariat-status-switch.is-active .secretariat-switch-track{background:#16a34a}
+.secretariat-status-switch.is-inactive .secretariat-switch-track{background:#dc2626}
+.secretariat-switch-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .18s ease}
+.secretariat-status-switch.is-active .secretariat-switch-thumb{transform:translateX(20px)}
+.secretariat-switch-label{font-size:12px;font-weight:700;min-width:48px;text-align:left}
+.secretariat-status-switch.is-active .secretariat-switch-label{color:#15803d}
+.secretariat-status-switch.is-inactive .secretariat-switch-label{color:#b91c1c}
+.secretariat-status-switch:focus-visible{outline:2px solid #2563eb;outline-offset:3px;border-radius:5px}
 .bac-secretariat-procurement>.bac-code-box-header{background:#1d4ed8}
 .bac-secretariat-adhoc{border:2px solid #f472b6;background:#fdf2f8}
 .bac-secretariat-adhoc>.bac-code-box-header{background:#be185d}
