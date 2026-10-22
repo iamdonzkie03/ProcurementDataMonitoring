@@ -368,7 +368,7 @@ $rows=$pdo->query('
 ')->fetchAll();
 
 $people=$pdo->query('
-  SELECT ap.id,ap.area_id,ap.name,ap.position_designation,ap.electronic_signature,ap.created_at,a.name area_name,d.name division_name
+  SELECT ap.id,ap.area_id,ap.name,ap.position_designation,ap.role,ap.electronic_signature,ap.created_at,a.name area_name,d.name division_name
   FROM area_personnel ap
   JOIN areas a ON a.id=ap.area_id
   JOIN divisions d ON d.id=a.division_id
