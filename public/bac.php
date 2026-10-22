@@ -487,7 +487,7 @@ pageStart('Bids and Awards Committee');
       <?php endforeach; ?>
       </tbody></table></div>
       <?php else: ?><p class="bac-role-empty">No Procurement supervisor or staff are currently listed.</p><?php endif; ?>
-    </div>
+    </article>
     <article class="bac-code-box bac-secretariat-card bac-secretariat-adhoc">
       <header class="bac-code-box-header"><div><h4>Ad-Hoc Secretariat Members</h4><p>Additional assigned Secretariat members</p></div><?php if($canManage): ?><button class="btn secondary" type="button" id="showAddAdHocSecretariatMember">Add Ad-Hoc BAC Secretariat Member</button><?php endif; ?></header>
       <?php if($canManage): ?>
@@ -517,7 +517,6 @@ pageStart('Bids and Awards Committee');
       <?php endforeach; ?>
       </tbody></table></div>
       <?php else: ?><p class="bac-role-empty">No Ad-Hoc Secretariat Members have been added.</p><?php endif; ?>
-    </article>
     </article>
     </div>
   </section>
