@@ -478,8 +478,8 @@ pageStart('Bids and Awards Committee');
   ?>
   <section class="bac-tab-content">
     <div class="bac-secretariat-panels">
-    <div class="panel">
-      <div class="bac-list-toolbar"><h3>Procurement BAC Secretariat</h3><span class="bac-role-empty">Supervisor and listed Procurement staff</span></div>
+    <article class="bac-code-box bac-secretariat-card bac-secretariat-procurement">
+      <header class="bac-code-box-header"><div><h4>Procurement BAC Secretariat</h4><p>Supervisor and listed Procurement staff</p></div></header>
       <?php if($secretariatRows): ?>
       <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th></tr></thead><tbody>
       <?php foreach($secretariatRows as $secretariatRow): ?>
@@ -488,8 +488,8 @@ pageStart('Bids and Awards Committee');
       </tbody></table></div>
       <?php else: ?><p class="bac-role-empty">No Procurement supervisor or staff are currently listed.</p><?php endif; ?>
     </div>
-    <div class="panel">
-      <div class="bac-list-toolbar"><h3>Ad-Hoc Secretariat Members</h3><?php if($canManage): ?><button class="btn" type="button" id="showAddAdHocSecretariatMember">Add Ad-Hoc BAC Secretariat Member</button><?php endif; ?></div>
+    <article class="bac-code-box bac-secretariat-card bac-secretariat-adhoc">
+      <header class="bac-code-box-header"><div><h4>Ad-Hoc Secretariat Members</h4><p>Additional assigned Secretariat members</p></div><?php if($canManage): ?><button class="btn secondary" type="button" id="showAddAdHocSecretariatMember">Add Ad-Hoc BAC Secretariat Member</button><?php endif; ?></header>
       <?php if($canManage): ?>
       <form method="post" id="addAdHocSecretariatMemberForm" class="bac-member-form" hidden>
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
@@ -517,7 +517,8 @@ pageStart('Bids and Awards Committee');
       <?php endforeach; ?>
       </tbody></table></div>
       <?php else: ?><p class="bac-role-empty">No Ad-Hoc Secretariat Members have been added.</p><?php endif; ?>
-    </div>
+    </article>
+    </article>
     </div>
   </section>
   <?php else: ?>
@@ -729,12 +730,18 @@ pageStart('Bids and Awards Committee');
 .bac-tabs .btn{font-size:13px;text-decoration:none}
 .bac-tabs .btn.secondary{background:#f3f4f6;color:#374151;border:1px solid #d1d5db}
 .bac-tab-content{flex:1;min-height:180px;padding-top:20px}
-.bac-secretariat-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
-.bac-secretariat-panels>.panel{min-width:0;margin:0}
-.bac-secretariat-panels>.panel:first-child>.bac-list-toolbar{background:#dbeafe;border-bottom:2px solid #93c5fd;padding:14px 16px;border-radius:9px 9px 0 0}
-.bac-secretariat-panels>.panel:first-child>.bac-list-toolbar h3{color:#1e40af}
-.bac-secretariat-panels>.panel:last-child>.bac-list-toolbar{background:#fce7f3;border-bottom:2px solid #f9a8d4;padding:14px 16px;border-radius:9px 9px 0 0}
-.bac-secretariat-panels>.panel:last-child>.bac-list-toolbar h3{color:#9d174d}
+.bac-secretariat-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.bac-secretariat-card{min-width:0;margin:0}
+.bac-secretariat-procurement{border:2px solid #60a5fa;background:#eff6ff}
+.bac-secretariat-procurement>.bac-code-box-header{background:#1d4ed8}
+.bac-secretariat-adhoc{border:2px solid #f472b6;background:#fdf2f8}
+.bac-secretariat-adhoc>.bac-code-box-header{background:#be185d}
+.bac-secretariat-card>.bac-code-box-header{min-height:76px;padding:16px 18px}
+.bac-secretariat-card>.bac-code-box-header h4{font-size:16px}
+.bac-secretariat-card>.bac-code-box-header p{font-size:11px}
+.bac-secretariat-card>.table-wrap{padding:0 12px 12px}
+.bac-secretariat-card>.bac-member-form{margin:14px}
+.bac-secretariat-card>.bac-bulk-actions{margin:14px}
 @media(max-width:800px){.bac-secretariat-panels{grid-template-columns:1fr}}
 .bac-hierarchy-content{padding-top:22px;max-width:1100px;margin:0 auto;width:100%}
 .bac-hierarchy-content h3{margin:0;color:#102a43;font-size:18px;text-align:center}
