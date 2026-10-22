@@ -736,8 +736,8 @@ pageStart('Bids and Awards Committee');
 .bac-secretariat-adhoc{border:2px solid #f472b6;background:#fdf2f8}
 .bac-secretariat-adhoc>.bac-code-box-header{background:#be185d}
 .bac-secretariat-card>.bac-code-box-header{min-height:76px;padding:16px 18px}
-.bac-secretariat-card>.bac-code-box-header h4{font-size:16px}
-.bac-secretariat-card>.bac-code-box-header p{font-size:11px}
+.bac-secretariat-card>.bac-code-box-header h4{font-size:12px!important;font-weight:700}
+.bac-secretariat-card>.bac-code-box-header p{font-size:10px!important}
 .bac-secretariat-card>.table-wrap{padding:0 12px 12px}
 .bac-secretariat-card>.bac-member-form{margin:14px}
 .bac-secretariat-card>.bac-bulk-actions{margin:14px}
