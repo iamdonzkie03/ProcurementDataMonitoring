@@ -520,7 +520,8 @@ pageStart('Bids and Awards Committee');
           $originalCount=count($roles['BAC Chairman'])+count($roles['BAC Vice-Chairman'])+count($roles['BAC Member']);
           $adHocRoles=['BAC Chairman'=>'Ad-Hoc Chairman','BAC Vice-Chairman'=>'Ad-Hoc Vice-Chairman','BAC Member'=>'Ad-Hoc Member'];
       ?>
-      <article class="bac-code-box">
+      <?php $teamColorClass=['BAC A'=>'bac-team-a','BAC B'=>'bac-team-b','BAC C'=>'bac-team-c','BAC D'=>'bac-team-d','BAC E'=>'bac-team-e'][$tagLabel]??'bac-team-a'; ?>
+      <article class="bac-code-box <?=$teamColorClass?>">
         <header class="bac-code-box-header">
           <div><span class="bac-code-eyebrow">BAC COMMITTEE</span><h4><?=e($tagLabel)?></h4><p><?=$total?> of 7 total members</p></div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -649,6 +650,11 @@ pageStart('Bids and Awards Committee');
 .bac-roster-guidance{font-size:11px;color:#92400e}
 
 .bac-code-box{border:1px solid #dbe3ec;border-radius:14px;background:#f8fafc;overflow:hidden;box-shadow:0 4px 14px rgba(16,42,67,.05)}
+.bac-code-box.bac-team-a{border-color:#93c5fd;background:#eff6ff}.bac-code-box.bac-team-a>.bac-code-box-header{background:#1d4ed8}
+.bac-code-box.bac-team-b{border-color:#86efac;background:#f0fdf4}.bac-code-box.bac-team-b>.bac-code-box-header{background:#15803d}
+.bac-code-box.bac-team-c{border-color:#fcd34d;background:#fffbeb}.bac-code-box.bac-team-c>.bac-code-box-header{background:#b45309}
+.bac-code-box.bac-team-d{border-color:#c4b5fd;background:#f5f3ff}.bac-code-box.bac-team-d>.bac-code-box-header{background:#6d28d9}
+.bac-code-box.bac-team-e{border-color:#f9a8d4;background:#fdf2f8}.bac-code-box.bac-team-e>.bac-code-box-header{background:#be185d}
 .bac-code-box-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 20px;background:#102a43;color:#fff}
 .bac-code-box-header h4{margin:3px 0;font-size:19px;color:#fff}
 .bac-code-box-header p{margin:0;color:#dbeafe;font-size:12px}
