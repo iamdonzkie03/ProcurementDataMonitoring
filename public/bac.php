@@ -532,10 +532,10 @@ pageStart('Bids and Awards Committee');
           <div class="bac-edit-grid bac-entry-row">
             <label>Name*<div class="bac-person-autocomplete"><input class="input bac-person-name" type="text" name="name[]" maxlength="180" required placeholder="Search name..." autocomplete="off" aria-label="Name"><div class="bac-person-suggestions" role="listbox"></div></div></label>
             <label>Area/Unit*<input class="input bac-area-unit-input bac-locked-field" type="text" name="area_unit[]" maxlength="180" required placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly></label>
-            <div class="bac-row-actions"><button class="btn danger removeAdHocSecretariatRow" type="button" hidden>Remove Row</button></div>
+            <div class="bac-row-actions"><button class="btn secondary addAdHocSecretariatRow" type="button">Add Row</button></div>
           </div>
         </div>
-        <div class="bac-form-actions"><button class="btn secondary" type="button" id="addAdHocSecretariatRow">Add Row</button><button class="btn" type="submit">Save Members</button><button class="btn secondary" type="button" id="cancelAddAdHocSecretariatMember">Cancel</button></div>
+        <div class="bac-form-actions"><button class="btn" type="submit" id="saveAdHocSecretariatItems">Save Member</button><button class="btn secondary" type="button" id="cancelAddAdHocSecretariatMember">Cancel</button></div>
       </form>
       <?php endif; ?>
       <?php if($canManage&&$adhocSecretariatRows): ?>
@@ -1025,24 +1025,28 @@ document.addEventListener('DOMContentLoaded',function(){
   const adhocSecretariatForm=document.getElementById('addAdHocSecretariatMemberForm');
   if(adhocSecretariatForm){
     const entryRows=document.getElementById('adhocSecretariatEntryRows');
-    const addRowButton=document.getElementById('addAdHocSecretariatRow');
-    function refreshAdHocRowButtons(){
-      if(!entryRows)return;
-      const rowList=Array.from(entryRows.querySelectorAll('.bac-entry-row'));
-      rowList.forEach(function(row){const remove=row.querySelector('.removeAdHocSecretariatRow');if(remove)remove.hidden=rowList.length===1;});
+    const saveAdHocItems=document.getElementById('saveAdHocSecretariatItems');
+    function updateAdHocSaveLabel(){
+      if(!saveAdHocItems||!entryRows)return;
+      saveAdHocItems.textContent=entryRows.querySelectorAll('.bac-entry-row').length>=2?'Save Members':'Save Member';
     }
-    if(addRowButton&&entryRows)addRowButton.addEventListener('click',function(){
-      const first=entryRows.querySelector('.bac-entry-row');if(!first)return;
-      const clone=first.cloneNode(true);
-      clone.querySelectorAll('input').forEach(function(input){input.value='';});
-      clone.querySelectorAll('.bac-person-suggestions').forEach(function(list){list.innerHTML='';list.style.display='none';});
-      const remove=clone.querySelector('.removeAdHocSecretariatRow');if(remove)remove.hidden=false;
-      entryRows.appendChild(clone);refreshAdHocRowButtons();
-      const name=clone.querySelector('.bac-person-name');if(name)name.focus();
-    });
     if(entryRows)entryRows.addEventListener('click',function(event){
-      const remove=event.target.closest('.removeAdHocSecretariatRow');if(!remove)return;
-      const row=remove.closest('.bac-entry-row');if(row)row.remove();refreshAdHocRowButtons();
+      const add=event.target.closest('.addAdHocSecretariatRow');
+      if(add){
+        const sourceRow=add.closest('.bac-entry-row');if(!sourceRow)return;
+        const clone=sourceRow.cloneNode(true);
+        clone.querySelectorAll('input').forEach(function(input){input.value='';});
+        clone.querySelectorAll('.bac-person-suggestions').forEach(function(list){list.innerHTML='';list.style.display='none';});
+        const action=clone.querySelector('.bac-row-actions');
+        if(action){
+          action.innerHTML='<button class="btn danger removeAdHocSecretariatRow" type="button">Remove</button>';
+        }
+        entryRows.appendChild(clone);updateAdHocSaveLabel();
+        const name=clone.querySelector('.bac-person-name');if(name)name.focus();
+        return;
+      }
+      const remove=event.target.closest('.removeAdHocSecretariatRow');
+      if(remove){const row=remove.closest('.bac-entry-row');if(row)row.remove();updateAdHocSaveLabel();}
     });
     adhocSecretariatForm.addEventListener('input',function(event){
       if(event.target.classList.contains('bac-person-name')){
@@ -1060,17 +1064,17 @@ document.addEventListener('DOMContentLoaded',function(){
     adhocSecretariatForm.addEventListener('submit',function(event){
       const rowList=Array.from(adhocSecretariatForm.querySelectorAll('.bac-entry-row'));
       let invalid=null;
-      rowList.forEach(function(row){const name=row.querySelector('.bac-person-name');const area=row.querySelector('.bac-area-unit-input');if(!invalid&&(!name||!name.value.trim()||!area||!area.value.trim()))invalid=name;});
+      rowList.forEach(function(row){const name=row.querySelector('.bac-person-name');const area=row.querySelector('.bac-area-unit-input');if(!invalid&&(!name||!name.value.trim()||!area||!area.value.trim()))invalid=row;});
       if(invalid){
         event.preventDefault();
-        if(invalid){const name=invalid.querySelector('.bac-person-name');if(name){renderPersonSuggestions(name);name.focus();}}
+        const name=invalid.querySelector('.bac-person-name');if(name){renderPersonSuggestions(name);name.focus();}
         alert('Select a name from the suggestions list for every row so Area/Unit can be filled automatically.');
       }
     });
     document.addEventListener('click',function(event){
       adhocSecretariatForm.querySelectorAll('.bac-person-autocomplete').forEach(function(box){if(!box.contains(event.target))closePersonSuggestions(box);});
     });
-    refreshAdHocRowButtons();
+    updateAdHocSaveLabel();
   }
   if(rows){
     rows.addEventListener('input',function(event){
