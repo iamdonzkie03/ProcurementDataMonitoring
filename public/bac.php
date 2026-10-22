@@ -396,7 +396,7 @@ pageStart('Bids and Awards Committee');
   <section class="bac-tab-content">
     <div class="bac-list-toolbar">
       <h3><?=$tab==='bac-members'?'BAC Members':'Technical Working Group'?></h3>
-      <?php if($canManage&&$type==='TWG'): ?><button class="btn" type="button" id="showAddTwgTeam">TWG Team</button><?php endif; ?>
+      <?php if($canManage&&$type==='TWG'): ?><button class="btn" type="button" id="showAddTwgTeam">Add TWG Team</button><?php endif; ?>
       <?php if($canManage&&$type==='BAC'):
         $usedTeamTags=[];
         foreach($members as $existingTeamMember){$usedTeamTags[]=mb_strtolower(preg_replace('/\\s+/u',' ',trim((string)$existingTeamMember['code_tag'])));}
