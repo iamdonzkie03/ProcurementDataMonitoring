@@ -91,17 +91,21 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
     header('Location:bac.php?tab=technical-working-group');exit;
   }
-  if($type==='SECRETARIAT'&&$action==='add_secretariat_member'){
+  if($type==='SECRETARIAT'&&in_array($action,['add_secretariat_member','add_adhoc_secretariat_member'],true)){
     $name=trim((string)($_POST['name']??''));
     $areaUnit=trim((string)($_POST['area_unit']??''));
+    $isAdHoc=$action==='add_adhoc_secretariat_member';
     if($name===''||$areaUnit===''){flash('error','Enter the Secretariat member name and Area/Unit.');}
     else{
       $dupe=$pdo->prepare("SELECT COUNT(*) FROM bac_committee_members WHERE member_type='SECRETARIAT' AND LOWER(TRIM(name))=LOWER(TRIM(?))");
       $dupe->execute([$name]);
       if((int)$dupe->fetchColumn()>0){flash('error','This person is already listed in the BAC Secretariat.');}
       else{
-        $ins=$pdo->prepare("INSERT INTO bac_committee_members(member_type,name,designation,area_unit,code_tag) VALUES('SECRETARIAT',?,'Secretariat Member',?,'BAC Secretariat')");
-        $ins->execute([$name,$areaUnit]);flash('success','BAC Secretariat member added.');
+        $designation=$isAdHoc?'Ad-Hoc Secretariat Member':'Secretariat Member';
+        $codeTag=$isAdHoc?'Ad-Hoc BAC Secretariat':'BAC Secretariat';
+        $ins=$pdo->prepare("INSERT INTO bac_committee_members(member_type,name,designation,area_unit,code_tag) VALUES('SECRETARIAT',?,?,?,?)");
+        $ins->execute([$name,$designation,$areaUnit,$codeTag]);
+        flash('success',$isAdHoc?'Ad-Hoc BAC Secretariat member added.':'BAC Secretariat member added.');
       }
     }
     header('Location:bac.php?tab=bac-secretariat');exit;
@@ -469,38 +473,50 @@ pageStart('Bids and Awards Committee');
   </section>
   <?php elseif($tab==='bac-secretariat'): ?>
   <?php
-    $secretariatRows=$pdo->query("SELECT id,name,designation,area_unit FROM bac_committee_members WHERE member_type='SECRETARIAT' ORDER BY CASE WHEN designation='Head BAC Secretariat' THEN 0 ELSE 1 END,name,id")->fetchAll(PDO::FETCH_ASSOC);
-    $secretariatHeadCount=count(array_filter($secretariatRows,static fn($row)=>$row['designation']==='Head BAC Secretariat'));
+    $secretariatRows=$pdo->query("SELECT id,name,designation,area_unit FROM bac_committee_members WHERE member_type='SECRETARIAT' AND (LOWER(TRIM(area_unit))='procurement' OR designation='Head BAC Secretariat') ORDER BY CASE WHEN designation='Head BAC Secretariat' THEN 0 ELSE 1 END,name,id")->fetchAll(PDO::FETCH_ASSOC);
+    $adhocSecretariatRows=$pdo->query("SELECT id,name,designation,area_unit FROM bac_committee_members WHERE member_type='SECRETARIAT' AND LOWER(TRIM(area_unit))<>'procurement' AND designation<>'Head BAC Secretariat' ORDER BY name,id")->fetchAll(PDO::FETCH_ASSOC);
   ?>
   <section class="bac-tab-content">
-    <div class="bac-list-toolbar"><h3>BAC Secretariat Team</h3><?php if($canManage): ?><button class="btn" type="button" id="showAddSecretariatMember">Add BAC Secretariat Member</button><?php endif; ?></div>
-    <?php if($canManage): ?>
-    <form method="post" id="addSecretariatMemberForm" class="bac-member-form" hidden>
-      <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-      <input type="hidden" name="member_type" value="SECRETARIAT">
-      <input type="hidden" name="action" value="add_secretariat_member">
-      <div class="bac-edit-grid">
-        <label>Name*<input class="input" name="name" maxlength="180" required placeholder="Enter Secretariat member name"></label>
-        <label>Area/Unit*<input class="input" name="area_unit" maxlength="180" required placeholder="Enter Area/Unit"></label>
-      </div>
-      <div class="bac-form-actions"><button class="btn" type="submit">Save Member</button><button class="btn secondary" type="button" id="cancelAddSecretariatMember">Cancel</button></div>
-    </form>
-    <?php endif; ?>
-    <?php if($canManage&&$secretariatRows): ?>
-    <form method="post" id="deleteSecretariatMembersForm" onsubmit="if(!confirm('Delete the selected BAC Secretariat member(s)? This cannot be undone.'))return false;return Array.from(document.querySelectorAll('#deleteSecretariatMembersForm input[name=&quot;selected_ids[]&quot;]')).some(function(box){return box.checked;})||(alert('Select at least one member to delete.'),false);">
-      <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-      <input type="hidden" name="member_type" value="SECRETARIAT">
-      <input type="hidden" name="action" value="delete_selected">
-      <div class="bac-bulk-actions"><label><input type="checkbox" id="selectAllSecretariatMembers"> Select All</label><button class="btn danger" type="submit">Delete Selected Members</button></div>
-    </form>
-    <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Select</th><th>Name</th><th>Designation</th><th>Area/Unit</th><?php if($canManage): ?><th>Actions</th><?php endif; ?></tr></thead><tbody>
-    <?php foreach($secretariatRows as $secretariatRow): ?>
-      <tr><td><input type="checkbox" form="deleteSecretariatMembersForm" name="selected_ids[]" value="<?=(int)$secretariatRow['id']?>" aria-label="Select <?=e($secretariatRow['name'])?>"></td><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td><td><?=e($secretariatRow['area_unit'])?></td><td><?php if($secretariatRow['designation']!=='Head BAC Secretariat'): ?><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="SECRETARIAT"><input type="hidden" name="action" value="set_secretariat_head"><input type="hidden" name="id" value="<?=(int)$secretariatRow['id']?>"><button class="btn secondary" type="submit">Assign as Head</button></form><?php else: ?><span class="bac-role-empty">Current Head</span><?php endif; ?></td></tr>
-    <?php endforeach; ?>
-    </tbody></table></div>
-    <?php elseif($secretariatRows): ?>
-      <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th><th>Area/Unit</th></tr></thead><tbody><?php foreach($secretariatRows as $secretariatRow): ?><tr><td><?=e($secretariatRow['name'])?></td><td><?=e($secretariatRow['designation'])?></td><td><?=e($secretariatRow['area_unit'])?></td></tr><?php endforeach; ?></tbody></table></div>
-    <?php else: ?><p class="bac-role-empty">No BAC Secretariat members have been added yet.</p><?php endif; ?>
+    <div class="panel" style="margin-bottom:20px">
+      <div class="bac-list-toolbar"><h3>Procurement BAC Secretariat</h3><span class="bac-role-empty">Supervisor and listed Procurement staff</span></div>
+      <?php if($secretariatRows): ?>
+      <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th><th>Area/Unit</th></tr></thead><tbody>
+      <?php foreach($secretariatRows as $secretariatRow): ?>
+        <tr><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td><td><?=e($secretariatRow['area_unit'])?></td></tr>
+      <?php endforeach; ?>
+      </tbody></table></div>
+      <?php else: ?><p class="bac-role-empty">No Procurement supervisor or staff are currently listed.</p><?php endif; ?>
+    </div>
+    <div class="panel">
+      <div class="bac-list-toolbar"><h3>Ad-Hoc Secretariat Members</h3><?php if($canManage): ?><button class="btn" type="button" id="showAddAdHocSecretariatMember">Add Ad-Hoc BAC Secretariat Member</button><?php endif; ?></div>
+      <?php if($canManage): ?>
+      <form method="post" id="addAdHocSecretariatMemberForm" class="bac-member-form" hidden>
+        <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+        <input type="hidden" name="member_type" value="SECRETARIAT">
+        <input type="hidden" name="action" value="add_adhoc_secretariat_member">
+        <div class="bac-edit-grid">
+          <label>Name*<input class="input" name="name" maxlength="180" required placeholder="Enter Ad-Hoc Secretariat member name"></label>
+          <label>Area/Unit*<input class="input" name="area_unit" maxlength="180" required placeholder="Enter Area/Unit"></label>
+        </div>
+        <div class="bac-form-actions"><button class="btn" type="submit">Save Member</button><button class="btn secondary" type="button" id="cancelAddAdHocSecretariatMember">Cancel</button></div>
+      </form>
+      <?php endif; ?>
+      <?php if($canManage&&$adhocSecretariatRows): ?>
+      <form method="post" id="deleteSecretariatMembersForm" onsubmit="if(!confirm('Delete the selected Ad-Hoc Secretariat member(s)? This cannot be undone.'))return false;return Array.from(document.querySelectorAll('#deleteSecretariatMembersForm input[name=&quot;selected_ids[]&quot;]')).some(function(box){return box.checked;})||(alert('Select at least one member to delete.'),false);">
+        <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+        <input type="hidden" name="member_type" value="SECRETARIAT">
+        <input type="hidden" name="action" value="delete_selected">
+        <div class="bac-bulk-actions"><label><input type="checkbox" id="selectAllSecretariatMembers"> Select All</label><button class="btn danger" type="submit">Delete Selected Members</button></div>
+      </form>
+      <?php endif; ?>
+      <?php if($adhocSecretariatRows): ?>
+      <div class="table-wrap"><table class="table bac-members-table"><thead><tr><?php if($canManage): ?><th>Select</th><?php endif; ?><th>Name</th><th>Designation</th><th>Area/Unit</th></tr></thead><tbody>
+      <?php foreach($adhocSecretariatRows as $secretariatRow): ?>
+        <tr><?php if($canManage): ?><td><input type="checkbox" form="deleteSecretariatMembersForm" name="selected_ids[]" value="<?=(int)$secretariatRow['id']?>" aria-label="Select <?=e($secretariatRow['name'])?>"></td><?php endif; ?><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation']==='Secretariat Member'?'Ad-Hoc Secretariat Member':$secretariatRow['designation'])?></td><td><?=e($secretariatRow['area_unit'])?></td></tr>
+      <?php endforeach; ?>
+      </tbody></table></div>
+      <?php else: ?><p class="bac-role-empty">No Ad-Hoc Secretariat Members have been added.</p><?php endif; ?>
+    </div>
   </section>
   <?php else: ?>
   <section class="bac-tab-content">
@@ -818,11 +834,11 @@ pageStart('Bids and Awards Committee');
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
-  const showSecretariatMember=document.getElementById('showAddSecretariatMember');
-  const addSecretariatMemberForm=document.getElementById('addSecretariatMemberForm');
-  const cancelSecretariatMember=document.getElementById('cancelAddSecretariatMember');
-  if(showSecretariatMember&&addSecretariatMemberForm)showSecretariatMember.addEventListener('click',function(){addSecretariatMemberForm.hidden=false;const nameInput=addSecretariatMemberForm.querySelector('[name="name"]');if(nameInput)nameInput.focus();});
-  if(cancelSecretariatMember&&addSecretariatMemberForm)cancelSecretariatMember.addEventListener('click',function(){addSecretariatMemberForm.reset();addSecretariatMemberForm.hidden=true;});
+  const showAdHocSecretariatMember=document.getElementById('showAddAdHocSecretariatMember');
+  const addAdHocSecretariatMemberForm=document.getElementById('addAdHocSecretariatMemberForm');
+  const cancelAdHocSecretariatMember=document.getElementById('cancelAddAdHocSecretariatMember');
+  if(showAdHocSecretariatMember&&addAdHocSecretariatMemberForm)showAdHocSecretariatMember.addEventListener('click',function(){addAdHocSecretariatMemberForm.hidden=false;const nameInput=addAdHocSecretariatMemberForm.querySelector('[name="name"]');if(nameInput)nameInput.focus();});
+  if(cancelAdHocSecretariatMember&&addAdHocSecretariatMemberForm)cancelAdHocSecretariatMember.addEventListener('click',function(){addAdHocSecretariatMemberForm.reset();addAdHocSecretariatMemberForm.hidden=true;});
   const selectAllSecretariatMembers=document.getElementById('selectAllSecretariatMembers');
   const secretariatMemberCheckboxes=Array.from(document.querySelectorAll('#deleteSecretariatMembersForm input[name="selected_ids[]"]'));
   if(selectAllSecretariatMembers){selectAllSecretariatMembers.addEventListener('change',function(){secretariatMemberCheckboxes.forEach(function(box){box.checked=selectAllSecretariatMembers.checked;});});secretariatMemberCheckboxes.forEach(function(box){box.addEventListener('change',function(){selectAllSecretariatMembers.checked=secretariatMemberCheckboxes.length>0&&secretariatMemberCheckboxes.every(function(box){return box.checked;});});});}
