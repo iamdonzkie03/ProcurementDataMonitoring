@@ -113,13 +113,13 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   }
   if($type==='SECRETARIAT'&&$action==='toggle_procurement_secretariat_status'){
     $id=(int)($_POST['id']??0);
-    $check=$pdo->prepare("SELECT id,name,is_active FROM bac_committee_members WHERE id=? AND member_type='SECRETARIAT' AND (LOWER(TRIM(area_unit))='procurement' OR designation='Head BAC Secretariat') LIMIT 1");
+    $check=$pdo->prepare("SELECT id,name,is_active FROM bac_committee_members WHERE id=? AND member_type='SECRETARIAT' AND LOWER(TRIM(area_unit))='procurement' AND designation<>'Head BAC Secretariat' LIMIT 1");
     $check->execute([$id]);
     $target=$check->fetch(PDO::FETCH_ASSOC);
     if(!$target){flash('error','Procurement BAC Secretariat member could not be found.');}
     else{
       $nextStatus=(int)$target['is_active']===1?0:1;
-      $update=$pdo->prepare("UPDATE bac_committee_members SET is_active=? WHERE id=? AND member_type='SECRETARIAT' AND (LOWER(TRIM(area_unit))='procurement' OR designation='Head BAC Secretariat')");
+      $update=$pdo->prepare("UPDATE bac_committee_members SET is_active=? WHERE id=? AND member_type='SECRETARIAT' AND LOWER(TRIM(area_unit))='procurement' AND designation<>'Head BAC Secretariat'");
       $update->execute([$nextStatus,$id]);
       flash('success',$target['name'].' is now '.($nextStatus?'Active':'Inactive').'.');
     }
@@ -498,7 +498,7 @@ pageStart('Bids and Awards Committee');
       <?php if($secretariatRows): ?>
       <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th><?php if($canManage): ?><th>Status</th><?php endif; ?></tr></thead><tbody>
       <?php foreach($secretariatRows as $secretariatRow): ?>
-        <tr><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td><?php if($canManage): ?><td><form method="post" class="bac-secretariat-status-form"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="SECRETARIAT"><input type="hidden" name="action" value="toggle_procurement_secretariat_status"><input type="hidden" name="id" value="<?=(int)$secretariatRow['id']?>"><button type="submit" class="btn <?=((int)$secretariatRow['is_active']===1)?'secondary':''?>"><?=((int)$secretariatRow['is_active']===1)?'Active — Set Inactive':'Inactive — Set Active'?></button></form></td><?php endif; ?></tr>
+        <tr><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td><?php if($canManage): ?><td><?php if($secretariatRow['designation']!=='Head BAC Secretariat'): ?><form method="post" class="bac-secretariat-status-form"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="SECRETARIAT"><input type="hidden" name="action" value="toggle_procurement_secretariat_status"><input type="hidden" name="id" value="<?=(int)$secretariatRow['id']?>"><button type="submit" class="btn <?=((int)$secretariatRow['is_active']===1)?'secondary':''?>"><?=((int)$secretariatRow['is_active']===1)?'Active — Set Inactive':'Inactive — Set Active'?></button></form><?php endif; ?></td><?php endif; ?></tr>
       <?php endforeach; ?>
       </tbody></table></div>
       <?php else: ?><p class="bac-role-empty">No Procurement supervisor or staff are currently listed.</p><?php endif; ?>
