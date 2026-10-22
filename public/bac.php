@@ -458,9 +458,9 @@ pageStart('Bids and Awards Committee');
           <button class="btn danger" type="submit">Delete Selected TWG Teams</button>
         </div>
         <div class="bac-twg-team-grid">
-        <?php foreach($twgTeams as $twgTeam): $twgTeamName=$twgTeam['team_name']; ?>
-          <article class="bac-code-box bac-twg-team-box">
-            <header class="bac-code-box-header"><label style="display:flex;align-items:flex-start;gap:8px"><input type="checkbox" name="team_ids[]" value="<?= (int)$twgTeam['id'] ?>" aria-label="Select <?=e($twgTeamName)?> for deletion"><span><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">BAC Team: <?=e($twgTeam['bac_code_tag']??'Not assigned')?></p><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></span></label><button type="button" class="btn secondary edit-twg-team-btn" data-team="<?=e(json_encode($twgTeam,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit Team</button></header>
+        <?php foreach($twgTeams as $twgTeam): $twgTeamName=$twgTeam['team_name']; $twgColorMap=['BAC A'=>['border'=>'#60a5fa','body'=>'#eff6ff','header'=>'#1d4ed8'],'BAC B'=>['border'=>'#4ade80','body'=>'#f0fdf4','header'=>'#15803d'],'BAC C'=>['border'=>'#fbbf24','body'=>'#fffbeb','header'=>'#b45309'],'BAC D'=>['border'=>'#a78bfa','body'=>'#f5f3ff','header'=>'#6d28d9'],'BAC E'=>['border'=>'#f472b6','body'=>'#fdf2f8','header'=>'#be185d']]; $twgColor=$twgColorMap[trim((string)($twgTeam['bac_code_tag']??''))]??['border'=>'#cbd5e1','body'=>'#f8fafc','header'=>'#334155']; ?>
+          <article class="bac-code-box bac-twg-team-box" style="border:2px solid <?=$twgColor['border']?> !important;background:<?=$twgColor['body']?> !important;">
+            <header class="bac-code-box-header" style="background:<?=$twgColor['header']?> !important;"><label style="display:flex;align-items:flex-start;gap:8px"><input type="checkbox" name="team_ids[]" value="<?= (int)$twgTeam['id'] ?>" aria-label="Select <?=e($twgTeamName)?> for deletion"><span><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">BAC Team: <?=e($twgTeam['bac_code_tag']??'Not assigned')?></p><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></span></label><button type="button" class="btn secondary edit-twg-team-btn" data-team="<?=e(json_encode($twgTeam,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit Team</button></header>
           <div class="bac-twg-team-actions">
             <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Chairman">Add TWG Chairman</button>
             <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Vice-Chairman">Add TWG Vice-Chairman</button>
@@ -478,9 +478,9 @@ pageStart('Bids and Awards Committee');
       </form>
       <?php elseif($twgTeams): ?>
         <div class="bac-twg-team-grid">
-        <?php foreach($twgTeams as $twgTeam): $twgTeamName=$twgTeam['team_name']; ?>
+        <?php foreach($twgTeams as $twgTeam): $twgTeamName=$twgTeam['team_name']; $twgColorMap=['BAC A'=>['border'=>'#60a5fa','body'=>'#eff6ff','header'=>'#1d4ed8'],'BAC B'=>['border'=>'#4ade80','body'=>'#f0fdf4','header'=>'#15803d'],'BAC C'=>['border'=>'#fbbf24','body'=>'#fffbeb','header'=>'#b45309'],'BAC D'=>['border'=>'#a78bfa','body'=>'#f5f3ff','header'=>'#6d28d9'],'BAC E'=>['border'=>'#f472b6','body'=>'#fdf2f8','header'=>'#be185d']]; $twgColor=$twgColorMap[trim((string)($twgTeam['bac_code_tag']??''))]??['border'=>'#cbd5e1','body'=>'#f8fafc','header'=>'#334155']; ?>
           <article class="bac-code-box bac-twg-team-box">
-            <header class="bac-code-box-header"><div><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">BAC Team: <?=e($twgTeam['bac_code_tag']??'Not assigned')?></p><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></div><?php if($canManage): ?><button type="button" class="btn secondary edit-twg-team-btn" data-team="<?=e(json_encode($twgTeam,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit Team</button><?php endif; ?></header>
+            <header class="bac-code-box-header" style="background:<?=$twgColor['header']?> !important;"><div><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">BAC Team: <?=e($twgTeam['bac_code_tag']??'Not assigned')?></p><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></div><?php if($canManage): ?><button type="button" class="btn secondary edit-twg-team-btn" data-team="<?=e(json_encode($twgTeam,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit Team</button><?php endif; ?></header>
             <div class="bac-twg-team-actions">
               <?php if($canManage): ?>
               <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-role="TWG Chairman">Add TWG Chairman</button>
@@ -520,9 +520,9 @@ pageStart('Bids and Awards Committee');
           $originalCount=count($roles['BAC Chairman'])+count($roles['BAC Vice-Chairman'])+count($roles['BAC Member']);
           $adHocRoles=['BAC Chairman'=>'Ad-Hoc Chairman','BAC Vice-Chairman'=>'Ad-Hoc Vice-Chairman','BAC Member'=>'Ad-Hoc Member'];
       ?>
-      <?php $teamColorClass=['BAC A'=>'bac-team-a','BAC B'=>'bac-team-b','BAC C'=>'bac-team-c','BAC D'=>'bac-team-d','BAC E'=>'bac-team-e'][$tagLabel]??'bac-team-a'; ?>
-      <article class="bac-code-box <?=$teamColorClass?>">
-        <header class="bac-code-box-header">
+      <?php $teamColors=['BAC A'=>['class'=>'bac-team-a','border'=>'#60a5fa','body'=>'#eff6ff','header'=>'#1d4ed8'],'BAC B'=>['class'=>'bac-team-b','border'=>'#4ade80','body'=>'#f0fdf4','header'=>'#15803d'],'BAC C'=>['class'=>'bac-team-c','border'=>'#fbbf24','body'=>'#fffbeb','header'=>'#b45309'],'BAC D'=>['class'=>'bac-team-d','border'=>'#a78bfa','body'=>'#f5f3ff','header'=>'#6d28d9'],'BAC E'=>['class'=>'bac-team-e','border'=>'#f472b6','body'=>'#fdf2f8','header'=>'#be185d']]; $teamColor=$teamColors[$tagLabel]??$teamColors['BAC A']; ?>
+      <article class="bac-code-box <?=$teamColor['class']?>" style="border:2px solid <?=$teamColor['border']?> !important;background:<?=$teamColor['body']?> !important;">
+        <header class="bac-code-box-header" style="background:<?=$teamColor['header']?> !important;">
           <div><span class="bac-code-eyebrow">BAC COMMITTEE</span><h4><?=e($tagLabel)?></h4><p><?=$total?> of 7 total members</p></div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <div class="bac-code-box-status <?=$originalCount>=5&&$total<=7?'is-valid':'is-incomplete'?>"><?=$originalCount<5?'Needs '.(5-$originalCount).' more':($total<=7?'Roster size '.$total.'/7':'Exceeds limit')?></div>
