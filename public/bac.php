@@ -96,18 +96,25 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     $name=trim((string)($_POST['name']??''));
     $areaUnit=trim((string)($_POST['area_unit']??''));
     $isAdHoc=$action==='add_adhoc_secretariat_member';
-    if($name===''||$areaUnit===''){flash('error','Enter the Secretariat member name and Area/Unit.');}
+    if($isAdHoc){
+      if($name===''){flash('error','Select a name from the suggestions list.');header('Location:bac.php?tab=bac-secretariat');exit;}
+      $personLookup=$pdo->prepare("SELECT name,area_unit FROM (SELECT d.division_head AS name,d.name AS area_unit FROM divisions d WHERE TRIM(COALESCE(d.division_head,''))<>'' AND LOWER(d.name) NOT LIKE '%procurement%' UNION SELECT ap.name AS name,a.name AS area_unit FROM area_personnel ap JOIN areas a ON a.id=ap.area_id WHERE TRIM(COALESCE(ap.name,''))<>'' AND LOWER(a.name) NOT LIKE '%procurement%') eligible_people WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) ORDER BY name,area_unit");
+      $personLookup->execute([$name]);
+      $matchedPeople=$personLookup->fetchAll(PDO::FETCH_ASSOC);
+      if(!$matchedPeople){flash('error','Select a valid name from the suggestions list.');header('Location:bac.php?tab=bac-secretariat');exit;}
+      $matchedUnits=array_values(array_unique(array_filter(array_map(static fn($person)=>trim((string)$person['area_unit']),$matchedPeople))));
+      $areaUnit=implode(', ',$matchedUnits);
+      $name=trim((string)$matchedPeople[0]['name']);
+    }elseif($name===''||$areaUnit===''){flash('error','Enter the Secretariat member name and Area/Unit.');header('Location:bac.php?tab=bac-secretariat');exit;}
+    $dupe=$pdo->prepare("SELECT COUNT(*) FROM bac_committee_members WHERE member_type='SECRETARIAT' AND LOWER(TRIM(name))=LOWER(TRIM(?))");
+    $dupe->execute([$name]);
+    if((int)$dupe->fetchColumn()>0){flash('error','This person is already listed in the BAC Secretariat.');}
     else{
-      $dupe=$pdo->prepare("SELECT COUNT(*) FROM bac_committee_members WHERE member_type='SECRETARIAT' AND LOWER(TRIM(name))=LOWER(TRIM(?))");
-      $dupe->execute([$name]);
-      if((int)$dupe->fetchColumn()>0){flash('error','This person is already listed in the BAC Secretariat.');}
-      else{
-        $designation=$isAdHoc?'Ad-Hoc Secretariat Member':'Secretariat Member';
-        $codeTag=$isAdHoc?'Ad-Hoc BAC Secretariat':'BAC Secretariat';
-        $ins=$pdo->prepare("INSERT INTO bac_committee_members(member_type,name,designation,area_unit,code_tag) VALUES('SECRETARIAT',?,?,?,?)");
-        $ins->execute([$name,$designation,$areaUnit,$codeTag]);
-        flash('success',$isAdHoc?'Ad-Hoc BAC Secretariat member added.':'BAC Secretariat member added.');
-      }
+      $designation=$isAdHoc?'Ad-Hoc Secretariat Member':'Secretariat Member';
+      $codeTag=$isAdHoc?'Ad-Hoc BAC Secretariat':'BAC Secretariat';
+      $ins=$pdo->prepare("INSERT INTO bac_committee_members(member_type,name,designation,area_unit,code_tag) VALUES('SECRETARIAT',?,?,?,?)");
+      $ins->execute([$name,$designation,$areaUnit,$codeTag]);
+      flash('success',$isAdHoc?'Ad-Hoc BAC Secretariat member added.':'BAC Secretariat member added.');
     }
     header('Location:bac.php?tab=bac-secretariat');exit;
   }
@@ -510,9 +517,9 @@ pageStart('Bids and Awards Committee');
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="member_type" value="SECRETARIAT">
         <input type="hidden" name="action" value="add_adhoc_secretariat_member">
-        <div class="bac-edit-grid">
-          <label>Name*<input class="input" name="name" maxlength="180" required placeholder="Enter Ad-Hoc Secretariat member name"></label>
-          <label>Area/Unit*<input class="input" name="area_unit" maxlength="180" required placeholder="Enter Area/Unit"></label>
+        <div class="bac-edit-grid bac-entry-row">
+          <label>Name*<div class="bac-person-autocomplete"><input class="input bac-person-name" type="text" name="name" maxlength="180" required placeholder="Search name..." autocomplete="off" aria-label="Name"><div class="bac-person-suggestions" role="listbox"></div></div></label>
+          <label>Area/Unit*<input class="input bac-area-unit-input bac-locked-field" type="text" name="area_unit" maxlength="180" required placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly></label>
         </div>
         <div class="bac-form-actions"><button class="btn" type="submit">Save Member</button><button class="btn secondary" type="button" id="cancelAddAdHocSecretariatMember">Cancel</button></div>
       </form>
@@ -1001,6 +1008,35 @@ document.addEventListener('DOMContentLoaded',function(){
   }
   window.addEventListener('resize',function(){rows&&rows.querySelectorAll('.bac-person-name').forEach(function(input){const list=input.closest('.bac-person-autocomplete').querySelector('.bac-person-suggestions');if(list&&list.style.display==='block')positionPersonSuggestions(input,list);});});
   window.addEventListener('scroll',function(){rows&&rows.querySelectorAll('.bac-person-name').forEach(function(input){const list=input.closest('.bac-person-autocomplete').querySelector('.bac-person-suggestions');if(list&&list.style.display==='block')positionPersonSuggestions(input,list);});},true);
+  const adhocSecretariatForm=document.getElementById('addAdHocSecretariatMemberForm');
+  if(adhocSecretariatForm){
+    adhocSecretariatForm.addEventListener('input',function(event){
+      if(event.target.classList.contains('bac-person-name')){
+        const area=adhocSecretariatForm.querySelector('.bac-area-unit-input');
+        if(area)area.value='';
+        renderPersonSuggestions(event.target);
+      }
+    });
+    adhocSecretariatForm.addEventListener('focusin',function(event){
+      if(event.target.classList.contains('bac-person-name'))renderPersonSuggestions(event.target);
+    });
+    adhocSecretariatForm.addEventListener('keydown',function(event){
+      if(event.target.classList.contains('bac-person-name')&&event.key==='Escape')closePersonSuggestions(event.target.closest('.bac-person-autocomplete'));
+    });
+    adhocSecretariatForm.addEventListener('submit',function(event){
+      const name=adhocSecretariatForm.querySelector('.bac-person-name');
+      const area=adhocSecretariatForm.querySelector('.bac-area-unit-input');
+      if(!name||!area||!area.value.trim()){
+        event.preventDefault();
+        if(name)renderPersonSuggestions(name);
+        if(name)name.focus();
+        alert('Select a name from the suggestions list so Area/Unit can be filled automatically.');
+      }
+    });
+    document.addEventListener('click',function(event){
+      adhocSecretariatForm.querySelectorAll('.bac-person-autocomplete').forEach(function(box){if(!box.contains(event.target))closePersonSuggestions(box);});
+    });
+  }
   if(rows){
     rows.addEventListener('input',function(event){
       if(event.target.classList.contains('bac-person-name'))renderPersonSuggestions(event.target);
