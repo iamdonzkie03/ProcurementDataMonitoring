@@ -857,22 +857,20 @@ document.addEventListener('DOMContentLoaded',function(){
 .management-column:nth-child(2) .management-list-content .table th,
 .management-column:nth-child(2) .management-list-content .table td{padding:7px 4px;vertical-align:middle;overflow-wrap:anywhere;word-break:break-word}
 .management-column:nth-child(2) .management-list-content .table th{text-align:center}
-.management-column:nth-child(2) .management-list-content .table th:nth-child(1),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(1){width:4%;text-align:center}
-.management-column:nth-child(2) .management-list-content .table th:nth-child(2),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(2){width:16%}
-.management-column:nth-child(2) .management-list-content .table th:nth-child(3),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(3){width:14%}
-.management-column:nth-child(2) .management-list-content .table th:nth-child(4),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(4){width:15%}
-.management-column:nth-child(2) .management-list-content .table th:nth-child(5),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(5){width:6%}
-.management-column:nth-child(2) .management-list-content .table th:nth-child(6),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(6){width:20%}
-.management-column:nth-child(2) .management-list-content .table th:nth-child(7),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(7){width:10%}
-.management-column:nth-child(2) .management-list-content .table th:nth-child(8),
-.management-column:nth-child(2) .management-list-content .table td:nth-child(8){width:10%}
+.management-column:nth-child(2) .management-list-content #areaTable{width:100%;max-width:100%;table-layout:fixed;border-collapse:collapse}
+.management-column:nth-child(2) .management-list-content #areaTable th:nth-child(1),
+.management-column:nth-child(2) .management-list-content #areaTable td:nth-child(1){width:7%;text-align:center}
+.management-column:nth-child(2) .management-list-content #areaTable th:nth-child(2),
+.management-column:nth-child(2) .management-list-content #areaTable td:nth-child(2){width:37%}
+.management-column:nth-child(2) .management-list-content #areaTable th:nth-child(3),
+.management-column:nth-child(2) .management-list-content #areaTable td:nth-child(3){width:32%}
+.management-column:nth-child(2) .management-list-content #areaTable th:nth-child(4),
+.management-column:nth-child(2) .management-list-content #areaTable td:nth-child(4){width:10%;text-align:center}
+.management-column:nth-child(2) .management-list-content #areaTable th:nth-child(5),
+.management-column:nth-child(2) .management-list-content #areaTable td:nth-child(5){width:14%;text-align:center}
+.management-column:nth-child(2) .management-list-content #areaTable td:nth-child(2),
+.management-column:nth-child(2) .management-list-content #areaTable td:nth-child(3){line-height:1.35}
+.management-column:nth-child(2) .management-list-content #areaTable .master-action{width:100%;min-width:0;max-width:54px;box-sizing:border-box;justify-content:center}
 .management-column:nth-child(2) .management-list-content .table ul{padding-left:14px!important}
 .management-column:nth-child(2) .management-list-content .table .actions{display:flex;gap:3px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap;width:100%;max-width:100%}
 .management-column:nth-child(2) .management-list-content .table .master-action{width:42px;min-width:42px;height:28px;padding:2px 3px;font-size:10px}
