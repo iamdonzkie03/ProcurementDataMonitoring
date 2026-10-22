@@ -351,6 +351,27 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   header('Location:bac.php?tab='.$returnTab);exit;
 }
 
+// Automatically synchronize all listed Procurement Area/Unit staff as BAC Secretariat Members.
+$procurementStaffStmt=$pdo->query("SELECT ap.name FROM area_personnel ap JOIN areas a ON a.id=ap.area_id WHERE LOWER(TRIM(a.name))='procurement' AND LOWER(TRIM(COALESCE(ap.role,'')))='staff' AND TRIM(COALESCE(ap.name,''))<>'' ORDER BY ap.id");
+$procurementStaffNames=$procurementStaffStmt->fetchAll(PDO::FETCH_COLUMN);
+if($procurementStaffNames){
+  $pdo->beginTransaction();
+  try{
+    $findProcurementStaff=$pdo->prepare("SELECT id FROM bac_committee_members WHERE member_type='SECRETARIAT' AND LOWER(TRIM(name))=LOWER(TRIM(?)) ORDER BY id LIMIT 1");
+    $updateProcurementStaff=$pdo->prepare("UPDATE bac_committee_members SET designation='Secretariat Member',area_unit='Procurement',code_tag='BAC Secretariat' WHERE id=? AND member_type='SECRETARIAT'");
+    $insertProcurementStaff=$pdo->prepare("INSERT INTO bac_committee_members(member_type,name,designation,area_unit,code_tag) VALUES('SECRETARIAT',?,'Secretariat Member','Procurement','BAC Secretariat')");
+    foreach($procurementStaffNames as $staffName){
+      $staffName=trim((string)$staffName);
+      if($staffName==='') continue;
+      $findProcurementStaff->execute([$staffName]);
+      $existingStaffId=(int)($findProcurementStaff->fetchColumn()?:0);
+      if($existingStaffId>0) $updateProcurementStaff->execute([$existingStaffId]);
+      else $insertProcurementStaff->execute([$staffName]);
+    }
+    $pdo->commit();
+  }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
+}
+
 // Automatically synchronize the Head of the Area/Unit named Procurement into the BAC Secretariat.
 $procurementHeadStmt=$pdo->query("SELECT ap.name FROM area_personnel ap JOIN areas a ON a.id=ap.area_id WHERE LOWER(TRIM(a.name))='procurement' AND LOWER(TRIM(COALESCE(ap.role,'')))='head' AND TRIM(COALESCE(ap.name,''))<>'' ORDER BY ap.id LIMIT 1");
 $procurementHeadName=trim((string)($procurementHeadStmt->fetchColumn()?:''));
