@@ -892,6 +892,8 @@ pageStart('Bids and Awards Committee');
  .bac-members-table th,.bac-members-table td{padding:11px 12px;text-align:left;border-bottom:1px solid #e5e7eb}
 .bac-members-table th{background:#f8fafc;color:#334155;font-size:13px;white-space:nowrap}
 .bac-members-table td{font-size:13px}.bac-bulk-actions{display:flex;align-items:center;gap:12px;margin:14px 0}.bac-bulk-actions span{font-size:12px;color:#64748b}.bac-edit-form{margin:14px 0 20px;padding:16px;border:1px solid #dbe3ec;border-radius:10px;background:#f8fafc}.bac-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.bac-edit-grid label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600}.bac-edit-form[hidden]{display:none}
+/* Keep Add Row and cloned Remove controls aligned with the text inputs in the Ad-Hoc Secretariat entry grid. */
+#addAdHocSecretariatMemberForm #adhocSecretariatEntryRows .bac-row-actions{display:flex;align-items:flex-end;align-self:stretch;padding-top:19px;box-sizing:border-box}#addAdHocSecretariatMemberForm #adhocSecretariatEntryRows .bac-row-actions button{height:38px;white-space:nowrap}
 .bac-page-heading p{margin:0;color:#6b7280;font-size:13px;line-height:1.6}
 @media(max-width:700px){.content:has(.bac-page-panel){padding:14px!important;min-height:calc(100vh - 150px)}.bac-page-panel{min-height:calc(100vh - 190px);padding:17px}.bac-page-heading h2{font-size:18px}.bac-page-icon{width:44px;height:44px;flex-basis:44px}.bac-member-fields{grid-template-columns:1fr}.bac-list-toolbar{align-items:flex-start;flex-wrap:wrap}}
 </style>
