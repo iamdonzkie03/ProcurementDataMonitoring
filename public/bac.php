@@ -445,17 +445,17 @@ pageStart('Bids and Awards Committee');
     </form>
     <?php endif; ?>
     <?php if($canManage&&$secretariatRows): ?>
-    <form method="post" id="deleteSecretariatMembersForm" onsubmit="if(!confirm('Delete the selected BAC Secretariat member(s)? This cannot be undone.'))return false;return Array.from(this.querySelectorAll('input[name=&quot;selected_ids[]&quot;]')).some(function(box){return box.checked;})||(alert('Select at least one member to delete.'),false);">
+    <form method="post" id="deleteSecretariatMembersForm" onsubmit="if(!confirm('Delete the selected BAC Secretariat member(s)? This cannot be undone.'))return false;return Array.from(document.querySelectorAll('#deleteSecretariatMembersForm input[name=&quot;selected_ids[]&quot;]')).some(function(box){return box.checked;})||(alert('Select at least one member to delete.'),false);">
       <input type="hidden" name="csrf" value="<?=e(csrf())?>">
       <input type="hidden" name="member_type" value="SECRETARIAT">
       <input type="hidden" name="action" value="delete_selected">
       <div class="bac-bulk-actions"><label><input type="checkbox" id="selectAllSecretariatMembers"> Select All</label><button class="btn danger" type="submit">Delete Selected Members</button></div>
-      <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Select</th><th>Name</th><th>Designation</th><th>Area/Unit</th><?php if($canManage): ?><th>Actions</th><?php endif; ?></tr></thead><tbody>
-      <?php foreach($secretariatRows as $secretariatRow): ?>
-        <tr><td><input type="checkbox" name="selected_ids[]" value="<?=(int)$secretariatRow['id']?>" aria-label="Select <?=e($secretariatRow['name'])?>"></td><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td><td><?=e($secretariatRow['area_unit'])?></td><td><?php if($secretariatRow['designation']!=='Head BAC Secretariat'): ?><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="SECRETARIAT"><input type="hidden" name="action" value="set_secretariat_head"><input type="hidden" name="id" value="<?=(int)$secretariatRow['id']?>"><button class="btn secondary" type="submit">Assign as Head</button></form><?php else: ?><span class="bac-role-empty">Current Head</span><?php endif; ?></td></tr>
-      <?php endforeach; ?>
-      </tbody></table></div>
     </form>
+    <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Select</th><th>Name</th><th>Designation</th><th>Area/Unit</th><?php if($canManage): ?><th>Actions</th><?php endif; ?></tr></thead><tbody>
+    <?php foreach($secretariatRows as $secretariatRow): ?>
+      <tr><td><input type="checkbox" form="deleteSecretariatMembersForm" name="selected_ids[]" value="<?=(int)$secretariatRow['id']?>" aria-label="Select <?=e($secretariatRow['name'])?>"></td><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td><td><?=e($secretariatRow['area_unit'])?></td><td><?php if($secretariatRow['designation']!=='Head BAC Secretariat'): ?><form method="post" style="display:inline"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="SECRETARIAT"><input type="hidden" name="action" value="set_secretariat_head"><input type="hidden" name="id" value="<?=(int)$secretariatRow['id']?>"><button class="btn secondary" type="submit">Assign as Head</button></form><?php else: ?><span class="bac-role-empty">Current Head</span><?php endif; ?></td></tr>
+    <?php endforeach; ?>
+    </tbody></table></div>
     <?php elseif($secretariatRows): ?>
       <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th><th>Area/Unit</th></tr></thead><tbody><?php foreach($secretariatRows as $secretariatRow): ?><tr><td><?=e($secretariatRow['name'])?></td><td><?=e($secretariatRow['designation'])?></td><td><?=e($secretariatRow['area_unit'])?></td></tr><?php endforeach; ?></tbody></table></div>
     <?php else: ?><p class="bac-role-empty">No BAC Secretariat members have been added yet.</p><?php endif; ?>
