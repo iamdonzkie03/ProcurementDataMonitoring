@@ -93,28 +93,39 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     header('Location:bac.php?tab=technical-working-group');exit;
   }
   if($type==='SECRETARIAT'&&in_array($action,['add_secretariat_member','add_adhoc_secretariat_member'],true)){
-    $name=trim((string)($_POST['name']??''));
-    $areaUnit=trim((string)($_POST['area_unit']??''));
     $isAdHoc=$action==='add_adhoc_secretariat_member';
     if($isAdHoc){
-      if($name===''){flash('error','Select a name from the suggestions list.');header('Location:bac.php?tab=bac-secretariat');exit;}
+      $submittedNames=is_array($_POST['name']??null)?$_POST['name']:[$_POST['name']??''];
+      $cleanNames=[];
+      foreach($submittedNames as $rawName){$candidate=trim((string)$rawName);if($candidate!=='')$cleanNames[]=$candidate;}
+      if(!$cleanNames){flash('error','Select at least one name from the suggestions list.');header('Location:bac.php?tab=bac-secretariat');exit;}
       $personLookup=$pdo->prepare("SELECT name,area_unit FROM (SELECT d.division_head AS name,d.name AS area_unit FROM divisions d WHERE TRIM(COALESCE(d.division_head,''))<>'' AND LOWER(d.name) NOT LIKE '%procurement%' UNION SELECT ap.name AS name,a.name AS area_unit FROM area_personnel ap JOIN areas a ON a.id=ap.area_id WHERE TRIM(COALESCE(ap.name,''))<>'' AND LOWER(a.name) NOT LIKE '%procurement%') eligible_people WHERE LOWER(TRIM(name))=LOWER(TRIM(?)) AND NOT EXISTS (SELECT 1 FROM bac_committee_members bcm WHERE bcm.member_type='BAC' AND LOWER(TRIM(bcm.name))=LOWER(TRIM(eligible_people.name))) AND NOT EXISTS (SELECT 1 FROM divisions pd WHERE LOWER(pd.name) LIKE '%procurement%' AND LOWER(TRIM(pd.division_head))=LOWER(TRIM(eligible_people.name))) AND NOT EXISTS (SELECT 1 FROM area_personnel pap JOIN areas pa ON pa.id=pap.area_id WHERE LOWER(pa.name) LIKE '%procurement%' AND LOWER(TRIM(pap.name))=LOWER(TRIM(eligible_people.name))) ORDER BY name,area_unit");
-      $personLookup->execute([$name]);
-      $matchedPeople=$personLookup->fetchAll(PDO::FETCH_ASSOC);
-      if(!$matchedPeople){flash('error','Select a valid name from the suggestions list.');header('Location:bac.php?tab=bac-secretariat');exit;}
-      $matchedUnits=array_values(array_unique(array_filter(array_map(static fn($person)=>trim((string)$person['area_unit']),$matchedPeople))));
-      $areaUnit=implode(', ',$matchedUnits);
-      $name=trim((string)$matchedPeople[0]['name']);
-    }elseif($name===''||$areaUnit===''){flash('error','Enter the Secretariat member name and Area/Unit.');header('Location:bac.php?tab=bac-secretariat');exit;}
-    $dupe=$pdo->prepare("SELECT COUNT(*) FROM bac_committee_members WHERE member_type='SECRETARIAT' AND LOWER(TRIM(name))=LOWER(TRIM(?))");
-    $dupe->execute([$name]);
-    if((int)$dupe->fetchColumn()>0){flash('error','This person is already listed in the BAC Secretariat.');}
-    else{
-      $designation=$isAdHoc?'Ad-Hoc Secretariat Member':'Secretariat Member';
-      $codeTag=$isAdHoc?'Ad-Hoc BAC Secretariat':'BAC Secretariat';
-      $ins=$pdo->prepare("INSERT INTO bac_committee_members(member_type,name,designation,area_unit,code_tag) VALUES('SECRETARIAT',?,?,?,?)");
-      $ins->execute([$name,$designation,$areaUnit,$codeTag]);
-      flash('success',$isAdHoc?'Ad-Hoc BAC Secretariat member added.':'BAC Secretariat member added.');
+      $existingCheck=$pdo->prepare("SELECT COUNT(*) FROM bac_committee_members WHERE member_type='SECRETARIAT' AND LOWER(TRIM(name))=LOWER(TRIM(?))");
+      $seen=[];$validated=[];
+      foreach($cleanNames as $candidate){
+        $key=mb_strtolower(preg_replace('/\\s+/u',' ',trim($candidate)));
+        if(isset($seen[$key])){flash('error','The same person was selected more than once.');header('Location:bac.php?tab=bac-secretariat');exit;}
+        $seen[$key]=true;
+        $personLookup->execute([$candidate]);$matchedPeople=$personLookup->fetchAll(PDO::FETCH_ASSOC);
+        if(!$matchedPeople){flash('error','One or more selected names are not eligible. Please select each name from the suggestions list.');header('Location:bac.php?tab=bac-secretariat');exit;}
+        $existingCheck->execute([$candidate]);
+        if((int)$existingCheck->fetchColumn()>0){flash('error',htmlspecialchars($candidate,ENT_QUOTES,'UTF-8').' is already listed in the BAC Secretariat. No members were added.');header('Location:bac.php?tab=bac-secretariat');exit;}
+        $units=array_values(array_unique(array_filter(array_map(static fn($person)=>trim((string)$person['area_unit']),$matchedPeople))));
+        $validated[]=['name'=>trim((string)$matchedPeople[0]['name']),'area_unit'=>implode(', ',$units)];
+      }
+      try{
+        $pdo->beginTransaction();
+        $ins=$pdo->prepare("INSERT INTO bac_committee_members(member_type,name,designation,area_unit,code_tag) VALUES('SECRETARIAT',?,'Ad-Hoc Secretariat Member',?,'Ad-Hoc BAC Secretariat')");
+        foreach($validated as $person)$ins->execute([$person['name'],$person['area_unit']]);
+        $pdo->commit();
+        flash('success',count($validated)===1?'Ad-Hoc BAC Secretariat member added.':count($validated).' Ad-Hoc BAC Secretariat members added.');
+      }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
+    }else{
+      $name=trim((string)($_POST['name']??''));$areaUnit=trim((string)($_POST['area_unit']??''));
+      if($name===''||$areaUnit===''){flash('error','Enter the Secretariat member name and Area/Unit.');header('Location:bac.php?tab=bac-secretariat');exit;}
+      $dupe=$pdo->prepare("SELECT COUNT(*) FROM bac_committee_members WHERE member_type='SECRETARIAT' AND LOWER(TRIM(name))=LOWER(TRIM(?))");$dupe->execute([$name]);
+      if((int)$dupe->fetchColumn()>0){flash('error','This person is already listed in the BAC Secretariat.');}
+      else{$ins=$pdo->prepare("INSERT INTO bac_committee_members(member_type,name,designation,area_unit,code_tag) VALUES('SECRETARIAT',?,?,?,?)");$ins->execute([$name,'Secretariat Member',$areaUnit,'BAC Secretariat']);flash('success','BAC Secretariat member added.');}
     }
     header('Location:bac.php?tab=bac-secretariat');exit;
   }
@@ -517,11 +528,14 @@ pageStart('Bids and Awards Committee');
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="member_type" value="SECRETARIAT">
         <input type="hidden" name="action" value="add_adhoc_secretariat_member">
-        <div class="bac-edit-grid bac-entry-row">
-          <label>Name*<div class="bac-person-autocomplete"><input class="input bac-person-name" type="text" name="name" maxlength="180" required placeholder="Search name..." autocomplete="off" aria-label="Name"><div class="bac-person-suggestions" role="listbox"></div></div></label>
-          <label>Area/Unit*<input class="input bac-area-unit-input bac-locked-field" type="text" name="area_unit" maxlength="180" required placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly></label>
+        <div id="adhocSecretariatEntryRows">
+          <div class="bac-edit-grid bac-entry-row">
+            <label>Name*<div class="bac-person-autocomplete"><input class="input bac-person-name" type="text" name="name[]" maxlength="180" required placeholder="Search name..." autocomplete="off" aria-label="Name"><div class="bac-person-suggestions" role="listbox"></div></div></label>
+            <label>Area/Unit*<input class="input bac-area-unit-input bac-locked-field" type="text" name="area_unit[]" maxlength="180" required placeholder="Auto-filled from selected name" aria-label="Area/Unit" readonly></label>
+            <div class="bac-row-actions"><button class="btn danger removeAdHocSecretariatRow" type="button" hidden>Remove Row</button></div>
+          </div>
         </div>
-        <div class="bac-form-actions"><button class="btn" type="submit">Save Member</button><button class="btn secondary" type="button" id="cancelAddAdHocSecretariatMember">Cancel</button></div>
+        <div class="bac-form-actions"><button class="btn secondary" type="button" id="addAdHocSecretariatRow">Add Row</button><button class="btn" type="submit">Save Members</button><button class="btn secondary" type="button" id="cancelAddAdHocSecretariatMember">Cancel</button></div>
       </form>
       <?php endif; ?>
       <?php if($canManage&&$adhocSecretariatRows): ?>
@@ -1010,9 +1024,29 @@ document.addEventListener('DOMContentLoaded',function(){
   window.addEventListener('scroll',function(){rows&&rows.querySelectorAll('.bac-person-name').forEach(function(input){const list=input.closest('.bac-person-autocomplete').querySelector('.bac-person-suggestions');if(list&&list.style.display==='block')positionPersonSuggestions(input,list);});},true);
   const adhocSecretariatForm=document.getElementById('addAdHocSecretariatMemberForm');
   if(adhocSecretariatForm){
+    const entryRows=document.getElementById('adhocSecretariatEntryRows');
+    const addRowButton=document.getElementById('addAdHocSecretariatRow');
+    function refreshAdHocRowButtons(){
+      if(!entryRows)return;
+      const rowList=Array.from(entryRows.querySelectorAll('.bac-entry-row'));
+      rowList.forEach(function(row){const remove=row.querySelector('.removeAdHocSecretariatRow');if(remove)remove.hidden=rowList.length===1;});
+    }
+    if(addRowButton&&entryRows)addRowButton.addEventListener('click',function(){
+      const first=entryRows.querySelector('.bac-entry-row');if(!first)return;
+      const clone=first.cloneNode(true);
+      clone.querySelectorAll('input').forEach(function(input){input.value='';});
+      clone.querySelectorAll('.bac-person-suggestions').forEach(function(list){list.innerHTML='';list.style.display='none';});
+      const remove=clone.querySelector('.removeAdHocSecretariatRow');if(remove)remove.hidden=false;
+      entryRows.appendChild(clone);refreshAdHocRowButtons();
+      const name=clone.querySelector('.bac-person-name');if(name)name.focus();
+    });
+    if(entryRows)entryRows.addEventListener('click',function(event){
+      const remove=event.target.closest('.removeAdHocSecretariatRow');if(!remove)return;
+      const row=remove.closest('.bac-entry-row');if(row)row.remove();refreshAdHocRowButtons();
+    });
     adhocSecretariatForm.addEventListener('input',function(event){
       if(event.target.classList.contains('bac-person-name')){
-        const area=adhocSecretariatForm.querySelector('.bac-area-unit-input');
+        const row=event.target.closest('.bac-entry-row');const area=row&&row.querySelector('.bac-area-unit-input');
         if(area)area.value='';
         renderPersonSuggestions(event.target);
       }
@@ -1024,18 +1058,19 @@ document.addEventListener('DOMContentLoaded',function(){
       if(event.target.classList.contains('bac-person-name')&&event.key==='Escape')closePersonSuggestions(event.target.closest('.bac-person-autocomplete'));
     });
     adhocSecretariatForm.addEventListener('submit',function(event){
-      const name=adhocSecretariatForm.querySelector('.bac-person-name');
-      const area=adhocSecretariatForm.querySelector('.bac-area-unit-input');
-      if(!name||!area||!area.value.trim()){
+      const rowList=Array.from(adhocSecretariatForm.querySelectorAll('.bac-entry-row'));
+      let invalid=null;
+      rowList.forEach(function(row){const name=row.querySelector('.bac-person-name');const area=row.querySelector('.bac-area-unit-input');if(!invalid&&(!name||!name.value.trim()||!area||!area.value.trim()))invalid=name;});
+      if(invalid){
         event.preventDefault();
-        if(name)renderPersonSuggestions(name);
-        if(name)name.focus();
-        alert('Select a name from the suggestions list so Area/Unit can be filled automatically.');
+        if(invalid){const name=invalid.querySelector('.bac-person-name');if(name){renderPersonSuggestions(name);name.focus();}}
+        alert('Select a name from the suggestions list for every row so Area/Unit can be filled automatically.');
       }
     });
     document.addEventListener('click',function(event){
       adhocSecretariatForm.querySelectorAll('.bac-person-autocomplete').forEach(function(box){if(!box.contains(event.target))closePersonSuggestions(box);});
     });
+    refreshAdHocRowButtons();
   }
   if(rows){
     rows.addEventListener('input',function(event){
