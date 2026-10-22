@@ -48,6 +48,20 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
     }
     header('Location:bac.php?tab=technical-working-group');exit;
   }
+  if($type==='TWG'&&$action==='set_twg_role'){
+    $id=(int)($_POST['id']??0); $role=trim((string)($_POST['twg_role']??''));
+    $validRoles=['TWG Chairman','TWG Vice-Chairman','TWG Member'];
+    $personStmt=$pdo->prepare("SELECT id,name,code_tag FROM bac_committee_members WHERE id=? AND member_type='TWG' LIMIT 1");
+    $personStmt->execute([$id]); $person=$personStmt->fetch(PDO::FETCH_ASSOC);
+    if(!$person||!in_array($role,$validRoles,true)){flash('error','Select a valid TWG member and role.');}
+    else{
+      $roleCheck=$pdo->prepare("SELECT COUNT(*) FROM bac_committee_members WHERE member_type='TWG' AND code_tag=? AND designation=? AND id<>?");
+      $roleCheck->execute([$person['code_tag'],$role,$id]);
+      if($role!=='TWG Member'&&(int)$roleCheck->fetchColumn()>0){flash('error',$role.' is already assigned to this TWG Team.');}
+      else{$updateRole=$pdo->prepare("UPDATE bac_committee_members SET designation=? WHERE id=? AND member_type='TWG'");$updateRole->execute([$role,$id]);flash('success',$person['name'].' is now assigned as '.$role.'.');}
+    }
+    header('Location:bac.php?tab=technical-working-group');exit;
+  }
   if($type==='TWG'&&$action==='edit_twg_team'){
     $teamId=(int)($_POST['team_id']??0);
     $teamName=trim((string)($_POST['team_name']??''));
@@ -461,15 +475,16 @@ pageStart('Bids and Awards Committee');
         <?php foreach($twgTeams as $twgTeam): $twgTeamName=$twgTeam['team_name']; $twgColorMap=['BAC A'=>['border'=>'#60a5fa','body'=>'#eff6ff','header'=>'#1d4ed8'],'BAC B'=>['border'=>'#4ade80','body'=>'#f0fdf4','header'=>'#15803d'],'BAC C'=>['border'=>'#fbbf24','body'=>'#fffbeb','header'=>'#b45309'],'BAC D'=>['border'=>'#a78bfa','body'=>'#f5f3ff','header'=>'#6d28d9'],'BAC E'=>['border'=>'#f472b6','body'=>'#fdf2f8','header'=>'#be185d']]; $twgColor=$twgColorMap[trim((string)($twgTeam['bac_code_tag']??''))]??['border'=>'#cbd5e1','body'=>'#f8fafc','header'=>'#334155']; ?>
           <article class="bac-code-box bac-twg-team-box" style="border:2px solid <?=$twgColor['border']?> !important;background:<?=$twgColor['body']?> !important;">
             <header class="bac-code-box-header" style="background:<?=$twgColor['header']?> !important;"><label style="display:flex;align-items:flex-start;gap:8px"><input type="checkbox" name="team_ids[]" value="<?= (int)$twgTeam['id'] ?>" aria-label="Select <?=e($twgTeamName)?> for deletion"><span><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">BAC Team: <?=e($twgTeam['bac_code_tag']??'Not assigned')?></p><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></span></label><button type="button" class="btn secondary edit-twg-team-btn" data-team="<?=e(json_encode($twgTeam,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit Team</button></header>
-          <div class="bac-twg-team-actions">
-            <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-bac-team="<?=e($twgTeam['bac_code_tag']??'')?>" data-role="TWG Chairman">Add TWG Chairman</button>
-            <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-bac-team="<?=e($twgTeam['bac_code_tag']??'')?>" data-role="TWG Vice-Chairman">Add TWG Vice-Chairman</button>
+          <?php $teamMembersForRoles=array_values(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName))); $hasTwgChairman=(bool)array_filter($teamMembersForRoles,static fn($m)=>trim((string)$m['designation'])==='TWG Chairman'); $hasTwgVice=(bool)array_filter($teamMembersForRoles,static fn($m)=>trim((string)$m['designation'])==='TWG Vice-Chairman'); ?>
+           <div class="bac-twg-team-actions">
+            <?php if(!$hasTwgChairman): ?><button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-bac-team="<?=e($twgTeam['bac_code_tag']??'')?>" data-role="TWG Chairman">Add TWG Chairman</button><?php endif; ?>
+            <?php if(!$hasTwgVice): ?><button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-bac-team="<?=e($twgTeam['bac_code_tag']??'')?>" data-role="TWG Vice-Chairman">Add TWG Vice-Chairman</button><?php endif; ?>
             <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-bac-team="<?=e($twgTeam['bac_code_tag']??'')?>" data-role="TWG Member">Add TWG Members</button>
           </div>
           <div class="bac-twg-team-members">
             <?php $teamMembers=array_values(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName))); ?>
             <?php if(!$teamMembers): ?><div class="bac-role-empty">No TWG members added yet</div><?php else: ?>
-              <?php foreach($teamMembers as $teamMember): ?><div class="bac-person-box"><div class="bac-person-box-details"><strong><?=e($teamMember['name'])?></strong><span><?=e($teamMember['designation'])?> · <?=e($teamMember['area_unit'])?></span></div><?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($teamMember,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><?php endif; ?></div><?php endforeach; ?>
+              <?php foreach($teamMembers as $teamMember): ?><div class="bac-person-box"><div class="bac-person-box-details"><strong><?=e($teamMember['name'])?></strong><span><?=e($teamMember['designation'])?> · <?=e($teamMember['area_unit'])?></span></div><?php if($canManage): ?><div class="bac-person-actions"><?php if($teamMember['designation']!=='TWG Chairman'&&!$hasTwgChairman): ?><form method="post"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="TWG"><input type="hidden" name="action" value="set_twg_role"><input type="hidden" name="id" value="<?=(int)$teamMember['id']?>"><input type="hidden" name="twg_role" value="TWG Chairman"><button class="btn secondary" type="submit">Make Chairman</button></form><?php endif; ?><?php if($teamMember['designation']!=='TWG Vice-Chairman'&&!$hasTwgVice): ?><form method="post"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="TWG"><input type="hidden" name="action" value="set_twg_role"><input type="hidden" name="id" value="<?=(int)$teamMember['id']?>"><input type="hidden" name="twg_role" value="TWG Vice-Chairman"><button class="btn secondary" type="submit">Make Vice-Chairman</button></form><?php endif; ?><?php if(in_array($teamMember['designation'],['TWG Chairman','TWG Vice-Chairman'],true)): ?><form method="post"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="TWG"><input type="hidden" name="action" value="set_twg_role"><input type="hidden" name="id" value="<?=(int)$teamMember['id']?>"><input type="hidden" name="twg_role" value="TWG Member"><button class="btn secondary" type="submit">Set as Member</button></form><?php endif; ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($teamMember,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button></div><?php endif; ?></div><?php endforeach; ?>
             <?php endif; ?>
           </div>
           </article>
@@ -483,15 +498,15 @@ pageStart('Bids and Awards Committee');
             <header class="bac-code-box-header" style="background:<?=$twgColor['header']?> !important;"><div><h4 style="font-size:12px"><?=e($twgTeamName)?></h4><p style="font-size:10px">BAC Team: <?=e($twgTeam['bac_code_tag']??'Not assigned')?></p><p style="font-size:10px">Members: <?=count(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName)))?></p></div><?php if($canManage): ?><button type="button" class="btn secondary edit-twg-team-btn" data-team="<?=e(json_encode($twgTeam,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit Team</button><?php endif; ?></header>
             <div class="bac-twg-team-actions">
               <?php if($canManage): ?>
-              <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-bac-team="<?=e($twgTeam['bac_code_tag']??'')?>" data-role="TWG Chairman">Add TWG Chairman</button>
-              <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-bac-team="<?=e($twgTeam['bac_code_tag']??'')?>" data-role="TWG Vice-Chairman">Add TWG Vice-Chairman</button>
+              <?php if(!$hasTwgChairman): ?><button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-bac-team="<?=e($twgTeam['bac_code_tag']??'')?>" data-role="TWG Chairman">Add TWG Chairman</button><?php endif; ?>
+              <?php if(!$hasTwgVice): ?><button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-bac-team="<?=e($twgTeam['bac_code_tag']??'')?>" data-role="TWG Vice-Chairman">Add TWG Vice-Chairman</button><?php endif; ?>
               <button type="button" class="btn twg-add-role" data-team="<?=e($twgTeamName)?>" data-bac-team="<?=e($twgTeam['bac_code_tag']??'')?>" data-role="TWG Member">Add TWG Members</button>
               <?php endif; ?>
             </div>
             <div class="bac-twg-team-members">
               <?php $teamMembers=array_values(array_filter($members,static fn($m)=>trim((string)$m['code_tag'])===trim((string)$twgTeamName))); ?>
               <?php if(!$teamMembers): ?><div class="bac-role-empty">No TWG members added yet</div><?php else: ?>
-                <?php foreach($teamMembers as $teamMember): ?><div class="bac-person-box"><div class="bac-person-box-details"><strong><?=e($teamMember['name'])?></strong><span><?=e($teamMember['designation'])?> · <?=e($teamMember['area_unit'])?></span></div><?php if($canManage): ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($teamMember,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button><?php endif; ?></div><?php endforeach; ?>
+                <?php foreach($teamMembers as $teamMember): ?><div class="bac-person-box"><div class="bac-person-box-details"><strong><?=e($teamMember['name'])?></strong><span><?=e($teamMember['designation'])?> · <?=e($teamMember['area_unit'])?></span></div><?php if($canManage): ?><div class="bac-person-actions"><?php if($teamMember['designation']!=='TWG Chairman'&&!$hasTwgChairman): ?><form method="post"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="TWG"><input type="hidden" name="action" value="set_twg_role"><input type="hidden" name="id" value="<?=(int)$teamMember['id']?>"><input type="hidden" name="twg_role" value="TWG Chairman"><button class="btn secondary" type="submit">Make Chairman</button></form><?php endif; ?><?php if($teamMember['designation']!=='TWG Vice-Chairman'&&!$hasTwgVice): ?><form method="post"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="TWG"><input type="hidden" name="action" value="set_twg_role"><input type="hidden" name="id" value="<?=(int)$teamMember['id']?>"><input type="hidden" name="twg_role" value="TWG Vice-Chairman"><button class="btn secondary" type="submit">Make Vice-Chairman</button></form><?php endif; ?><?php if(in_array($teamMember['designation'],['TWG Chairman','TWG Vice-Chairman'],true)): ?><form method="post"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="TWG"><input type="hidden" name="action" value="set_twg_role"><input type="hidden" name="id" value="<?=(int)$teamMember['id']?>"><input type="hidden" name="twg_role" value="TWG Member"><button class="btn secondary" type="submit">Set as Member</button></form><?php endif; ?><button class="btn secondary bac-card-edit edit-member-btn" type="button" data-member="<?=e(json_encode($teamMember,JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_TAG|JSON_HEX_AMP))?>">Edit</button></div><?php endif; ?></div><?php endforeach; ?>
               <?php endif; ?>
             </div>
           </article>
@@ -683,7 +698,8 @@ pageStart('Bids and Awards Committee');
 @media(max-width:1000px){.bac-code-box-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.bac-twg-team-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.bac-twg-team-grid{grid-template-columns:1fr}.bac-code-box-grid{grid-template-columns:1fr;padding:10px}.bac-code-box-header{padding:14px}.bac-code-box-footer{align-items:flex-start;flex-direction:column}.bac-code-box-status{white-space:normal}}
 
-.bac-members-table th,.bac-members-table td{padding:11px 12px;text-align:left;border-bottom:1px solid #e5e7eb}
+.bac-person-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}.bac-person-actions form{margin:0}.bac-person-actions .btn{font-size:10px;padding:5px 7px}
+ .bac-members-table th,.bac-members-table td{padding:11px 12px;text-align:left;border-bottom:1px solid #e5e7eb}
 .bac-members-table th{background:#f8fafc;color:#334155;font-size:13px;white-space:nowrap}
 .bac-members-table td{font-size:13px}.bac-bulk-actions{display:flex;align-items:center;gap:12px;margin:14px 0}.bac-bulk-actions span{font-size:12px;color:#64748b}.bac-edit-form{margin:14px 0 20px;padding:16px;border:1px solid #dbe3ec;border-radius:10px;background:#f8fafc}.bac-edit-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.bac-edit-grid label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600}.bac-edit-form[hidden]{display:none}
 .bac-page-heading p{margin:0;color:#6b7280;font-size:13px;line-height:1.6}
