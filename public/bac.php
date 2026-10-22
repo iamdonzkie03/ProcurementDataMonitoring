@@ -18,6 +18,7 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS bac_committee_members (
   INDEX idx_bac_member_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 try { $pdo->exec("ALTER TABLE bac_committee_members ADD COLUMN assigned_member VARCHAR(180) NULL AFTER code_tag"); } catch (PDOException $e) { if ((int)($e->errorInfo[1]??0)!==1060) throw $e; }
+try { $pdo->exec("ALTER TABLE bac_committee_members ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER assigned_member"); } catch (PDOException $e) { if ((int)($e->errorInfo[1]??0)!==1060) throw $e; }
 $pdo->exec("ALTER TABLE bac_committee_members MODIFY COLUMN member_type ENUM('BAC','TWG','SECRETARIAT') NOT NULL");
 $pdo->exec("CREATE TABLE IF NOT EXISTS bac_twg_teams (
  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -107,6 +108,20 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $ins->execute([$name,$designation,$areaUnit,$codeTag]);
         flash('success',$isAdHoc?'Ad-Hoc BAC Secretariat member added.':'BAC Secretariat member added.');
       }
+    }
+    header('Location:bac.php?tab=bac-secretariat');exit;
+  }
+  if($type==='SECRETARIAT'&&$action==='toggle_procurement_secretariat_status'){
+    $id=(int)($_POST['id']??0);
+    $check=$pdo->prepare("SELECT id,name,is_active FROM bac_committee_members WHERE id=? AND member_type='SECRETARIAT' AND (LOWER(TRIM(area_unit))='procurement' OR designation='Head BAC Secretariat') LIMIT 1");
+    $check->execute([$id]);
+    $target=$check->fetch(PDO::FETCH_ASSOC);
+    if(!$target){flash('error','Procurement BAC Secretariat member could not be found.');}
+    else{
+      $nextStatus=(int)$target['is_active']===1?0:1;
+      $update=$pdo->prepare("UPDATE bac_committee_members SET is_active=? WHERE id=? AND member_type='SECRETARIAT' AND (LOWER(TRIM(area_unit))='procurement' OR designation='Head BAC Secretariat')");
+      $update->execute([$nextStatus,$id]);
+      flash('success',$target['name'].' is now '.($nextStatus?'Active':'Inactive').'.');
     }
     header('Location:bac.php?tab=bac-secretariat');exit;
   }
@@ -473,7 +488,7 @@ pageStart('Bids and Awards Committee');
   </section>
   <?php elseif($tab==='bac-secretariat'): ?>
   <?php
-    $secretariatRows=$pdo->query("SELECT id,name,designation,area_unit FROM bac_committee_members WHERE member_type='SECRETARIAT' AND (LOWER(TRIM(area_unit))='procurement' OR designation='Head BAC Secretariat') ORDER BY CASE WHEN designation='Head BAC Secretariat' THEN 0 ELSE 1 END,name,id")->fetchAll(PDO::FETCH_ASSOC);
+    $secretariatRows=$pdo->query("SELECT id,name,designation,area_unit,is_active FROM bac_committee_members WHERE member_type='SECRETARIAT' AND (LOWER(TRIM(area_unit))='procurement' OR designation='Head BAC Secretariat') ORDER BY CASE WHEN designation='Head BAC Secretariat' THEN 0 ELSE 1 END,name,id")->fetchAll(PDO::FETCH_ASSOC);
     $adhocSecretariatRows=$pdo->query("SELECT id,name,designation,area_unit FROM bac_committee_members WHERE member_type='SECRETARIAT' AND LOWER(TRIM(area_unit))<>'procurement' AND designation<>'Head BAC Secretariat' ORDER BY name,id")->fetchAll(PDO::FETCH_ASSOC);
   ?>
   <section class="bac-tab-content">
@@ -481,9 +496,9 @@ pageStart('Bids and Awards Committee');
     <article class="bac-code-box bac-secretariat-card bac-secretariat-procurement">
       <header class="bac-code-box-header"><div><h4>Procurement BAC Secretariat</h4><p>Supervisor and listed Procurement staff</p></div></header>
       <?php if($secretariatRows): ?>
-      <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th></tr></thead><tbody>
+      <div class="table-wrap"><table class="table bac-members-table"><thead><tr><th>Name</th><th>Designation</th><?php if($canManage): ?><th>Status</th><?php endif; ?></tr></thead><tbody>
       <?php foreach($secretariatRows as $secretariatRow): ?>
-        <tr><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td></tr>
+        <tr><td><strong><?=e($secretariatRow['name'])?></strong></td><td><?=e($secretariatRow['designation'])?></td><?php if($canManage): ?><td><form method="post" class="bac-secretariat-status-form"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="member_type" value="SECRETARIAT"><input type="hidden" name="action" value="toggle_procurement_secretariat_status"><input type="hidden" name="id" value="<?=(int)$secretariatRow['id']?>"><button type="submit" class="btn <?=((int)$secretariatRow['is_active']===1)?'secondary':''?>"><?=((int)$secretariatRow['is_active']===1)?'Active — Set Inactive':'Inactive — Set Active'?></button></form></td><?php endif; ?></tr>
       <?php endforeach; ?>
       </tbody></table></div>
       <?php else: ?><p class="bac-role-empty">No Procurement supervisor or staff are currently listed.</p><?php endif; ?>
