@@ -468,7 +468,8 @@ pageStart('Bids and Awards Committee');
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="member_type" value="TWG">
         <input type="hidden" name="action" value="delete_twg_teams">
-        <div class="bac-form-actions" style="justify-content:flex-end;margin:0 0 12px">
+        <div class="bac-form-actions" style="justify-content:space-between;margin:0 0 12px">
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600"><input type="checkbox" id="selectAllTwgTeams"> Select All TWG Teams</label>
           <button class="btn danger" type="submit">Delete Selected TWG Teams</button>
         </div>
         <div class="bac-twg-team-grid">
@@ -707,6 +708,18 @@ pageStart('Bids and Awards Committee');
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
+  const twgTeamDeleteForm=document.getElementById('deleteTwgTeamsForm');
+  if(twgTeamDeleteForm){
+    const selectAllTwgTeams=document.getElementById('selectAllTwgTeams');
+    const twgTeamCheckboxes=Array.from(twgTeamDeleteForm.querySelectorAll('input[name="team_ids[]"]'));
+    if(selectAllTwgTeams){
+      selectAllTwgTeams.addEventListener('change',function(){twgTeamCheckboxes.forEach(function(box){box.checked=selectAllTwgTeams.checked;});});
+      twgTeamCheckboxes.forEach(function(box){box.addEventListener('change',function(){selectAllTwgTeams.checked=twgTeamCheckboxes.length>0&&twgTeamCheckboxes.every(function(item){return item.checked;});});});
+    }
+    twgTeamDeleteForm.addEventListener('submit',function(event){
+      if(!twgTeamCheckboxes.some(function(box){return box.checked;})){event.preventDefault();alert('Select at least one TWG Team to delete.');}
+    });
+  }
   const form=document.getElementById('addMemberForm');
   const showTwgTeam=document.getElementById('showAddTwgTeam');
   const addTwgTeamForm=document.getElementById('addTwgTeamForm');
