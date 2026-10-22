@@ -748,15 +748,16 @@ pageStart('Bids and Awards Committee');
 .bac-secretariat-card{min-width:0;margin:0}
 .bac-secretariat-procurement{border:2px solid #60a5fa;background:#eff6ff}
 .bac-secretariat-status-form{margin:0}
-.secretariat-status-switch{display:inline-flex;align-items:center;gap:8px;border:0;background:transparent;padding:4px 0;cursor:pointer;font:inherit}
-.secretariat-switch-track{position:relative;display:inline-block;flex:0 0 44px;width:44px;height:24px;border-radius:999px;transition:background-color .18s ease;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
-.secretariat-status-switch.is-active .secretariat-switch-track{background:#16a34a}
-.secretariat-status-switch.is-inactive .secretariat-switch-track{background:#dc2626}
-.secretariat-switch-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .18s ease}
-.secretariat-status-switch.is-active .secretariat-switch-thumb{transform:translateX(20px)}
-.secretariat-switch-label{font-size:12px;font-weight:700;min-width:48px;text-align:left}
-.secretariat-status-switch.is-active .secretariat-switch-label{color:#15803d}
-.secretariat-status-switch.is-inactive .secretariat-switch-label{color:#b91c1c}
+.secretariat-status-switch{position:relative;display:inline-flex;align-items:center;justify-content:center;width:92px;height:30px;border:0;border-radius:999px;padding:0;cursor:pointer;font:inherit;overflow:hidden;transition:background-color .18s ease;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
+.secretariat-status-switch.is-active{background:#16a34a}
+.secretariat-status-switch.is-inactive{background:#dc2626}
+.secretariat-switch-track{position:absolute;inset:0;display:block;border-radius:999px}
+.secretariat-switch-thumb{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .18s ease}
+.secretariat-status-switch.is-active .secretariat-switch-thumb{transform:translateX(62px)}
+.secretariat-switch-label{position:relative;z-index:1;color:#fff;font-size:12px;font-weight:700;line-height:1;pointer-events:none}
+.secretariat-status-switch.is-active .secretariat-switch-label{padding-right:23px}
+.secretariat-status-switch.is-inactive .secretariat-switch-label{padding-left:23px}
+.secretariat-status-switch:focus-visible{outline:2px solid #2563eb;outline-offset:3px}
 .secretariat-status-switch:focus-visible{outline:2px solid #2563eb;outline-offset:3px;border-radius:5px}
 .bac-secretariat-procurement>.bac-code-box-header{background:#1d4ed8}
 .bac-secretariat-adhoc{border:2px solid #f472b6;background:#fdf2f8}
