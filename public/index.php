@@ -46,7 +46,7 @@ try{
 }catch(Throwable $e){}
 
 // 3. Purchase Requests - all divisions/departments/areas/units
-$prDashboardCount=0;$prDashboardAmount=0.0;$recentPrDashboard=null;
+$prDashboardCount=0;$prDashboardAmount=0.0;$recentPrDashboardRows=[];
 try{
   $st=$pdo->query("SELECT COUNT(*) FROM purchase_requests");
   $prDashboardCount=(int)$st->fetchColumn();
@@ -64,12 +64,12 @@ try{
     LEFT JOIN purchase_request_items i ON i.pr_id=r.id
     GROUP BY r.id
     ORDER BY r.created_at DESC,r.id DESC
-    LIMIT 1");
-  $recentPrDashboard=$st->fetch() ?: null;
+    LIMIT 10");
+  $recentPrDashboardRows=$st->fetchAll();
 }catch(Throwable $e){}
 
 // 4. Purchase Orders - all divisions/departments/areas/units
-$poDashboardCount=0;$poDashboardAmount=0.0;$recentPoDashboard=null;
+$poDashboardCount=0;$poDashboardAmount=0.0;$recentPoDashboardRows=[];
 try{
   $st=$pdo->query("SELECT COUNT(*) FROM purchase_orders");
   $poDashboardCount=(int)$st->fetchColumn();
@@ -88,8 +88,8 @@ try{
     LEFT JOIN purchase_order_items i ON i.po_id=o.id
     GROUP BY o.id
     ORDER BY o.created_at DESC,o.id DESC
-    LIMIT 1");
-  $recentPoDashboard=$st->fetch() ?: null;
+    LIMIT 10");
+  $recentPoDashboardRows=$st->fetchAll();
 }catch(Throwable $e){}
 
 // 5. Cancelled Purchase Requests and Purchase Orders
@@ -259,13 +259,9 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
   </div>
   <?php else: ?><p class="empty">No PPMP budget amounts are available for FY <?= (int)$ppmpEndUserYear ?>.</p><?php endif; ?>
 </div>
-<div class="grid">
-<div class="panel"><h2>Recent Purchase Request</h2><?php if($recentPrDashboard):?><p><b><?=e($recentPrDashboard['pr_no'])?></b></p><p><b>Area/Unit:</b> <?=e($recentPrDashboard['area']??'')?></p><p><b>Division/Department:</b> <?=e($recentPrDashboard['division']??'')?></p><p><b>Total Amount:</b> ₱<?=number_format((float)$recentPrDashboard['total_amount'],2)?></p><p><b>Created:</b> <?=e(date('M d, Y h:i A',strtotime($recentPrDashboard['created_at'])))?></p><?php else:?><p class="empty">No Purchase Request has been created.</p><?php endif;?></div>
-<div class="panel"><h2>Recent Purchase Order</h2><?php if($recentPoDashboard):?><p><b><?=e($recentPoDashboard['po_no'])?></b></p><p><b>Supplier:</b> <?=e($recentPoDashboard['supplier']??'')?></p><p><b>Area/Unit:</b> <?=e($recentPoDashboard['area']??'')?></p><p><b>Division/Department:</b> <?=e($recentPoDashboard['division']??'')?></p><p><b>Total Amount:</b> ₱<?=number_format((float)$recentPoDashboard['total_amount'],2)?></p><p><b>Created:</b> <?=e(date('M d, Y h:i A',strtotime($recentPoDashboard['created_at'])))?></p><?php else:?><p class="empty">No Purchase Order has been created.</p><?php endif;?></div>
-</div>
-<div class="grid" style="margin-top:16px">
-<div class="panel"><h2>Cancelled Purchase Requests</h2><div class="table-wrap"><table class="table"><tr><th>PR No.</th><th>Area/Unit</th><th>Division/Department</th><th>Reason</th></tr><?php foreach($cancelledPrRows as $r):?><tr><td><?=e($r['pr_no'])?></td><td><?=e($r['area']??'')?></td><td><?=e($r['division']??'')?></td><td><?=e($r['reason'])?></td></tr><?php endforeach;?><?php if(!$cancelledPrRows):?><tr><td colspan="4" class="empty">No cancelled Purchase Requests.</td></tr><?php endif;?></table></div></div>
-<div class="panel"><h2>Cancelled Purchase Orders</h2><div class="table-wrap"><table class="table"><tr><th>PO No.</th><th>Supplier</th><th>Area/Unit</th><th>Reason</th></tr><?php foreach($cancelledPoRows as $r):?><tr><td><?=e($r['po_no'])?></td><td><?=e($r['supplier']??'')?></td><td><?=e($r['area']??'')?></td><td><?=e($r['reason'])?></td></tr><?php endforeach;?><?php if(!$cancelledPoRows):?><tr><td colspan="4" class="empty">No cancelled Purchase Orders.</td></tr><?php endif;?></table></div></div>
+<div class="grid" style="align-items:start">
+<div class="panel"><h2>Purchase Requests</h2><h3 style="margin:14px 0 8px;font-size:14px">Recent Purchase Requests</h3><div class="table-wrap"><table class="table"><tr><th>PR No.</th><th>Area/Unit</th><th>Division/Department</th><th>Status</th><th>Total Amount</th><th>Created</th></tr><?php foreach($recentPrDashboardRows as $r):?><tr><td><?=e($r['pr_no'])?></td><td><?=e($r['area']??'')?></td><td><?=e($r['division']??'')?></td><td><?=e($r['status']??'')?></td><td>₱<?=number_format((float)$r['total_amount'],2)?></td><td><?=!empty($r['created_at'])?e(date('M d, Y h:i A',strtotime($r['created_at']))):'—'?></td></tr><?php endforeach;?><?php if(!$recentPrDashboardRows):?><tr><td colspan="6" class="empty">No Purchase Requests have been created.</td></tr><?php endif;?></table></div><h3 style="margin:18px 0 8px;font-size:14px">Cancelled Purchase Requests</h3><div class="table-wrap"><table class="table"><tr><th>PR No.</th><th>Area/Unit</th><th>Division/Department</th><th>Reason</th></tr><?php foreach($cancelledPrRows as $r):?><tr><td><?=e($r['pr_no'])?></td><td><?=e($r['area']??'')?></td><td><?=e($r['division']??'')?></td><td><?=e($r['reason'])?></td></tr><?php endforeach;?><?php if(!$cancelledPrRows):?><tr><td colspan="4" class="empty">No cancelled Purchase Requests.</td></tr><?php endif;?></table></div></div>
+<div class="panel"><h2>Purchase Orders</h2><h3 style="margin:14px 0 8px;font-size:14px">Recent Purchase Orders</h3><div class="table-wrap"><table class="table"><tr><th>PO No.</th><th>Supplier</th><th>Area/Unit</th><th>Division/Department</th><th>Status</th><th>Total Amount</th><th>Created</th></tr><?php foreach($recentPoDashboardRows as $r):?><tr><td><?=e($r['po_no'])?></td><td><?=e($r['supplier']??'')?></td><td><?=e($r['area']??'')?></td><td><?=e($r['division']??'')?></td><td><?=e($r['status']??'')?></td><td>₱<?=number_format((float)$r['total_amount'],2)?></td><td><?=!empty($r['created_at'])?e(date('M d, Y h:i A',strtotime($r['created_at']))):'—'?></td></tr><?php endforeach;?><?php if(!$recentPoDashboardRows):?><tr><td colspan="7" class="empty">No Purchase Orders have been created.</td></tr><?php endif;?></table></div><h3 style="margin:18px 0 8px;font-size:14px">Cancelled Purchase Orders</h3><div class="table-wrap"><table class="table"><tr><th>PO No.</th><th>Supplier</th><th>Area/Unit</th><th>Division/Department</th><th>Reason</th></tr><?php foreach($cancelledPoRows as $r):?><tr><td><?=e($r['po_no'])?></td><td><?=e($r['supplier']??'')?></td><td><?=e($r['area']??'')?></td><td><?=e($r['division']??'')?></td><td><?=e($r['reason'])?></td></tr><?php endforeach;?><?php if(!$cancelledPoRows):?><tr><td colspan="5" class="empty">No cancelled Purchase Orders.</td></tr><?php endif;?></table></div></div>
 </div><div class="grid"><div class="panel"><h2>Procurement Workflow</h2><p>1. Area/Unit prepares its PPMP.</p><p>2. Equivalent PPMP items are consolidated into the APP.</p><p>3. Authorized users create PRs from available PPMP quantities.</p><p>4. PR quantities automatically reduce remaining planned quantities.</p><p>5. Submitted/approved PRs can be converted into POs with supplier details.</p><a class="btn" href="app.php?year=<?=$year?>">View Consolidated APP</a></div></div><script>const ppmpEndUserData = <?=json_encode(array_map(static fn($row)=>['name'=>(string)$row['end_user'],'amount'=>(float)$row['total_amount']],$ppmpEndUserTotals),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
 (function(){
   const canvas=document.getElementById('ppmpEndUserBarChart');
