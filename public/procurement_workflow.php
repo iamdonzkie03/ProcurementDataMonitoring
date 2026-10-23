@@ -116,7 +116,6 @@ pageStart('Procurement Process Workflow');
   <div class="flowchart-canvas">
   <div class="tree-intro">
     <div><h2 style="margin:0">Procurement Process Decision Tree</h2><p>Trace the standard procurement path and follow each Yes/No decision to understand approvals, returns, failed bids, and contract completion.</p></div>
-    <div class="tree-actions"><a class="btn" href="index.php">← Dashboard</a><a class="btn btn-primary" href="app.php?year=<?= (int)date('Y') ?>">View Consolidated APP</a><button class="btn" type="button" onclick="window.print()">Print Decision Tree</button></div>
   </div>
   <section class="tree-phase">
     
