@@ -412,6 +412,9 @@ if(!$embedded) pageStart('Area/Unit Management');
     </div>
     <div class="management-inner-list">
       <div class="management-list-content">
+        <form method="post" id="divisionBulkDeleteForm" onsubmit="return confirmBulkDivisionDelete();">
+          <input type="hidden" name="csrf" value="<?=e(csrf())?>">
+          <input type="hidden" name="action" value="bulk_delete_divisions">
         <div class="management-list-header">
           <h2>Division/Department List</h2>
           <div class="management-list-search" id="divisionSearchBox">
@@ -419,9 +422,10 @@ if(!$embedded) pageStart('Area/Unit Management');
             <div class="management-search-suggestions" id="divisionSearchSuggestions" role="listbox"></div>
           </div>
         </div>
-        <form method="post" id="divisionBulkDeleteForm" onsubmit="return confirmBulkDivisionDelete();">
-          <input type="hidden" name="csrf" value="<?=e(csrf())?>">
-          <input type="hidden" name="action" value="bulk_delete_divisions">
+        <div class="area-selection-toolbar" style="display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:10px 0 12px">
+          <label style="display:flex;align-items:center;gap:7px;margin:0;font-size:13px"><input type="checkbox" id="selectAllDivisions"> Select All</label>
+          <button class="btn danger" type="submit" id="deleteSelectedDivisions" disabled>Delete Selected</button>
+        </div>
         <div class="table-wrap"><table class="table" id="divisionTable">
           <tr><th style="width:34px">Select</th><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized Person</th><th>Actions</th></tr>
           <?php foreach($divisions as $d): ?>
@@ -448,10 +452,6 @@ if(!$embedded) pageStart('Area/Unit Management');
           <?php endforeach; ?>
           <?php if(!$divisions): ?><tr><td colspan="5">No Division/Department records found.</td></tr><?php endif; ?>
         </table></div>
-        <div class="area-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 0">
-          <label style="display:flex;align-items:center;gap:7px;margin:0;font-size:13px"><input type="checkbox" id="selectAllDivisions"> Select All</label>
-          <button class="btn danger" type="submit" id="deleteSelectedDivisions" disabled>Delete Selected</button>
-        </div>
         </form>
       </div>
     </div>
