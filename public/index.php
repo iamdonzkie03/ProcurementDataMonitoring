@@ -127,6 +127,19 @@ $ppmpSt=$pdo->prepare("SELECT COUNT(*) FROM ppmp_items p".$scopeSql);$ppmpSt->ex
 $areaSt=$pdo->prepare("SELECT COUNT(DISTINCT p.area_id) FROM ppmp_items p".$scopeSql);$areaSt->execute($scopeArgs);$areas=(int)$areaSt->fetchColumn();
 $qtySt=$pdo->prepare("SELECT COALESCE(SUM(p.quantity),0) FROM ppmp_items p".$scopeSql);$qtySt->execute($scopeArgs);$qty=(float)$qtySt->fetchColumn();
 $abcSt=$pdo->prepare("SELECT COALESCE(SUM(p.quantity*p.unit_price),0) FROM ppmp_items p".$scopeSql);$abcSt->execute($scopeArgs);$abc=(float)$abcSt->fetchColumn();
+$ppmpEndUserTotals=[];
+try{
+  $endUserSql="SELECT a.name AS end_user, COALESCE(SUM(p.quantity*p.unit_price),0) AS total_amount
+    FROM ppmp_items p JOIN areas a ON a.id=p.area_id
+    WHERE p.fiscal_year=?";
+  $endUserArgs=[$year];
+  if($isSupervisor && $contextDivisionId>0){$endUserSql.=" AND a.division_id=?";$endUserArgs[]=$contextDivisionId;}
+  elseif($contextAreaId>0){$endUserSql.=" AND p.area_id=?";$endUserArgs[]=$contextAreaId;}
+  $endUserSql.=" GROUP BY a.id,a.name HAVING SUM(p.quantity*p.unit_price)>0 ORDER BY total_amount DESC,a.name ASC";
+  $endUserSt=$pdo->prepare($endUserSql);$endUserSt->execute($endUserArgs);$ppmpEndUserTotals=$endUserSt->fetchAll(PDO::FETCH_ASSOC);
+}catch(Throwable $e){}
+$ppmpEndUserChartTotal=array_sum(array_map(static fn($row)=>(float)$row['total_amount'],$ppmpEndUserTotals));
+
 $prWhere=$isSupervisor&&$contextDivisionId>0?' AND a.division_id=?':($contextAreaId>0?' AND r.area_id=?':'');
 $prArgs=$isSupervisor&&$contextDivisionId>0?[$year,$contextDivisionId]:($contextAreaId>0?[$year,$contextAreaId]:[$year]);
 $prCountSt=$pdo->prepare("SELECT COUNT(*) FROM purchase_requests r JOIN areas a ON a.id=r.area_id WHERE r.fiscal_year=? AND r.status<>'Cancelled'".$prWhere);$prCountSt->execute($prArgs);$prCount=(int)$prCountSt->fetchColumn();
@@ -174,6 +187,18 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 .dashboard-pastel-yellow:before{background:#a58b4d}
 .dashboard-pastel-sky{background:linear-gradient(145deg,#fff 0%,#f5f9fb 100%);color:#5f879a}
 .dashboard-pastel-sky:before{background:#5f879a}
+.dashboard-enduser-chart{margin-top:18px}
+.dashboard-enduser-chart-layout{display:grid;grid-template-columns:minmax(220px,.9fr) minmax(260px,1.1fr);align-items:center;gap:24px}
+.dashboard-enduser-chart-visual{display:flex;align-items:center;justify-content:center;min-height:260px}
+#ppmpEndUserPieChart{display:block;width:100%;max-width:320px;height:auto;aspect-ratio:1}
+.dashboard-enduser-legend{display:flex;flex-direction:column;gap:9px;max-height:320px;overflow:auto;padding:2px 4px}
+.dashboard-enduser-legend-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 10px;border:1px solid #edf0f3;border-radius:9px;background:#fff}
+.dashboard-enduser-legend-swatch{width:10px;height:10px;border-radius:3px}
+.dashboard-enduser-legend-name{font-size:12px;font-weight:600;color:#475569;overflow-wrap:anywhere}
+.dashboard-enduser-legend-value{font-size:12px;font-weight:700;color:#172033;text-align:right;white-space:nowrap}
+.dashboard-enduser-legend-percent{display:block;font-size:10px;font-weight:500;color:#94a3b8;margin-top:2px}
+.dashboard-enduser-chart-total{font-size:12px;color:#64748b;margin-top:5px}
+@media(max-width:760px){.dashboard-enduser-chart-layout{grid-template-columns:1fr;gap:12px}.dashboard-enduser-chart-visual{min-height:unset}.dashboard-enduser-legend{max-height:none}}
 .dashboard-mini-card[href]{cursor:pointer}
 .dashboard-mini-card[href]:focus-visible{outline:3px solid #94a3b8;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.dashboard-mini-card{transition:none}.dashboard-mini-card:hover{transform:none}}
@@ -207,6 +232,17 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
     <div class="hint">Open the Role and Functions Access Matrix <span aria-hidden="true">→</span></div>
   </a>
 </div>
+<div class="panel dashboard-enduser-chart">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+    <div><h2 style="margin:0">PPMP Budget by End-user</h2><div class="dashboard-enduser-chart-total">Fiscal Year <?= (int)$year ?> · Total planned amount: <b>₱<?=number_format($ppmpEndUserChartTotal,2)?></b></div></div>
+  </div>
+  <?php if($ppmpEndUserTotals): ?>
+  <div class="dashboard-enduser-chart-layout">
+    <div class="dashboard-enduser-chart-visual"><canvas id="ppmpEndUserPieChart" width="320" height="320" role="img" aria-label="Pie chart showing PPMP planned amounts by end-user for fiscal year <?= (int)$year ?>"></canvas></div>
+    <div class="dashboard-enduser-legend" id="ppmpEndUserPieLegend"><?php foreach($ppmpEndUserTotals as $i=>$row): $pct=$ppmpEndUserChartTotal>0?((float)$row['total_amount']/$ppmpEndUserChartTotal*100):0; ?><div class="dashboard-enduser-legend-row"><span class="dashboard-enduser-legend-swatch" data-chart-index="<?=$i?>"></span><div class="dashboard-enduser-legend-name"><?=e($row['end_user'])?><span class="dashboard-enduser-legend-percent"><?=number_format($pct,1)?>% of total</span></div><div class="dashboard-enduser-legend-value">₱<?=number_format((float)$row['total_amount'],2)?></div></div><?php endforeach; ?></div>
+  </div>
+  <?php else: ?><p class="empty">No PPMP budget amounts are available for FY <?= (int)$year ?>.</p><?php endif; ?>
+</div>
 <div class="grid">
 <div class="panel"><h2>Recent Purchase Request</h2><?php if($recentPrDashboard):?><p><b><?=e($recentPrDashboard['pr_no'])?></b></p><p><b>Area/Unit:</b> <?=e($recentPrDashboard['area']??'')?></p><p><b>Division/Department:</b> <?=e($recentPrDashboard['division']??'')?></p><p><b>Total Amount:</b> ₱<?=number_format((float)$recentPrDashboard['total_amount'],2)?></p><p><b>Created:</b> <?=e(date('M d, Y h:i A',strtotime($recentPrDashboard['created_at'])))?></p><?php else:?><p class="empty">No Purchase Request has been created.</p><?php endif;?></div>
 <div class="panel"><h2>Recent Purchase Order</h2><?php if($recentPoDashboard):?><p><b><?=e($recentPoDashboard['po_no'])?></b></p><p><b>Supplier:</b> <?=e($recentPoDashboard['supplier']??'')?></p><p><b>Area/Unit:</b> <?=e($recentPoDashboard['area']??'')?></p><p><b>Division/Department:</b> <?=e($recentPoDashboard['division']??'')?></p><p><b>Total Amount:</b> ₱<?=number_format((float)$recentPoDashboard['total_amount'],2)?></p><p><b>Created:</b> <?=e(date('M d, Y h:i A',strtotime($recentPoDashboard['created_at'])))?></p><?php else:?><p class="empty">No Purchase Order has been created.</p><?php endif;?></div>
@@ -214,4 +250,29 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 <div class="grid" style="margin-top:16px">
 <div class="panel"><h2>Cancelled Purchase Requests</h2><div class="table-wrap"><table class="table"><tr><th>PR No.</th><th>Area/Unit</th><th>Division/Department</th><th>Reason</th></tr><?php foreach($cancelledPrRows as $r):?><tr><td><?=e($r['pr_no'])?></td><td><?=e($r['area']??'')?></td><td><?=e($r['division']??'')?></td><td><?=e($r['reason'])?></td></tr><?php endforeach;?><?php if(!$cancelledPrRows):?><tr><td colspan="4" class="empty">No cancelled Purchase Requests.</td></tr><?php endif;?></table></div></div>
 <div class="panel"><h2>Cancelled Purchase Orders</h2><div class="table-wrap"><table class="table"><tr><th>PO No.</th><th>Supplier</th><th>Area/Unit</th><th>Reason</th></tr><?php foreach($cancelledPoRows as $r):?><tr><td><?=e($r['po_no'])?></td><td><?=e($r['supplier']??'')?></td><td><?=e($r['area']??'')?></td><td><?=e($r['reason'])?></td></tr><?php endforeach;?><?php if(!$cancelledPoRows):?><tr><td colspan="4" class="empty">No cancelled Purchase Orders.</td></tr><?php endif;?></table></div></div>
-</div><div class="grid"><div class="panel" id="recent-ppmp-entries"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div><h2 style="margin:0">Recent PPMP Entries</h2><small style="color:#64748b">Entries created in the last 7 days</small></div><form method="get" style="display:flex;align-items:center;gap:8px" onsubmit="sessionStorage.setItem('dashboardRecentPpmpScrollY',String(window.scrollY))"><label for="ppmp_year_filter" style="font-size:12px;font-weight:700">Year</label><select id="ppmp_year_filter" name="ppmp_year" class="input" style="width:auto;min-width:100px;padding:7px 9px" onchange="this.form.requestSubmit()"><?php foreach($recentYearOptions as $optionYear):?><option value="<?=$optionYear?>" <?=$recentPpmpYear===$optionYear?'selected':''?>><?=$optionYear?></option><?php endforeach;?></select></form></div><div class="table-wrap"><table class="table"><tr><th>Item</th><th>Area/Unit</th><th>Category</th><th>Qty</th><th>ABC</th></tr><?php foreach($recentRows as $r):?><tr><td><?=e($r['item_name'])?></td><td><?=e($r['area'])?></td><td><?=e($r['category'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td></tr><?php endforeach;?><?php if(!$recentRows):?><tr><td colspan="5" class="empty">No PPMP entries created in the last 7 days for FY <?=$recentPpmpYear?>.</td></tr><?php endif;?></table></div><?php if($recentTotalRows>0):?><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:#64748b"><span>Showing <?=number_format(($recentPage-1)*$recentPageSize+1)?>–<?=number_format(min($recentPage*$recentPageSize,$recentTotalRows))?> of <?=number_format($recentTotalRows)?> entries</span><div style="display:flex;align-items:center;gap:6px"><?php $recentPageUrl=function(int $page)use($recentPpmpYear):string{$params=$_GET;$params['ppmp_year']=$recentPpmpYear;$params['ppmp_page']=$page;return '?'.http_build_query($params).'#recent-ppmp-entries';};?><a class="btn" style="padding:5px 9px;font-size:12px;<?= $recentPage<=1?'opacity:.45;pointer-events:none;':'' ?>" href="<?=e($recentPageUrl($recentPage-1))?>">Previous</a><span style="padding:0 5px">Page <?=$recentPage?> of <?=$recentTotalPages?></span><a class="btn" style="padding:5px 9px;font-size:12px;<?= $recentPage>=$recentTotalPages?'opacity:.45;pointer-events:none;':'' ?>" href="<?=e($recentPageUrl($recentPage+1))?>">Next</a></div></div><?php endif;?></div><div class="panel"><h2>Procurement Workflow</h2><p>1. Area/Unit prepares its PPMP.</p><p>2. Equivalent PPMP items are consolidated into the APP.</p><p>3. Authorized users create PRs from available PPMP quantities.</p><p>4. PR quantities automatically reduce remaining planned quantities.</p><p>5. Submitted/approved PRs can be converted into POs with supplier details.</p><a class="btn" href="app.php?year=<?=$year?>">View Consolidated APP</a></div></div><script>window.addEventListener("load",function(){var saved=sessionStorage.getItem("dashboardRecentPpmpScrollY");if(saved!==null){sessionStorage.removeItem("dashboardRecentPpmpScrollY");window.scrollTo(0,Number(saved)||0);}});</script><?php pageEnd();
+</div><div class="grid"><div class="panel" id="recent-ppmp-entries"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div><h2 style="margin:0">Recent PPMP Entries</h2><small style="color:#64748b">Entries created in the last 7 days</small></div><form method="get" style="display:flex;align-items:center;gap:8px" onsubmit="sessionStorage.setItem('dashboardRecentPpmpScrollY',String(window.scrollY))"><label for="ppmp_year_filter" style="font-size:12px;font-weight:700">Year</label><select id="ppmp_year_filter" name="ppmp_year" class="input" style="width:auto;min-width:100px;padding:7px 9px" onchange="this.form.requestSubmit()"><?php foreach($recentYearOptions as $optionYear):?><option value="<?=$optionYear?>" <?=$recentPpmpYear===$optionYear?'selected':''?>><?=$optionYear?></option><?php endforeach;?></select></form></div><div class="table-wrap"><table class="table"><tr><th>Item</th><th>Area/Unit</th><th>Category</th><th>Qty</th><th>ABC</th></tr><?php foreach($recentRows as $r):?><tr><td><?=e($r['item_name'])?></td><td><?=e($r['area'])?></td><td><?=e($r['category'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td></tr><?php endforeach;?><?php if(!$recentRows):?><tr><td colspan="5" class="empty">No PPMP entries created in the last 7 days for FY <?=$recentPpmpYear?>.</td></tr><?php endif;?></table></div><?php if($recentTotalRows>0):?><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:#64748b"><span>Showing <?=number_format(($recentPage-1)*$recentPageSize+1)?>–<?=number_format(min($recentPage*$recentPageSize,$recentTotalRows))?> of <?=number_format($recentTotalRows)?> entries</span><div style="display:flex;align-items:center;gap:6px"><?php $recentPageUrl=function(int $page)use($recentPpmpYear):string{$params=$_GET;$params['ppmp_year']=$recentPpmpYear;$params['ppmp_page']=$page;return '?'.http_build_query($params).'#recent-ppmp-entries';};?><a class="btn" style="padding:5px 9px;font-size:12px;<?= $recentPage<=1?'opacity:.45;pointer-events:none;':'' ?>" href="<?=e($recentPageUrl($recentPage-1))?>">Previous</a><span style="padding:0 5px">Page <?=$recentPage?> of <?=$recentTotalPages?></span><a class="btn" style="padding:5px 9px;font-size:12px;<?= $recentPage>=$recentTotalPages?'opacity:.45;pointer-events:none;':'' ?>" href="<?=e($recentPageUrl($recentPage+1))?>">Next</a></div></div><?php endif;?></div><div class="panel"><h2>Procurement Workflow</h2><p>1. Area/Unit prepares its PPMP.</p><p>2. Equivalent PPMP items are consolidated into the APP.</p><p>3. Authorized users create PRs from available PPMP quantities.</p><p>4. PR quantities automatically reduce remaining planned quantities.</p><p>5. Submitted/approved PRs can be converted into POs with supplier details.</p><a class="btn" href="app.php?year=<?=$year?>">View Consolidated APP</a></div></div><script>const ppmpEndUserData = <?=json_encode(array_map(static fn($row)=>['name'=>(string)$row['end_user'],'amount'=>(float)$row['total_amount']],$ppmpEndUserTotals),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
+(function(){
+  const canvas=document.getElementById('ppmpEndUserPieChart');
+  if(!canvas || !ppmpEndUserData.length) return;
+  const ctx=canvas.getContext('2d');
+  const colors=['#647ba5','#64866d','#8170a8','#b78361','#a66f87','#5f8d84','#a58b4d','#5f879a','#9a7560','#718096','#7c8f6b','#987fa8'];
+  const total=ppmpEndUserData.reduce((sum,item)=>sum+item.amount,0);
+  document.querySelectorAll('.dashboard-enduser-legend-swatch').forEach((el,i)=>{el.style.backgroundColor=colors[i%colors.length];});
+  function draw(){
+    const dpr=window.devicePixelRatio||1;
+    const width=Math.max(220,Math.min(canvas.parentElement.clientWidth||320,320));
+    canvas.width=width*dpr;canvas.height=width*dpr;canvas.style.width=width+'px';canvas.style.height=width+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,width);
+    const cx=width/2,cy=width/2,r=width*.44;
+    let angle=-Math.PI/2;
+    ppmpEndUserData.forEach((item,i)=>{
+      const slice=total>0?(item.amount/total)*Math.PI*2:0;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+slice);ctx.closePath();
+      ctx.fillStyle=colors[i%colors.length];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();angle+=slice;
+    });
+  }
+  draw();
+  if(window.ResizeObserver){new ResizeObserver(draw).observe(canvas.parentElement);}
+  else window.addEventListener('resize',draw);
+})();
+window.addEventListener("load",function(){var saved=sessionStorage.getItem("dashboardRecentPpmpScrollY");if(saved!==null){sessionStorage.removeItem("dashboardRecentPpmpScrollY");window.scrollTo(0,Number(saved)||0);}});</script><?php pageEnd();
