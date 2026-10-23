@@ -40,6 +40,51 @@ pageStart('Procurement Process Workflow');
 .proc-tree .tree-note{margin:8px 0 0;color:#64748b;font-size:11px;text-align:center}
 @media(max-width:720px){.proc-tree .tree-phase{padding:15px}.proc-tree .branch-columns{grid-template-columns:1fr;gap:22px}.proc-tree .branch-columns:before{display:none}.proc-tree .branch:before{top:-15px;height:15px}.proc-tree .tree-node{padding:12px}.proc-tree .decision-shape{min-width:0;width:100%;box-sizing:border-box;clip-path:none;border-radius:10px;min-height:0}.proc-tree .phase-title{font-size:14px}.proc-tree .tree-legend{gap:8px}}
 @media print{.proc-tree .tree-actions{display:none}.proc-tree .tree-phase{break-inside:avoid;box-shadow:none}.proc-tree .tree-node,.proc-tree .decision-shape{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+
+/* Flowchart presentation: distinct node shapes, visible connectors, and clear branches */
+.proc-tree{max-width:1600px}
+.proc-tree .tree-legend{position:sticky;top:8px;z-index:3;background:#fff;box-shadow:0 4px 14px rgba(15,23,42,.06)}
+.proc-tree .tree-phase{position:relative;border:1px solid #dbe4ef;border-top:4px solid #6c88b4;border-radius:12px;background:linear-gradient(180deg,#f8fbff 0,#fff 150px);overflow:visible}
+.proc-tree .phase-title{padding-bottom:13px;border-bottom:1px solid #e7edf5}
+.proc-tree .tree-node{max-width:560px;padding:14px 20px;border:2px solid #8da6c7;border-radius:4px;background:#f4f8ff;box-shadow:0 4px 10px rgba(43,69,105,.07)}
+.proc-tree .tree-node strong{font-size:13px;color:#263e5c}
+.proc-tree .tree-node span{font-size:12px;line-height:1.55}
+.proc-tree .tree-node.start,.proc-tree .tree-node.end{border-radius:999px;background:#e8f7ed;border-color:#54a56e;padding:15px 28px}
+.proc-tree .tree-node.start strong,.proc-tree .tree-node.end strong{color:#21643a}
+.proc-tree .tree-node.return{background:#fff0ed;border-color:#d78375;border-radius:4px}
+.proc-tree .tree-node.return strong{color:#963f32}
+.proc-tree .tree-arrow{height:34px;position:relative;color:transparent}
+.proc-tree .tree-arrow:before{content:"";position:absolute;top:0;bottom:7px;left:50%;width:2px;height:auto;background:#8fa1b8}
+.proc-tree .tree-arrow:after{content:"";position:absolute;left:calc(50% - 5px);bottom:3px;width:8px;height:8px;border-right:2px solid #8fa1b8;border-bottom:2px solid #8fa1b8;transform:rotate(45deg)}
+.proc-tree .decision-shape{position:relative;display:flex;align-items:center;justify-content:center;width:320px;max-width:100%;min-width:0;min-height:125px;box-sizing:border-box;margin:0 auto;padding:30px 58px;border:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:#d6ae58;color:#674811;font-size:12px;font-weight:800;line-height:1.4}
+.proc-tree .decision-shape:before{content:"";position:absolute;inset:3px;background:#fff8e7;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);z-index:-1}
+.proc-tree .decision{width:100%;max-width:550px}
+.proc-tree .branch-columns{gap:24px;margin-top:18px;align-items:start}
+.proc-tree .branch-columns:before{top:-19px;left:25%;right:25%;height:2px;background:#9cacc0}
+.proc-tree .branch{padding-top:7px}
+.proc-tree .branch:before{top:-19px;height:19px;border-left:2px solid #9cacc0}
+.proc-tree .branch-label{position:relative;z-index:1;min-width:48px;border:1px solid transparent;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.proc-tree .branch-label.yes{background:#e5f6ea;border-color:#9bcdaa;color:#21683a}
+.proc-tree .branch-label.no{background:#fff0ed;border-color:#e5aaa0;color:#9d382d}
+.proc-tree .branch .tree-arrow{height:29px}
+.proc-tree .branch .branch-columns{margin-top:16px}
+.proc-tree .branch .branch-columns:before{top:-17px}
+.proc-tree .branch .branch-columns>.branch:before{top:-17px;height:17px}
+.proc-tree .merge-note{border:1px solid #9bcdaa;background:#eef9f1;color:#285d39;max-width:850px;padding:14px 18px}
+@media(max-width:720px){
+ .proc-tree .tree-legend{position:static}
+ .proc-tree .tree-phase{padding:14px}
+ .proc-tree .decision-shape{width:270px;min-height:108px;padding:26px 48px;font-size:11px}
+ .proc-tree .tree-node.start,.proc-tree .tree-node.end{border-radius:18px}
+ .proc-tree .branch-columns{gap:20px}
+}
+@media print{
+ .proc-tree .tree-legend{position:static;box-shadow:none}
+ .proc-tree .tree-phase{background:#fff;border-color:#cbd5e1}
+ .proc-tree .tree-arrow:before{background:#64748b}
+ .proc-tree .tree-arrow:after{border-color:#64748b}
+}
+
 </style>
 <div class="proc-tree">
   <div class="tree-intro">
