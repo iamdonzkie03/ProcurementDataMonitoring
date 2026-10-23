@@ -108,6 +108,5 @@ document.addEventListener('DOMContentLoaded',function(){
 .user-pagination-buttons .user-page-button:first-child:hover:not(:disabled),.user-pagination-buttons .user-page-button:last-child:hover:not(:disabled){background:#343a40;color:#fff;border-color:#343a40}
 .user-pagination-buttons .user-page-button:disabled{opacity:.7;cursor:not-allowed}
 @media(max-width:700px){.user-pagination{align-items:flex-start;justify-content:flex-end;flex-wrap:wrap}.user-pagination-info{order:3;flex-basis:100%;text-align:right}.user-list-tools{width:100%;align-items:flex-end;gap:12px}.user-search{flex:0 1 200px;min-width:160px}.user-search .input{width:100%}.user-list-heading{align-items:center;gap:12px;flex-wrap:wrap}}
+.delete-selected-users-btn{background:#dc3545!important;border-color:#dc3545!important;color:#fff!important}.delete-selected-users-btn:hover{background:#bb2d3b!important;border-color:#b02a37!important;color:#fff!important}
 </style><?php pageEnd();
-
-<style>.delete-selected-users-btn{background:#dc3545!important;border-color:#dc3545!important;color:#fff!important}.delete-selected-users-btn:hover{background:#bb2d3b!important;border-color:#b02a37!important;color:#fff!important}</style>
