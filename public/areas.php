@@ -423,11 +423,10 @@ if(!$embedded) pageStart('Area/Unit Management');
           </div>
         </div>
         <div class="area-selection-toolbar" style="display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:10px 0 12px">
-          <label style="display:flex;align-items:center;gap:7px;margin:0;font-size:13px"><input type="checkbox" id="selectAllDivisions"> Select All</label>
           <button class="btn danger" type="submit" id="deleteSelectedDivisions" disabled>Delete Selected</button>
         </div>
         <div class="table-wrap"><table class="table" id="divisionTable">
-          <tr><th style="width:34px">Select</th><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized Person</th><th>Actions</th></tr>
+          <tr><th style="width:70px"><label style="display:flex;align-items:center;gap:5px;margin:0;font-size:12px"><input type="checkbox" id="selectAllDivisions"> Select All</label></th><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized Person</th><th>Actions</th></tr>
           <?php foreach($divisions as $d): ?>
           <tr data-management-search-id="<?=e((string)$d['id'])?>" data-management-search-name="<?=e($d['name'])?>" data-management-search-head="<?=e($d['division_head'])?>">
             <td><input type="checkbox" class="division-select" name="selected_division_ids[]" value="<?=(int)$d['id']?>" aria-label="Select <?=e($d['name'])?>"></td>
@@ -507,12 +506,11 @@ if(!$embedded) pageStart('Area/Unit Management');
           <input type="hidden" name="csrf" value="<?=e(csrf())?>">
           <input type="hidden" name="action" value="bulk_delete">
         <div class="area-pagination" id="areaPagination" aria-label="Area/Unit pagination"><div class="area-page-size"><label for="areaPageSize">Show</label><select class="input" id="areaPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="areaPageSize">records</label></span></div><div class="area-pagination-info" id="areaPaginationInfo"></div><div class="area-pagination-buttons" id="areaPaginationButtons"></div></div>
-        <div class="area-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 0">
-          <label style="display:flex;align-items:center;gap:7px;margin:0;font-size:13px"><input type="checkbox" id="selectAllAreas"> Select All</label>
+        <div class="area-selection-toolbar" style="display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:10px 0 0">
           <button class="btn danger" type="submit" id="deleteSelectedAreas" disabled>Delete Selected</button>
         </div>
         <div class="table-wrap"><table class="table" id="areaTable">
-          <thead><tr><th style="width:34px">Select</th><th>Area/Unit</th><th>Department/Division</th><th>Code</th><th>Actions</th></tr></thead>
+          <thead><tr><th style="width:70px"><label style="display:flex;align-items:center;gap:5px;margin:0;font-size:12px"><input type="checkbox" id="selectAllAreas"> Select All</label></th><th>Area/Unit</th><th>Department/Division</th><th>Code</th><th>Actions</th></tr></thead>
           <tbody>
           <?php foreach($rows as $r): ?><?php
             $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id']));
