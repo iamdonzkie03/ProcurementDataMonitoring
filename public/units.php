@@ -98,11 +98,10 @@ if(!$embedded) pageStart('Units of Measurement');
 <div class="table-wrap">
 <form method="post" id="uomBulkDeleteForm" onsubmit="return confirmBulkUomDelete();">
 <input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="bulk_delete">
-<div class="uom-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px">
-<label style="display:flex;align-items:center;gap:7px;margin:0;font-size:13px"><input type="checkbox" id="selectAllUom"> Select All</label>
+<div class="uom-selection-toolbar" style="display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:0 0 10px">
 <button class="btn danger" type="submit" id="deleteSelectedUom" disabled>Delete Selected</button>
 </div>
-<table class="table" id="uomTable"><thead><tr><th style="width:42px">Select</th><th>Unit</th><th>Action</th></tr></thead><tbody><?php foreach($rows as $r):?><tr data-uom-id="<?=e((string)$r['id'])?>" data-uom-name="<?=e($r['name'])?>"><td><input type="checkbox" class="uom-select" name="selected_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['name'])?>"></td><td><b><?=e($r['name'])?></b></td><td>
+<table class="table" id="uomTable"><thead><tr><th style="width:42px;text-align:center"><input type="checkbox" id="selectAllUom" aria-label="Select all Units of Measurement" title="Select all Units of Measurement"></th><th>Unit</th><th>Action</th></tr></thead><tbody><?php foreach($rows as $r):?><tr data-uom-id="<?=e((string)$r['id'])?>" data-uom-name="<?=e($r['name'])?>"><td><input type="checkbox" class="uom-select" name="selected_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['name'])?>"></td><td><b><?=e($r['name'])?></b></td><td>
 <a class="btn secondary master-action" href="<?=e($embedded ? 'settings.php?tab=uom&edit='.(int)$r['id'] : 'units.php?edit='.(int)$r['id'])?>">Edit</a>
 </td></tr><?php endforeach;?><?php if(!$rows):?><tr><td colspan="3" class="empty">No Units of Measurement have been added yet.</td></tr><?php endif;?></tbody></table>
 </form></div>
