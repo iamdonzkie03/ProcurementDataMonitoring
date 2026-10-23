@@ -116,7 +116,7 @@ if(!$embedded) pageStart('Procurement Method');
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="bulk_delete">
     <div class="procurement_method-pagination" id="procurement_methodPagination" aria-label="Procurement Method pagination"><div class="procurement_method-page-size"><label for="procurement_methodPageSize">Show</label><select class="input" id="procurement_methodPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="procurement_methodPageSize">records</label></span></div><div class="procurement_method-pagination-info" id="procurement_methodPaginationInfo"></div><div class="procurement_method-pagination-buttons" id="procurement_methodPaginationButtons"></div></div>
-    <div class="procurement-method-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 10px">
+    <div class="procurement-method-selection-toolbar" style="display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:0 0 10px">
 
       <button class="btn danger" type="submit" id="deleteSelectedProcurementMethods" disabled>Delete Selected</button>
     </div>
