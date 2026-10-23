@@ -38,7 +38,7 @@ pageStart('Procurement Process Workflow');
    <p>Flowchart recreated from the supplied Excel file, preserving its process wording, decisions, outcomes, and branching paths.</p>
   </div>
   <div class="svg-scroll">
-   <svg class="flow-svg" viewBox="0 0 1200 2260" role="img" aria-label="Procurement process flowchart matching the supplied Excel file">
+   <svg class="flow-svg" viewBox="0 0 1200 2370" role="img" aria-label="Procurement process flowchart matching the supplied Excel file">
     <defs>
      <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#577ca9"/></marker>
      <marker id="return-arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#bb6d63"/></marker>
@@ -129,13 +129,18 @@ pageStart('Procurement Process Workflow');
     <rect class="yes" x="670" y="2127" width="70" height="28" rx="14"/><text class="branch yes-text" x="705" y="2146">YES</text>
     <rect class="no" x="816" y="2063" width="62" height="28" rx="14"/><text class="branch no-text" x="847" y="2082">NO</text>
     <path class="return-connector" d="M878 2077 H1188 V57 H765"/>
-    <path class="connector" d="M600 2142 V2170"/>
-    <rect class="success" x="390" y="2170" width="420" height="62" rx="14"/>
-    <text class="label" x="600" y="2206"><tspan x="600">Issue approved contract</tspan></text>
+    <path class="connector" d="M600 2142 V2160"/>
+    <rect class="success" x="390" y="2160" width="420" height="62" rx="14"/>
+    <text class="label" x="600" y="2196"><tspan x="600">Issue approved contract</tspan></text>
+    <path class="connector" d="M600 2222 V2250"/>
+    <rect class="success" x="390" y="2250" width="420" height="68" rx="14"/>
+    <text class="label" x="600" y="2279"><tspan x="600">Recordkeeping</tspan></text>
+    <text class="small" x="600" y="2302"><tspan x="600">Procurement Section retains approved PO/Contract and NTP copies.</tspan></text>
+    <path class="return-connector" d="M878 2077 H930 V2200"/>
+    <rect class="return-box" x="850" y="2200" width="280" height="78" rx="9"/>
+    <text class="return-text" x="990" y="2230"><tspan x="990">Project cancelled</tspan></text>
+    <text class="small" x="990" y="2253"><tspan x="990">Contract disapproval cancels the project.</tspan></text>
    </svg>
-  </div>
-  <div style="margin:12px auto 0;max-width:520px">
-   <div class="flow-node success"><strong>Recordkeeping</strong><span>Procurement Section retains approved PO/Contract and NTP copies.</span></div>
   </div>
  </div>
 </div>
