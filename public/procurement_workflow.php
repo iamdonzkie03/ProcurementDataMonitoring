@@ -14,10 +14,10 @@ pageStart('Procurement Process Workflow');
 .proc-infographic .legend{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;padding:14px 18px 2px;color:#536b85;font-size:12px}
 .proc-infographic .legend span{display:inline-flex;align-items:center;gap:7px}
 .proc-infographic .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
-.proc-infographic .svg-scroll{overflow-x:auto;padding:12px 12px 28px}
+.proc-infographic .svg-scroll{overflow-x:auto;padding:20px 18px 34px}
 .proc-infographic svg{display:block;width:100%;height:auto;min-width:1000px;margin:0 auto}
-.proc-infographic .connector{fill:none;stroke:#5282b3;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arr)}
-.proc-infographic .return-path{fill:none;stroke:#d34e61;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrRed);stroke-dasharray:5 6}
+.proc-infographic .connector{fill:none;stroke:#5282b3;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arr)}
+.proc-infographic .return-path{fill:none;stroke:#d34e61;stroke-width:1.25;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrRed);stroke-dasharray:5 6}
 .proc-infographic .card{stroke-width:2.2;filter:url(#shadow)}
 .proc-infographic .blue{fill:#e4f1ff;stroke:#5d91c5}
 .proc-infographic .gold{fill:#fff3c9;stroke:#d1a63b}
@@ -28,9 +28,9 @@ pageStart('Procurement Process Workflow');
 .proc-infographic .node-desc{font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:400;fill:#4f6780;text-anchor:middle}
 .proc-infographic .decision-text{font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:800;fill:#76591e;text-anchor:middle}
 .proc-infographic .branch{font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;letter-spacing:.7px;text-anchor:middle}
-.proc-infographic .yes-pill{fill:#23834b;stroke:#fff;stroke-width:2}
-.proc-infographic .no-pill{fill:#c9344d;stroke:#fff;stroke-width:2}
-.proc-infographic .pill-text{font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:800;fill:#fff;text-anchor:middle}
+.proc-infographic .yes-pill{fill:#18763e;stroke:#fff;stroke-width:2.5}
+.proc-infographic .no-pill{fill:#b92740;stroke:#fff;stroke-width:2.5}
+.proc-infographic .pill-text{font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:800;fill:#fff;text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke-width:0}
 .proc-infographic .icon-disc{fill:#fff;stroke:#d4e4f4;stroke-width:1.5}
 @media(max-width:760px){.proc-infographic .poster-head{padding:18px 16px;align-items:flex-start}.proc-infographic .head-icon{flex-basis:44px;height:44px;font-size:23px}.proc-infographic .svg-scroll{padding:8px 5px 18px}.proc-infographic svg{min-width:1000px}}
 @media print{.proc-infographic .poster{box-shadow:none;border:0}.proc-infographic .svg-scroll{overflow:visible}.proc-infographic svg{min-width:0;width:100%;print-color-adjust:exact;-webkit-print-color-adjust:exact}}
@@ -68,9 +68,9 @@ pageStart('Procurement Process Workflow');
     <polygon class="decision" points="600,226 860,294 600,362 340,294"/>
     <text class="decision-text" x="600" y="288"><tspan x="600">Division Head approves PPMP?</tspan></text>
     <path class="connector" d="M600 362 V390"/>
-    <rect class="yes-pill" x="566" y="374" width="68" height="28" rx="14"/><text class="pill-text" x="600" y="393">YES</text>
+    <rect class="yes-pill" x="568" y="365" width="64" height="22" rx="11"/><text class="pill-text" x="600" y="376">YES</text>
     <path class="return-path" d="M860 294 H915 V68 H860"/>
-    <rect class="no-pill" x="878" y="280" width="64" height="28" rx="14"/><text class="pill-text" x="910" y="299">NO</text>
+    <rect class="no-pill" x="879" y="283" width="58" height="22" rx="11"/><text class="pill-text" x="908" y="294">NO</text>
     <rect class="card red" x="990" y="230" width="520" height="76" rx="16"/>
     <text class="node-title" x="1250" y="261" style="fill:#a62f44">Division Head disapproves the PPMP.</text>
     <text class="node-desc" x="1250" y="284">Return the PPMP to the End-user.</text>
@@ -85,9 +85,9 @@ pageStart('Procurement Process Workflow');
     <polygon class="decision" points="600,494 860,562 600,630 340,562"/>
     <text class="decision-text" x="600" y="556">Budget Officer approves?</text>
     <path class="connector" d="M600 630 V658"/>
-    <rect class="yes-pill" x="566" y="642" width="68" height="28" rx="14"/><text class="pill-text" x="600" y="661">YES</text>
+    <rect class="yes-pill" x="568" y="633" width="64" height="22" rx="11"/><text class="pill-text" x="600" y="644">YES</text>
     <path class="return-path" d="M860 562 H930 V68 H860"/>
-    <rect class="no-pill" x="878" y="548" width="64" height="28" rx="14"/><text class="pill-text" x="910" y="567">NO</text>
+    <rect class="no-pill" x="879" y="551" width="58" height="22" rx="11"/><text class="pill-text" x="908" y="562">NO</text>
     <rect class="card green" x="340" y="658" width="520" height="76" rx="16"/>
     <text class="node-title" x="600" y="689">PPMP approved</text>
     <text class="node-desc" x="600" y="713">Return to End-user and include approved items in the APP.</text>
@@ -115,9 +115,9 @@ pageStart('Procurement Process Workflow');
     <polygon class="decision" points="600,1090 860,1158 600,1226 340,1158"/>
     <text class="decision-text" x="600" y="1152">Does HoPE approve the PR?</text>
     <path class="connector" d="M600 1226 V1254"/>
-    <rect class="yes-pill" x="566" y="1238" width="68" height="28" rx="14"/><text class="pill-text" x="600" y="1257">YES</text>
+    <rect class="yes-pill" x="568" y="1229" width="64" height="22" rx="11"/><text class="pill-text" x="600" y="1240">YES</text>
     <path class="return-path" d="M860 1158 H950 V68 H860"/>
-    <rect class="no-pill" x="878" y="1144" width="64" height="28" rx="14"/><text class="pill-text" x="910" y="1163">NO</text>
+    <rect class="no-pill" x="879" y="1147" width="58" height="22" rx="11"/><text class="pill-text" x="908" y="1158">NO</text>
 
     <!-- Procurement and BAC -->
     <rect class="card gold" x="340" y="1254" width="520" height="92" rx="16"/>
@@ -147,9 +147,9 @@ pageStart('Procurement Process Workflow');
     <polygon class="decision" points="600,1702 860,1770 600,1838 340,1770"/>
     <text class="decision-text" x="600" y="1764"><tspan x="600">Does HoPE approve</tspan><tspan x="600" dy="22">the recommendation?</tspan></text>
     <path class="connector" d="M600 1838 V1866"/>
-    <rect class="yes-pill" x="566" y="1850" width="68" height="28" rx="14"/><text class="pill-text" x="600" y="1869">YES</text>
+    <rect class="yes-pill" x="568" y="1841" width="64" height="22" rx="11"/><text class="pill-text" x="600" y="1852">YES</text>
     <path class="return-path" d="M860 1770 H970 V68 H860"/>
-    <rect class="no-pill" x="878" y="1756" width="64" height="28" rx="14"/><text class="pill-text" x="910" y="1775">NO</text>
+    <rect class="no-pill" x="879" y="1759" width="58" height="22" rx="11"/><text class="pill-text" x="908" y="1770">NO</text>
     <rect class="card red" x="990" y="1732" width="520" height="76" rx="16"/>
     <text class="node-title" x="1250" y="1763" style="fill:#a62f44">Return to End-user</text>
     <text class="node-desc" x="1250" y="1786">Recommendation not approved.</text>
@@ -165,9 +165,9 @@ pageStart('Procurement Process Workflow');
     <polygon class="decision" points="600,1986 860,2054 600,2122 340,2054"/>
     <text class="decision-text" x="600" y="2048"><tspan x="600">Does HoPE approve</tspan><tspan x="600" dy="22">the recommendation?</tspan></text>
     <path class="connector" d="M600 2122 V2150"/>
-    <rect class="yes-pill" x="566" y="2134" width="68" height="28" rx="14"/><text class="pill-text" x="600" y="2153">YES</text>
+    <rect class="yes-pill" x="568" y="2125" width="64" height="22" rx="11"/><text class="pill-text" x="600" y="2136">YES</text>
     <path class="return-path" d="M860 2054 H970 V68 H860"/>
-    <rect class="no-pill" x="878" y="2040" width="64" height="28" rx="14"/><text class="pill-text" x="910" y="2059">NO</text>
+    <rect class="no-pill" x="879" y="2043" width="58" height="22" rx="11"/><text class="pill-text" x="908" y="2054">NO</text>
     <rect class="card red" x="990" y="2016" width="520" height="76" rx="16"/>
     <text class="node-title" x="1250" y="2047" style="fill:#a62f44">Project cancelled</text>
     <text class="node-desc" x="1250" y="2070">Contract disapproval cancels the project.</text>
