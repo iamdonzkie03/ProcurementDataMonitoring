@@ -215,6 +215,32 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 @media(prefers-reduced-motion:reduce){.dashboard-mini-card{transition:none}.dashboard-mini-card:hover{transform:none}}
 @media(max-width:1050px){.dashboard-mini-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.dashboard-mini-cards{grid-template-columns:1fr}.dashboard-mini-card{min-height:unset}}
+
+.procurement-process-workflow{width:100%;max-width:none;margin:24px 0 0;box-sizing:border-box;overflow:hidden}
+.procurement-process-workflow .workflow-intro{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.procurement-process-workflow .workflow-intro p{margin:6px 0 0;color:#64748b;font-size:13px;line-height:1.6}
+.procurement-process-workflow .workflow-phase{margin-top:20px;padding:18px;border:1px solid #e8edf3;border-radius:14px;background:linear-gradient(145deg,#fff,#fafbfd)}
+.procurement-process-workflow .workflow-phase-heading{display:flex;align-items:center;gap:10px;margin:0 0 14px;color:#344054;font-size:14px;font-weight:800}
+.procurement-process-workflow .workflow-phase-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 30px;width:30px;height:30px;border-radius:9px;background:#e9eef7;color:#4f6589;font-size:12px}
+.procurement-process-workflow .workflow-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
+.procurement-process-workflow .workflow-step{position:relative;min-width:0;padding:15px 15px 14px;border:1px solid #e4e9f0;border-radius:12px;background:#fff;box-shadow:0 2px 7px rgba(15,23,42,.035);animation:workflowStepEnter .55s both;animation-delay:calc(var(--step-index,0)*45ms);transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.procurement-process-workflow .workflow-step:hover{transform:translateY(-3px);border-color:#cbd5e1;box-shadow:0 8px 18px rgba(15,23,42,.07)}
+.procurement-process-workflow .workflow-step-top{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.procurement-process-workflow .workflow-step-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:#edf2f8;color:#526783;font-size:12px;font-weight:800}
+.procurement-process-workflow .workflow-step strong{font-size:12px;line-height:1.45;color:#344054}
+.procurement-process-workflow .workflow-step p{margin:0;color:#596579;font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.procurement-process-workflow .workflow-outcome{display:block;margin-top:9px;padding:7px 9px;border-radius:8px;font-size:11px;font-weight:700;line-height:1.5}
+.procurement-process-workflow .workflow-outcome.approved{background:#edf8f0;color:#34734a}
+.procurement-process-workflow .workflow-outcome.disapproved{background:#fff1f0;color:#a3423b}
+.procurement-process-workflow .workflow-outcome.info{background:#eef4ff;color:#49699c}
+.procurement-process-workflow .workflow-connector{display:flex;justify-content:center;align-items:center;height:24px;color:#9aa8bb;font-size:20px;animation:workflowArrowPulse 1.8s ease-in-out infinite}
+.procurement-process-workflow .workflow-finish{margin-top:18px;padding:14px 16px;border-radius:12px;background:#edf8f0;border:1px solid #cfe8d6;color:#34734a;font-size:12px;line-height:1.65}
+@keyframes workflowStepEnter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes workflowArrowPulse{0%,100%{opacity:.45;transform:translateY(-2px)}50%{opacity:1;transform:translateY(2px)}}
+@media(max-width:1000px){.procurement-process-workflow .workflow-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.procurement-process-workflow .workflow-phase{padding:12px}.procurement-process-workflow .workflow-steps{grid-template-columns:1fr}.procurement-process-workflow .workflow-step{animation-delay:0ms}}
+@media(prefers-reduced-motion:reduce){.procurement-process-workflow .workflow-step,.procurement-process-workflow .workflow-connector{animation:none;transition:none}.procurement-process-workflow .workflow-step:hover{transform:none}}
+
 </style>
 <div class="dashboard-mini-cards">
   <div class="dashboard-mini-card dashboard-pastel-blue">
@@ -266,7 +292,58 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 <div class="dashboard-pr-po-grid">
 <div class="panel dashboard-pr-po-card"><h2>Purchase Requests</h2><h3 style="margin:14px 0 8px;font-size:14px">Recent Purchase Requests</h3><div class="table-wrap"><table class="table"><tr><th>PR No.</th><th>Area/Unit</th><th>Division/Department</th><th>Status</th><th>Total Amount</th><th>Created</th></tr><?php foreach($recentPrDashboardRows as $r):?><tr><td><?=e($r['pr_no'])?></td><td><?=e($r['area']??'')?></td><td><?=e($r['division']??'')?></td><td><?=e($r['status']??'')?></td><td>₱<?=number_format((float)$r['total_amount'],2)?></td><td><?=!empty($r['created_at'])?e(date('M d, Y h:i A',strtotime($r['created_at']))):'—'?></td></tr><?php endforeach;?><?php if(!$recentPrDashboardRows):?><tr><td colspan="6" class="empty">No Purchase Requests have been created.</td></tr><?php endif;?></table></div><h3 style="margin:18px 0 8px;font-size:14px">Cancelled Purchase Requests</h3><div class="table-wrap"><table class="table"><tr><th>PR No.</th><th>Area/Unit</th><th>Division/Department</th><th>Reason</th></tr><?php foreach($cancelledPrRows as $r):?><tr><td><?=e($r['pr_no'])?></td><td><?=e($r['area']??'')?></td><td><?=e($r['division']??'')?></td><td><?=e($r['reason'])?></td></tr><?php endforeach;?><?php if(!$cancelledPrRows):?><tr><td colspan="4" class="empty">No cancelled Purchase Requests.</td></tr><?php endif;?></table></div></div>
 <div class="panel dashboard-pr-po-card"><h2>Purchase Orders</h2><h3 style="margin:14px 0 8px;font-size:14px">Recent Purchase Orders</h3><div class="table-wrap"><table class="table"><tr><th>PO No.</th><th>Supplier</th><th>Area/Unit</th><th>Division/Department</th><th>Status</th><th>Total Amount</th><th>Created</th></tr><?php foreach($recentPoDashboardRows as $r):?><tr><td><?=e($r['po_no'])?></td><td><?=e($r['supplier']??'')?></td><td><?=e($r['area']??'')?></td><td><?=e($r['division']??'')?></td><td><?=e($r['status']??'')?></td><td>₱<?=number_format((float)$r['total_amount'],2)?></td><td><?=!empty($r['created_at'])?e(date('M d, Y h:i A',strtotime($r['created_at']))):'—'?></td></tr><?php endforeach;?><?php if(!$recentPoDashboardRows):?><tr><td colspan="7" class="empty">No Purchase Orders have been created.</td></tr><?php endif;?></table></div><h3 style="margin:18px 0 8px;font-size:14px">Cancelled Purchase Orders</h3><div class="table-wrap"><table class="table"><tr><th>PO No.</th><th>Supplier</th><th>Area/Unit</th><th>Division/Department</th><th>Reason</th></tr><?php foreach($cancelledPoRows as $r):?><tr><td><?=e($r['po_no'])?></td><td><?=e($r['supplier']??'')?></td><td><?=e($r['area']??'')?></td><td><?=e($r['division']??'')?></td><td><?=e($r['reason'])?></td></tr><?php endforeach;?><?php if(!$cancelledPoRows):?><tr><td colspan="5" class="empty">No cancelled Purchase Orders.</td></tr><?php endif;?></table></div></div>
-</div><div class="grid"><div class="panel"><h2>Procurement Workflow</h2><p>1. Area/Unit prepares its PPMP.</p><p>2. Equivalent PPMP items are consolidated into the APP.</p><p>3. Authorized users create PRs from available PPMP quantities.</p><p>4. PR quantities automatically reduce remaining planned quantities.</p><p>5. Submitted/approved PRs can be converted into POs with supplier details.</p><a class="btn" href="app.php?year=<?=$year?>">View Consolidated APP</a></div></div><script>const ppmpEndUserData = <?=json_encode(array_map(static fn($row)=>['name'=>(string)$row['end_user'],'amount'=>(float)$row['total_amount']],$ppmpEndUserTotals),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
+</div><div class="panel procurement-process-workflow">
+  <div class="workflow-intro">
+    <div><h2 style="margin:0">Procurement Process Workflow</h2><p>Follow the process from PPMP preparation through bidding, award, and contract issuance.</p></div>
+    <a class="btn" href="app.php?year=<?=$year?>">View Consolidated APP</a>
+  </div>
+  <div class="workflow-phase">
+    <h3 class="workflow-phase-heading"><span class="workflow-phase-number">01</span> PPMP Preparation, Review &amp; Budget Approval</h3>
+    <div class="workflow-steps">
+      <article class="workflow-step" style="--step-index:1"><div class="workflow-step-top"><span class="workflow-step-number">1</span><strong>PPMP Preparation</strong></div><p>The End-user creates a PPMP and submits it to the Division Head for review.</p></article>
+      <article class="workflow-step" style="--step-index:2"><div class="workflow-step-top"><span class="workflow-step-number">2</span><strong>Division Head Review</strong></div><p>The Division Head reviews the PPMP and may approve or disapprove it.</p><span class="workflow-outcome info">Decision: Approve or disapprove</span></article>
+      <article class="workflow-step" style="--step-index:3"><div class="workflow-step-top"><span class="workflow-step-number">3</span><strong>Division Head Disapproves</strong></div><p>If disapproved, the PPMP is returned to the End-user.</p><span class="workflow-outcome disapproved">Outcome: Marked “Disapproved”</span></article>
+      <article class="workflow-step" style="--step-index:4"><div class="workflow-step-top"><span class="workflow-step-number">4</span><strong>Budget Section Review</strong></div><p>If the Division Head approves, the PPMP is forwarded to the Budget Section for approval and issuance of budget allocation. The Budget Officer may approve or disapprove it.</p></article>
+      <article class="workflow-step" style="--step-index:5"><div class="workflow-step-top"><span class="workflow-step-number">5</span><strong>Budget Officer Disapproves</strong></div><p>If disapproved by the Budget Officer, the PPMP is returned to the End-user.</p><span class="workflow-outcome disapproved">Outcome: Marked “Disapproved”</span></article>
+      <article class="workflow-step" style="--step-index:6"><div class="workflow-step-top"><span class="workflow-step-number">6</span><strong>Budget Approval</strong></div><p>If approved by the Budget Officer, the PPMP is returned to the End-user marked “Approved” and automatically included in the Annual Procurement Plan (APP).</p><span class="workflow-outcome approved">Outcome: Approved PPMP added to APP</span></article>
+    </div>
+  </div>
+  <div class="workflow-connector" aria-hidden="true">↓</div>
+  <div class="workflow-phase">
+    <h3 class="workflow-phase-heading"><span class="workflow-phase-number">02</span> Purchase Request &amp; HoPE Approval</h3>
+    <div class="workflow-steps">
+      <article class="workflow-step" style="--step-index:7"><div class="workflow-step-top"><span class="workflow-step-number">7</span><strong>Create Purchase Request</strong></div><p>The End-user creates a PR. Only items approved and listed in the APP are available for selection in a Purchase Request.</p></article>
+      <article class="workflow-step" style="--step-index:8"><div class="workflow-step-top"><span class="workflow-step-number">8</span><strong>CAF &amp; HoPE Routing</strong></div><p>The PR is forwarded to the Budget Office for issuance of the Certificate of Availability of Funds (CAF), then to the Head of the Procuring Entity (HoPE) for approval.</p></article>
+      <article class="workflow-step" style="--step-index:9"><div class="workflow-step-top"><span class="workflow-step-number">9</span><strong>HoPE Reviews PR</strong></div><p>The HoPE may approve or disapprove the Purchase Request.</p><span class="workflow-outcome info">Decision: Approve or disapprove</span></article>
+      <article class="workflow-step" style="--step-index:10"><div class="workflow-step-top"><span class="workflow-step-number">10</span><strong>PR Disapproved</strong></div><p>If the HoPE disapproves the PR, it is returned to the End-user.</p><span class="workflow-outcome disapproved">Outcome: Returned to End-user</span></article>
+      <article class="workflow-step" style="--step-index:11"><div class="workflow-step-top"><span class="workflow-step-number">11</span><strong>PR Approved &amp; BAC Review</strong></div><p>If approved, the PR is returned to the End-user and routed through the Procurement Section to the BAC for evaluation and verification of documentary requirements before posting the bid opportunity, if applicable.</p><span class="workflow-outcome approved">Next: Bid opportunity, if applicable</span></article>
+    </div>
+  </div>
+  <div class="workflow-connector" aria-hidden="true">↓</div>
+  <div class="workflow-phase">
+    <h3 class="workflow-phase-heading"><span class="workflow-phase-number">03</span> Bid Evaluation &amp; Recommendation of Award</h3>
+    <div class="workflow-steps">
+      <article class="workflow-step" style="--step-index:12"><div class="workflow-step-top"><span class="workflow-step-number">12</span><strong>End-user Bid Evaluation</strong></div><p>Bid results are forwarded to the End-user to evaluate the completeness and compliance of the bidder’s submission.</p></article>
+      <article class="workflow-step" style="--step-index:13"><div class="workflow-step-top"><span class="workflow-step-number">13</span><strong>Non-compliant Bid</strong></div><p>If the bidder is found non-compliant, the bid opportunity is marked as Failed.</p><span class="workflow-outcome disapproved">Outcome: Failed</span></article>
+      <article class="workflow-step" style="--step-index:14"><div class="workflow-step-top"><span class="workflow-step-number">14</span><strong>Compliant Bid</strong></div><p>If the bidder is found compliant, the bid opportunity is marked as Awarded.</p><span class="workflow-outcome approved">Outcome: Awarded</span></article>
+      <article class="workflow-step" style="--step-index:15"><div class="workflow-step-top"><span class="workflow-step-number">15</span><strong>BAC Re-evaluation</strong></div><p>The BAC, through the Procurement Section, re-evaluates bidders’ compliance requirements before recommending an award.</p></article>
+      <article class="workflow-step" style="--step-index:16"><div class="workflow-step-top"><span class="workflow-step-number">16</span><strong>Resolution Recommending Award</strong></div><p>BAC members issue a resolution recommending the award for approval by the HoPE.</p></article>
+    </div>
+  </div>
+  <div class="workflow-connector" aria-hidden="true">↓</div>
+  <div class="workflow-phase">
+    <h3 class="workflow-phase-heading"><span class="workflow-phase-number">04</span> HoPE Decision, Contract &amp; Closeout</h3>
+    <div class="workflow-steps">
+      <article class="workflow-step" style="--step-index:17"><div class="workflow-step-top"><span class="workflow-step-number">17</span><strong>Recommendation Disapproved</strong></div><p>If the HoPE disapproves the recommendation, it is returned to the End-user.</p><span class="workflow-outcome disapproved">Outcome: Returned to End-user</span></article>
+      <article class="workflow-step" style="--step-index:18"><div class="workflow-step-top"><span class="workflow-step-number">18</span><strong>Prepare Contract &amp; NTP</strong></div><p>If the HoPE approves the recommendation, the Procurement Section prepares the Purchase Order/Contract and Notice to Proceed (NTP) for HoPE approval.</p></article>
+      <article class="workflow-step" style="--step-index:19"><div class="workflow-step-top"><span class="workflow-step-number">19</span><strong>Contract Disapproved</strong></div><p>If the HoPE disapproves the Purchase Order/Contract, the entire project is considered cancelled.</p><span class="workflow-outcome disapproved">Outcome: Project cancelled</span></article>
+      <article class="workflow-step" style="--step-index:20"><div class="workflow-step-top"><span class="workflow-step-number">20</span><strong>Contract Approved &amp; Issued</strong></div><p>If approved, copies of the Purchase Order/Contract are emailed or forwarded to the winning bidder, who may begin obligations under the contract terms.</p><span class="workflow-outcome approved">Outcome: Winning bidder may proceed</span></article>
+      <article class="workflow-step" style="--step-index:21"><div class="workflow-step-top"><span class="workflow-step-number">21</span><strong>Recordkeeping</strong></div><p>The Procurement Section keeps the received approved copies of the Purchase Order/Contract and its NTP.</p></article>
+    </div>
+    <div class="workflow-finish"><strong>Process completion:</strong> Approved contract documents and the Notice to Proceed are issued to the winning bidder, and the Procurement Section retains the approved copies for its records.</div>
+  </div>
+</div>
+<script>const ppmpEndUserData = <?=json_encode(array_map(static fn($row)=>['name'=>(string)$row['end_user'],'amount'=>(float)$row['total_amount']],$ppmpEndUserTotals),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
 (function(){
   const canvas=document.getElementById('ppmpEndUserBarChart');
   if(!canvas || !ppmpEndUserData.length) return;
