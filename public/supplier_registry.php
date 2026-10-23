@@ -285,9 +285,6 @@ pageStart('Supplier Registry');
       <div class="supplier-heading-block">
         <h2 style="margin:0">Supplier Registry</h2>
         <p class="hint-text">Maintain the official registry of suppliers and their accreditation documents.</p>
-        <div class="supplier-table-select-all-toolbar" style="display:flex;align-items:center;gap:6px;margin:8px 0 0;font-size:12px">
-          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSupplierEntryRows"> Select All</label>
-        </div>
       </div>
     </div>
 
@@ -301,7 +298,7 @@ pageStart('Supplier Registry');
           <colgroup><col style="width:60px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:280px"></colgroup>
           <tbody>
           <tr class="supplier-entry-row">
-          <td class="supplier-field supplier-row-select-field"><label>Select</label><input type="checkbox" class="supplier-entry-select" aria-label="Select supplier entry row to remove" style="display:block!important;position:static!important;float:none!important;justify-self:start!important;width:15px!important;min-width:15px!important;max-width:15px!important;height:15px!important;margin:0!important;padding:0!important;transform:none!important;"></td>
+          <td class="supplier-field supplier-row-select-field"><label><input type="checkbox" id="selectAllSupplierEntryRows" aria-label="Select all supplier entry rows" title="Select all entry rows" style="display:block!important;width:15px!important;height:15px!important;margin:0!important;padding:0!important"></label><input type="checkbox" class="supplier-entry-select" aria-label="Select supplier entry row to remove" style="display:block!important;position:static!important;float:none!important;justify-self:start!important;width:15px!important;min-width:15px!important;max-width:15px!important;height:15px!important;margin:0!important;padding:0!important;transform:none!important;"></td>
           <td class="supplier-field supplier-company-field"><label>Supplier/Company</label><input class="input" name="supplier_company_name[]" value="<?=e($editing['supplier_company_name'])?>" placeholder="Supplier/Company Name" required></td>
           <td class="supplier-field supplier-address-field"><label>Address</label><input class="input" type="text" name="address[]" value="<?=e($editing['address'])?>" placeholder="Address"></td>
           <td class="supplier-field supplier-owner-field"><label>Owner</label><input class="input" name="owner[]" value="<?=e($editing['owner'])?>" placeholder="Owner"></td>
@@ -342,14 +339,14 @@ pageStart('Supplier Registry');
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
         <input type="hidden" name="action" value="bulk_delete">
         <div class="supplier-bulk-actions" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0;font-size:12px;width:100%;box-sizing:border-box">
-          <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="selectAllSuppliers"> Select All</label>
+          <span aria-hidden="true"></span>
           <button class="btn danger" type="submit" id="deleteSelectedSuppliers" style="margin-left:auto;flex:0 0 auto">Delete Selected</button>
         </div>
       <?php endif; ?>
       <div class="table-wrap supplier-table-wrap">
         <table class="table supplier-table <?=$isEditor?'supplier-table-editor':'supplier-table-viewer'?>" id="supplierTable">
           <colgroup><?php if($isEditor): ?><col class="col-select"><col class="col-number"><col class="col-company"><col class="col-permits"><col class="col-actions"><?php else: ?><col style="width:5%"><col style="width:35%"><col style="width:60%"><?php endif; ?></colgroup>
-          <thead><tr><?php if($isEditor): ?><th><span class="sr-only">Select</span></th><?php endif; ?><th>#</th><th>Supplier/Company Name</th><th>Permits and Licenses</th><?php if($isEditor): ?><th>Actions</th><?php endif; ?></tr></thead>
+          <thead><tr><?php if($isEditor): ?><th><input type="checkbox" id="selectAllSuppliers" aria-label="Select all registered suppliers" title="Select all registered suppliers" style="width:15px;height:15px;cursor:pointer"></th><?php endif; ?><th>#</th><th>Supplier/Company Name</th><th>Permits and Licenses</th><?php if($isEditor): ?><th>Actions</th><?php endif; ?></tr></thead>
           <tbody>
           <?php $i=1;foreach($rows as $r): ?>
           <tr>
