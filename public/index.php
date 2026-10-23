@@ -226,14 +226,21 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 @keyframes workflowOpenBook{from{transform:rotateX(2deg) translateY(5px);opacity:.8}to{transform:rotateX(0) translateY(0);opacity:1}}
 .procurement-process-workflow .workflow-phase-heading{display:flex;align-items:center;gap:12px;margin:0 0 28px;color:#344054;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .procurement-process-workflow .workflow-phase-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;border-radius:4px;background:#263b5b;color:#fff;font-size:12px}
-.procurement-process-workflow .workflow-steps{display:block;position:relative;perspective:1800px;transform-style:preserve-3d}
-.procurement-process-workflow .workflow-step{display:none;position:relative;min-width:0;min-height:225px;padding:22px 24px 28px 30px;border:1px solid #e5dcc8;border-radius:2px 5px 5px 2px;background:repeating-linear-gradient(0deg,#fffdf7 0,#fffdf7 31px,#ece5d7 32px,#fffdf7 33px);box-shadow:inset 9px 0 12px -13px #614d2c,4px 5px 0 rgba(199,181,143,.45);animation:none;transform-origin:left center;transform-style:preserve-3d;backface-visibility:hidden}
-.procurement-process-workflow .workflow-step:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(72,48,18,.16) 0%,rgba(255,255,255,0) 16%,rgba(255,255,255,0) 76%,rgba(72,48,18,.1) 100%);opacity:0;backface-visibility:hidden}
-.procurement-process-workflow .workflow-step.is-current{display:block;animation:workflowBookFlip 1.05s cubic-bezier(.35,.05,.2,1) both}
-.procurement-process-workflow .workflow-step.is-current:after{animation:workflowBookPageShade 1.05s ease-out both}
-@keyframes workflowBookFlip{0%{transform:rotateY(-178deg);opacity:1;box-shadow:inset 18px 0 28px -10px rgba(15,23,42,.65),12px 10px 24px rgba(15,23,42,.25)}45%{transform:rotateY(-90deg);opacity:1;box-shadow:inset 14px 0 24px -10px rgba(15,23,42,.5),8px 8px 20px rgba(15,23,42,.2)}75%{transform:rotateY(-20deg);opacity:1;box-shadow:inset 5px 0 12px -8px rgba(15,23,42,.28),3px 5px 12px rgba(15,23,42,.1)}100%{transform:rotateY(0);opacity:1;box-shadow:inset 9px 0 12px -13px #614d2c,4px 5px 0 rgba(199,181,143,.45)}}
-@keyframes workflowBookPageShade{0%,30%{opacity:.95}70%{opacity:.35}100%{opacity:0}}
-@media(max-width:620px){.procurement-process-workflow{padding:14px}.procurement-process-workflow .workflow-phase{padding:22px 14px 24px 25px;min-height:330px}.procurement-process-workflow .workflow-step{padding:16px 14px 20px;min-height:230px}}
+.procurement-process-workflow .workflow-phase{display:none!important}
+.procurement-process-workflow .workflow-spread{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);position:relative;isolation:isolate;perspective:1800px;transform-style:preserve-3d;margin-top:14px;min-height:390px;border:1px solid #c9b993;border-radius:5px;background:#dfd0b1;box-shadow:3px 5px 0 #d9c9a8,6px 9px 0 #c7b58f,0 14px 22px rgba(53,40,20,.18);overflow:hidden}
+.procurement-process-workflow .workflow-spread:after{content:"";position:absolute;z-index:4;top:0;bottom:0;left:50%;width:20px;transform:translateX(-50%);background:linear-gradient(90deg,rgba(76,54,25,.28),rgba(255,255,255,.5) 45%,rgba(76,54,25,.22));pointer-events:none}
+.procurement-process-workflow .workflow-spread-page{display:none;position:relative;min-width:0;min-height:390px;padding:28px 28px 32px;background:repeating-linear-gradient(0deg,#fffdf7 0,#fffdf7 31px,#ece5d7 32px,#fffdf7 33px);box-shadow:inset 10px 0 14px -14px #614d2c;transform-style:preserve-3d;backface-visibility:hidden}
+.procurement-process-workflow .workflow-spread-page.left{border-right:1px solid #c9b993;box-shadow:inset -10px 0 14px -14px #614d2c,inset 12px 0 12px -15px #614d2c}
+.procurement-process-workflow .workflow-spread-page.right{box-shadow:inset 10px 0 14px -14px #614d2c,inset -12px 0 12px -15px #614d2c}
+.procurement-process-workflow .workflow-spread-page.is-current{display:block}
+.procurement-process-workflow .workflow-spread-page .workflow-step{display:block;position:relative;min-width:0;min-height:260px;padding:22px 12px 28px;border:0;border-radius:0;background:transparent;box-shadow:none;animation:none;transform:none;backface-visibility:visible}
+.procurement-process-workflow .workflow-spread-page .workflow-step:after{display:none}
+.procurement-process-workflow .workflow-page-phase{margin-bottom:20px;color:#85683d;font-size:10px;line-height:1.5;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.procurement-process-workflow .workflow-spread-page.left.is-turning{transform-origin:right center;animation:workflowLeftPageTurn .8s cubic-bezier(.3,.05,.2,1) both}
+.procurement-process-workflow .workflow-spread-page.right.is-turning{transform-origin:left center;animation:workflowRightPageTurn .8s cubic-bezier(.3,.05,.2,1) both}
+@keyframes workflowLeftPageTurn{0%{transform:rotateY(0);filter:brightness(1);box-shadow:inset -10px 0 14px -14px #614d2c}45%{transform:rotateY(-90deg);filter:brightness(.72);box-shadow:12px 6px 22px rgba(47,32,11,.3)}100%{transform:rotateY(0);filter:brightness(1)}}
+@keyframes workflowRightPageTurn{0%{transform:rotateY(0);filter:brightness(1);box-shadow:inset 10px 0 14px -14px #614d2c}45%{transform:rotateY(90deg);filter:brightness(.72);box-shadow:-12px 6px 22px rgba(47,32,11,.3)}100%{transform:rotateY(0);filter:brightness(1)}}
+@media(max-width:700px){.procurement-process-workflow{padding:14px}.procurement-process-workflow .workflow-spread{grid-template-columns:1fr;min-height:0}.procurement-process-workflow .workflow-spread:after{display:none}.procurement-process-workflow .workflow-spread-page{min-height:0;padding:20px 18px;border-right:0!important;border-bottom:1px solid #c9b993}.procurement-process-workflow .workflow-spread-page .workflow-step{min-height:190px;padding:12px 4px 18px}.procurement-process-workflow .workflow-spread-page.right{display:none!important}}
 @media(prefers-reduced-motion:reduce){.procurement-process-workflow .workflow-step.is-current,.procurement-process-workflow .workflow-step.is-current:after,.procurement-process-workflow .workflow-phase.is-current{animation:none}}
 .procurement-process-workflow .workflow-step-top{display:flex;align-items:center;gap:18px;margin-bottom:18px}
 .procurement-process-workflow .workflow-step-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 66px;width:66px;height:66px;border-radius:50%;background:#e8eef6;color:#263b5b;font-size:22px;font-weight:800}
@@ -378,42 +385,66 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
   const progressTrack=root.querySelector('.workflow-progress');
   const finish=root.querySelector('.workflow-finish');
   if(!steps.length||!previous||!next)return;
-  let current=0;
-  const phaseForStep=step=>step.closest('.workflow-phase');
-  function showSlide(index){
-    const nextIndex=Math.max(0,Math.min(index,steps.length-1));
-    if(nextIndex===current && steps[current] && steps[current].classList.contains('is-current'))return;
-    current=nextIndex;
-    steps.forEach((step,i)=>{
-      step.classList.remove('is-current');
-      if(i===current){
-        // Restart the page-turn animation only when the reader changes page.
-        void step.offsetWidth;
-        step.classList.add('is-current');
-      }
+  let spreadIndex=0;
+  const spreadCount=Math.ceil(steps.length/2);
+  const spread=document.createElement('div');
+  spread.className='workflow-spread';
+  spread.setAttribute('aria-label','Open book showing two workflow pages');
+  const pages=[];
+  steps.forEach((step,index)=>{
+    const phase=step.closest('.workflow-phase');
+    const heading=phase ? phase.querySelector('.workflow-phase-heading') : null;
+    const page=document.createElement('section');
+    page.className='workflow-spread-page '+(index%2===0?'left':'right');
+    page.setAttribute('aria-label','Workflow page '+(index+1));
+    const phaseLabel=document.createElement('div');
+    phaseLabel.className='workflow-page-phase';
+    phaseLabel.textContent=heading ? heading.textContent.replace(/^\\s*\\d+\\s*/, '').trim() : 'Procurement Process Workflow';
+    page.appendChild(phaseLabel);
+    page.appendChild(step);
+    spread.appendChild(page);
+    pages.push(page);
+  });
+  const controls=root.querySelector('.workflow-presentation-controls');
+  if(controls)controls.insertAdjacentElement('beforebegin',spread);
+  function showSpread(index,animate=true){
+    const nextIndex=Math.max(0,Math.min(index,spreadCount-1));
+    if(nextIndex===spreadIndex && pages.some((page,i)=>page.classList.contains('is-current')))return;
+    const movingForward=nextIndex>spreadIndex;
+    const changed=nextIndex!==spreadIndex;
+    spreadIndex=nextIndex;
+    pages.forEach((page,i)=>{
+      const active=i===spreadIndex*2||i===spreadIndex*2+1;
+      page.classList.remove('is-current','is-turning');
+      if(active)page.classList.add('is-current');
     });
-    const activePhase=phaseForStep(steps[current]);
-    phases.forEach(phase=>phase.classList.toggle('is-current',phase===activePhase));
-    if(finish)finish.classList.toggle('is-current',current===steps.length-1);
-    previous.disabled=current===0;
-    next.disabled=current===steps.length-1;
-    previous.setAttribute('aria-label',current===0?'Beginning of book':'Turn to previous page');
-    next.setAttribute('aria-label',current===steps.length-1?'End of book':'Turn to next page');
-    next.textContent=current===steps.length-1?'End of book':'Next page ›';
-    if(count)count.textContent=String(current+1).padStart(2,'0')+' / '+String(steps.length).padStart(2,'0');
-    if(progress)progress.style.width=((current+1)/steps.length*100)+'%';
-    if(progressTrack)progressTrack.setAttribute('aria-valuenow',String(current+1));
+    if(animate&&changed){
+      const turnPage=pages[movingForward?Math.min(spreadIndex*2,pages.length-1):Math.min(spreadIndex*2+1,pages.length-1)];
+      if(turnPage){void turnPage.offsetWidth;turnPage.classList.add('is-turning');turnPage.addEventListener('animationend',()=>turnPage.classList.remove('is-turning'),{once:true});}
+    }
+    previous.disabled=spreadIndex===0;
+    next.disabled=spreadIndex===spreadCount-1;
+    previous.setAttribute('aria-label',spreadIndex===0?'Beginning of book':'Turn to previous spread');
+    next.setAttribute('aria-label',spreadIndex===spreadCount-1?'End of book':'Turn to next spread');
+    next.textContent=spreadIndex===spreadCount-1?'End of book':'Next spread ›';
+    if(count){
+      const first=spreadIndex*2+1;
+      const last=Math.min(first+1,steps.length);
+      count.textContent=String(first).padStart(2,'0')+'–'+String(last).padStart(2,'0')+' / '+String(steps.length).padStart(2,'0');
+    }
+    if(progress)progress.style.width=(Math.min((spreadIndex+1)*2,steps.length)/steps.length*100)+'%';
+    if(progressTrack)progressTrack.setAttribute('aria-valuenow',String(Math.min((spreadIndex+1)*2,steps.length)));
+    if(finish)finish.classList.toggle('is-current',spreadIndex===spreadCount-1);
   }
-  function navigateTo(index){showSlide(index);}
-  previous.addEventListener('click',()=>navigateTo(current-1));
-  next.addEventListener('click',()=>navigateTo(current+1));
-  // The book stays open until the reader chooses to turn a page.
+  function navigateTo(index){showSpread(index,true);}
+  previous.addEventListener('click',()=>navigateTo(spreadIndex-1));
+  next.addEventListener('click',()=>navigateTo(spreadIndex+1));
   root.addEventListener('keydown',event=>{
     if(event.altKey||event.ctrlKey||event.metaKey)return;
-    if(event.key==='ArrowLeft'){event.preventDefault();navigateTo(current-1);}
-    if(event.key==='ArrowRight'){event.preventDefault();navigateTo(current+1);}
+    if(event.key==='ArrowLeft'){event.preventDefault();navigateTo(spreadIndex-1);}
+    if(event.key==='ArrowRight'){event.preventDefault();navigateTo(spreadIndex+1);}
   });
-  showSlide(0);
+  showSpread(0,false);
 })();
 </script>
 <script>const ppmpEndUserData = <?=json_encode(array_map(static fn($row)=>['name'=>(string)$row['end_user'],'amount'=>(float)$row['total_amount']],$ppmpEndUserTotals),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
