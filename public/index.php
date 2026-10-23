@@ -172,21 +172,6 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
     <div class="metric">₱<?=number_format($currentAppTotal,2)?></div>
     <div class="hint">Total planned budget for the current calendar year</div>
   </div>
-  <div class="dashboard-mini-card dashboard-pastel-green">
-    <div class="label">Divisions / Departments</div>
-    <div class="metric"><?=number_format($divisionCount)?></div>
-    <div class="hint"><?=number_format($areaUnitCount)?> Areas / Units under them</div>
-  </div>
-  <div class="dashboard-mini-card dashboard-pastel-lavender">
-    <div class="label">Purchase Requests</div>
-    <div class="metric"><?=number_format($prDashboardCount)?></div>
-    <div class="hint"><?php if($recentPrDashboard): ?><b>Last created:</b> <?=e($recentPrDashboard['pr_no']??'')?> · <?=e(date('M d, Y',strtotime($recentPrDashboard['created_at'])))?><?php else: ?>No Purchase Requests created yet<?php endif; ?></div>
-  </div>
-  <div class="dashboard-mini-card dashboard-pastel-peach">
-    <div class="label">Purchase Orders</div>
-    <div class="metric"><?=number_format($poDashboardCount)?></div>
-    <div class="hint"><?php if($recentPoDashboard): ?><b>Last created:</b> <?=e($recentPoDashboard['po_no']??'')?> · <?=e(date('M d, Y',strtotime($recentPoDashboard['created_at'])))?><?php else: ?>No Purchase Orders created yet<?php endif; ?></div>
-  </div>
   <div class="dashboard-mini-card dashboard-pastel-pink">
     <div class="label">Supplier Registry</div>
     <div class="metric"><?=number_format($supplierCount)?></div>
