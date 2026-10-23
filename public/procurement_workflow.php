@@ -42,6 +42,14 @@ pageStart('Procurement Process Workflow');
 @media print{.proc-tree .tree-actions{display:none}.proc-tree .tree-phase{break-inside:avoid;box-shadow:none}.proc-tree .tree-node,.proc-tree .decision-shape{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 
 
+/* Cross-stage connectors keep the full process as one continuous flowchart */
+.proc-tree .stage-connector{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:94px;margin:0 auto;text-align:center;color:#536780;font-size:12px;font-weight:700}
+.proc-tree .stage-connector span{display:inline-block;padding:7px 14px;border:1px solid #cbd8e8;border-radius:999px;background:#f4f8ff}
+.proc-tree .stage-connector i{position:relative;display:block;width:2px;height:28px;background:#8fa1b8}
+.proc-tree .stage-connector i:after{content:"";position:absolute;bottom:0;left:-4px;width:8px;height:8px;border-right:2px solid #8fa1b8;border-bottom:2px solid #8fa1b8;transform:rotate(45deg)}
+@media(max-width:720px){.proc-tree .stage-connector{min-height:86px;padding:0 8px}.proc-tree .stage-connector span{max-width:100%;box-sizing:border-box}}
+@media print{.proc-tree .stage-connector{break-inside:avoid}}
+
 /* Keep every procurement stage inside one continuous flowchart canvas */
 .proc-tree .flowchart-canvas{display:block;position:relative;padding:28px 28px 24px;border:1px solid #d9e2ee;border-radius:16px;background:#fff;box-shadow:0 6px 24px rgba(15,23,42,.055);overflow:hidden}
 .proc-tree .tree-phase{display:contents!important}
@@ -111,7 +119,7 @@ pageStart('Procurement Process Workflow');
   </div>
   <div class="flowchart-canvas">
   <section class="tree-phase">
-    <h3 class="phase-title"><span class="phase-no">01</span> PPMP Preparation, Review &amp; Budget Approval</h3>
+    
     <div class="tree-node start"><strong>End-user prepares PPMP</strong><span>Create the PPMP and submit it to the Division Head.</span></div>
     <div class="tree-arrow"></div>
     <div class="decision"><div class="decision-shape">Division Head approves PPMP?</div></div>
@@ -126,8 +134,9 @@ pageStart('Procurement Process Workflow');
     </div>
     <p class="tree-note">Only approved PPMP items are available for inclusion in the APP and subsequent Purchase Requests.</p>
   </section>
+  <div class="stage-connector"><span>Approved PPMP items included in the APP</span><i></i></div>
   <section class="tree-phase">
-    <h3 class="phase-title"><span class="phase-no">02</span> Purchase Request &amp; HoPE Approval</h3>
+    
     <div class="tree-node start"><strong>Create Purchase Request (PR)</strong><span>Select approved APP items; route to the Budget Office for CAF issuance.</span></div>
     <div class="tree-arrow"></div><div class="tree-node"><strong>Budget Office issues CAF</strong><span>Certificate of Availability of Funds; forward PR to the Head of the Procuring Entity (HoPE).</span></div>
     <div class="tree-arrow"></div><div class="decision"><div class="decision-shape">Does HoPE approve the PR?</div></div>
@@ -136,8 +145,9 @@ pageStart('Procurement Process Workflow');
       <div class="branch"><span class="branch-label no">NO</span><div class="tree-arrow"></div><div class="tree-node return"><strong>PR returned to End-user</strong><span>Process stops until the request is corrected and resubmitted, as applicable.</span></div></div>
     </div>
   </section>
+  <div class="stage-connector"><span>HoPE-approved PR proceeds to procurement / bidding</span><i></i></div>
   <section class="tree-phase">
-    <h3 class="phase-title"><span class="phase-no">03</span> Bid Evaluation &amp; Recommendation of Award</h3>
+    
     <div class="tree-node"><strong>End-user evaluates bid documents</strong><span>Assess completeness and compliance of the bidder’s submission.</span></div>
     <div class="tree-arrow"></div><div class="decision"><div class="decision-shape">Is the bid compliant?</div></div>
     <div class="branch-columns">
@@ -145,8 +155,9 @@ pageStart('Procurement Process Workflow');
       <div class="branch"><span class="branch-label no">NO</span><div class="tree-arrow"></div><div class="tree-node return"><strong>Bid marked Failed</strong><span>Non-compliant bid opportunity is recorded as failed.</span></div></div>
     </div>
   </section>
+  <div class="stage-connector"><span>BAC recommendation submitted to HoPE</span><i></i></div>
   <section class="tree-phase">
-    <h3 class="phase-title"><span class="phase-no">04</span> HoPE Decision, Contract &amp; Closeout</h3>
+    
     <div class="tree-node"><strong>HoPE reviews recommendation of award</strong><span>Decide whether to approve or disapprove the BAC recommendation.</span></div>
     <div class="tree-arrow"></div><div class="decision"><div class="decision-shape">Does HoPE approve the recommendation?</div></div>
     <div class="branch-columns">
