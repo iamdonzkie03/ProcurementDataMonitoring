@@ -220,13 +220,15 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 .procurement-process-workflow .workflow-intro{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
 .procurement-process-workflow .workflow-intro p{margin:6px 0 0;color:#64748b;font-size:13px;line-height:1.6}
 .procurement-process-workflow .workflow-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.procurement-process-workflow .workflow-phase{display:none;margin-top:14px;padding:26px 30px 28px;border:1px solid #e2e8f0;border-radius:8px;background:linear-gradient(135deg,#fff 0%,#f8fafc 100%);min-height:310px}
+.procurement-process-workflow .workflow-phase{display:none;margin-top:14px;padding:26px 30px 28px;border:1px solid #e2e8f0;border-radius:8px;background:linear-gradient(135deg,#fff 0%,#f8fafc 100%);min-height:310px;perspective:1200px}
 .procurement-process-workflow .workflow-phase.is-current{display:block}
 .procurement-process-workflow .workflow-phase-heading{display:flex;align-items:center;gap:12px;margin:0 0 28px;color:#344054;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .procurement-process-workflow .workflow-phase-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;border-radius:4px;background:#263b5b;color:#fff;font-size:12px}
 .procurement-process-workflow .workflow-steps{display:block}
-.procurement-process-workflow .workflow-step{display:none;position:relative;min-width:0;padding:8px 0 18px;border:0;border-radius:0;background:transparent;box-shadow:none;animation:none;transition:none}
-.procurement-process-workflow .workflow-step.is-current{display:block}
+.procurement-process-workflow .workflow-step{display:none;position:relative;min-width:0;padding:8px 0 18px;border:0;border-radius:0;background:transparent;box-shadow:none;animation:none;transition:none;transform-origin:left center;backface-visibility:hidden}
+.procurement-process-workflow .workflow-step.is-current{display:block;animation:workflowBookFlip .7s cubic-bezier(.2,.75,.25,1) both}
+@keyframes workflowBookFlip{0%{transform:perspective(1200px) rotateY(-78deg);opacity:.35;filter:brightness(.8)}55%{transform:perspective(1200px) rotateY(8deg);opacity:1;filter:brightness(1.03)}100%{transform:perspective(1200px) rotateY(0);opacity:1;filter:brightness(1)}}
+@media(prefers-reduced-motion:reduce){.procurement-process-workflow .workflow-step.is-current{animation:none}}
 .procurement-process-workflow .workflow-step-top{display:flex;align-items:center;gap:18px;margin-bottom:18px}
 .procurement-process-workflow .workflow-step-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 66px;width:66px;height:66px;border-radius:50%;background:#e8eef6;color:#263b5b;font-size:22px;font-weight:800}
 .procurement-process-workflow .workflow-step strong{font-size:clamp(20px,2.4vw,30px);line-height:1.25;color:#263449;font-weight:750}
