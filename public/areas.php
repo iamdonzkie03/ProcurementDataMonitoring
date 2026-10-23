@@ -846,7 +846,7 @@ document.addEventListener('DOMContentLoaded',function(){
 .management-column:first-child .management-list-content .table td:nth-child(4){width:27%}
 .management-column:first-child .management-list-content .table th:nth-child(5),
 .management-column:first-child .management-list-content .table td:nth-child(5){width:24%}
-.management-column:first-child .management-list-content .table .actions{display:flex;gap:5px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap;width:max-content;max-width:100%}
+.management-column:first-child .management-list-content .table .actions{display:flex;gap:5px;align-items:center;justify-content:center;flex-wrap:nowrap;white-space:nowrap;width:100%;max-width:100%;box-sizing:border-box}
 .management-column:first-child .management-list-content .table .master-action{width:58px;min-width:58px;height:30px;padding:3px 4px;font-size:11px}
 .management-column:first-child .management-list-content .table .master-action-form{margin:0;display:inline-flex;flex:0 0 auto}
 /* Keep the Area/Unit List compact enough to fit the right-hand panel. */
@@ -870,7 +870,7 @@ document.addEventListener('DOMContentLoaded',function(){
 .management-column:nth-child(2) .management-list-content #areaTable td:nth-child(3){line-height:1.35}
 .management-column:nth-child(2) .management-list-content #areaTable .master-action{width:100%;min-width:0;max-width:54px;box-sizing:border-box;justify-content:center}
 .management-column:nth-child(2) .management-list-content .table ul{padding-left:14px!important}
-.management-column:nth-child(2) .management-list-content .table .actions{display:flex;gap:3px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;white-space:nowrap;width:100%;max-width:100%}
+.management-column:nth-child(2) .management-list-content .table .actions{display:flex;gap:3px;align-items:center;justify-content:center;flex-wrap:nowrap;white-space:nowrap;width:100%;max-width:100%;box-sizing:border-box}
 .management-column:nth-child(2) .management-list-content .table .master-action{width:42px;min-width:42px;height:28px;padding:2px 3px;font-size:10px}
 .management-column:nth-child(2) .management-list-content .table .master-action-form{margin:0;display:inline-flex;flex:0 0 auto}
  .area-name-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(150px,1fr) 170px minmax(180px,1.2fr) 140px;gap:8px;margin-bottom:8px;align-items:start}.area-name-row .remove-area-name{width:140px;min-width:140px;justify-self:end;box-sizing:border-box}.area-name-actions{display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin:4px 0 8px}.area-name-help{display:block;text-align:right}.area-name-actions #add-area-name,.area-unit-add-panel form>.actions>button[type="submit"]{width:140px;min-width:140px;box-sizing:border-box}.area-person-role{display:flex;gap:10px;align-items:center;min-height:38px;white-space:nowrap}.area-person-role label{display:flex;gap:4px;align-items:center;font-size:12px;margin:0}@media(max-width:900px){.area-name-row{grid-template-columns:1fr 1fr}}
