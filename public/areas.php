@@ -426,7 +426,7 @@ if(!$embedded) pageStart('Area/Unit Management');
           <button class="btn danger" type="submit" id="deleteSelectedDivisions" disabled>Delete Selected</button>
         </div>
         <div class="table-wrap"><table class="table" id="divisionTable">
-          <tr><th style="width:70px"><label style="display:flex;align-items:center;gap:5px;margin:0;font-size:12px"><input type="checkbox" id="selectAllDivisions"> Select All</label></th><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized Person</th><th>Actions</th></tr>
+          <tr><th style="width:70px;text-align:center"><input type="checkbox" id="selectAllDivisions" aria-label="Select all Division/Department rows" title="Select all"></th><th>Division/Department</th><th>Division/Department Head</th><th>PPMP Supervisor/Authorized Person</th><th>Actions</th></tr>
           <?php foreach($divisions as $d): ?>
           <tr data-management-search-id="<?=e((string)$d['id'])?>" data-management-search-name="<?=e($d['name'])?>" data-management-search-head="<?=e($d['division_head'])?>">
             <td><input type="checkbox" class="division-select" name="selected_division_ids[]" value="<?=(int)$d['id']?>" aria-label="Select <?=e($d['name'])?>"></td>
@@ -510,7 +510,7 @@ if(!$embedded) pageStart('Area/Unit Management');
           <button class="btn danger" type="submit" id="deleteSelectedAreas" disabled>Delete Selected</button>
         </div>
         <div class="table-wrap"><table class="table" id="areaTable">
-          <thead><tr><th style="width:70px"><label style="display:flex;align-items:center;gap:5px;margin:0;font-size:12px"><input type="checkbox" id="selectAllAreas"> Select All</label></th><th>Area/Unit</th><th>Department/Division</th><th>Code</th><th>Actions</th></tr></thead>
+          <thead><tr><th style="width:70px;text-align:center"><input type="checkbox" id="selectAllAreas" aria-label="Select all Area/Unit rows" title="Select all"></th><th>Area/Unit</th><th>Department/Division</th><th>Code</th><th>Actions</th></tr></thead>
           <tbody>
           <?php foreach($rows as $r): ?><?php
             $areaPeople=array_values(array_filter($people,fn($p)=>(int)$p['area_id']===(int)$r['id']));
