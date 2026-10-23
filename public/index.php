@@ -240,7 +240,7 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 .procurement-process-workflow .workflow-spread-page.right.is-turning{transform-origin:left center;animation:workflowRightPageTurn .8s cubic-bezier(.3,.05,.2,1) both}
 @keyframes workflowLeftPageTurn{0%{transform:rotateY(0);filter:brightness(1);box-shadow:inset -10px 0 14px -14px #614d2c}45%{transform:rotateY(-90deg);filter:brightness(.72);box-shadow:12px 6px 22px rgba(47,32,11,.3)}100%{transform:rotateY(0);filter:brightness(1)}}
 @keyframes workflowRightPageTurn{0%{transform:rotateY(0);filter:brightness(1);box-shadow:inset 10px 0 14px -14px #614d2c}45%{transform:rotateY(90deg);filter:brightness(.72);box-shadow:-12px 6px 22px rgba(47,32,11,.3)}100%{transform:rotateY(0);filter:brightness(1)}}
-@media(max-width:700px){.procurement-process-workflow{padding:14px}.procurement-process-workflow .workflow-spread{grid-template-columns:1fr;min-height:0}.procurement-process-workflow .workflow-spread:after{display:none}.procurement-process-workflow .workflow-spread-page{min-height:0;padding:20px 18px;border-right:0!important;border-bottom:1px solid #c9b993}.procurement-process-workflow .workflow-spread-page .workflow-step{min-height:190px;padding:12px 4px 18px}.procurement-process-workflow .workflow-spread-page.right{display:none!important}}
+@media(max-width:700px){.procurement-process-workflow{padding:14px}.procurement-process-workflow .workflow-spread{grid-template-columns:1fr;min-height:0}.procurement-process-workflow .workflow-spread:after{display:none}.procurement-process-workflow .workflow-spread-page{min-height:0;padding:20px 18px;border-right:0!important;border-bottom:1px solid #c9b993}.procurement-process-workflow .workflow-spread-page .workflow-step{min-height:190px;padding:12px 4px 18px}}
 @media(prefers-reduced-motion:reduce){.procurement-process-workflow .workflow-step.is-current,.procurement-process-workflow .workflow-step.is-current:after,.procurement-process-workflow .workflow-phase.is-current{animation:none}}
 .procurement-process-workflow .workflow-step-top{display:flex;align-items:center;gap:18px;margin-bottom:18px}
 .procurement-process-workflow .workflow-step-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 66px;width:66px;height:66px;border-radius:50%;background:#e8eef6;color:#263b5b;font-size:22px;font-weight:800}
@@ -407,6 +407,7 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
   });
   const controls=root.querySelector('.workflow-presentation-controls');
   if(controls)controls.insertAdjacentElement('beforebegin',spread);
+  if(finish)spread.insertAdjacentElement('afterend',finish);
   function showSpread(index,animate=true){
     const nextIndex=Math.max(0,Math.min(index,spreadCount-1));
     if(nextIndex===spreadIndex && pages.some((page,i)=>page.classList.contains('is-current')))return;
