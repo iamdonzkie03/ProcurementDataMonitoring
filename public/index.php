@@ -170,7 +170,7 @@ $recentArgs=$isSupervisor&&$contextDivisionId>0?[$recentPpmpYear,$contextDivisio
 $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id'.$recentSql.' ORDER BY p.created_at DESC');$recent->execute($recentArgs);$recentAllRows=$recent->fetchAll();$recentPageSize=10;$recentTotalRows=count($recentAllRows);$recentTotalPages=max(1,(int)ceil($recentTotalRows/$recentPageSize));$recentPage=max(1,min($recentTotalPages,(int)($_GET['ppmp_page']??1)));$recentRows=array_slice($recentAllRows,($recentPage-1)*$recentPageSize,$recentPageSize);pageStart('Dashboard');
 ?><style>
 .dashboard-mini-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-.dashboard-pr-po-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch;width:100%}
+.dashboard-pr-po-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:stretch;width:100%;margin-top:24px}
 .dashboard-pr-po-card{min-width:0;width:100%;height:100%;box-sizing:border-box}
 .dashboard-pr-po-card .table-wrap{max-width:100%;overflow-x:auto}
 @media(max-width:760px){.dashboard-pr-po-grid{grid-template-columns:1fr}}
