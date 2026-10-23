@@ -16,8 +16,8 @@ pageStart('Procurement Process Workflow');
 .proc-infographic .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
 .proc-infographic .svg-scroll{overflow-x:auto;padding:12px 12px 28px}
 .proc-infographic svg{display:block;width:100%;height:auto;min-width:1000px;margin:0 auto}
-.proc-infographic .connector{fill:none;stroke:#5282b3;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arr)}
-.proc-infographic .return-path{fill:none;stroke:#d34e61;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrRed);stroke-dasharray:8 7}
+.proc-infographic .connector{fill:none;stroke:#5282b3;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arr)}
+.proc-infographic .return-path{fill:none;stroke:#d34e61;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#arrRed);stroke-dasharray:5 6}
 .proc-infographic .card{stroke-width:2.2;filter:url(#shadow)}
 .proc-infographic .blue{fill:#e4f1ff;stroke:#5d91c5}
 .proc-infographic .gold{fill:#fff3c9;stroke:#d1a63b}
@@ -50,8 +50,8 @@ pageStart('Procurement Process Workflow');
   <div class="svg-scroll">
    <svg viewBox="0 0 1600 2530" role="img" aria-label="Procurement process flowchart based on the supplied Excel diagram">
     <defs>
-     <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5282b3"/></marker>
-     <marker id="arrRed" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#d34e61"/></marker>
+     <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#5282b3"/></marker>
+     <marker id="arrRed" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#d34e61"/></marker>
      <filter id="shadow" x="-15%" y="-15%" width="130%" height="145%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#294969" flood-opacity=".15"/></filter>
     </defs>
     <!-- Uniform sizing: every process/outcome card is 520px wide; decision diamonds span the same 520px width. -->
