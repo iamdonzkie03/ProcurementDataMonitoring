@@ -195,10 +195,10 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 .dashboard-pastel-sky{background:linear-gradient(145deg,#fff 0%,#f5f9fb 100%);color:#5f879a}
 .dashboard-pastel-sky:before{background:#5f879a}
 .dashboard-enduser-chart{margin-top:18px}
-.dashboard-enduser-chart-layout{display:grid;grid-template-columns:minmax(220px,.9fr) minmax(260px,1.1fr);align-items:center;gap:24px}
-.dashboard-enduser-chart-visual{display:flex;align-items:center;justify-content:center;min-height:260px}
-#ppmpEndUserPieChart{display:block;width:100%;max-width:320px;height:auto;aspect-ratio:1}
-.dashboard-enduser-legend{display:flex;flex-direction:column;gap:9px;max-height:320px;overflow:auto;padding:2px 4px}
+.dashboard-enduser-chart-layout{display:flex;flex-direction:column;gap:18px}
+.dashboard-enduser-chart-visual{display:block;width:100%;overflow-x:auto;overflow-y:hidden;padding:4px 0 10px}
+#ppmpEndUserPieChart{display:block;height:390px;max-width:none}
+.dashboard-enduser-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px;max-height:280px;overflow:auto;padding:2px 4px}
 .dashboard-enduser-legend-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 10px;border:1px solid #edf0f3;border-radius:9px;background:#fff}
 .dashboard-enduser-legend-swatch{width:10px;height:10px;border-radius:3px}
 .dashboard-enduser-legend-name{font-size:12px;font-weight:600;color:#475569;overflow-wrap:anywhere}
@@ -254,8 +254,8 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
   </div>
   <?php if($ppmpEndUserTotals): ?>
   <div class="dashboard-enduser-chart-layout">
-    <div class="dashboard-enduser-chart-visual"><canvas id="ppmpEndUserPieChart" width="320" height="320" role="img" aria-label="Pie chart showing PPMP planned amounts by end-user for fiscal year <?= (int)$ppmpEndUserYear ?>"></canvas></div>
-    <div class="dashboard-enduser-legend" id="ppmpEndUserPieLegend"><?php foreach($ppmpEndUserTotals as $i=>$row): $pct=$ppmpEndUserChartTotal>0?((float)$row['total_amount']/$ppmpEndUserChartTotal*100):0; ?><div class="dashboard-enduser-legend-row"><span class="dashboard-enduser-legend-swatch" data-chart-index="<?=$i?>"></span><div class="dashboard-enduser-legend-name"><?=e($row['end_user'])?><span class="dashboard-enduser-legend-percent"><?=number_format($pct,1)?>% of total</span></div><div class="dashboard-enduser-legend-value">₱<?=number_format((float)$row['total_amount'],2)?></div></div><?php endforeach; ?></div>
+    <div class="dashboard-enduser-chart-visual"><canvas id="ppmpEndUserBarChart" width="900" height="390" role="img" aria-label="Vertical bar chart showing each end-user's share of the PPMP planned budget for fiscal year <?= (int)$ppmpEndUserYear ?>. Bars show percentage of total budget."></canvas></div>
+    <div class="dashboard-enduser-legend" id="ppmpEndUserBarLegend"><?php foreach($ppmpEndUserTotals as $i=>$row): $pct=$ppmpEndUserChartTotal>0?((float)$row['total_amount']/$ppmpEndUserChartTotal*100):0; ?><div class="dashboard-enduser-legend-row"><span class="dashboard-enduser-legend-swatch" data-chart-index="<?=$i?>"></span><div class="dashboard-enduser-legend-name"><?=e($row['end_user'])?><span class="dashboard-enduser-legend-percent"><?=number_format($pct,1)?>% of total</span></div><div class="dashboard-enduser-legend-value">₱<?=number_format((float)$row['total_amount'],2)?></div></div><?php endforeach; ?></div>
   </div>
   <?php else: ?><p class="empty">No PPMP budget amounts are available for FY <?= (int)$ppmpEndUserYear ?>.</p><?php endif; ?>
 </div>
@@ -268,7 +268,7 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 <div class="panel"><h2>Cancelled Purchase Orders</h2><div class="table-wrap"><table class="table"><tr><th>PO No.</th><th>Supplier</th><th>Area/Unit</th><th>Reason</th></tr><?php foreach($cancelledPoRows as $r):?><tr><td><?=e($r['po_no'])?></td><td><?=e($r['supplier']??'')?></td><td><?=e($r['area']??'')?></td><td><?=e($r['reason'])?></td></tr><?php endforeach;?><?php if(!$cancelledPoRows):?><tr><td colspan="4" class="empty">No cancelled Purchase Orders.</td></tr><?php endif;?></table></div></div>
 </div><div class="grid"><div class="panel" id="recent-ppmp-entries"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px"><div><h2 style="margin:0">Recent PPMP Entries</h2><small style="color:#64748b">Entries created in the last 7 days</small></div><form method="get" style="display:flex;align-items:center;gap:8px" onsubmit="sessionStorage.setItem('dashboardRecentPpmpScrollY',String(window.scrollY))"><label for="ppmp_year_filter" style="font-size:12px;font-weight:700">Year</label><select id="ppmp_year_filter" name="ppmp_year" class="input" style="width:auto;min-width:100px;padding:7px 9px" onchange="this.form.requestSubmit()"><?php foreach($recentYearOptions as $optionYear):?><option value="<?=$optionYear?>" <?=$recentPpmpYear===$optionYear?'selected':''?>><?=$optionYear?></option><?php endforeach;?></select></form></div><div class="table-wrap"><table class="table"><tr><th>Item</th><th>Area/Unit</th><th>Category</th><th>Qty</th><th>ABC</th></tr><?php foreach($recentRows as $r):?><tr><td><?=e($r['item_name'])?></td><td><?=e($r['area'])?></td><td><?=e($r['category'])?></td><td><?=number_format($r['quantity'],2).' '.e($r['unit'])?></td><td>₱<?=number_format($r['quantity']*$r['unit_price'],2)?></td></tr><?php endforeach;?><?php if(!$recentRows):?><tr><td colspan="5" class="empty">No PPMP entries created in the last 7 days for FY <?=$recentPpmpYear?>.</td></tr><?php endif;?></table></div><?php if($recentTotalRows>0):?><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:#64748b"><span>Showing <?=number_format(($recentPage-1)*$recentPageSize+1)?>–<?=number_format(min($recentPage*$recentPageSize,$recentTotalRows))?> of <?=number_format($recentTotalRows)?> entries</span><div style="display:flex;align-items:center;gap:6px"><?php $recentPageUrl=function(int $page)use($recentPpmpYear):string{$params=$_GET;$params['ppmp_year']=$recentPpmpYear;$params['ppmp_page']=$page;return '?'.http_build_query($params).'#recent-ppmp-entries';};?><a class="btn" style="padding:5px 9px;font-size:12px;<?= $recentPage<=1?'opacity:.45;pointer-events:none;':'' ?>" href="<?=e($recentPageUrl($recentPage-1))?>">Previous</a><span style="padding:0 5px">Page <?=$recentPage?> of <?=$recentTotalPages?></span><a class="btn" style="padding:5px 9px;font-size:12px;<?= $recentPage>=$recentTotalPages?'opacity:.45;pointer-events:none;':'' ?>" href="<?=e($recentPageUrl($recentPage+1))?>">Next</a></div></div><?php endif;?></div><div class="panel"><h2>Procurement Workflow</h2><p>1. Area/Unit prepares its PPMP.</p><p>2. Equivalent PPMP items are consolidated into the APP.</p><p>3. Authorized users create PRs from available PPMP quantities.</p><p>4. PR quantities automatically reduce remaining planned quantities.</p><p>5. Submitted/approved PRs can be converted into POs with supplier details.</p><a class="btn" href="app.php?year=<?=$year?>">View Consolidated APP</a></div></div><script>const ppmpEndUserData = <?=json_encode(array_map(static fn($row)=>['name'=>(string)$row['end_user'],'amount'=>(float)$row['total_amount']],$ppmpEndUserTotals),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
 (function(){
-  const canvas=document.getElementById('ppmpEndUserPieChart');
+  const canvas=document.getElementById('ppmpEndUserBarChart');
   if(!canvas || !ppmpEndUserData.length) return;
   const ctx=canvas.getContext('2d');
   const colors=['#647ba5','#64866d','#8170a8','#b78361','#a66f87','#5f8d84','#a58b4d','#5f879a','#9a7560','#718096','#7c8f6b','#987fa8'];
@@ -276,37 +276,39 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
   document.querySelectorAll('.dashboard-enduser-legend-swatch').forEach((el,i)=>{el.style.backgroundColor=colors[i%colors.length];});
   function draw(){
     const dpr=window.devicePixelRatio||1;
-    const width=Math.max(220,Math.min(canvas.parentElement.clientWidth||320,320));
-    canvas.width=width*dpr;canvas.height=width*dpr;canvas.style.width=width+'px';canvas.style.height=width+'px';
-    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,width);
-    const cx=width/2,cy=width/2,r=width*.44;
-    let angle=-Math.PI/2;
+    const width=Math.max(600,ppmpEndUserData.length*100+80);
+    const height=390;
+    canvas.width=width*dpr;canvas.height=height*dpr;canvas.style.width=width+'px';canvas.style.height=height+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
+    const left=58,right=24,top=34,bottom=125;
+    const plotW=width-left-right,plotH=height-top-bottom;
+    ctx.font='11px Arial, sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
+    for(let tick=0;tick<=100;tick+=20){
+      const y=top+plotH-(tick/100)*plotH;
+      ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(width-right,y);ctx.strokeStyle='#e8edf2';ctx.lineWidth=1;ctx.stroke();
+      ctx.fillStyle='#64748b';ctx.fillText(tick+'%',left-10,y);
+    }
+    const slot=plotW/ppmpEndUserData.length;
+    const barW=Math.max(12,Math.min(48,slot*.58));
     ppmpEndUserData.forEach((item,i)=>{
-      const slice=total>0?(item.amount/total)*Math.PI*2:0;
-      const start=angle,end=angle+slice,mid=(start+end)/2;
-      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,end);ctx.closePath();
-      ctx.fillStyle=colors[i%colors.length];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
-
-      if(slice>0){
-        const labelRadius=r*.59;
-        const labelX=cx+Math.cos(mid)*labelRadius;
-        const labelY=cy+Math.sin(mid)*labelRadius;
-        const availableWidth=Math.max(18,2*labelRadius*Math.sin(Math.min(slice,Math.PI)/2)*.82);
-        const fontSize=Math.max(7,Math.min(11,availableWidth/5.5));
-        const pct=(item.amount/total*100).toFixed(1)+'%';
-        let name=String(item.name||'End-user');
-        ctx.font='600 '+fontSize+'px Arial, sans-serif';
-        while(name.length>1 && ctx.measureText(name).width>availableWidth-4) name=name.slice(0,-1);
-        if(name!==item.name && name.length>1) name=name.slice(0,-1)+'…';
-        ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.lineJoin='round';ctx.lineWidth=2.5;ctx.strokeStyle='rgba(255,255,255,.95)';
-        ctx.strokeText(name,labelX,labelY-fontSize*.55,Math.max(10,availableWidth));
-        ctx.fillStyle='#172033';ctx.fillText(name,labelX,labelY-fontSize*.55,Math.max(10,availableWidth));
-        ctx.font='700 '+Math.max(7,fontSize-1)+'px Arial, sans-serif';
-        ctx.strokeText(pct,labelX,labelY+fontSize*.7,Math.max(10,availableWidth));
-        ctx.fillStyle='#172033';ctx.fillText(pct,labelX,labelY+fontSize*.7,Math.max(10,availableWidth));
-      }
-      angle=end;
+      const pct=total>0?(item.amount/total*100):0;
+      const x=left+slot*i+(slot-barW)/2;
+      const barH=plotH*(pct/100);
+      const y=top+plotH-barH;
+      ctx.fillStyle=colors[i%colors.length];
+      ctx.beginPath();
+      const radius=Math.min(5,barW/2,barH/2);
+      ctx.moveTo(x,top+plotH);ctx.lineTo(x,y+radius);ctx.quadraticCurveTo(x,y,x+radius,y);
+      ctx.lineTo(x+barW-radius,y);ctx.quadraticCurveTo(x+barW,y,x+barW,y+radius);
+      ctx.lineTo(x+barW,top+plotH);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#172033';ctx.font='700 11px Arial, sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+      ctx.fillText(pct.toFixed(1)+'%',x+barW/2,Math.max(13,y-5));
+      ctx.save();ctx.translate(x+barW/2,top+plotH+13);ctx.rotate(-Math.PI/4);
+      ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillStyle='#475569';ctx.font='11px Arial, sans-serif';
+      let label=String(item.name||'End-user');
+      while(label.length>8 && ctx.measureText(label).width>145) label=label.slice(0,-2);
+      if(label!==item.name) label=label.replace(/\.*$/,'')+'…';
+      ctx.fillText(label,0,0,145);ctx.restore();
     });
   }
   draw();
