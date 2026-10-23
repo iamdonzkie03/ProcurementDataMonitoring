@@ -5,171 +5,150 @@ require_once __DIR__.'/../app/layout.php';
 pageStart('Procurement Process Workflow');
 ?>
 <style>
-.proc-tree{max-width:1500px;margin:0 auto}
-.proc-tree .tree-intro{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
-.proc-tree .tree-intro p{margin:6px 0 0;color:#64748b;font-size:13px;line-height:1.7}
-.proc-tree .tree-actions{display:flex;gap:8px;flex-wrap:wrap}
-.proc-tree .tree-legend{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 20px;padding:12px 15px;background:#f8fafc;border:1px solid #e5eaf0;border-radius:10px;font-size:12px;color:#475569}
-.proc-tree .legend-item{display:flex;align-items:center;gap:7px}
-.proc-tree .legend-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
-.proc-tree .tree-phase{margin:0 0 22px;padding:22px;border:1px solid #e1e7ef;border-radius:14px;background:#fff;box-shadow:0 4px 15px rgba(15,23,42,.035);overflow:hidden}
-.proc-tree .phase-title{display:flex;align-items:center;gap:11px;margin:0 0 22px;font-size:16px;color:#25364e}
-.proc-tree .phase-no{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:#e8eef7;color:#29466e;font-size:12px;font-weight:800}
-.proc-tree .tree-node{position:relative;max-width:650px;margin:0 auto;padding:13px 17px;border:1px solid #cbd8e8;border-radius:10px;background:#f6f9fd;color:#24364e;text-align:center;line-height:1.5;box-shadow:0 2px 5px rgba(15,23,42,.035)}
-.proc-tree .tree-node strong{display:block;font-size:13px}
-.proc-tree .tree-node span{display:block;margin-top:4px;color:#64748b;font-size:12px}
-.proc-tree .tree-node.start{background:#edf8f0;border-color:#b8dfc2}
-.proc-tree .tree-node.end{background:#f0f7f2;border-color:#b9ddc2}
-.proc-tree .tree-node.return{background:#fff4f1;border-color:#f0c5bb;color:#923f35}
-.proc-tree .tree-node.info{background:#f2f6fc}
-.proc-tree .tree-arrow{height:30px;display:flex;align-items:center;justify-content:center;color:#8291a5;font-size:23px;line-height:1}
-.proc-tree .tree-arrow:before{content:"↓"}
-.proc-tree .decision{max-width:530px;margin:0 auto;text-align:center}
-.proc-tree .decision-shape{display:inline-flex;align-items:center;justify-content:center;min-height:74px;min-width:min(100%,290px);padding:12px 25px;border:2px solid #d9b76a;background:#fff8e8;color:#78561a;clip-path:polygon(8% 0,92% 0,100% 50%,92% 100%,8% 100%,0 50%);font-weight:800;font-size:13px;line-height:1.45}
-.proc-tree .branch-label{display:inline-block;margin:0 auto;padding:5px 10px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.03em}
-.proc-tree .branch-label.yes{background:#e8f6ec;color:#267143}
-.proc-tree .branch-label.no{background:#fff0ed;color:#a33d32}
-.proc-tree .branch-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-top:14px;position:relative}
-.proc-tree .branch-columns:before{content:"";position:absolute;top:-15px;left:25%;right:25%;height:1px;background:#cbd5e1}
-.proc-tree .branch{min-width:0;position:relative;text-align:center;padding-top:4px}
-.proc-tree .branch:before{content:"";position:absolute;top:-15px;left:50%;height:15px;border-left:1px solid #cbd5e1}
-.proc-tree .branch .tree-node{height:100%;box-sizing:border-box}
-.proc-tree .branch .tree-arrow{height:25px}
-.proc-tree .branch .tree-node+.tree-arrow{margin-top:0}
-.proc-tree .merge-note{max-width:750px;margin:18px auto 0;padding:11px 14px;text-align:center;border:1px dashed #c5d0df;border-radius:9px;background:#fafcff;color:#526176;font-size:12px;line-height:1.6}
-.proc-tree .tree-note{margin:8px 0 0;color:#64748b;font-size:11px;text-align:center}
-@media(max-width:720px){.proc-tree .tree-phase{padding:15px}.proc-tree .branch-columns{grid-template-columns:1fr;gap:22px}.proc-tree .branch-columns:before{display:none}.proc-tree .branch:before{top:-15px;height:15px}.proc-tree .tree-node{padding:12px}.proc-tree .decision-shape{min-width:0;width:100%;box-sizing:border-box;clip-path:none;border-radius:10px;min-height:0}.proc-tree .phase-title{font-size:14px}.proc-tree .tree-legend{gap:8px}}
-@media print{.proc-tree .tree-actions{display:none}.proc-tree .tree-phase{break-inside:avoid;box-shadow:none}.proc-tree .tree-node,.proc-tree .decision-shape{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
-
-
-/* Cross-stage connectors keep the full process as one continuous flowchart */
-.proc-tree .stage-connector{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:94px;margin:0 auto;text-align:center;color:#536780;font-size:12px;font-weight:700}
-.proc-tree .stage-connector span{display:inline-block;padding:7px 14px;border:1px solid #cbd8e8;border-radius:999px;background:#f4f8ff}
-.proc-tree .stage-connector i{position:relative;display:block;width:2px;height:28px;background:#8fa1b8}
-.proc-tree .stage-connector i:after{content:"";position:absolute;bottom:0;left:-4px;width:8px;height:8px;border-right:2px solid #8fa1b8;border-bottom:2px solid #8fa1b8;transform:rotate(45deg)}
-@media(max-width:720px){.proc-tree .stage-connector{min-height:86px;padding:0 8px}.proc-tree .stage-connector span{max-width:100%;box-sizing:border-box}}
-@media print{.proc-tree .stage-connector{break-inside:avoid}}
-
-/* Keep every procurement stage inside one continuous flowchart canvas */
-.proc-tree .flowchart-canvas{display:block;position:relative;padding:28px 28px 24px;border:1px solid #d9e2ee;border-radius:16px;background:#fff;box-shadow:0 6px 24px rgba(15,23,42,.055);overflow:hidden}
-.proc-tree .tree-phase{display:contents!important}
-.proc-tree .phase-title{margin:26px 0 22px;padding:0 0 12px;border-bottom:1px solid #e3eaf3}
-.proc-tree .phase-title:first-child{margin-top:0}
-.proc-tree .tree-phase .phase-title{width:100%}
-.proc-tree .tree-phase+.tree-phase .phase-title{margin-top:34px}
-.proc-tree .merge-note{max-width:none;margin:28px auto 0}
-@media(max-width:720px){.proc-tree .flowchart-canvas{padding:16px 10px;border-radius:10px}}
-@media print{.proc-tree .flowchart-canvas{padding:12px;border:0;box-shadow:none;overflow:visible}}
-
-/* Flowchart presentation: distinct node shapes, visible connectors, and clear branches */
-.proc-tree{max-width:1600px}
-.proc-tree .tree-legend{position:sticky;top:8px;z-index:3;background:#fff;box-shadow:0 4px 14px rgba(15,23,42,.06)}
-.proc-tree .tree-phase{position:relative;border:1px solid #dbe4ef;border-top:4px solid #6c88b4;border-radius:12px;background:linear-gradient(180deg,#f8fbff 0,#fff 150px);overflow:visible}
-.proc-tree .phase-title{padding-bottom:13px;border-bottom:1px solid #e7edf5}
-.proc-tree .tree-node{max-width:560px;padding:14px 20px;border:2px solid #8da6c7;border-radius:4px;background:#f4f8ff;box-shadow:0 4px 10px rgba(43,69,105,.07)}
-.proc-tree .tree-node strong{font-size:13px;color:#263e5c}
-.proc-tree .tree-node span{font-size:12px;line-height:1.55}
-.proc-tree .tree-node.start,.proc-tree .tree-node.end{border-radius:999px;background:#e8f7ed;border-color:#54a56e;padding:15px 28px}
-.proc-tree .tree-node.start strong,.proc-tree .tree-node.end strong{color:#21643a}
-.proc-tree .tree-node.return{background:#fff0ed;border-color:#d78375;border-radius:4px}
-.proc-tree .tree-node.return strong{color:#963f32}
-.proc-tree .tree-arrow{height:34px;position:relative;color:transparent}
-.proc-tree .tree-arrow:before{content:"";position:absolute;top:0;bottom:7px;left:50%;width:2px;height:auto;background:#8fa1b8}
-.proc-tree .tree-arrow:after{content:"";position:absolute;left:calc(50% - 5px);bottom:3px;width:8px;height:8px;border-right:2px solid #8fa1b8;border-bottom:2px solid #8fa1b8;transform:rotate(45deg)}
-.proc-tree .decision-shape{position:relative;display:flex;align-items:center;justify-content:center;width:320px;max-width:100%;min-width:0;min-height:125px;box-sizing:border-box;margin:0 auto;padding:30px 58px;border:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:#d6ae58;color:#674811;font-size:12px;font-weight:800;line-height:1.4}
-.proc-tree .decision-shape:before{content:"";position:absolute;inset:3px;background:#fff8e7;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);z-index:-1}
-.proc-tree .decision{width:100%;max-width:550px}
-.proc-tree .branch-columns{gap:24px;margin-top:18px;align-items:start}
-.proc-tree .branch-columns:before{top:-19px;left:25%;right:25%;height:2px;background:#9cacc0}
-.proc-tree .branch{padding-top:7px}
-.proc-tree .branch:before{top:-19px;height:19px;border-left:2px solid #9cacc0}
-.proc-tree .branch-label{position:relative;z-index:1;min-width:48px;border:1px solid transparent;box-shadow:0 1px 3px rgba(15,23,42,.06)}
-.proc-tree .branch-label.yes{background:#e5f6ea;border-color:#9bcdaa;color:#21683a}
-.proc-tree .branch-label.no{background:#fff0ed;border-color:#e5aaa0;color:#9d382d}
-.proc-tree .branch .tree-arrow{height:29px}
-.proc-tree .branch .branch-columns{margin-top:16px}
-.proc-tree .branch .branch-columns:before{top:-17px}
-.proc-tree .branch .branch-columns>.branch:before{top:-17px;height:17px}
-.proc-tree .merge-note{border:1px solid #9bcdaa;background:#eef9f1;color:#285d39;max-width:850px;padding:14px 18px}
-@media(max-width:720px){
- .proc-tree .tree-legend{position:static}
- .proc-tree .tree-phase{padding:14px}
- .proc-tree .decision-shape{width:270px;min-height:108px;padding:26px 48px;font-size:11px}
- .proc-tree .tree-node.start,.proc-tree .tree-node.end{border-radius:18px}
- .proc-tree .branch-columns{gap:20px}
+.proc-tree{max-width:1600px;margin:0 auto;color:#274365;font-family:inherit}
+.proc-tree .flowchart-canvas{padding:28px 24px 34px;border:1px solid #d6e0ee;border-radius:14px;background:#fff;box-shadow:0 5px 22px rgba(26,55,91,.07);overflow:hidden}
+.proc-tree .tree-intro{text-align:center;margin:0 auto 26px;max-width:900px}
+.proc-tree .tree-intro h2{margin:0 0 8px;font-size:23px;color:#22613b}
+.proc-tree .tree-intro p{margin:0;color:#617995;font-size:14px;line-height:1.55}
+.proc-tree .flow-node{position:relative;box-sizing:border-box;width:min(100%,520px);min-height:68px;margin:0 auto;padding:12px 18px;border:1.6px solid #2c5595;background:#fff;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;line-height:1.45;color:#536f91}
+.proc-tree .flow-node strong{font-size:15px;color:#24446f;line-height:1.35}
+.proc-tree .flow-node span{display:block;margin-top:7px;font-size:13px;line-height:1.4}
+.proc-tree .flow-node.start,.proc-tree .flow-node.end{border-radius:15px;min-height:68px}
+.proc-tree .flow-node.start strong,.proc-tree .flow-node.end strong{color:#267143}
+.proc-tree .flow-node.return{color:#8e4137;border-color:#2c5595}
+.proc-tree .flow-node.return strong{color:#a33f32}
+.proc-tree .flow-node.process{border-radius:0}
+.proc-tree .flow-node.compact{min-height:62px}
+.proc-tree .decision{width:min(100%,430px);min-height:118px;margin:0 auto;display:flex;align-items:center;justify-content:center;position:relative;padding:20px 54px;box-sizing:border-box;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:#2d5595;color:#73531a;text-align:center}
+.proc-tree .decision:before{content:"";position:absolute;inset:2px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:#fff}
+.proc-tree .decision strong{position:relative;z-index:1;display:block;max-width:210px;padding:2px 5px;background:#f5d98c;color:#6e511a;font-size:14px;line-height:1.35}
+.proc-tree .down{height:32px;width:2px;background:#477bd0;margin:0 auto;position:relative}
+.proc-tree .down:after{content:"";position:absolute;bottom:0;left:-4px;width:8px;height:8px;border-right:2px solid #477bd0;border-bottom:2px solid #477bd0;transform:rotate(45deg)}
+.proc-tree .branch-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px;align-items:start;max-width:1100px;margin:0 auto;position:relative}
+.proc-tree .branch-grid:before{content:"";position:absolute;top:0;left:25%;right:25%;height:2px;background:#477bd0}
+.proc-tree .branch-col{min-width:0;text-align:center;position:relative;padding-top:16px}
+.proc-tree .branch-col:before{content:"";position:absolute;top:0;left:50%;height:16px;border-left:2px solid #477bd0}
+.proc-tree .branch-label{display:inline-block;position:relative;z-index:2;margin:-9px auto 8px;padding:3px 9px;background:#fff;font-size:13px;color:#111;font-weight:500}
+.proc-tree .branch-col .down{height:28px}
+.proc-tree .branch-col .flow-node{width:100%;max-width:490px}
+.proc-tree .subflow{margin-top:0}
+.proc-tree .route-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px;align-items:center;max-width:1120px;margin:0 auto;position:relative}
+.proc-tree .route-row .flow-node{width:100%}
+.proc-tree .route-row .route-arrow{position:relative;height:2px;background:#477bd0;align-self:center}
+.proc-tree .route-row .route-arrow:after{content:"";position:absolute;right:0;top:-4px;width:8px;height:8px;border-top:2px solid #477bd0;border-right:2px solid #477bd0;transform:rotate(45deg)}
+.proc-tree .sequence-gap{height:28px}
+.proc-tree .return-connector{max-width:1080px;margin:8px auto 18px;text-align:right;color:#647b97;font-size:12px}
+.proc-tree .return-connector span{display:inline-block;padding:5px 10px;border:1px dashed #8aa5cd;border-radius:7px;background:#f7faff}
+.proc-tree .outcome-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px;align-items:start;max-width:1120px;margin:0 auto}
+.proc-tree .outcome-grid .flow-node{width:100%}
+.proc-tree .decision-stack{max-width:900px;margin:0 auto}
+.proc-tree .decision-stack .decision{margin:0 auto}
+.proc-tree .merge-note{margin:26px auto 0;max-width:700px;padding:12px 16px;border:1px solid #b7d8c0;border-radius:14px;background:#eff9f1;text-align:center;color:#2b6540;font-size:13px;line-height:1.5}
+.proc-tree .yes-label{color:#267143;font-weight:700}
+.proc-tree .no-label{color:#a33f32;font-weight:700}
+@media(max-width:760px){
+ .proc-tree .flowchart-canvas{padding:18px 10px}
+ .proc-tree .tree-intro h2{font-size:20px}
+ .proc-tree .branch-grid,.proc-tree .route-row,.proc-tree .outcome-grid{grid-template-columns:1fr;gap:22px}
+ .proc-tree .branch-grid:before{display:none}
+ .proc-tree .branch-col:before{height:16px}
+ .proc-tree .decision{min-height:106px;padding:18px 48px}
+ .proc-tree .flow-node{padding:12px}
+ .proc-tree .route-row .route-arrow{height:26px;width:2px;justify-self:center;background:#477bd0}
+ .proc-tree .route-row .route-arrow:after{right:-3px;top:auto;bottom:0;transform:rotate(135deg)}
 }
 @media print{
- .proc-tree .tree-legend{position:static;box-shadow:none}
- .proc-tree .tree-phase{background:#fff;border-color:#cbd5e1}
- .proc-tree .tree-arrow:before{background:#64748b}
- .proc-tree .tree-arrow:after{border-color:#64748b}
+ .proc-tree .flowchart-canvas{box-shadow:none;border:0;padding:8px;overflow:visible}
+ .proc-tree .flow-node,.proc-tree .decision,.proc-tree .merge-note{break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ .proc-tree .down{background:#477bd0}
 }
-
 </style>
 <div class="proc-tree">
-  <div class="tree-legend">
-    <span class="legend-item"><i class="legend-dot" style="background:#b8dfc2"></i> Start / completed</span>
-    <span class="legend-item"><i class="legend-dot" style="background:#d9b76a"></i> Decision point</span>
-    <span class="legend-item"><i class="legend-dot" style="background:#f0c5bb"></i> Return / disapproval / failure</span>
-    <span class="legend-item"><i class="legend-dot" style="background:#cbd8e8"></i> Process step</span>
-  </div>
   <div class="flowchart-canvas">
-  <div class="tree-intro">
-    <div><h2 style="margin:0">Procurement Process Decision Tree</h2><p>Trace the standard procurement path and follow each Yes/No decision to understand approvals, returns, failed bids, and contract completion.</p></div>
+    <div class="tree-intro">
+      <h2>Procurement Process Decision Tree</h2>
+      <p>Trace the standard procurement path and follow each Yes/No decision to understand approvals, returns, failed bids, and contract completion.</p>
+    </div>
+
+    <div class="flow-node start"><strong>End-user prepares PPMP</strong><span>Create the PPMP and submit it to the Division</span></div>
+    <div class="down"></div>
+    <div class="decision"><strong>Division Head approves PPMP?</strong></div>
+    <div class="branch-grid">
+      <div class="branch-col">
+        <div class="branch-label yes-label">YES</div>
+        <div class="flow-node process"><strong>Budget Section review</strong><span>Review the PPMP and issue budget allocation decision.</span></div>
+        <div class="down"></div>
+        <div class="decision"><strong>Budget Officer approves?</strong></div>
+        <div class="branch-grid subflow">
+          <div class="branch-col">
+            <div class="branch-label yes-label">YES</div>
+            <div class="flow-node end"><strong>PPMP approved</strong><span>Return to End-user and include approved items in the APP.</span></div>
+          </div>
+          <div class="branch-col">
+            <div class="branch-label no-label">NO</div>
+            <div class="flow-node return"><strong>Return to End-user</strong><span>Division Head disapproves the PPMP.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="branch-col">
+        <div class="branch-label no-label">NO</div>
+        <div class="flow-node return"><strong>Return to End-user</strong><span>Division Head disapproves the PPMP.</span></div>
+      </div>
+    </div>
+
+    <div class="sequence-gap"></div>
+    <div class="down"></div>
+    <div class="flow-node start"><strong>Approved PPMP items included in the APP</strong></div>
+    <div class="down"></div>
+    <div class="flow-node start"><strong>Create Purchase Request (PR)</strong><span>Select approved APP items; route to the Budget</span></div>
+    <div class="down"></div>
+    <div class="flow-node process"><strong>Budget Office issues CAF</strong><span>Certificate of Availability of Funds; forward PR to the Head of the Procuring Entity (HoPE).</span></div>
+    <div class="down"></div>
+    <div class="decision"><strong>Does HoPE approve the PR?</strong></div>
+    <div class="branch-grid">
+      <div class="branch-col">
+        <div class="branch-label yes-label">YES</div>
+        <div class="flow-node process"><strong>Procurement Section &amp; BAC review</strong><span>Verify documentary requirements and prepare the bid opportunity, if applicable.</span></div>
+        <div class="down"></div>
+        <div class="flow-node end"><strong>Proceed to bid evaluation</strong><span>Continue to the next decision stage.</span></div>
+        <div class="down"></div>
+        <div class="flow-node start"><strong>BAC recommendation submitted to HoPE</strong></div>
+      </div>
+      <div class="branch-col">
+        <div class="branch-label no-label">NO</div>
+        <div class="flow-node return"><strong>Return to End-user</strong><span>PR is returned for correction and resubmission.</span></div>
+      </div>
+    </div>
+
+    <div class="sequence-gap"></div>
+    <div class="down"></div>
+    <div class="flow-node process"><strong>HoPE reviews recommendation of award</strong><span>Decide whether to approve or disapprove the BAC recommendation.</span></div>
+    <div class="down"></div>
+    <div class="decision"><strong>Does HoPE approve the recommendation?</strong></div>
+    <div class="branch-grid">
+      <div class="branch-col">
+        <div class="branch-label yes-label">YES</div>
+        <div class="flow-node process"><strong>Prepare PO / Contract &amp; NTP</strong><span>Procurement Section prepares the Purchase Order/Contract and Notice to Proceed for HoPE approval.</span></div>
+        <div class="down"></div>
+        <div class="decision"><strong>Does HoPE approve the recommendation?</strong></div>
+        <div class="branch-grid subflow">
+          <div class="branch-col">
+            <div class="branch-label yes-label">YES</div>
+            <div class="flow-node end"><strong>Issue approved contract</strong><span>Send approved copies to the winning bidder; obligations may begin under the contract terms.</span></div>
+            <div class="down"></div>
+            <div class="flow-node end"><strong>Recordkeeping</strong><span>Procurement Section retains approved PO/Contract and NTP copies.</span></div>
+          </div>
+          <div class="branch-col">
+            <div class="branch-label no-label">NO</div>
+            <div class="flow-node return"><strong>Project cancelled</strong><span>Contract disapproval cancels the project.</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="branch-col">
+        <div class="branch-label no-label">NO</div>
+        <div class="flow-node return"><strong>Return to End-user</strong><span>HoPE disapproves the recommendation of award.</span></div>
+      </div>
+    </div>
   </div>
-  <section class="tree-phase">
-    
-    <div class="tree-node start"><strong>End-user prepares PPMP</strong><span>Create the PPMP and submit it to the Division Head.</span></div>
-    <div class="tree-arrow"></div>
-    <div class="decision"><div class="decision-shape">Division Head approves PPMP?</div></div>
-    <div class="branch-columns">
-      <div class="branch"><span class="branch-label yes">YES</span><div class="tree-arrow"></div><div class="tree-node"><strong>Budget Section review</strong><span>Review the PPMP and issue budget allocation decision.</span></div><div class="tree-arrow"></div><div class="decision"><div class="decision-shape">Budget Officer approves?</div></div>
-        <div class="branch-columns">
-          <div class="branch"><span class="branch-label yes">YES</span><div class="tree-arrow"></div><div class="tree-node end"><strong>PPMP approved</strong><span>Return to End-user and include approved items in the APP.</span></div></div>
-          <div class="branch"><span class="branch-label no">NO</span><div class="tree-arrow"></div><div class="tree-node return"><strong>Return to End-user</strong><span>PPMP is marked disapproved.</span></div></div>
-        </div>
-      </div>
-      <div class="branch"><span class="branch-label no">NO</span><div class="tree-arrow"></div><div class="tree-node return"><strong>Return to End-user</strong><span>Division Head disapproves the PPMP.</span></div></div>
-    </div>
-    <p class="tree-note">Only approved PPMP items are available for inclusion in the APP and subsequent Purchase Requests.</p>
-  </section>
-  <div class="stage-connector"><span>Approved PPMP items included in the APP</span><i></i></div>
-  <section class="tree-phase">
-    
-    <div class="tree-node start"><strong>Create Purchase Request (PR)</strong><span>Select approved APP items; route to the Budget Office for CAF issuance.</span></div>
-    <div class="tree-arrow"></div><div class="tree-node"><strong>Budget Office issues CAF</strong><span>Certificate of Availability of Funds; forward PR to the Head of the Procuring Entity (HoPE).</span></div>
-    <div class="tree-arrow"></div><div class="decision"><div class="decision-shape">Does HoPE approve the PR?</div></div>
-    <div class="branch-columns">
-      <div class="branch"><span class="branch-label yes">YES</span><div class="tree-arrow"></div><div class="tree-node"><strong>Procurement Section &amp; BAC review</strong><span>Verify documentary requirements and prepare the bid opportunity, if applicable.</span></div><div class="tree-arrow"></div><div class="tree-node end"><strong>Proceed to bid evaluation</strong><span>Continue to the next decision stage.</span></div></div>
-      <div class="branch"><span class="branch-label no">NO</span><div class="tree-arrow"></div><div class="tree-node return"><strong>PR returned to End-user</strong><span>Process stops until the request is corrected and resubmitted, as applicable.</span></div></div>
-    </div>
-  </section>
-  <div class="stage-connector"><span>HoPE-approved PR proceeds to procurement / bidding</span><i></i></div>
-  <section class="tree-phase">
-    
-    <div class="tree-node"><strong>End-user evaluates bid documents</strong><span>Assess completeness and compliance of the bidder’s submission.</span></div>
-    <div class="tree-arrow"></div><div class="decision"><div class="decision-shape">Is the bid compliant?</div></div>
-    <div class="branch-columns">
-      <div class="branch"><span class="branch-label yes">YES</span><div class="tree-arrow"></div><div class="tree-node end"><strong>Bid marked Awarded</strong><span>Continue with BAC re-evaluation of compliance requirements.</span></div><div class="tree-arrow"></div><div class="tree-node"><strong>BAC recommends award</strong><span>BAC issues a resolution recommending award for HoPE decision.</span></div></div>
-      <div class="branch"><span class="branch-label no">NO</span><div class="tree-arrow"></div><div class="tree-node return"><strong>Bid marked Failed</strong><span>Non-compliant bid opportunity is recorded as failed.</span></div></div>
-    </div>
-  </section>
-  <div class="stage-connector"><span>BAC recommendation submitted to HoPE</span><i></i></div>
-  <section class="tree-phase">
-    
-    <div class="tree-node"><strong>HoPE reviews recommendation of award</strong><span>Decide whether to approve or disapprove the BAC recommendation.</span></div>
-    <div class="tree-arrow"></div><div class="decision"><div class="decision-shape">Does HoPE approve the recommendation?</div></div>
-    <div class="branch-columns">
-      <div class="branch"><span class="branch-label yes">YES</span><div class="tree-arrow"></div><div class="tree-node"><strong>Prepare PO / Contract &amp; NTP</strong><span>Procurement Section prepares the Purchase Order/Contract and Notice to Proceed for HoPE approval.</span></div><div class="tree-arrow"></div><div class="decision"><div class="decision-shape">Does HoPE approve the contract?</div></div>
-        <div class="branch-columns">
-          <div class="branch"><span class="branch-label yes">YES</span><div class="tree-arrow"></div><div class="tree-node end"><strong>Issue approved contract</strong><span>Send approved copies to the winning bidder; obligations may begin under the contract terms.</span></div><div class="tree-arrow"></div><div class="tree-node end"><strong>Recordkeeping</strong><span>Procurement Section retains approved PO/Contract and NTP copies.</span></div></div>
-          <div class="branch"><span class="branch-label no">NO</span><div class="tree-arrow"></div><div class="tree-node return"><strong>Project cancelled</strong><span>Contract disapproval cancels the project.</span></div></div>
-        </div>
-      </div>
-      <div class="branch"><span class="branch-label no">NO</span><div class="tree-arrow"></div><div class="tree-node return"><strong>Return to End-user</strong><span>HoPE disapproves the recommendation of award.</span></div></div>
-    </div>
-  </section>
-  <div class="merge-note"><strong>Process completion:</strong> The approved Purchase Order/Contract and Notice to Proceed are issued to the winning bidder, and the Procurement Section retains the approved documents for its records.</div>
-</div>
 </div>
 <?php pageEnd(); ?>
