@@ -274,6 +274,19 @@ pageStart('Supplier Registry');
 .supplier-entry-table input[type=file]{display:block!important;width:100%!important;max-width:100%!important;font-size:12px!important}
 .supplier-entry-table .supplier-date-picker,.supplier-entry-table .supplier-registration-under-tax{max-width:100%!important}
 .supplier-bulk-actions{min-width:0}
+.supplier-pagination{display:flex;align-items:center;justify-content:flex-end;gap:12px;width:100%;clear:both;position:static;float:none;margin:0 0 18px;padding:0 0 2px;box-sizing:border-box;font-size:12px}
+.supplier-pagination-info{flex:0 0 auto;text-align:right;font-size:13px;color:#6b7280}
+.supplier-page-size{display:flex;align-items:center;gap:6px;font-size:14px;color:#4b5563}
+.supplier-page-size .input{width:78px;min-width:78px;height:36px;font-size:12px!important}
+.supplier-pagination-buttons{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.supplier-page-button{min-width:38px;height:36px;padding:0 10px;background:#cfe8ff;color:#1f5f85;border-color:#b7d9f5;font-size:12px!important}
+.supplier-page-button:hover:not(:disabled):not(.active){background:#b9dcfa;color:#174a69}
+.supplier-page-button.active{font-weight:700;pointer-events:none;background:#0d6efd;color:#fff;border-color:#0d6efd}
+.supplier-pagination-buttons .supplier-page-button:first-child,.supplier-pagination-buttons .supplier-page-button:last-child{background:#495057;color:#fff;border-color:#495057}
+.supplier-pagination-buttons .supplier-page-button:first-child:hover:not(:disabled),.supplier-pagination-buttons .supplier-page-button:last-child:hover:not(:disabled){background:#343a40;color:#fff;border-color:#343a40}
+.supplier-pagination-buttons .supplier-page-button:disabled{opacity:.7;cursor:not-allowed}
+.supplier-table tr.supplier-search-selected td{background:#eef5ff}
+@media(max-width:700px){.supplier-pagination{align-items:flex-start;justify-content:flex-end;flex-wrap:wrap}.supplier-pagination-info{order:3;flex-basis:100%;text-align:right}}
 @media(max-width:760px){
  .supplier-table-wrap{overflow-x:auto}
  .supplier-table{min-width:680px!important}
@@ -336,6 +349,11 @@ pageStart('Supplier Registry');
           </div>
         </div>
       </div>
+      <div class="supplier-pagination" id="supplierPagination" aria-label="Supplier pagination">
+        <div class="supplier-page-size"><label for="supplierPageSize">Show</label><select class="input" id="supplierPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="supplierPageSize">records</label></span></div>
+        <div class="supplier-pagination-info" id="supplierPaginationInfo"></div>
+        <div class="supplier-pagination-buttons" id="supplierPaginationButtons"></div>
+      </div>
       <?php if($isEditor): ?>
       <form method="post" id="bulkSupplierDeleteForm" onsubmit="return confirm('Delete all selected supplier records and their uploaded permits/licenses? This cannot be undone.');">
         <input type="hidden" name="csrf" value="<?=e(csrf())?>">
@@ -351,7 +369,7 @@ pageStart('Supplier Registry');
           <thead><tr><?php if($isEditor): ?><th><input type="checkbox" id="selectAllSuppliers" aria-label="Select all registered suppliers" title="Select all registered suppliers" style="width:15px;height:15px;cursor:pointer"></th><?php endif; ?><th>#</th><th>Supplier/Company Name</th><th>Permits and Licenses</th><?php if($isEditor): ?><th>Actions</th><?php endif; ?></tr></thead>
           <tbody>
           <?php $i=1;foreach($rows as $r): ?>
-          <tr>
+          <tr data-supplier-id="<?=e((string)$r['id'])?>" data-supplier-name="<?=e($r['supplier_company_name'])?>">
             <?php if($isEditor): ?><td><input type="checkbox" class="supplier-select-checkbox" name="supplier_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['supplier_company_name'])?> for deletion"></td><?php endif; ?>
             <td><?=$i++?></td>
             <td class="supplier-company-details">
@@ -393,11 +411,19 @@ document.addEventListener('DOMContentLoaded',function(){
  const selectAll=document.getElementById('selectAllSuppliers');
  if(selectAll){selectAll.addEventListener('change',function(){document.querySelectorAll('.supplier-select-checkbox').forEach(cb=>{const tr=cb.closest('tr');if(tr&&tr.style.display!=='none')cb.checked=selectAll.checked;});});}
  document.querySelectorAll('.supplier-select-checkbox').forEach(cb=>cb.addEventListener('change',function(){const all=Array.from(document.querySelectorAll('.supplier-select-checkbox'));if(selectAll)selectAll.checked=all.length>0&&all.every(x=>x.checked);}));
- const input=document.getElementById('supplierSearchInput'),box=document.getElementById('supplierSearchBox'),suggestions=document.getElementById('supplierSearchSuggestions'),table=document.getElementById('supplierTable');
- if(!input||!suggestions||!table)return;const tableRows=Array.from(table.querySelectorAll('tbody tr')).filter(r=>!r.classList.contains('empty'));
- function filter(term){term=String(term||'').trim().toLowerCase();tableRows.forEach(r=>r.style.display=!term||r.textContent.toLowerCase().includes(term)?'':'none');}
+ const input=document.getElementById('supplierSearchInput'),box=document.getElementById('supplierSearchBox'),suggestions=document.getElementById('supplierSearchSuggestions'),table=document.getElementById('supplierTable'),pageSizeSelect=document.getElementById('supplierPageSize'),paginationInfo=document.getElementById('supplierPaginationInfo'),paginationButtons=document.getElementById('supplierPaginationButtons');
+ if(!input||!suggestions||!table||!pageSizeSelect||!paginationInfo||!paginationButtons)return;
+ const tableRows=Array.from(table.querySelectorAll('tbody tr')).filter(r=>!r.classList.contains('empty'));
+ let filteredRows=tableRows.slice(),currentPage=1,pageSize=Number(pageSizeSelect.value)||10,selectedRowId='';
+ function rowText(row){return String(row.innerText||row.textContent||'').replace(/\s+/g,' ').trim();}
  function close(){suggestions.innerHTML='';suggestions.style.display='none';}
- input.addEventListener('input',function(){const term=input.value.trim().toLowerCase();suggestions.innerHTML='';if(!term){close();filter('');return;}const m=tableRows.filter(r=>r.textContent.toLowerCase().includes(term)).slice(0,10);m.forEach(r=>{const b=document.createElement('button');b.type='button';b.className='supplier-search-suggestion';b.textContent=(r.cells[document.querySelector('.supplier-select-checkbox')?2:1]?.querySelector('strong')?.textContent||r.cells[document.querySelector('.supplier-select-checkbox')?2:1]?.textContent||'').trim();b.onclick=()=>{input.value=b.textContent;close();filter(b.textContent)};suggestions.appendChild(b)});if(!m.length){const e=document.createElement('div');e.className='supplier-search-empty';e.textContent='No matching supplier found.';suggestions.appendChild(e)}suggestions.style.display='block';filter(term)});input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';close();filter('')}});document.addEventListener('click',e=>{if(box&&!box.contains(e.target))close()});
+ function renderPagination(){const total=filteredRows.length,totalPages=Math.max(1,Math.ceil(total/pageSize));if(currentPage>totalPages)currentPage=totalPages;tableRows.forEach(row=>{row.style.display='none';row.classList.remove('supplier-search-selected');});const start=(currentPage-1)*pageSize;filteredRows.slice(start,start+pageSize).forEach(row=>{row.style.display='';});paginationInfo.textContent=total?'Showing '+(start+1)+'-'+Math.min(start+pageSize,total)+' of '+total+' records':'0 records';paginationButtons.innerHTML='';function addButton(label,page,disabled,active){const button=document.createElement('button');button.type='button';button.className='btn secondary supplier-page-button'+(active?' active':'');button.textContent=label;button.disabled=!!disabled;button.addEventListener('click',()=>{currentPage=page;renderPagination();});paginationButtons.appendChild(button);}addButton('Previous',currentPage-1,currentPage===1,false);const max=7;let first=Math.max(1,currentPage-3),last=Math.min(totalPages,first+max-1);first=Math.max(1,last-max+1);for(let page=first;page<=last;page++)addButton(String(page),page,false,page===currentPage);addButton('Next',currentPage+1,currentPage===totalPages,false);}
+ function applyFilter(term,chosenRow,reset){const value=String(term||'').trim().toLowerCase();selectedRowId=chosenRow||'';filteredRows=tableRows.filter(row=>selectedRowId?row.dataset.supplierId===selectedRowId:(!value||rowText(row).toLowerCase().includes(value)));if(reset)currentPage=1;renderPagination();if(selectedRowId)filteredRows.forEach(row=>row.classList.add('supplier-search-selected'));}
+ function showSuggestions(){const term=String(input.value||'').trim().toLowerCase();suggestions.innerHTML='';if(!term){close();applyFilter('',null,true);return;}const matches=tableRows.filter(row=>rowText(row).toLowerCase().includes(term)).slice(0,10);if(!matches.length){const empty=document.createElement('div');empty.className='supplier-search-empty';empty.textContent='No matching supplier found.';suggestions.appendChild(empty);suggestions.style.display='block';applyFilter(term,null,true);return;}matches.forEach(row=>{const button=document.createElement('button');button.type='button';button.className='supplier-search-suggestion';button.setAttribute('role','option');button.dataset.id=row.dataset.supplierId||'';const nameCell=row.cells[document.querySelector('.supplier-select-checkbox')?2:1];button.textContent=(nameCell?.querySelector('strong')?.textContent||nameCell?.textContent||'').trim().replace(/\s+/g,' ');suggestions.appendChild(button);});suggestions.style.display='block';applyFilter(term,null,true);}
+ input.addEventListener('input',showSuggestions);input.addEventListener('focus',()=>{if(input.value.trim())showSuggestions();});input.addEventListener('keydown',e=>{if(e.key==='Escape'){input.value='';close();applyFilter('',null,true);}});
+ suggestions.addEventListener('click',e=>{const button=e.target.closest('.supplier-search-suggestion');if(!button)return;input.value=button.textContent;close();applyFilter('',button.dataset.id||null,true);});
+ pageSizeSelect.addEventListener('change',()=>{pageSize=Number(pageSizeSelect.value)||10;currentPage=1;renderPagination();});
+ document.addEventListener('click',e=>{if(box&&!box.contains(e.target))close();});renderPagination();
 });
 </script>
 <?php pageEnd(); ?>
