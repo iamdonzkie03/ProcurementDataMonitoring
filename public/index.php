@@ -224,11 +224,15 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 .procurement-process-workflow .workflow-phase.is-current{display:block}
 .procurement-process-workflow .workflow-phase-heading{display:flex;align-items:center;gap:12px;margin:0 0 28px;color:#344054;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .procurement-process-workflow .workflow-phase-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;border-radius:4px;background:#263b5b;color:#fff;font-size:12px}
-.procurement-process-workflow .workflow-steps{display:block}
-.procurement-process-workflow .workflow-step{display:none;position:relative;min-width:0;padding:8px 0 18px;border:0;border-radius:0;background:transparent;box-shadow:none;animation:none;transition:none;transform-origin:left center;backface-visibility:hidden}
-.procurement-process-workflow .workflow-step.is-current{display:block;animation:workflowBookFlip .7s cubic-bezier(.2,.75,.25,1) both}
-@keyframes workflowBookFlip{0%{transform:perspective(1200px) rotateY(-78deg);opacity:.35;filter:brightness(.8)}55%{transform:perspective(1200px) rotateY(8deg);opacity:1;filter:brightness(1.03)}100%{transform:perspective(1200px) rotateY(0);opacity:1;filter:brightness(1)}}
-@media(prefers-reduced-motion:reduce){.procurement-process-workflow .workflow-step.is-current{animation:none}}
+.procurement-process-workflow .workflow-steps{display:block;perspective:1500px;transform-style:preserve-3d}
+.procurement-process-workflow .workflow-step{display:none;position:relative;min-width:0;min-height:205px;padding:20px 22px 24px;border:1px solid #d7dee9;border-radius:4px;background:linear-gradient(100deg,#fff 0%,#fff 76%,#f4f6fa 100%);box-shadow:inset 12px 0 18px -18px rgba(15,23,42,.55);animation:none;transition:none;transform-origin:left center;transform-style:preserve-3d;backface-visibility:hidden}
+.procurement-process-workflow .workflow-step:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(15,23,42,.14) 0%,rgba(255,255,255,0) 20%,rgba(255,255,255,0) 72%,rgba(15,23,42,.05) 100%);opacity:0;backface-visibility:hidden}
+.procurement-process-workflow .workflow-step.is-current{display:block;animation:workflowBookFlip 1.15s cubic-bezier(.22,.72,.22,1) both}
+.procurement-process-workflow .workflow-step.is-current:after{animation:workflowBookPageShade 1.15s ease-out both}
+@keyframes workflowBookFlip{0%{transform:rotateY(-155deg);opacity:1;box-shadow:inset 18px 0 28px -10px rgba(15,23,42,.55),12px 10px 24px rgba(15,23,42,.22)}35%{transform:rotateY(-88deg);opacity:1;box-shadow:inset 14px 0 24px -10px rgba(15,23,42,.48),8px 8px 20px rgba(15,23,42,.18)}68%{transform:rotateY(-24deg);opacity:1;box-shadow:inset 5px 0 12px -8px rgba(15,23,42,.28),3px 5px 12px rgba(15,23,42,.1)}100%{transform:rotateY(0);opacity:1;box-shadow:inset 12px 0 18px -18px rgba(15,23,42,.55)}}
+@keyframes workflowBookPageShade{0%,30%{opacity:.8}70%{opacity:.35}100%{opacity:0}}
+@media(max-width:620px){.procurement-process-workflow .workflow-step{padding:16px 14px 20px;min-height:230px}}
+@media(prefers-reduced-motion:reduce){.procurement-process-workflow .workflow-step.is-current,.procurement-process-workflow .workflow-step.is-current:after{animation:none}}
 .procurement-process-workflow .workflow-step-top{display:flex;align-items:center;gap:18px;margin-bottom:18px}
 .procurement-process-workflow .workflow-step-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 66px;width:66px;height:66px;border-radius:50%;background:#e8eef6;color:#263b5b;font-size:22px;font-weight:800}
 .procurement-process-workflow .workflow-step strong{font-size:clamp(20px,2.4vw,30px);line-height:1.25;color:#263449;font-weight:750}
