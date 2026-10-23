@@ -127,12 +127,19 @@ $ppmpSt=$pdo->prepare("SELECT COUNT(*) FROM ppmp_items p".$scopeSql);$ppmpSt->ex
 $areaSt=$pdo->prepare("SELECT COUNT(DISTINCT p.area_id) FROM ppmp_items p".$scopeSql);$areaSt->execute($scopeArgs);$areas=(int)$areaSt->fetchColumn();
 $qtySt=$pdo->prepare("SELECT COALESCE(SUM(p.quantity),0) FROM ppmp_items p".$scopeSql);$qtySt->execute($scopeArgs);$qty=(float)$qtySt->fetchColumn();
 $abcSt=$pdo->prepare("SELECT COALESCE(SUM(p.quantity*p.unit_price),0) FROM ppmp_items p".$scopeSql);$abcSt->execute($scopeArgs);$abc=(float)$abcSt->fetchColumn();
+$ppmpBudgetYearOptions=[];
+try{$ppmpBudgetYearOptions=array_map('intval',$pdo->query("SELECT DISTINCT fiscal_year FROM ppmp_items WHERE fiscal_year IS NOT NULL ORDER BY fiscal_year DESC")->fetchAll(PDO::FETCH_COLUMN));}catch(Throwable $e){}
+$currentCalendarYear=(int)date('Y');
+if(!in_array($currentCalendarYear,$ppmpBudgetYearOptions,true))$ppmpBudgetYearOptions[]=$currentCalendarYear;
+rsort($ppmpBudgetYearOptions);
+$ppmpEndUserYear=(int)($_GET['ppmp_budget_year']??$currentCalendarYear);
+if(!in_array($ppmpEndUserYear,$ppmpBudgetYearOptions,true))$ppmpEndUserYear=$currentCalendarYear;
 $ppmpEndUserTotals=[];
 try{
   $endUserSql="SELECT a.name AS end_user, COALESCE(SUM(p.quantity*p.unit_price),0) AS total_amount
     FROM ppmp_items p JOIN areas a ON a.id=p.area_id
     WHERE p.fiscal_year=?";
-  $endUserArgs=[$year];
+  $endUserArgs=[$ppmpEndUserYear];
   if($isSupervisor && $contextDivisionId>0){$endUserSql.=" AND a.division_id=?";$endUserArgs[]=$contextDivisionId;}
   elseif($contextAreaId>0){$endUserSql.=" AND p.area_id=?";$endUserArgs[]=$contextAreaId;}
   $endUserSql.=" GROUP BY a.id,a.name HAVING SUM(p.quantity*p.unit_price)>0 ORDER BY total_amount DESC,a.name ASC";
@@ -234,14 +241,23 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 </div>
 <div class="panel dashboard-enduser-chart">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-    <div><h2 style="margin:0">PPMP Budget by End-user</h2><div class="dashboard-enduser-chart-total">Fiscal Year <?= (int)$year ?> · Total planned amount: <b>₱<?=number_format($ppmpEndUserChartTotal,2)?></b></div></div>
+    <div><h2 style="margin:0">PPMP Budget by End-user</h2><div class="dashboard-enduser-chart-total">Fiscal Year <?= (int)$ppmpEndUserYear ?> · Total planned amount: <b>₱<?=number_format($ppmpEndUserChartTotal,2)?></b></div></div>
+    <form method="get" style="display:flex;align-items:center;gap:8px">
+      <?php if(isset($_GET['year'])): ?><input type="hidden" name="year" value="<?= (int)$year ?>"><?php endif; ?>
+      <?php if(isset($_GET['ppmp_year'])): ?><input type="hidden" name="ppmp_year" value="<?= (int)$recentPpmpYear ?>"><?php endif; ?>
+      <?php if(isset($_GET['ppmp_page'])): ?><input type="hidden" name="ppmp_page" value="<?= (int)$recentPage ?>"><?php endif; ?>
+      <label for="ppmp_budget_year" style="font-size:12px;font-weight:700;color:#64748b">Year</label>
+      <select id="ppmp_budget_year" name="ppmp_budget_year" class="input" style="width:auto;min-width:100px;padding:7px 9px" onchange="this.form.submit()">
+        <?php foreach($ppmpBudgetYearOptions as $optionYear): ?><option value="<?=$optionYear?>" <?=$ppmpEndUserYear===$optionYear?'selected':''?>><?=$optionYear?></option><?php endforeach; ?>
+      </select>
+    </form>
   </div>
   <?php if($ppmpEndUserTotals): ?>
   <div class="dashboard-enduser-chart-layout">
-    <div class="dashboard-enduser-chart-visual"><canvas id="ppmpEndUserPieChart" width="320" height="320" role="img" aria-label="Pie chart showing PPMP planned amounts by end-user for fiscal year <?= (int)$year ?>"></canvas></div>
+    <div class="dashboard-enduser-chart-visual"><canvas id="ppmpEndUserPieChart" width="320" height="320" role="img" aria-label="Pie chart showing PPMP planned amounts by end-user for fiscal year <?= (int)$ppmpEndUserYear ?>"></canvas></div>
     <div class="dashboard-enduser-legend" id="ppmpEndUserPieLegend"><?php foreach($ppmpEndUserTotals as $i=>$row): $pct=$ppmpEndUserChartTotal>0?((float)$row['total_amount']/$ppmpEndUserChartTotal*100):0; ?><div class="dashboard-enduser-legend-row"><span class="dashboard-enduser-legend-swatch" data-chart-index="<?=$i?>"></span><div class="dashboard-enduser-legend-name"><?=e($row['end_user'])?><span class="dashboard-enduser-legend-percent"><?=number_format($pct,1)?>% of total</span></div><div class="dashboard-enduser-legend-value">₱<?=number_format((float)$row['total_amount'],2)?></div></div><?php endforeach; ?></div>
   </div>
-  <?php else: ?><p class="empty">No PPMP budget amounts are available for FY <?= (int)$year ?>.</p><?php endif; ?>
+  <?php else: ?><p class="empty">No PPMP budget amounts are available for FY <?= (int)$ppmpEndUserYear ?>.</p><?php endif; ?>
 </div>
 <div class="grid">
 <div class="panel"><h2>Recent Purchase Request</h2><?php if($recentPrDashboard):?><p><b><?=e($recentPrDashboard['pr_no'])?></b></p><p><b>Area/Unit:</b> <?=e($recentPrDashboard['area']??'')?></p><p><b>Division/Department:</b> <?=e($recentPrDashboard['division']??'')?></p><p><b>Total Amount:</b> ₱<?=number_format((float)$recentPrDashboard['total_amount'],2)?></p><p><b>Created:</b> <?=e(date('M d, Y h:i A',strtotime($recentPrDashboard['created_at'])))?></p><?php else:?><p class="empty">No Purchase Request has been created.</p><?php endif;?></div>
