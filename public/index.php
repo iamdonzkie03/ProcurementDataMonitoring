@@ -219,6 +219,14 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 .procurement-process-workflow{width:100%;max-width:none;margin:24px 0 0;box-sizing:border-box;overflow:hidden}
 .procurement-process-workflow .workflow-intro{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
 .procurement-process-workflow .workflow-intro p{margin:6px 0 0;color:#64748b;font-size:13px;line-height:1.6}
+.procurement-process-workflow .workflow-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.procurement-process-workflow .workflow-replay{cursor:pointer}
+.procurement-process-workflow .workflow-step.is-active{z-index:1;border-color:#7896c4;box-shadow:0 0 0 3px rgba(120,150,196,.18),0 12px 28px rgba(59,86,130,.13);animation:workflowStepFocus .8s ease both}
+.procurement-process-workflow .workflow-step.is-active .workflow-step-number{background:#526f9e;color:#fff;box-shadow:0 0 0 5px rgba(82,111,158,.13)}
+.procurement-process-workflow .workflow-step.is-complete{border-color:#cfe2d4}
+.procurement-process-workflow .workflow-step.is-complete .workflow-step-number{background:#e6f4e9;color:#34734a}
+@keyframes workflowStepFocus{0%{transform:scale(.985)}45%{transform:scale(1.015)}100%{transform:scale(1)}}
+
 .procurement-process-workflow .workflow-phase{margin-top:20px;padding:18px;border:1px solid #e8edf3;border-radius:14px;background:linear-gradient(145deg,#fff,#fafbfd)}
 .procurement-process-workflow .workflow-phase-heading{display:flex;align-items:center;gap:10px;margin:0 0 14px;color:#344054;font-size:14px;font-weight:800}
 .procurement-process-workflow .workflow-phase-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 30px;width:30px;height:30px;border-radius:9px;background:#e9eef7;color:#4f6589;font-size:12px}
@@ -295,7 +303,7 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 </div><div class="panel procurement-process-workflow">
   <div class="workflow-intro">
     <div><h2 style="margin:0">Procurement Process Workflow</h2><p>Follow the process from PPMP preparation through bidding, award, and contract issuance.</p></div>
-    <a class="btn" href="app.php?year=<?=$year?>">View Consolidated APP</a>
+    <div class="workflow-actions"><button type="button" class="btn workflow-replay" id="replayProcurementWorkflow">Replay Animation</button><a class="btn" href="app.php?year=<?=$year?>">View Consolidated APP</a></div>
   </div>
   <div class="workflow-phase">
     <h3 class="workflow-phase-heading"><span class="workflow-phase-number">01</span> PPMP Preparation, Review &amp; Budget Approval</h3>
@@ -343,6 +351,40 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
     <div class="workflow-finish"><strong>Process completion:</strong> Approved contract documents and the Notice to Proceed are issued to the winning bidder, and the Procurement Section retains the approved copies for its records.</div>
   </div>
 </div>
+<script>
+(function(){
+  const root=document.querySelector('.procurement-process-workflow');
+  if(!root)return;
+  const steps=Array.from(root.querySelectorAll('.workflow-step'));
+  const replay=root.querySelector('#replayProcurementWorkflow');
+  if(!steps.length)return;
+  const reducedMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let timer=null;
+  function play(){
+    if(timer)window.clearInterval(timer);
+    steps.forEach(step=>step.classList.remove('is-active','is-complete'));
+    let index=0;
+    if(reducedMotion){steps.forEach(step=>step.classList.add('is-complete'));return;}
+    function advance(){
+      steps.forEach((step,i)=>{
+        step.classList.toggle('is-active',i===index);
+        if(i<index)step.classList.add('is-complete');
+      });
+      index++;
+      if(index>=steps.length){
+        window.clearInterval(timer);
+        timer=null;
+        steps.forEach(step=>step.classList.remove('is-active'));
+        steps.forEach(step=>step.classList.add('is-complete'));
+      }
+    }
+    advance();
+    timer=window.setInterval(advance,850);
+  }
+  if(replay)replay.addEventListener('click',play);
+  play();
+})();
+</script>
 <script>const ppmpEndUserData = <?=json_encode(array_map(static fn($row)=>['name'=>(string)$row['end_user'],'amount'=>(float)$row['total_amount']],$ppmpEndUserTotals),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
 (function(){
   const canvas=document.getElementById('ppmpEndUserBarChart');
