@@ -48,17 +48,15 @@ pageStart('Procurement Process Workflow');
    <span><i class="dot" style="background:#ffe5e9;border:1px solid #d75e70"></i>No / return / cancellation</span>
   </div>
   <div class="svg-scroll">
-   <svg viewBox="0 0 1600 2530" role="img" aria-label="Procurement process flowchart based on the supplied Excel diagram">
+   <svg viewBox="0 0 1600 2436" role="img" aria-label="Procurement process flowchart based on the supplied Excel diagram">
     <defs>
      <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#5282b3"/></marker>
      <marker id="arrRed" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#d34e61"/></marker>
      <filter id="shadow" x="-15%" y="-15%" width="130%" height="145%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#294969" flood-opacity=".15"/></filter>
     </defs>
     <!-- Uniform sizing: every process/outcome card is 520px wide; decision diamonds span the same 520px width. -->
-    <rect class="card red" x="340" y="28" width="520" height="66" rx="18"/>
-    <text class="node-title" x="600" y="68" style="fill:#a62f44">↶ Return to End-user</text>
-
-    <!-- First PPMP decision -->
+    <g transform="translate(0,-94)">
+    <!-- End-user is the first step at the top; NO routes reconnect to this card. -->
     <path class="connector" d="M600 94 V122"/>
     <rect class="card blue" x="340" y="122" width="520" height="76" rx="16"/>
     <circle class="icon-disc" cx="382" cy="160" r="22"/><text x="382" y="167" text-anchor="middle" font-size="21" fill="#245c91">1</text>
@@ -69,12 +67,12 @@ pageStart('Procurement Process Workflow');
     <text class="decision-text" x="600" y="288"><tspan x="600">Division Head approves PPMP?</tspan></text>
     <path class="connector" d="M600 362 V390"/>
     <rect class="yes-pill" x="568" y="365" width="64" height="22" rx="11"/><text class="pill-text" x="600" y="376">YES</text>
-    <path class="return-path" d="M860 294 H915 V68 H860"/>
+    <path class="return-path" d="M860 294 H915 V162 H860"/>
     <rect class="no-pill" x="879" y="283" width="58" height="22" rx="11"/><text class="pill-text" x="908" y="294">NO</text>
     <rect class="card red" x="990" y="230" width="520" height="76" rx="16"/>
     <text class="node-title" x="1250" y="261" style="fill:#a62f44">Division Head disapproves the PPMP.</text>
     <text class="node-desc" x="1250" y="284">Return the PPMP to the End-user.</text>
-    <path class="return-path" d="M1250 230 V68 H860"/>
+    <path class="return-path" d="M1250 230 V162 H860"/>
 
     <!-- Budget review -->
     <rect class="card gold" x="340" y="390" width="520" height="76" rx="16"/>
@@ -86,7 +84,7 @@ pageStart('Procurement Process Workflow');
     <text class="decision-text" x="600" y="556">Budget Officer approves?</text>
     <path class="connector" d="M600 630 V658"/>
     <rect class="yes-pill" x="568" y="633" width="64" height="22" rx="11"/><text class="pill-text" x="600" y="644">YES</text>
-    <path class="return-path" d="M860 562 H930 V68 H860"/>
+    <path class="return-path" d="M860 562 H930 V162 H860"/>
     <rect class="no-pill" x="879" y="551" width="58" height="22" rx="11"/><text class="pill-text" x="908" y="562">NO</text>
     <rect class="card green" x="340" y="658" width="520" height="76" rx="16"/>
     <text class="node-title" x="600" y="689">PPMP approved</text>
@@ -116,7 +114,7 @@ pageStart('Procurement Process Workflow');
     <text class="decision-text" x="600" y="1152">Does HoPE approve the PR?</text>
     <path class="connector" d="M600 1226 V1254"/>
     <rect class="yes-pill" x="568" y="1229" width="64" height="22" rx="11"/><text class="pill-text" x="600" y="1240">YES</text>
-    <path class="return-path" d="M860 1158 H950 V68 H860"/>
+    <path class="return-path" d="M860 1158 H950 V162 H860"/>
     <rect class="no-pill" x="879" y="1147" width="58" height="22" rx="11"/><text class="pill-text" x="908" y="1158">NO</text>
 
     <!-- Procurement and BAC -->
@@ -148,12 +146,12 @@ pageStart('Procurement Process Workflow');
     <text class="decision-text" x="600" y="1764"><tspan x="600">Does HoPE approve</tspan><tspan x="600" dy="22">the recommendation?</tspan></text>
     <path class="connector" d="M600 1838 V1866"/>
     <rect class="yes-pill" x="568" y="1841" width="64" height="22" rx="11"/><text class="pill-text" x="600" y="1852">YES</text>
-    <path class="return-path" d="M860 1770 H970 V68 H860"/>
+    <path class="return-path" d="M860 1770 H970 V162 H860"/>
     <rect class="no-pill" x="879" y="1759" width="58" height="22" rx="11"/><text class="pill-text" x="908" y="1770">NO</text>
     <rect class="card red" x="990" y="1732" width="520" height="76" rx="16"/>
     <text class="node-title" x="1250" y="1763" style="fill:#a62f44">Return to End-user</text>
     <text class="node-desc" x="1250" y="1786">Recommendation not approved.</text>
-    <path class="return-path" d="M1250 1732 V68 H860"/>
+    <path class="return-path" d="M1250 1732 V162 H860"/>
 
     <!-- PO / contract and final decision -->
     <rect class="card gold" x="340" y="1866" width="520" height="92" rx="16"/>
@@ -166,12 +164,12 @@ pageStart('Procurement Process Workflow');
     <text class="decision-text" x="600" y="2048"><tspan x="600">Does HoPE approve</tspan><tspan x="600" dy="22">the recommendation?</tspan></text>
     <path class="connector" d="M600 2122 V2150"/>
     <rect class="yes-pill" x="568" y="2125" width="64" height="22" rx="11"/><text class="pill-text" x="600" y="2136">YES</text>
-    <path class="return-path" d="M860 2054 H970 V68 H860"/>
+    <path class="return-path" d="M860 2054 H970 V162 H860"/>
     <rect class="no-pill" x="879" y="2043" width="58" height="22" rx="11"/><text class="pill-text" x="908" y="2054">NO</text>
     <rect class="card red" x="990" y="2016" width="520" height="76" rx="16"/>
     <text class="node-title" x="1250" y="2047" style="fill:#a62f44">Project cancelled</text>
     <text class="node-desc" x="1250" y="2070">Contract disapproval cancels the project.</text>
-    <path class="return-path" d="M1510 2054 H1550 V68 H860"/>
+    <path class="return-path" d="M1510 2054 H1550 V162 H860"/>
 
     <rect class="card green" x="340" y="2150" width="520" height="92" rx="16"/>
     <circle class="icon-disc" cx="382" cy="2196" r="22"/><text x="382" y="2203" text-anchor="middle" font-size="21" fill="#287448">✓</text>
@@ -184,6 +182,7 @@ pageStart('Procurement Process Workflow');
     <text class="node-title" x="610" y="2302">Recordkeeping</text>
     <text class="node-desc" x="610" y="2326">Procurement Section retains approved PO/Contract</text>
     <text class="node-desc" x="610" y="2346">and NTP copies.</text>
+       </g>
    </svg>
   </div>
  </section>
