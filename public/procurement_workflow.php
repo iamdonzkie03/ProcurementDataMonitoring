@@ -107,10 +107,6 @@ pageStart('Procurement Process Workflow');
 
 </style>
 <div class="proc-tree">
-  <div class="tree-intro">
-    <div><h2 style="margin:0">Procurement Process Decision Tree</h2><p>Trace the standard procurement path and follow each Yes/No decision to understand approvals, returns, failed bids, and contract completion.</p></div>
-    <div class="tree-actions"><a class="btn" href="index.php">← Dashboard</a><a class="btn btn-primary" href="app.php?year=<?= (int)date('Y') ?>">View Consolidated APP</a><button class="btn" type="button" onclick="window.print()">Print Decision Tree</button></div>
-  </div>
   <div class="tree-legend">
     <span class="legend-item"><i class="legend-dot" style="background:#b8dfc2"></i> Start / completed</span>
     <span class="legend-item"><i class="legend-dot" style="background:#d9b76a"></i> Decision point</span>
@@ -118,6 +114,10 @@ pageStart('Procurement Process Workflow');
     <span class="legend-item"><i class="legend-dot" style="background:#cbd8e8"></i> Process step</span>
   </div>
   <div class="flowchart-canvas">
+  <div class="tree-intro">
+    <div><h2 style="margin:0">Procurement Process Decision Tree</h2><p>Trace the standard procurement path and follow each Yes/No decision to understand approvals, returns, failed bids, and contract completion.</p></div>
+    <div class="tree-actions"><a class="btn" href="index.php">← Dashboard</a><a class="btn btn-primary" href="app.php?year=<?= (int)date('Y') ?>">View Consolidated APP</a><button class="btn" type="button" onclick="window.print()">Print Decision Tree</button></div>
+  </div>
   <section class="tree-phase">
     
     <div class="tree-node start"><strong>End-user prepares PPMP</strong><span>Create the PPMP and submit it to the Division Head.</span></div>
