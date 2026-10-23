@@ -280,7 +280,7 @@ pageStart('Supplier Registry');
 }
 </style>
 <div class="supplier-registry-page" style="display:flex!important;flex-direction:column!important;align-items:stretch!important;row-gap:24px!important;">
-  <div class="panel supplier-content-panel" id="supplierRegistryPanel" style="display:<?= $editId>0 ? 'block' : 'none' ?>;">
+  <div class="panel supplier-content-panel" id="supplierRegistryPanel"<?= $editId>0 ? '' : ' hidden' ?> style="<?= $editId>0 ? '' : 'display:none;' ?>">
     <div class="supplier-toolbar supplier-registry-heading-row">
       <div class="supplier-heading-block">
         <h2 style="margin:0">Supplier Registry</h2>
@@ -381,7 +381,7 @@ pageStart('Supplier Registry');
 <script>
 document.addEventListener('DOMContentLoaded',function(){
  const registryPanel=document.getElementById('supplierRegistryPanel'),showRegistryButton=document.getElementById('showSupplierRegistry');
- if(showRegistryButton&&registryPanel){showRegistryButton.addEventListener('click',function(){registryPanel.style.display='block';registryPanel.scrollIntoView({behavior:'smooth',block:'start'});const firstField=registryPanel.querySelector('input[name="supplier_company_name[]"]');if(firstField)firstField.focus({preventScroll:true});});}
+ if(showRegistryButton&&registryPanel){showRegistryButton.addEventListener('click',function(){registryPanel.hidden=false;registryPanel.style.setProperty('display','block','important');registryPanel.scrollIntoView({behavior:'smooth',block:'start'});const firstField=registryPanel.querySelector('input[name="supplier_company_name[]"]');if(firstField)firstField.focus({preventScroll:true});});}
  const datePickerRoot=document.querySelector('.supplier-form-scroll');
  function formatSupplierDate(value){if(!value)return '';const d=new Date(value+'T00:00:00');return isNaN(d)?value:d.toLocaleDateString('en-US',{month:'long',day:'2-digit',year:'numeric'});}
  function syncDatePicker(p){const native=p.querySelector('.supplier-date-native'),display=p.querySelector('.supplier-date-display');if(native&&display){display.value=formatSupplierDate(native.value);display.style.setProperty('font-size','12px','important');display.style.setProperty('line-height','1.2','important');native.style.pointerEvents='none';const openPicker=function(e){if(e){e.preventDefault();e.stopPropagation();}try{native.style.pointerEvents='auto';if(typeof native.showPicker==='function')native.showPicker();else native.click();}catch(err){try{native.click();}catch(ignore){}}finally{native.style.pointerEvents='none';}};display.addEventListener('click',openPicker);display.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openPicker(e);}});native.addEventListener('change',function(){display.value=formatSupplierDate(native.value);display.style.setProperty('font-size','12px','important');display.style.setProperty('line-height','1.2','important');});}}
