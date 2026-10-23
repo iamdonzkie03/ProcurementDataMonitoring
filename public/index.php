@@ -367,6 +367,8 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
   const finish=root.querySelector('.workflow-finish');
   if(!steps.length||!previous||!next)return;
   let current=0;
+  let autoAdvanceTimer=null;
+  const slideDuration=5000;
   const phaseForStep=step=>step.closest('.workflow-phase');
   function showSlide(index){
     current=Math.max(0,Math.min(index,steps.length-1));
@@ -381,14 +383,30 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
     if(progress)progress.style.width=((current+1)/steps.length*100)+'%';
     if(progressTrack)progressTrack.setAttribute('aria-valuenow',String(current+1));
   }
-  previous.addEventListener('click',()=>showSlide(current-1));
-  next.addEventListener('click',()=>showSlide(current+1));
+  function startAutoAdvance(){
+    if(autoAdvanceTimer)window.clearInterval(autoAdvanceTimer);
+    autoAdvanceTimer=window.setInterval(()=>{
+      if(current>=steps.length-1){
+        window.clearInterval(autoAdvanceTimer);
+        autoAdvanceTimer=null;
+        return;
+      }
+      showSlide(current+1);
+    },slideDuration);
+  }
+  function navigateTo(index){
+    showSlide(index);
+    startAutoAdvance();
+  }
+  previous.addEventListener('click',()=>navigateTo(current-1));
+  next.addEventListener('click',()=>navigateTo(current+1));
   root.addEventListener('keydown',event=>{
     if(event.altKey||event.ctrlKey||event.metaKey)return;
-    if(event.key==='ArrowLeft'){event.preventDefault();showSlide(current-1);}
-    if(event.key==='ArrowRight'){event.preventDefault();showSlide(current+1);}
+    if(event.key==='ArrowLeft'){event.preventDefault();navigateTo(current-1);}
+    if(event.key==='ArrowRight'){event.preventDefault();navigateTo(current+1);}
   });
   showSlide(0);
+  startAutoAdvance();
 })();
 </script>
 <script>const ppmpEndUserData = <?=json_encode(array_map(static fn($row)=>['name'=>(string)$row['end_user'],'amount'=>(float)$row['total_amount']],$ppmpEndUserTotals),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
