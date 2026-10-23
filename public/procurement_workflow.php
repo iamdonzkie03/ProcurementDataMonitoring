@@ -41,6 +41,18 @@ pageStart('Procurement Process Workflow');
 @media(max-width:720px){.proc-tree .tree-phase{padding:15px}.proc-tree .branch-columns{grid-template-columns:1fr;gap:22px}.proc-tree .branch-columns:before{display:none}.proc-tree .branch:before{top:-15px;height:15px}.proc-tree .tree-node{padding:12px}.proc-tree .decision-shape{min-width:0;width:100%;box-sizing:border-box;clip-path:none;border-radius:10px;min-height:0}.proc-tree .phase-title{font-size:14px}.proc-tree .tree-legend{gap:8px}}
 @media print{.proc-tree .tree-actions{display:none}.proc-tree .tree-phase{break-inside:avoid;box-shadow:none}.proc-tree .tree-node,.proc-tree .decision-shape{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 
+
+/* Keep every procurement stage inside one continuous flowchart canvas */
+.proc-tree .flowchart-canvas{display:block;position:relative;padding:28px 28px 24px;border:1px solid #d9e2ee;border-radius:16px;background:#fff;box-shadow:0 6px 24px rgba(15,23,42,.055);overflow:hidden}
+.proc-tree .tree-phase{display:contents!important}
+.proc-tree .phase-title{margin:26px 0 22px;padding:0 0 12px;border-bottom:1px solid #e3eaf3}
+.proc-tree .phase-title:first-child{margin-top:0}
+.proc-tree .tree-phase .phase-title{width:100%}
+.proc-tree .tree-phase+.tree-phase .phase-title{margin-top:34px}
+.proc-tree .merge-note{max-width:none;margin:28px auto 0}
+@media(max-width:720px){.proc-tree .flowchart-canvas{padding:16px 10px;border-radius:10px}}
+@media print{.proc-tree .flowchart-canvas{padding:12px;border:0;box-shadow:none;overflow:visible}}
+
 /* Flowchart presentation: distinct node shapes, visible connectors, and clear branches */
 .proc-tree{max-width:1600px}
 .proc-tree .tree-legend{position:sticky;top:8px;z-index:3;background:#fff;box-shadow:0 4px 14px rgba(15,23,42,.06)}
@@ -97,6 +109,7 @@ pageStart('Procurement Process Workflow');
     <span class="legend-item"><i class="legend-dot" style="background:#f0c5bb"></i> Return / disapproval / failure</span>
     <span class="legend-item"><i class="legend-dot" style="background:#cbd8e8"></i> Process step</span>
   </div>
+  <div class="flowchart-canvas">
   <section class="tree-phase">
     <h3 class="phase-title"><span class="phase-no">01</span> PPMP Preparation, Review &amp; Budget Approval</h3>
     <div class="tree-node start"><strong>End-user prepares PPMP</strong><span>Create the PPMP and submit it to the Division Head.</span></div>
@@ -147,5 +160,6 @@ pageStart('Procurement Process Workflow');
     </div>
   </section>
   <div class="merge-note"><strong>Process completion:</strong> The approved Purchase Order/Contract and Notice to Proceed are issued to the winning bidder, and the Procurement Section retains the approved documents for its records.</div>
+</div>
 </div>
 <?php pageEnd(); ?>
