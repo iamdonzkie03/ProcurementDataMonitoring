@@ -217,37 +217,33 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 @media(max-width:600px){.dashboard-mini-cards{grid-template-columns:1fr}.dashboard-mini-card{min-height:unset}}
 
 .procurement-process-workflow{width:100%;max-width:none;margin:24px 0 0;box-sizing:border-box;overflow:hidden}
-.procurement-process-workflow .workflow-intro{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+.procurement-process-workflow .workflow-intro{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
 .procurement-process-workflow .workflow-intro p{margin:6px 0 0;color:#64748b;font-size:13px;line-height:1.6}
 .procurement-process-workflow .workflow-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.procurement-process-workflow .workflow-replay{cursor:pointer}
-.procurement-process-workflow .workflow-step.is-active{z-index:1;border-color:#7896c4;box-shadow:0 0 0 3px rgba(120,150,196,.18),0 12px 28px rgba(59,86,130,.13);animation:workflowStepFocus .8s ease both}
-.procurement-process-workflow .workflow-step.is-active .workflow-step-number{background:#526f9e;color:#fff;box-shadow:0 0 0 5px rgba(82,111,158,.13)}
-.procurement-process-workflow .workflow-step.is-complete{border-color:#cfe2d4}
-.procurement-process-workflow .workflow-step.is-complete .workflow-step-number{background:#e6f4e9;color:#34734a}
-@keyframes workflowStepFocus{0%{transform:scale(.985)}45%{transform:scale(1.015)}100%{transform:scale(1)}}
-
-.procurement-process-workflow .workflow-phase{margin-top:20px;padding:18px;border:1px solid #e8edf3;border-radius:14px;background:linear-gradient(145deg,#fff,#fafbfd)}
-.procurement-process-workflow .workflow-phase-heading{display:flex;align-items:center;gap:10px;margin:0 0 14px;color:#344054;font-size:14px;font-weight:800}
-.procurement-process-workflow .workflow-phase-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 30px;width:30px;height:30px;border-radius:9px;background:#e9eef7;color:#4f6589;font-size:12px}
-.procurement-process-workflow .workflow-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
-.procurement-process-workflow .workflow-step{position:relative;min-width:0;padding:15px 15px 14px;border:1px solid #e4e9f0;border-radius:12px;background:#fff;box-shadow:0 2px 7px rgba(15,23,42,.035);animation:workflowStepEnter .55s both;animation-delay:calc(var(--step-index,0)*45ms);transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
-.procurement-process-workflow .workflow-step:hover{transform:translateY(-3px);border-color:#cbd5e1;box-shadow:0 8px 18px rgba(15,23,42,.07)}
-.procurement-process-workflow .workflow-step-top{display:flex;align-items:center;gap:9px;margin-bottom:8px}
-.procurement-process-workflow .workflow-step-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:#edf2f8;color:#526783;font-size:12px;font-weight:800}
-.procurement-process-workflow .workflow-step strong{font-size:12px;line-height:1.45;color:#344054}
-.procurement-process-workflow .workflow-step p{margin:0;color:#596579;font-size:12px;line-height:1.65;overflow-wrap:anywhere}
-.procurement-process-workflow .workflow-outcome{display:block;margin-top:9px;padding:7px 9px;border-radius:8px;font-size:11px;font-weight:700;line-height:1.5}
-.procurement-process-workflow .workflow-outcome.approved{background:#edf8f0;color:#34734a}
-.procurement-process-workflow .workflow-outcome.disapproved{background:#fff1f0;color:#a3423b}
-.procurement-process-workflow .workflow-outcome.info{background:#eef4ff;color:#49699c}
-.procurement-process-workflow .workflow-connector{display:flex;justify-content:center;align-items:center;height:24px;color:#9aa8bb;font-size:20px;animation:workflowArrowPulse 1.8s ease-in-out infinite}
-.procurement-process-workflow .workflow-finish{margin-top:18px;padding:14px 16px;border-radius:12px;background:#edf8f0;border:1px solid #cfe8d6;color:#34734a;font-size:12px;line-height:1.65}
-@keyframes workflowStepEnter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-@keyframes workflowArrowPulse{0%,100%{opacity:.45;transform:translateY(-2px)}50%{opacity:1;transform:translateY(2px)}}
-@media(max-width:1000px){.procurement-process-workflow .workflow-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:620px){.procurement-process-workflow .workflow-phase{padding:12px}.procurement-process-workflow .workflow-steps{grid-template-columns:1fr}.procurement-process-workflow .workflow-step{animation-delay:0ms}}
-@media(prefers-reduced-motion:reduce){.procurement-process-workflow .workflow-step,.procurement-process-workflow .workflow-connector{animation:none;transition:none}.procurement-process-workflow .workflow-step:hover{transform:none}}
+.procurement-process-workflow .workflow-phase{display:none;margin-top:14px;padding:26px 30px 28px;border:1px solid #e2e8f0;border-radius:8px;background:linear-gradient(135deg,#fff 0%,#f8fafc 100%);min-height:310px}
+.procurement-process-workflow .workflow-phase.is-current{display:block}
+.procurement-process-workflow .workflow-phase-heading{display:flex;align-items:center;gap:12px;margin:0 0 28px;color:#344054;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.procurement-process-workflow .workflow-phase-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;border-radius:4px;background:#263b5b;color:#fff;font-size:12px}
+.procurement-process-workflow .workflow-steps{display:block}
+.procurement-process-workflow .workflow-step{display:none;position:relative;min-width:0;padding:8px 0 18px;border:0;border-radius:0;background:transparent;box-shadow:none;animation:none;transition:none}
+.procurement-process-workflow .workflow-step.is-current{display:block}
+.procurement-process-workflow .workflow-step-top{display:flex;align-items:center;gap:18px;margin-bottom:18px}
+.procurement-process-workflow .workflow-step-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 66px;width:66px;height:66px;border-radius:50%;background:#e8eef6;color:#263b5b;font-size:22px;font-weight:800}
+.procurement-process-workflow .workflow-step strong{font-size:clamp(20px,2.4vw,30px);line-height:1.25;color:#263449;font-weight:750}
+.procurement-process-workflow .workflow-step p{max-width:900px;margin:0 0 0 84px;color:#4b5565;font-size:16px;line-height:1.85;overflow-wrap:anywhere}
+.procurement-process-workflow .workflow-outcome{display:inline-block;margin:22px 0 0 84px;padding:9px 13px;border-radius:4px;font-size:12px;font-weight:700;line-height:1.5}
+.procurement-process-workflow .workflow-outcome.approved{background:#e8f5ec;color:#28633b}
+.procurement-process-workflow .workflow-outcome.disapproved{background:#fff0ee;color:#9d3831}
+.procurement-process-workflow .workflow-outcome.info{background:#eaf1fb;color:#3e5c8a}
+.procurement-process-workflow .workflow-connector{display:none}
+.procurement-process-workflow .workflow-finish{display:none;margin-top:18px;padding:14px 16px;border-radius:4px;background:#edf8f0;border:1px solid #cfe8d6;color:#34734a;font-size:12px;line-height:1.65}
+.procurement-process-workflow .workflow-finish.is-current{display:block}
+.procurement-process-workflow .workflow-presentation-controls{display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid #e8edf3}
+.procurement-process-workflow .workflow-progress{flex:1;min-width:50px;height:5px;background:#e9edf3;border-radius:10px;overflow:hidden}
+.procurement-process-workflow .workflow-progress-fill{height:100%;width:0;background:#526f9e;transition:width .2s ease}
+.procurement-process-workflow .workflow-slide-count{min-width:74px;text-align:center;color:#64748b;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.procurement-process-workflow .workflow-nav-btn{min-width:94px}
+@media(max-width:620px){.procurement-process-workflow .workflow-phase{padding:20px 16px;min-height:280px}.procurement-process-workflow .workflow-phase-heading{margin-bottom:22px}.procurement-process-workflow .workflow-step-top{align-items:flex-start;gap:12px}.procurement-process-workflow .workflow-step-number{flex-basis:48px;width:48px;height:48px;font-size:17px}.procurement-process-workflow .workflow-step strong{font-size:21px}.procurement-process-workflow .workflow-step p,.procurement-process-workflow .workflow-outcome{margin-left:0}.procurement-process-workflow .workflow-presentation-controls{gap:7px}.procurement-process-workflow .workflow-nav-btn{min-width:70px;padding-left:10px;padding-right:10px}}
 
 </style>
 <div class="dashboard-mini-cards">
@@ -303,7 +299,13 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 </div><div class="panel procurement-process-workflow">
   <div class="workflow-intro">
     <div><h2 style="margin:0">Procurement Process Workflow</h2><p>Follow the process from PPMP preparation through bidding, award, and contract issuance.</p></div>
-    <div class="workflow-actions"><button type="button" class="btn workflow-replay" id="replayProcurementWorkflow">Replay Animation</button><a class="btn" href="app.php?year=<?=$year?>">View Consolidated APP</a></div>
+    <div class="workflow-actions"><a class="btn" href="app.php?year=<?=$year?>">View Consolidated APP</a></div>
+  </div>
+  <div class="workflow-presentation-controls" aria-label="Workflow presentation controls">
+    <button type="button" class="btn workflow-nav-btn" id="workflowPrevious" disabled>Previous</button>
+    <div class="workflow-progress" role="progressbar" aria-label="Presentation progress" aria-valuemin="1" aria-valuemax="21" aria-valuenow="1"><div class="workflow-progress-fill" id="workflowProgressFill"></div></div>
+    <span class="workflow-slide-count" id="workflowSlideCount" aria-live="polite">01 / 21</span>
+    <button type="button" class="btn workflow-nav-btn" id="workflowNext">Next</button>
   </div>
   <div class="workflow-phase">
     <h3 class="workflow-phase-heading"><span class="workflow-phase-number">01</span> PPMP Preparation, Review &amp; Budget Approval</h3>
@@ -356,33 +358,37 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
   const root=document.querySelector('.procurement-process-workflow');
   if(!root)return;
   const steps=Array.from(root.querySelectorAll('.workflow-step'));
-  const replay=root.querySelector('#replayProcurementWorkflow');
-  if(!steps.length)return;
-  const reducedMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let timer=null;
-  function play(){
-    if(timer)window.clearInterval(timer);
-    steps.forEach(step=>step.classList.remove('is-active','is-complete'));
-    let index=0;
-    if(reducedMotion){steps.forEach(step=>step.classList.add('is-complete'));return;}
-    function advance(){
-      steps.forEach((step,i)=>{
-        step.classList.toggle('is-active',i===index);
-        if(i<index)step.classList.add('is-complete');
-      });
-      index++;
-      if(index>=steps.length){
-        window.clearInterval(timer);
-        timer=null;
-        steps.forEach(step=>step.classList.remove('is-active'));
-        steps.forEach(step=>step.classList.add('is-complete'));
-      }
-    }
-    advance();
-    timer=window.setInterval(advance,850);
+  const phases=Array.from(root.querySelectorAll('.workflow-phase'));
+  const previous=root.querySelector('#workflowPrevious');
+  const next=root.querySelector('#workflowNext');
+  const count=root.querySelector('#workflowSlideCount');
+  const progress=root.querySelector('#workflowProgressFill');
+  const progressTrack=root.querySelector('.workflow-progress');
+  const finish=root.querySelector('.workflow-finish');
+  if(!steps.length||!previous||!next)return;
+  let current=0;
+  const phaseForStep=step=>step.closest('.workflow-phase');
+  function showSlide(index){
+    current=Math.max(0,Math.min(index,steps.length-1));
+    steps.forEach((step,i)=>step.classList.toggle('is-current',i===current));
+    const activePhase=phaseForStep(steps[current]);
+    phases.forEach(phase=>phase.classList.toggle('is-current',phase===activePhase));
+    if(finish)finish.classList.toggle('is-current',current===steps.length-1);
+    previous.disabled=current===0;
+    next.disabled=current===steps.length-1;
+    next.textContent=current===steps.length-1?'End':'Next';
+    if(count)count.textContent=String(current+1).padStart(2,'0')+' / '+String(steps.length).padStart(2,'0');
+    if(progress)progress.style.width=((current+1)/steps.length*100)+'%';
+    if(progressTrack)progressTrack.setAttribute('aria-valuenow',String(current+1));
   }
-  if(replay)replay.addEventListener('click',play);
-  play();
+  previous.addEventListener('click',()=>showSlide(current-1));
+  next.addEventListener('click',()=>showSlide(current+1));
+  root.addEventListener('keydown',event=>{
+    if(event.altKey||event.ctrlKey||event.metaKey)return;
+    if(event.key==='ArrowLeft'){event.preventDefault();showSlide(current-1);}
+    if(event.key==='ArrowRight'){event.preventDefault();showSlide(current+1);}
+  });
+  showSlide(0);
 })();
 </script>
 <script>const ppmpEndUserData = <?=json_encode(array_map(static fn($row)=>['name'=>(string)$row['end_user'],'amount'=>(float)$row['total_amount']],$ppmpEndUserTotals),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
