@@ -283,8 +283,30 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
     let angle=-Math.PI/2;
     ppmpEndUserData.forEach((item,i)=>{
       const slice=total>0?(item.amount/total)*Math.PI*2:0;
-      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+slice);ctx.closePath();
-      ctx.fillStyle=colors[i%colors.length];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();angle+=slice;
+      const start=angle,end=angle+slice,mid=(start+end)/2;
+      ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,start,end);ctx.closePath();
+      ctx.fillStyle=colors[i%colors.length];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+
+      if(slice>0){
+        const labelRadius=r*.59;
+        const labelX=cx+Math.cos(mid)*labelRadius;
+        const labelY=cy+Math.sin(mid)*labelRadius;
+        const availableWidth=Math.max(18,2*labelRadius*Math.sin(Math.min(slice,Math.PI)/2)*.82);
+        const fontSize=Math.max(7,Math.min(11,availableWidth/5.5));
+        const pct=(item.amount/total*100).toFixed(1)+'%';
+        let name=String(item.name||'End-user');
+        ctx.font='600 '+fontSize+'px Arial, sans-serif';
+        while(name.length>1 && ctx.measureText(name).width>availableWidth-4) name=name.slice(0,-1);
+        if(name!==item.name && name.length>1) name=name.slice(0,-1)+'…';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.lineJoin='round';ctx.lineWidth=2.5;ctx.strokeStyle='rgba(255,255,255,.95)';
+        ctx.strokeText(name,labelX,labelY-fontSize*.55,Math.max(10,availableWidth));
+        ctx.fillStyle='#172033';ctx.fillText(name,labelX,labelY-fontSize*.55,Math.max(10,availableWidth));
+        ctx.font='700 '+Math.max(7,fontSize-1)+'px Arial, sans-serif';
+        ctx.strokeText(pct,labelX,labelY+fontSize*.7,Math.max(10,availableWidth));
+        ctx.fillStyle='#172033';ctx.fillText(pct,labelX,labelY+fontSize*.7,Math.max(10,availableWidth));
+      }
+      angle=end;
     });
   }
   draw();
