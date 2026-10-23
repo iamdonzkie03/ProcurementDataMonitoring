@@ -216,23 +216,25 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 @media(max-width:1050px){.dashboard-mini-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.dashboard-mini-cards{grid-template-columns:1fr}.dashboard-mini-card{min-height:unset}}
 
-.procurement-process-workflow{width:100%;max-width:none;margin:24px 0 0;box-sizing:border-box;overflow:hidden}
+.procurement-process-workflow{width:100%;max-width:none;margin:24px 0 0;box-sizing:border-box;overflow:hidden;background:#f4f0e7;border:1px solid #d5c7ac;border-radius:10px;padding:22px;box-shadow:0 8px 22px rgba(50,35,18,.08)}
 .procurement-process-workflow .workflow-intro{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
 .procurement-process-workflow .workflow-intro p{margin:6px 0 0;color:#64748b;font-size:13px;line-height:1.6}
 .procurement-process-workflow .workflow-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.procurement-process-workflow .workflow-phase{display:none;margin-top:14px;padding:26px 30px 28px;border:1px solid #e2e8f0;border-radius:8px;background:linear-gradient(135deg,#fff 0%,#f8fafc 100%);min-height:310px;perspective:1200px}
-.procurement-process-workflow .workflow-phase.is-current{display:block}
+.procurement-process-workflow .workflow-phase{display:none;position:relative;margin-top:14px;padding:28px 34px 30px 42px;border:1px solid #c9b993;border-radius:3px 8px 8px 3px;background:repeating-linear-gradient(0deg,#fffdf7 0,#fffdf7 31px,#ece5d7 32px,#fffdf7 33px);min-height:370px;perspective:1800px;transform-style:preserve-3d;box-shadow:inset 12px 0 14px -13px #614d2c,3px 5px 0 #d9c9a8,6px 9px 0 #c7b58f,0 14px 22px rgba(53,40,20,.18)}
+.procurement-process-workflow .workflow-phase:before{content:"";position:absolute;left:0;top:0;bottom:0;width:17px;background:linear-gradient(90deg,#604521 0%,#9b7945 22%,#e1d0a7 52%,rgba(255,255,255,.25) 100%);border-radius:3px 0 0 3px;box-shadow:2px 0 4px rgba(47,32,11,.18);pointer-events:none}
+.procurement-process-workflow .workflow-phase.is-current{display:block;animation:workflowOpenBook .35s ease-out both}
+@keyframes workflowOpenBook{from{transform:rotateX(2deg) translateY(5px);opacity:.8}to{transform:rotateX(0) translateY(0);opacity:1}}
 .procurement-process-workflow .workflow-phase-heading{display:flex;align-items:center;gap:12px;margin:0 0 28px;color:#344054;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .procurement-process-workflow .workflow-phase-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;border-radius:4px;background:#263b5b;color:#fff;font-size:12px}
-.procurement-process-workflow .workflow-steps{display:block;perspective:1500px;transform-style:preserve-3d}
-.procurement-process-workflow .workflow-step{display:none;position:relative;min-width:0;min-height:205px;padding:20px 22px 24px;border:1px solid #d7dee9;border-radius:4px;background:linear-gradient(100deg,#fff 0%,#fff 76%,#f4f6fa 100%);box-shadow:inset 12px 0 18px -18px rgba(15,23,42,.55);animation:none;transition:none;transform-origin:left center;transform-style:preserve-3d;backface-visibility:hidden}
-.procurement-process-workflow .workflow-step:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(15,23,42,.14) 0%,rgba(255,255,255,0) 20%,rgba(255,255,255,0) 72%,rgba(15,23,42,.05) 100%);opacity:0;backface-visibility:hidden}
-.procurement-process-workflow .workflow-step.is-current{display:block;animation:workflowBookFlip 1.15s cubic-bezier(.22,.72,.22,1) both}
-.procurement-process-workflow .workflow-step.is-current:after{animation:workflowBookPageShade 1.15s ease-out both}
-@keyframes workflowBookFlip{0%{transform:rotateY(-155deg);opacity:1;box-shadow:inset 18px 0 28px -10px rgba(15,23,42,.55),12px 10px 24px rgba(15,23,42,.22)}35%{transform:rotateY(-88deg);opacity:1;box-shadow:inset 14px 0 24px -10px rgba(15,23,42,.48),8px 8px 20px rgba(15,23,42,.18)}68%{transform:rotateY(-24deg);opacity:1;box-shadow:inset 5px 0 12px -8px rgba(15,23,42,.28),3px 5px 12px rgba(15,23,42,.1)}100%{transform:rotateY(0);opacity:1;box-shadow:inset 12px 0 18px -18px rgba(15,23,42,.55)}}
-@keyframes workflowBookPageShade{0%,30%{opacity:.8}70%{opacity:.35}100%{opacity:0}}
-@media(max-width:620px){.procurement-process-workflow .workflow-step{padding:16px 14px 20px;min-height:230px}}
-@media(prefers-reduced-motion:reduce){.procurement-process-workflow .workflow-step.is-current,.procurement-process-workflow .workflow-step.is-current:after{animation:none}}
+.procurement-process-workflow .workflow-steps{display:block;position:relative;perspective:1800px;transform-style:preserve-3d}
+.procurement-process-workflow .workflow-step{display:none;position:relative;min-width:0;min-height:225px;padding:22px 24px 28px 30px;border:1px solid #e5dcc8;border-radius:2px 5px 5px 2px;background:repeating-linear-gradient(0deg,#fffdf7 0,#fffdf7 31px,#ece5d7 32px,#fffdf7 33px);box-shadow:inset 9px 0 12px -13px #614d2c,4px 5px 0 rgba(199,181,143,.45);animation:none;transform-origin:left center;transform-style:preserve-3d;backface-visibility:hidden}
+.procurement-process-workflow .workflow-step:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(72,48,18,.16) 0%,rgba(255,255,255,0) 16%,rgba(255,255,255,0) 76%,rgba(72,48,18,.1) 100%);opacity:0;backface-visibility:hidden}
+.procurement-process-workflow .workflow-step.is-current{display:block;animation:workflowBookFlip 1.05s cubic-bezier(.35,.05,.2,1) both}
+.procurement-process-workflow .workflow-step.is-current:after{animation:workflowBookPageShade 1.05s ease-out both}
+@keyframes workflowBookFlip{0%{transform:rotateY(-178deg);opacity:1;box-shadow:inset 18px 0 28px -10px rgba(15,23,42,.65),12px 10px 24px rgba(15,23,42,.25)}45%{transform:rotateY(-90deg);opacity:1;box-shadow:inset 14px 0 24px -10px rgba(15,23,42,.5),8px 8px 20px rgba(15,23,42,.2)}75%{transform:rotateY(-20deg);opacity:1;box-shadow:inset 5px 0 12px -8px rgba(15,23,42,.28),3px 5px 12px rgba(15,23,42,.1)}100%{transform:rotateY(0);opacity:1;box-shadow:inset 9px 0 12px -13px #614d2c,4px 5px 0 rgba(199,181,143,.45)}}
+@keyframes workflowBookPageShade{0%,30%{opacity:.95}70%{opacity:.35}100%{opacity:0}}
+@media(max-width:620px){.procurement-process-workflow{padding:14px}.procurement-process-workflow .workflow-phase{padding:22px 14px 24px 25px;min-height:330px}.procurement-process-workflow .workflow-step{padding:16px 14px 20px;min-height:230px}}
+@media(prefers-reduced-motion:reduce){.procurement-process-workflow .workflow-step.is-current,.procurement-process-workflow .workflow-step.is-current:after,.procurement-process-workflow .workflow-phase.is-current{animation:none}}
 .procurement-process-workflow .workflow-step-top{display:flex;align-items:center;gap:18px;margin-bottom:18px}
 .procurement-process-workflow .workflow-step-number{display:inline-flex;align-items:center;justify-content:center;flex:0 0 66px;width:66px;height:66px;border-radius:50%;background:#e8eef6;color:#263b5b;font-size:22px;font-weight:800}
 .procurement-process-workflow .workflow-step strong{font-size:clamp(20px,2.4vw,30px);line-height:1.25;color:#263449;font-weight:750}
@@ -244,11 +246,14 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
 .procurement-process-workflow .workflow-connector{display:none}
 .procurement-process-workflow .workflow-finish{display:none;margin-top:18px;padding:14px 16px;border-radius:4px;background:#edf8f0;border:1px solid #cfe8d6;color:#34734a;font-size:12px;line-height:1.65}
 .procurement-process-workflow .workflow-finish.is-current{display:block}
-.procurement-process-workflow .workflow-presentation-controls{display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid #e8edf3}
-.procurement-process-workflow .workflow-progress{flex:1;min-width:50px;height:5px;background:#e9edf3;border-radius:10px;overflow:hidden}
-.procurement-process-workflow .workflow-progress-fill{height:100%;width:0;background:#526f9e;transition:width .2s ease}
-.procurement-process-workflow .workflow-slide-count{min-width:74px;text-align:center;color:#64748b;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
-.procurement-process-workflow .workflow-nav-btn{min-width:94px}
+.procurement-process-workflow .workflow-presentation-controls{display:flex;align-items:center;gap:12px;margin-top:18px;padding-top:14px;border-top:1px solid #d8c9ac}
+.procurement-process-workflow .workflow-progress{flex:1;min-width:50px;height:6px;background:#e2d7c2;border-radius:10px;overflow:hidden}
+.procurement-process-workflow .workflow-progress-fill{height:100%;width:0;background:#76532c;transition:width .25s ease}
+.procurement-process-workflow .workflow-slide-count{min-width:74px;text-align:center;color:#6b5435;font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+.procurement-process-workflow .workflow-nav-btn{min-width:120px;background:#654723!important;color:#fff!important;border:1px solid #4d351a!important;border-radius:4px!important;box-shadow:0 3px 0 #3f2a15!important}
+.procurement-process-workflow .workflow-nav-btn:not(:disabled):hover{transform:translateY(1px);box-shadow:0 2px 0 #3f2a15!important}
+.procurement-process-workflow .workflow-nav-btn:disabled{opacity:.45;box-shadow:none!important}
+.procurement-process-workflow .workflow-page-hint{margin:10px 0 0;text-align:center;color:#826a48;font-size:11px;letter-spacing:.04em}
 @media(max-width:620px){.procurement-process-workflow .workflow-phase{padding:20px 16px;min-height:280px}.procurement-process-workflow .workflow-phase-heading{margin-bottom:22px}.procurement-process-workflow .workflow-step-top{align-items:flex-start;gap:12px}.procurement-process-workflow .workflow-step-number{flex-basis:48px;width:48px;height:48px;font-size:17px}.procurement-process-workflow .workflow-step strong{font-size:21px}.procurement-process-workflow .workflow-step p,.procurement-process-workflow .workflow-outcome{margin-left:0}.procurement-process-workflow .workflow-presentation-controls{gap:7px}.procurement-process-workflow .workflow-nav-btn{min-width:70px;padding-left:10px;padding-right:10px}}
 
 </style>
@@ -307,12 +312,13 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
     <div><h2 style="margin:0">Procurement Process Workflow</h2><p>Follow the process from PPMP preparation through bidding, award, and contract issuance.</p></div>
     <div class="workflow-actions"><a class="btn" href="app.php?year=<?=$year?>">View Consolidated APP</a></div>
   </div>
-  <div class="workflow-presentation-controls" aria-label="Workflow presentation controls">
-    <button type="button" class="btn workflow-nav-btn" id="workflowPrevious" disabled>Previous</button>
-    <div class="workflow-progress" role="progressbar" aria-label="Presentation progress" aria-valuemin="1" aria-valuemax="21" aria-valuenow="1"><div class="workflow-progress-fill" id="workflowProgressFill"></div></div>
+  <div class="workflow-presentation-controls" aria-label="Book page controls">
+    <button type="button" class="btn workflow-nav-btn" id="workflowPrevious" disabled aria-label="Turn to previous page">‹ Previous page</button>
+    <div class="workflow-progress" role="progressbar" aria-label="Book reading progress" aria-valuemin="1" aria-valuemax="21" aria-valuenow="1"><div class="workflow-progress-fill" id="workflowProgressFill"></div></div>
     <span class="workflow-slide-count" id="workflowSlideCount" aria-live="polite">01 / 21</span>
-    <button type="button" class="btn workflow-nav-btn" id="workflowNext">Next</button>
+    <button type="button" class="btn workflow-nav-btn" id="workflowNext" aria-label="Turn to next page">Next page ›</button>
   </div>
+  <p class="workflow-page-hint">TURN THE PAGES USING THE BUTTONS OR YOUR LEFT / RIGHT ARROW KEYS</p>
   <div class="workflow-phase">
     <h3 class="workflow-phase-heading"><span class="workflow-phase-number">01</span> PPMP Preparation, Review &amp; Budget Approval</h3>
     <div class="workflow-steps">
@@ -373,46 +379,41 @@ $recent=$pdo->prepare('SELECT p.*,a.name area,c.name category FROM ppmp_items p 
   const finish=root.querySelector('.workflow-finish');
   if(!steps.length||!previous||!next)return;
   let current=0;
-  let autoAdvanceTimer=null;
-  const slideDuration=5000;
   const phaseForStep=step=>step.closest('.workflow-phase');
   function showSlide(index){
-    current=Math.max(0,Math.min(index,steps.length-1));
-    steps.forEach((step,i)=>step.classList.toggle('is-current',i===current));
+    const nextIndex=Math.max(0,Math.min(index,steps.length-1));
+    if(nextIndex===current && steps[current] && steps[current].classList.contains('is-current'))return;
+    current=nextIndex;
+    steps.forEach((step,i)=>{
+      step.classList.remove('is-current');
+      if(i===current){
+        // Restart the page-turn animation only when the reader changes page.
+        void step.offsetWidth;
+        step.classList.add('is-current');
+      }
+    });
     const activePhase=phaseForStep(steps[current]);
     phases.forEach(phase=>phase.classList.toggle('is-current',phase===activePhase));
     if(finish)finish.classList.toggle('is-current',current===steps.length-1);
     previous.disabled=current===0;
     next.disabled=current===steps.length-1;
-    next.textContent=current===steps.length-1?'End':'Next';
+    previous.setAttribute('aria-label',current===0?'Beginning of book':'Turn to previous page');
+    next.setAttribute('aria-label',current===steps.length-1?'End of book':'Turn to next page');
+    next.textContent=current===steps.length-1?'End of book':'Next page ›';
     if(count)count.textContent=String(current+1).padStart(2,'0')+' / '+String(steps.length).padStart(2,'0');
     if(progress)progress.style.width=((current+1)/steps.length*100)+'%';
     if(progressTrack)progressTrack.setAttribute('aria-valuenow',String(current+1));
   }
-  function startAutoAdvance(){
-    if(autoAdvanceTimer)window.clearInterval(autoAdvanceTimer);
-    autoAdvanceTimer=window.setInterval(()=>{
-      if(current>=steps.length-1){
-        window.clearInterval(autoAdvanceTimer);
-        autoAdvanceTimer=null;
-        return;
-      }
-      showSlide(current+1);
-    },slideDuration);
-  }
-  function navigateTo(index){
-    showSlide(index);
-    startAutoAdvance();
-  }
+  function navigateTo(index){showSlide(index);}
   previous.addEventListener('click',()=>navigateTo(current-1));
   next.addEventListener('click',()=>navigateTo(current+1));
+  // The book stays open until the reader chooses to turn a page.
   root.addEventListener('keydown',event=>{
     if(event.altKey||event.ctrlKey||event.metaKey)return;
     if(event.key==='ArrowLeft'){event.preventDefault();navigateTo(current-1);}
     if(event.key==='ArrowRight'){event.preventDefault();navigateTo(current+1);}
   });
   showSlide(0);
-  startAutoAdvance();
 })();
 </script>
 <script>const ppmpEndUserData = <?=json_encode(array_map(static fn($row)=>['name'=>(string)$row['end_user'],'amount'=>(float)$row['total_amount']],$ppmpEndUserTotals),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
