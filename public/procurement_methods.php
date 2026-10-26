@@ -74,13 +74,16 @@ if(!$embedded) pageStart('Procurement Method');
       <h2>Procurement Method</h2>
       <p class="muted">Manage procurement methods.</p>
     </div>
-    <div class="procurement_method-search" id="procurement_methodSearchBox">
+    <div class="procurement_method-header-actions">
+      <div class="procurement_method-search" id="procurement_methodSearchBox">
       <input class="input" type="text" id="procurement_methodSearchInput" autocomplete="off" placeholder="Search Method..." aria-label="Search Method">
       <div class="procurement_method-search-suggestions" id="procurement_methodSearchSuggestions" role="listbox"></div>
+      </div>
+      <?php if(!$editing): ?><button type="button" class="btn procurement_method-add-button" id="showProcurementMethodForm">Add Method</button><?php endif; ?>
     </div>
   </div>
 
-  <form method="post" id="procurement_methodManagementForm" style="margin-top:18px">
+  <form method="post" id="procurement_methodManagementForm" style="margin-top:18px" <?=$editing?'':'hidden'?>>
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="<?=$editing?'save':'save_bulk'?>">
     <input type="hidden" name="id" value="<?=e((string)($editing['id']??0))?>">
@@ -111,33 +114,43 @@ if(!$embedded) pageStart('Procurement Method');
     <?php endif; ?>
   </form>
 
-  <div class="table-wrap" style="margin-top:22px">
+  <div class="procurement_method-listing" style="margin-top:22px">
   <form method="post" id="procurementMethodBulkDeleteForm" onsubmit="return confirmBulkProcurementMethodDelete();">
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="bulk_delete">
     <div class="procurement_method-pagination" id="procurement_methodPagination" aria-label="Procurement Method pagination"><div class="procurement_method-page-size"><label for="procurement_methodPageSize">Show</label><select class="input" id="procurement_methodPageSize" aria-label="Records per page"><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span><label for="procurement_methodPageSize">records</label></span></div><div class="procurement_method-pagination-info" id="procurement_methodPaginationInfo"></div><div class="procurement_method-pagination-buttons" id="procurement_methodPaginationButtons"></div></div>
-    <div class="procurement-method-selection-toolbar" style="display:flex;align-items:center;justify-content:flex-end;gap:12px;margin:0 0 10px">
-
+    <div class="procurement-method-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px">
+      <label class="procurement_method-select-all-label"><input type="checkbox" id="selectAllProcurementMethods" aria-label="Select all Procurement Methods"> Select All</label>
       <button class="btn danger" type="submit" id="deleteSelectedProcurementMethods" disabled>Delete Selected</button>
     </div>
-    <table class="table" id="procurement_methodTable">
-      <thead><tr><th style="width:42px;text-align:center"><input type="checkbox" id="selectAllProcurementMethods" aria-label="Select all Procurement Method rows" title="Select all"></th><th>Procurement Method</th><th>Actions</th></tr></thead>
-      <tbody>
+    <div class="procurement_method-cards" id="procurement_methodCards">
       <?php foreach($rows as $r): ?>
-        <tr data-procurement_method-id="<?=e((string)$r['id'])?>" data-procurement_method-name="<?=e($r['procurement_method'])?>">
-          <td><input type="checkbox" class="procurement-method-select" name="selected_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['procurement_method'])?>"></td>
-          <td><b><?=e($r['procurement_method'])?></b></td>
-          <td><a class="btn secondary master-action" href="<?=e($embedded?'settings.php?tab=procurement-method&edit='.(int)$r['id']:'procurement_methods.php?edit='.(int)$r['id'])?>">Edit</a></td>
-        </tr>
+        <article class="procurement_method-card" data-procurement_method-id="<?=e((string)$r['id'])?>" data-procurement_method-name="<?=e($r['procurement_method'])?>">
+          <div class="procurement_method-card-top"><input type="checkbox" class="procurement-method-select" name="selected_ids[]" value="<?=(int)$r['id']?>" aria-label="Select <?=e($r['procurement_method'])?>"><span class="procurement_method-card-label">Procurement Method</span></div>
+          <h3><?=e($r['procurement_method'])?></h3>
+          <div class="procurement_method-card-actions"><a class="btn secondary master-action" href="<?=e($embedded?'settings.php?tab=procurement-method&edit='.(int)$r['id']:'procurement_methods.php?edit='.(int)$r['id'])?>">Edit</a></div>
+        </article>
       <?php endforeach; ?>
-      <?php if(!$rows): ?><tr><td colspan="3" class="empty">No Procurement Methods have been added yet.</td></tr><?php endif; ?>
-      </tbody>
-    </table>
+      <?php if(!$rows): ?><div class="empty procurement_method-empty">No Procurement Methods have been added yet.</div><?php endif; ?>
+    </div>
   </form>
   </div>
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded',function(){
+  const toggle=document.getElementById('showProcurementMethodForm');
+  const form=document.getElementById('procurement_methodManagementForm');
+  if(toggle&&form){
+    toggle.addEventListener('click',function(){
+      const opening=form.hidden;
+      form.hidden=!opening;
+      toggle.textContent=opening?'Cancel':'Add Method';
+      if(opening){const first=form.querySelector('input[name="names[]"]');if(first)first.focus();}
+    });
+  }
+});
+
 function confirmBulkProcurementMethodDelete(){
   const selected=Array.from(document.querySelectorAll('.procurement-method-select:checked'));
   if(!selected.length){alert('Select at least one Procurement Method to delete.');return false;}
@@ -196,12 +209,12 @@ document.addEventListener('DOMContentLoaded',function(){
 document.addEventListener('DOMContentLoaded',function(){
   const input=document.getElementById('procurement_methodSearchInput');
   const suggestions=document.getElementById('procurement_methodSearchSuggestions');
-  const table=document.getElementById('procurement_methodTable');
+  const cards=document.getElementById('procurement_methodCards');
   const pageSizeSelect=document.getElementById('procurement_methodPageSize');
   const paginationInfo=document.getElementById('procurement_methodPaginationInfo');
   const paginationButtons=document.getElementById('procurement_methodPaginationButtons');
-  if(!input||!suggestions||!table||!pageSizeSelect||!paginationInfo||!paginationButtons)return;
-  const tableRows=Array.from(table.querySelectorAll('tr[data-procurement_method-id]'));
+  if(!input||!suggestions||!cards||!pageSizeSelect||!paginationInfo||!paginationButtons)return;
+  const tableRows=Array.from(cards.querySelectorAll('.procurement_method-card[data-procurement_method-id]'));
   let filteredRows=tableRows.slice(),currentPage=1,pageSize=Number(pageSizeSelect.value)||10;
   function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch];});}
   function closeSuggestions(){suggestions.innerHTML='';suggestions.style.display='none';}
@@ -262,6 +275,7 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 <style>
 .procurement_method-page-header{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.procurement_method-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-left:auto}.procurement_method-add-button{white-space:nowrap;background:#198754!important;border-color:#198754!important;color:#fff!important;font-weight:700}.procurement_method-add-button:hover{background:#157347!important}.procurement_method-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}.procurement_method-card{min-width:0;border:1px solid #dbe4ee;border-radius:12px;padding:16px;background:linear-gradient(145deg,#fff,#f7faff);box-shadow:0 3px 10px rgba(26,54,93,.06);display:flex;flex-direction:column;gap:12px}.procurement_method-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.procurement_method-card-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;font-weight:800}.procurement_method-card h3{font-size:16px;line-height:1.4;margin:0;overflow-wrap:anywhere;color:#183b5b}.procurement_method-card-actions{margin-top:auto;display:flex;justify-content:flex-end}.procurement_method-select-all-label{display:flex;align-items:center;gap:8px;font-size:13px;color:#475569}.procurement_method-listing .empty{grid-column:1/-1;padding:24px;text-align:center;border:1px dashed #cbd5e1;border-radius:10px;color:#64748b}.procurement_method-cards .procurement_method-card[style*="display: none"]{display:none!important}#procurement_methodManagementForm[hidden]{display:none!important}@media(max-width:700px){.procurement_method-page-header{align-items:stretch;flex-wrap:wrap}.procurement_method-header-actions{width:100%;margin-left:0}.procurement_method-search,.procurement_method-search .input{width:100%;min-width:0}.procurement_method-header-actions .procurement_method-search{flex:1}.procurement_method-cards{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}}
 .procurement_method-page-title{min-width:0}
 .procurement_method-page-title h2{margin:0}
 .procurement_method-page-title .muted{margin:4px 0 0}
