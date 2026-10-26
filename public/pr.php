@@ -101,7 +101,7 @@ pageStart('Purchase Requests');
   <div class="table-wrap"><table class="table"><thead><tr><th>PR No.</th><th>Area/Unit</th><th>Purpose</th><th>Lines</th><th>ABC</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody>
   <?php foreach($rows as $r):?><tr><td><b><?=e($r['pr_no'])?></b></td><td><?=e($r['area'])?></td><td><?=e($r['purpose'])?></td><td><?=$r['line_count']?></td><td>₱<?=number_format($r['abc'],2)?></td><td><span class="badge"><?=e($r['status'])?></span></td><td><?=date('M d, Y',strtotime($r['created_at']))?></td><td><?php if($r['status']==='Draft' && hasRole(['Administrator','Editor'])):?><a class="btn" href="pr.php?edit=<?=$r['id']?>">Edit Draft</a><?php else:?>—<?php endif;?></td></tr><?php endforeach;?><?php if(!$rows):?><tr><td colspan="8" class="empty">No purchase requests in this tab.</td></tr><?php endif;?>
   </tbody></table></div>
-  <?php if(hasRole(['Administrator','Editor'])): ?><div class="pr-create-actions"><button class="btn" type="button" id="showPrForm">Create PR</button></div><?php endif;?>
+  <?php if(hasRole(['Administrator','Editor'])): ?><div class="pr-create-actions"><button class="btn" type="button" id="showPrForm">Create PR</button><button class="btn" type="button" id="hidePrForm" hidden>Cancel</button></div><?php endif;?>
 </div>
 
 <?php if(hasRole(['Administrator','Editor'])):?><div class="panel" id="prForm" style="margin-top:18px" <?=$editPr?'':'hidden'?>><h2><?=$editPr?'Edit Draft Purchase Request '.$editPr['pr_no']:'Create Purchase Request from PPMP'?></h2><p class="hint-text">Only Draft Purchase Requests can be reopened and edited. Available quantity is automatically recalculated.</p>
@@ -118,17 +118,29 @@ pageStart('Purchase Requests');
 .pr-status-tab.active{color:#164e80;background:#edf6ff;border-color:#d9e9f8;border-bottom-color:#0d6efd}
 .pr-status-tab.active span{background:#0d6efd;color:#fff}
 .pr-create-actions{display:flex;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid #edf1f5}
-#prForm[hidden]{display:none!important}
+#prForm[hidden]{display:none!important}\n#hidePrForm[hidden]{display:none!important}
 @media(max-width:650px){.pr-list-header{align-items:stretch;flex-direction:column}.pr-search-form{width:100%}.pr-status-tabs{gap:2px}.pr-status-tab{padding:9px 8px;font-size:13px}}
 </style>
 <script>
 document.addEventListener('DOMContentLoaded',function(){
   const button=document.getElementById('showPrForm');
+  const cancelButton=document.getElementById('hidePrForm');
   const form=document.getElementById('prForm');
-  if(!button||!form)return;
+  if(!button||!cancelButton||!form)return;
   button.addEventListener('click',function(){
     form.hidden=false;
+    cancelButton.hidden=false;
+    button.hidden=true;
     form.scrollIntoView({behavior:'smooth',block:'start'});
   });
+  cancelButton.addEventListener('click',function(){
+    form.hidden=true;
+    cancelButton.hidden=true;
+    button.hidden=false;
+  });
+  if(!form.hidden){
+    button.hidden=true;
+    cancelButton.hidden=false;
+  }
 });
 </script>
