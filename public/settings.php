@@ -47,8 +47,8 @@ pageStart('Settings');
       <a class="btn <?=$tab==='area-unit'?'':'secondary'?>" href="settings.php?tab=area-unit">Area/Unit Management</a>
       <a class="btn <?=$tab==='uom'?'':'secondary'?>" href="settings.php?tab=uom">UOM</a><?php if(hasRole(['Administrator'])): ?><a class="btn <?=$tab==='login-background'?'':'secondary'?>" href="settings.php?tab=login-background">Login Background</a><?php endif; ?>
     </div>
+    <?php if($tab==='procurement-method'): ?><div class="settings-card-bottom-actions"><button type="button" class="btn procurement_method-add-button" id="showProcurementMethodForm" onclick="var f=document.getElementById('procurement_methodManagementForm');if(f){f.hidden=!f.hidden;this.textContent=f.hidden?'Add Method':'Cancel';if(!f.hidden){var i=f.querySelector('input[name=\'names[]\']');if(i)i.focus();}}">Add Method</button></div><?php endif; ?>
   </div>
-  <?php if($tab==='procurement-method'): ?><div class="settings-card-bottom-actions"><button type="button" class="btn procurement_method-add-button" id="showProcurementMethodForm" onclick="var f=document.getElementById('procurement_methodManagementForm');if(f){f.hidden=!f.hidden;this.textContent=f.hidden?'Add Method':'Cancel';if(!f.hidden){var i=f.querySelector('input[name=\'names[]\']');if(i)i.focus();}}">Add Method</button></div><?php endif; ?>
 </div>
 
 <div class="panel settings-panel">
@@ -73,9 +73,10 @@ pageStart('Settings');
 .settings-tabs-card>.muted{color:#d9e8f7!important;}
 .settings-tabs-card .settings-tabs .btn{background:#fff!important;color:#194a78!important;border-color:#d5e5f5!important;}
 .settings-tabs-card .settings-tabs .btn.secondary{background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;}
-.settings-tabs-row{display:flex;align-items:center;justify-content:flex-start;width:100%}
-.settings-tabs{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
-.settings-card-bottom-actions{display:flex;align-items:center;justify-content:flex-end;width:100%;margin-top:16px}
+.settings-tabs-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
+.settings-tabs{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
+.settings-card-bottom-actions{display:flex;align-items:center;justify-content:flex-end;flex:0 0 auto;margin-left:auto}
+@media(max-width:900px){.settings-tabs-row{align-items:flex-start;flex-wrap:wrap}.settings-card-bottom-actions{margin-left:auto}}
 .settings-card-bottom-actions .procurement_method-add-button{background:#fff!important;border-color:#d5e5f5!important;color:#194a78!important;font-weight:700}
 .settings-card-bottom-actions .procurement_method-add-button:hover{background:#edf5ff!important;color:#194a78!important}
 /* Keep the content panel below the tabs on its normal surface. */
