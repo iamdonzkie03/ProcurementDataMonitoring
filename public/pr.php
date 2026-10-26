@@ -79,7 +79,7 @@ $year=(int)($_GET['year']??($editPr['fiscal_year']??date('Y')));$q=trim($_GET['q
 $areas=$pdo->query('SELECT * FROM areas ORDER BY name')->fetchAll();$units=$pdo->query("SELECT id,name FROM units_of_measure WHERE status='Active' ORDER BY name")->fetchAll();
 $items=$pdo->prepare('SELECT p.*,a.name area,c.name category,u.name unit_name,p.quantity-COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled" AND r.id<>?),0) remaining FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id LEFT JOIN units_of_measure u ON LOWER(TRIM(u.name))=LOWER(TRIM(p.unit)) WHERE p.fiscal_year=? AND EXISTS (SELECT 1 FROM ppmp_reviews rv WHERE rv.fiscal_year=p.fiscal_year AND rv.area_id=p.area_id AND rv.ppmp_no=p.ppmp_no AND rv.status="Approved") ORDER BY a.name,p.item_name');
 $items->execute([$editId,$year]);$ppmp=$items->fetchAll();
-$supervisors=$pdo->query("SELECT id,full_name,area_id FROM users WHERE status='Active' AND area_id IS NOT NULL ORDER BY full_name")->fetchAll();
+$supervisors=$pdo->query("SELECT area_id, name AS full_name FROM area_personnel WHERE LOWER(TRIM(role))='head' ORDER BY name")->fetchAll();
 $prs=$pdo->prepare('SELECT r.*,a.name area,(SELECT COUNT(*) FROM purchase_request_items i WHERE i.pr_id=r.id) AS line_count,(SELECT COALESCE(SUM(i.quantity*i.unit_price),0) FROM purchase_request_items i WHERE i.pr_id=r.id) abc FROM purchase_requests r JOIN areas a ON a.id=r.area_id WHERE r.fiscal_year=? AND (r.pr_no LIKE ? OR a.name LIKE ?) ORDER BY r.created_at DESC');
 $prs->execute([$year,"%$q%","%$q%"]);$allRows=$prs->fetchAll();
 $statuses=['Pending','Received','Returned','Cancelled','Completed'];
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded',function(){
   const itemsWrap=document.getElementById('prItemsWrap');
   const viewHint=document.getElementById('ppmpViewHint');
   const supervisorName=<?=json_encode((string)($editPr['requested_by']??''),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
-  const supervisorMap=<?=json_encode(array_reduce($supervisors,function($carry,$sv){if(!isset($carry[(string)$sv['area_id']]))$carry[(string)$sv['area_id']]=$sv['full_name'];return $carry;},[]),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
+  const supervisorMap=<?=json_encode(array_reduce($supervisors,function($carry,$sv){$key=(string)$sv['area_id'];if(!isset($carry[$key]))$carry[$key]=[];$carry[$key][]=$sv['full_name'];return $carry;},[]),JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT)?>;
   let itemsViewed=<?= $editPr ? 'true' : 'false' ?>;
   if(button&&form){
     if(new URLSearchParams(window.location.search).get('show_form')==='1'){form.hidden=false;button.hidden=true;}
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded',function(){
     if(!itemsViewed&&itemsWrap)itemsWrap.hidden=true;
     const selectedArea=area.value;
     if(supervisor){
-      supervisor.value=selectedArea?(supervisorMap[selectedArea]||''):'';
+      supervisor.value=selectedArea?(supervisorMap[selectedArea]||[]).join(', '):'';
       if(supervisorName&&selectedArea&&!supervisor.value)supervisor.value=supervisorName;
     }
     document.querySelectorAll('.pr-item-row').forEach(function(row){
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded',function(){
   if(viewItemsButton)viewItemsButton.addEventListener('click',function(){
     if(!area||!area.value){alert('Please select an Area/Unit first.');if(area)area.focus();return;}
     if(!supervisor||!supervisor.value){alert('Please select a Supervisor Assigned first.');if(supervisor)supervisor.focus();return;}
-    if(!supervisorMap[area.value]||supervisor.value!==supervisorMap[area.value]){alert('The Supervisor Assigned must match the selected Area/Unit.');return;}
+    if(!(supervisorMap[area.value]||[]).length||supervisor.value!==(supervisorMap[area.value]||[]).join(', ')){alert('The Supervisor Assigned must match the Head(s) assigned to the selected Area/Unit.');return;}
     itemsViewed=true;if(itemsWrap)itemsWrap.hidden=false;
     if(viewHint)viewHint.textContent='Select the approved PPMP items you need. Selected items will automatically fill the table rows below.';
     filterRows();if(itemsWrap)itemsWrap.scrollIntoView({behavior:'smooth',block:'start'});
