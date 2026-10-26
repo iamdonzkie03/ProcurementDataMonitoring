@@ -101,13 +101,13 @@ pageStart('Purchase Requests');
   <div class="table-wrap"><table class="table"><thead><tr><th>PR No.</th><th>Area/Unit</th><th>Purpose</th><th>Lines</th><th>ABC</th><th>Status</th><th>Date</th><th>Action</th></tr></thead><tbody>
   <?php foreach($rows as $r):?><tr><td><b><?=e($r['pr_no'])?></b></td><td><?=e($r['area'])?></td><td><?=e($r['purpose'])?></td><td><?=$r['line_count']?></td><td>₱<?=number_format($r['abc'],2)?></td><td><span class="badge"><?=e($r['status'])?></span></td><td><?=date('M d, Y',strtotime($r['created_at']))?></td><td><?php if($r['status']==='Draft' && hasRole(['Administrator','Editor'])):?><a class="btn" href="pr.php?edit=<?=$r['id']?>">Edit Draft</a><?php else:?>—<?php endif;?></td></tr><?php endforeach;?><?php if(!$rows):?><tr><td colspan="8" class="empty">No purchase requests in this tab.</td></tr><?php endif;?>
   </tbody></table></div>
-  <?php if(hasRole(['Administrator','Editor'])): ?><div class="pr-create-actions"><button class="btn" type="button" id="showPrForm">Create PR</button><button class="btn" type="button" id="hidePrForm" hidden>Cancel</button></div><?php endif;?>
+  <?php if(hasRole(['Administrator','Editor'])): ?><div class="pr-create-actions"><button class="btn" type="button" id="showPrForm">Create PR</button></div><?php endif;?>
 </div>
 
 <?php if(hasRole(['Administrator','Editor'])):?><div class="panel" id="prForm" style="margin-top:18px" <?=$editPr?'':'hidden'?>><h2><?=$editPr?'Edit Draft Purchase Request '.$editPr['pr_no']:'Create Purchase Request from PPMP'?></h2><p class="hint-text">Only Draft Purchase Requests can be reopened and edited. Available quantity is automatically recalculated.</p>
 <form method="post"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="<?=$editPr?'update':'create'?>"><?php if($editPr):?><input type="hidden" name="pr_id" value="<?=$editPr['id']?>"><?php endif;?>
 <div class="form-grid"><div class="field"><label>Fiscal Year</label><input class="input" type="number" name="fiscal_year" value="<?=e((string)$year)?>" required></div><div class="field"><label>Area/Unit</label><select class="select" name="area_id" required><option value="">Select</option><?php foreach($areas as $a):?><option value="<?=$a['id']?>" <?=((int)($editPr['area_id']??0)===(int)$a['id']?'selected':'')?>><?=e($a['name'])?></option><?php endforeach;?></select></div><div class="field full"><label>Purpose</label><textarea class="input" name="purpose" rows="2" required><?=e($editPr['purpose']??'')?></textarea></div><div class="field"><label>Requested By</label><input class="input" name="requested_by" value="<?=e($editPr['requested_by']??'')?>"></div><div class="field"><label>Status</label><select class="select" name="status"><option <?=($editPr['status']??'Draft')==='Draft'?'selected':''?>>Draft</option><option <?=($editPr['status']??'Draft')==='Submitted'?'selected':''?>>Submitted</option></select></div></div>
-<div class="table-wrap" style="margin-top:16px"><table class="table"><tr><th>Select</th><th>PPMP Item</th><th>Area</th><th>Remaining</th><th>Unit</th><th>Unit Price</th><th>PR Qty</th></tr><?php foreach($ppmp as $p):$selected=array_key_exists((int)$p['id'],$editItems);$max=(float)$p['remaining']+($selected?(float)$editItems[(int)$p['id']]:0);?><tr><td><input type="checkbox" <?= $selected?'checked':''?> onclick="this.closest('tr').querySelectorAll('[name^=items],[name^=units]').forEach(function(x){x.disabled=!this.checked}.bind(this))"></td><td><?=e($p['item_name'])?><br><small><?=e($p['category'])?></small></td><td><?=e($p['area'])?></td><td><?=number_format($max,2)?></td><td><select class="select" name="units[<?=$p['id']?>]" required <?= $selected?'':'disabled'?>><option value="">Select unit</option><?php foreach($units as $u):?><option value="<?=$u['id']?>" <?=((int)($editUnits[(int)$p['id']]??0)===(int)$u['id']||(!$editPr && strcasecmp($p['unit'],$u['name'])===0)?'selected':'')?>><?=e($u['name'])?></option><?php endforeach;?></select></td><td>₱<?=number_format($p['unit_price'],2)?></td><td><input class="input" style="min-width:100px" type="number" step="0.0001" min="0" max="<?=$max?>" name="items[<?=$p['id']?>]" value="<?=e((string)($editItems[(int)$p['id']]??0))?>" <?= $selected?'':'disabled'?>></td></tr><?php endforeach;?></table></div><div class="actions"><button class="btn"><?=$editPr?'Save Draft / Submit PR':'Create Purchase Request'?></button><?php if($editPr):?><a class="btn" href="pr.php">Cancel</a><?php endif;?></div></form></div><?php endif;?><?php pageEnd(); ?>
+<div class="table-wrap" style="margin-top:16px"><table class="table"><tr><th>Select</th><th>PPMP Item</th><th>Area</th><th>Remaining</th><th>Unit</th><th>Unit Price</th><th>PR Qty</th></tr><?php foreach($ppmp as $p):$selected=array_key_exists((int)$p['id'],$editItems);$max=(float)$p['remaining']+($selected?(float)$editItems[(int)$p['id']]:0);?><tr><td><input type="checkbox" <?= $selected?'checked':''?> onclick="this.closest('tr').querySelectorAll('[name^=items],[name^=units]').forEach(function(x){x.disabled=!this.checked}.bind(this))"></td><td><?=e($p['item_name'])?><br><small><?=e($p['category'])?></small></td><td><?=e($p['area'])?></td><td><?=number_format($max,2)?></td><td><select class="select" name="units[<?=$p['id']?>]" required <?= $selected?'':'disabled'?>><option value="">Select unit</option><?php foreach($units as $u):?><option value="<?=$u['id']?>" <?=((int)($editUnits[(int)$p['id']]??0)===(int)$u['id']||(!$editPr && strcasecmp($p['unit'],$u['name'])===0)?'selected':'')?>><?=e($u['name'])?></option><?php endforeach;?></select></td><td>₱<?=number_format($p['unit_price'],2)?></td><td><input class="input" style="min-width:100px" type="number" step="0.0001" min="0" max="<?=$max?>" name="items[<?=$p['id']?>]" value="<?=e((string)($editItems[(int)$p['id']]??0))?>" <?= $selected?'':'disabled'?>></td></tr><?php endforeach;?></table></div><div class="actions"><button class="btn"><?=$editPr?'Save Draft / Submit PR':'Create Purchase Request'?></button><?php if($editPr):?><a class="btn" href="pr.php">Cancel</a><?php else:?><button class="btn" type="button" id="hidePrForm">Cancel</button><?php endif;?></div></form></div><?php endif;?><?php pageEnd(); ?>
 <style>
 .pr-list-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
 .pr-list-header h2{margin:0}.pr-list-header .hint-text{margin:5px 0 0}
@@ -126,21 +126,18 @@ document.addEventListener('DOMContentLoaded',function(){
   const button=document.getElementById('showPrForm');
   const cancelButton=document.getElementById('hidePrForm');
   const form=document.getElementById('prForm');
-  if(!button||!cancelButton||!form)return;
+  if(!button||!form)return;
   button.addEventListener('click',function(){
     form.hidden=false;
-    cancelButton.hidden=false;
     button.hidden=true;
     form.scrollIntoView({behavior:'smooth',block:'start'});
   });
-  cancelButton.addEventListener('click',function(){
-    form.hidden=true;
-    cancelButton.hidden=true;
-    button.hidden=false;
-  });
-  if(!form.hidden){
-    button.hidden=true;
-    cancelButton.hidden=false;
+  if(cancelButton){
+    cancelButton.addEventListener('click',function(){
+      form.hidden=true;
+      button.hidden=false;
+    });
   }
+  if(!form.hidden)button.hidden=true;
 });
 </script>
