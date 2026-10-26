@@ -16,7 +16,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
             $year=(int)$_POST['fiscal_year'];
             $area=(int)$_POST['area_id'];
-            $items=$_POST['items']??[];
+            $items=$_POST['items']??[]; $itemQuantities=$_POST['qty_display']??[]; $itemQuantities=$_POST['qty_display']??[];
             if(!$items) throw new RuntimeException('Select at least one PPMP item.');
 
             $up=$pdo->prepare('UPDATE purchase_requests SET fiscal_year=?,area_id=?,purpose=?,requested_by=?,status=? WHERE id=? AND status="Draft"');
@@ -27,9 +27,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
             $ins=$pdo->prepare('INSERT INTO purchase_request_items(pr_id,ppmp_item_id,quantity,unit_price,unit_id) VALUES(?,?,?,?,?)');
             foreach($items as $ppmpId=>$qty){
-                $qty=(float)$qty; if($qty<=0) continue;
-                $x=$pdo->prepare('SELECT p.*,COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled" AND r.id<>?),0) used FROM ppmp_items p WHERE p.id=? AND p.fiscal_year=?');
-                $x->execute([$prId,(int)$ppmpId,$year]); $p=$x->fetch();
+                $qty=(float)($itemQuantities[$ppmpId]??0); if($qty<=0) continue;
+                $x=$pdo->prepare('SELECT p.*,COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled" AND r.id<>?),0) used FROM ppmp_items p WHERE p.id=? AND p.fiscal_year=? AND p.area_id=? AND EXISTS (SELECT 1 FROM ppmp_reviews rv WHERE rv.fiscal_year=p.fiscal_year AND rv.area_id=p.area_id AND rv.ppmp_no=p.ppmp_no AND rv.status="Approved")');
+                $x->execute([$prId,(int)$ppmpId,$year,$area]); $p=$x->fetch();
                 if(!$p) throw new RuntimeException('Invalid PPMP item selected.');
                 $remaining=(float)$p['quantity']-(float)$p['used'];
                 if($qty>$remaining+0.000001) throw new RuntimeException('Requested quantity exceeds remaining PPMP quantity for '.$p['item_name'].'.');
@@ -51,9 +51,9 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $st->execute([$prNo,$year,$area,trim($_POST['purpose']),$_POST['status']??'Draft',trim($_POST['requested_by']),currentUser()['id']]);
         $prId=(int)$pdo->lastInsertId();
         foreach($items as $ppmpId=>$qty){
-            $qty=(float)$qty; if($qty<=0) continue;
+            $qty=(float)($itemQuantities[$ppmpId]??0); if($qty<=0) continue;
             $x=$pdo->prepare('SELECT p.*,COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled"),0) used FROM ppmp_items p WHERE p.id=? AND p.fiscal_year=?');
-            $x->execute([(int)$ppmpId,$year]); $p=$x->fetch();
+            $x->execute([(int)$ppmpId,$year,$area]); $p=$x->fetch();
             if(!$p) throw new RuntimeException('Invalid PPMP item selected.');
             $remaining=(float)$p['quantity']-(float)$p['used'];
             if($qty>$remaining+0.000001) throw new RuntimeException('Requested quantity exceeds remaining PPMP quantity for '.$p['item_name'].'.');
