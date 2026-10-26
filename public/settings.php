@@ -36,7 +36,7 @@ if($_SERVER['REQUEST_METHOD']==='POST' && $tab==='area-unit'){
 
 pageStart('Settings');
 ?>
-<div class="panel">
+<div class="panel settings-tabs-card">
   <h2>Settings</h2>
   <p class="muted">Manage procurement master data, Area/Unit hierarchy, and Units of Measurement.</p>
   <div class="settings-tabs">
@@ -64,10 +64,10 @@ pageStart('Settings');
 <?php endif; ?>
 </div>
 <style>
-/* Match both the Settings container and its embedded tab panel to the workflow page card background. */
-.settings-panel,
-.settings-panel > .panel,
-.settings-panel .panel{background:#e8f2ff!important;border-color:#c9def5!important;}
+/* The pastel background belongs to the card that contains the Settings heading and all tabs. */
+.settings-tabs-card{background:#e8f2ff!important;border-color:#c9def5!important;}
+/* Keep the content panel below the tabs using its normal surface color. */
+.settings-panel{background:initial;border-color:initial;}
 .status-toggle{border:0!important;color:#fff!important;border-radius:999px;padding:5px 12px;font:inherit;font-weight:700;cursor:pointer;transition:none!important;box-shadow:none!important;transform:none!important}
 .status-toggle.status-active{background:#198754!important}
 .status-toggle.status-inactive{background:#dc3545!important}
