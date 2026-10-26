@@ -115,7 +115,7 @@ pageStart('Procurement Process Workflow');
 </style>
 <div class="process-pdf-page">
 <section class="process-pdf-panel">
-<header class="process-pdf-heading"><h2>Procurement Process Flowchart</h2><p>Upload and organize procurement process PDFs by process title. Each title has its own folder.</p></header>
+<header class="process-pdf-heading"><h2>Procurement Process</h2><p>Upload and organize procurement process PDFs by process title. Each title has its own folder.</p></header>
 <?php if($canManage): ?>
 <div class="process-pdf-body">
 <form method="post" enctype="multipart/form-data" id="processPdfUploadForm">
