@@ -269,5 +269,16 @@ document.addEventListener('DOMContentLoaded',function(){
 .classification-form-actions{display:flex;gap:8px;align-items:center}
 .master-action{width:82px;min-width:82px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center}
 .master-action-form{display:inline-block;margin:0 0 0 6px;vertical-align:middle}
+
+/* Card-style master-data listing to match Procurement Method. */
+#classificationTable{border:0;border-collapse:separate;border-spacing:0;width:100%}
+#classificationTable thead{display:none}
+#classificationTable tbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;align-items:stretch}
+#classificationTable tbody tr{display:flex;flex-direction:column;min-width:0;border:1px solid rgba(30,64,100,.14);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 3px 10px rgba(26,54,93,.06)}
+#classificationTable tbody tr td{display:block;border:0;padding:14px 16px;overflow-wrap:anywhere}
+#classificationTable tbody tr td:first-child{flex:1;background:#e8f2ff;color:#183b5b;font-weight:700;min-height:48px;display:flex;align-items:center}
+#classificationTable tbody tr td:last-child{display:flex;align-items:center;justify-content:flex-end;gap:6px;border-top:1px solid #edf1f5}
+#classificationTable tbody tr td:last-child form{margin:0}
+#classificationTable tbody tr td[colspan]{display:block;text-align:center;background:#fff;min-height:0}
 </style>
 <?php if(!$embedded) pageEnd();
