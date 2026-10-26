@@ -31,7 +31,7 @@ function processPdfFolderName(string $title): string {
   return $title;
 }
 function processPdfRemove(string $relativePath,string $uploadRoot): bool {
-  $relative=str_replace('\\\\','/',ltrim($relativePath,'/'));
+  $relative=str_replace(chr(92),'/',ltrim($relativePath,'/'));
   if(!preg_match('~^uploads/[^/]+/[^/]+\\.pdf$~i',$relative)) return false;
   $base=realpath(__DIR__);
   if($base===false) return false;
@@ -136,7 +136,7 @@ pageStart('Procurement Process Workflow');
 <div class="process-pdf-bulk"><label><input type="checkbox" id="processPdfSelectAll"> Select all files on this page</label><?php if($canManage): ?><button type="submit" class="btn btn-danger" id="processPdfDeleteSelected">Delete Selected</button><?php endif; ?></div>
 <div class="process-pdf-table-wrap"><table class="process-pdf-table" id="processPdfTable"><thead><tr><th class="process-pdf-check"><span class="sr-only">Select</span></th><th>Process Title</th><th>PDF File</th><th>File Size</th><th>Date Uploaded</th></tr></thead><tbody>
 <?php foreach($rows as $row): $folder=basename(dirname((string)$row['relative_path']));$url=(string)$row['relative_path']; ?>
-<tr data-title="<?=e(mb_strtolower((string)$row['process_title'],'UTF-8'))?>" data-file="<?=e(mb_strtolower((string)$row['original_filename'],'UTF-8'))?>">
+<tr data-title="<?=e(strtolower((string)$row['process_title']))?>" data-file="<?=e(strtolower((string)$row['original_filename']))?>">
 <td class="process-pdf-check"><?php if($canManage): ?><input type="checkbox" class="process-pdf-row-check" name="pdf_ids[]" value="<?=(int)$row['id']?>" aria-label="Select <?=e((string)$row['original_filename'])?>"><?php else: ?><span>—</span><?php endif; ?></td>
 <td><div class="process-pdf-title"><?=e((string)$row['process_title'])?></div><div class="process-pdf-meta">Folder: public/uploads/<?=e($folder)?>/</div></td>
 <td><a class="process-pdf-file" href="<?=e($url)?>" target="_blank" rel="noopener"><span aria-hidden="true">📄</span><?=e((string)$row['original_filename'])?></a></td>
