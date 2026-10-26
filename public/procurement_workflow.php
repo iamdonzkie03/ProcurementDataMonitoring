@@ -194,5 +194,5 @@ window.confirmProcessPdfDelete=function(){var n=document.querySelectorAll('.proc
 var form=document.getElementById('processPdfUploadForm');if(form)form.addEventListener('submit',function(){var b=document.getElementById('processPdfUploadButton');if(b){b.disabled=true;b.textContent='Uploading…'}});
 renderPagination();
 })();
-</script>>
+</script>
 <?php pageEnd(); ?>
