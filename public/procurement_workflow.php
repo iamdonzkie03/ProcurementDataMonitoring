@@ -50,43 +50,43 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
   if(!$canManage){http_response_code(403);exit('403 - Access denied');}
   $action=(string)($_POST['action']??'');
   if($action==='upload_process_pdfs'){
-    $title=trim((string)($_POST['process_title']??''));
+    $titles=(array)($_POST['process_title']??[]);
+    $files=$_FILES['process_pdfs']??null;
     try {
-      if($title==='') throw new RuntimeException('Process title is required.');
-      if(strlen($title)>255) throw new RuntimeException('Process title must not exceed 255 characters.');
-      if(empty($_FILES['process_pdfs']['name']) || !is_array($_FILES['process_pdfs']['name'])) throw new RuntimeException('Choose at least one PDF file to upload.');
-      $folder=processPdfFolderName($title);
-      $targetDir=$uploadRoot.DIRECTORY_SEPARATOR.$folder;
-      if(!is_dir($targetDir) && !@mkdir($targetDir,0775,true) && !is_dir($targetDir)) throw new RuntimeException('Could not create the process folder under public/uploads. Check folder permissions.');
-      $count=0;$errors=[];$total=count($_FILES['process_pdfs']['name']);
-      for($i=0;$i<$total;$i++){
-        $err=(int)($_FILES['process_pdfs']['error'][$i]??UPLOAD_ERR_NO_FILE);
-        if($err===UPLOAD_ERR_NO_FILE) continue;
-        $original=(string)($_FILES['process_pdfs']['name'][$i]??'');
-        if($err!==UPLOAD_ERR_OK){$errors[]=$original.': upload failed.';continue;}
-        $tmp=(string)($_FILES['process_pdfs']['tmp_name'][$i]??'');
-        $size=(int)($_FILES['process_pdfs']['size'][$i]??0);
-        if($size<=0 || $size>25*1024*1024){$errors[]=$original.': file must be between 1 byte and 25 MB.';continue;}
-        $ext=strtolower(pathinfo($original,PATHINFO_EXTENSION));
-        $mime='';if(function_exists('finfo_open')){$fi=finfo_open(FILEINFO_MIME_TYPE);if($fi){$mime=(string)finfo_file($fi,$tmp);finfo_close($fi);}}
-        if($ext!=='pdf' || ($mime!=='' && !in_array($mime,['application/pdf','application/x-pdf','application/octet-stream'],true))){$errors[]=$original.': only PDF files are accepted.';continue;}
-        $handle=@fopen($tmp,'rb');$signature=$handle?fread($handle,5):'';if($handle)fclose($handle);
-        if($signature!=='%PDF-'){$errors[]=$original.': file content is not a valid PDF.';continue;}
-        $baseName=pathinfo($original,PATHINFO_FILENAME);
-        $safeName=preg_replace('~[^a-zA-Z0-9_-]+~','-', $baseName);
-        $safeName=trim((string)$safeName,'-_');if($safeName==='')$safeName='process-document';
-        $stored=$safeName.'-'.date('YmdHis').'-'.bin2hex(random_bytes(4)).'.pdf';
-        $target=$targetDir.DIRECTORY_SEPARATOR.$stored;
-        if(!move_uploaded_file($tmp,$target)){$errors[]=$original.': could not save file.';continue;}
-        try {
-          $relative=$uploadWeb.'/'.$folder.'/'.$stored;
-          $st=$pdo->prepare('INSERT INTO procurement_process_pdfs(process_title,original_filename,stored_filename,relative_path,file_size,uploaded_by) VALUES(?,?,?,?,?,?)');
-          $st->execute([$title,substr($original,0,255),$stored,$relative,$size,(int)(currentUser()['id']??0) ?: null]);
-          $count++;
-        } catch(Throwable $e){@unlink($target);$errors[]=$original.': could not save file details.';}
+      if(!$titles || !is_array($files) || !isset($files['name']) || !is_array($files['name'])) throw new RuntimeException('Add at least one process row and choose PDF files.');
+      $count=0;$errors=[];$totalRows=count($titles);
+      for($row=0;$row<$totalRows;$row++){
+        $title=trim((string)($titles[$row]??''));
+        $rowNames=$files['name'][$row]??[];
+        if($title==='' && (!is_array($rowNames) || !array_filter($rowNames,static fn($v)=>trim((string)$v)!==''))) continue;
+        if($title===''){$errors[]='Row '.($row+1).': process title is required.';continue;}
+        if(strlen($title)>255){$errors[]='Row '.($row+1).': process title must not exceed 255 characters.';continue;}
+        if(!is_array($rowNames) || !array_filter($rowNames,static fn($v)=>trim((string)$v)!=='')){$errors[]=$title.': choose at least one PDF file.';continue;}
+        try{$folder=processPdfFolderName($title);}catch(Throwable $e){$errors[]=$title.': invalid process title.';continue;}
+        $targetDir=$uploadRoot.DIRECTORY_SEPARATOR.$folder;
+        if(!is_dir($targetDir) && !@mkdir($targetDir,0775,true) && !is_dir($targetDir)){$errors[]=$title.': could not create folder under public/uploads. Check folder permissions.';continue;}
+        $names=$files['name'][$row]??[];$tmps=$files['tmp_name'][$row]??[];$sizes=$files['size'][$row]??[];$errs=$files['error'][$row]??[];
+        for($i=0;$i<count($names);$i++){
+          $err=(int)($errs[$i]??UPLOAD_ERR_NO_FILE);
+          if($err===UPLOAD_ERR_NO_FILE) continue;
+          $original=(string)($names[$i]??'');
+          if($err!==UPLOAD_ERR_OK){$errors[]=$title.' / '.$original.': upload failed.';continue;}
+          $tmp=(string)($tmps[$i]??'');$size=(int)($sizes[$i]??0);
+          if($size<=0 || $size>25*1024*1024){$errors[]=$original.': file must be between 1 byte and 25 MB.';continue;}
+          $ext=strtolower(pathinfo($original,PATHINFO_EXTENSION));
+          $mime='';if(function_exists('finfo_open')){$fi=finfo_open(FILEINFO_MIME_TYPE);if($fi){$mime=(string)finfo_file($fi,$tmp);finfo_close($fi);}}
+          if($ext!=='pdf' || ($mime!=='' && !in_array($mime,['application/pdf','application/x-pdf','application/octet-stream'],true))){$errors[]=$original.': only PDF files are accepted.';continue;}
+          $handle=@fopen($tmp,'rb');$signature=$handle?fread($handle,5):'';if($handle)fclose($handle);
+          if($signature!=='%PDF-'){$errors[]=$original.': file content is not a valid PDF.';continue;}
+          $baseName=pathinfo($original,PATHINFO_FILENAME);$safeName=preg_replace('~[^a-zA-Z0-9_-]+~','-',$baseName);$safeName=trim((string)$safeName,'-_');if($safeName==='')$safeName='process-document';
+          $stored=$safeName.'-'.date('YmdHis').'-'.bin2hex(random_bytes(4)).'.pdf';$target=$targetDir.DIRECTORY_SEPARATOR.$stored;
+          if(!move_uploaded_file($tmp,$target)){$errors[]=$original.': could not save file.';continue;}
+          try{$relative=$uploadWeb.'/'.$folder.'/'.$stored;$st=$pdo->prepare('INSERT INTO procurement_process_pdfs(process_title,original_filename,stored_filename,relative_path,file_size,uploaded_by) VALUES(?,?,?,?,?,?)');$st->execute([$title,substr($original,0,255),$stored,$relative,$size,(int)(currentUser()['id']??0) ?: null]);$count++;}
+          catch(Throwable $e){@unlink($target);$errors[]=$original.': could not save file details.';}
+        }
       }
-      if($count>0){$message=$count.' PDF file(s) uploaded to public/uploads/'.$folder.'/.';if($errors)$message.=' Some files were skipped: '.implode(' ',$errors);flash($errors?'error':'success',$message);}
-      else {if(is_dir($targetDir)){$items=@scandir($targetDir);if(is_array($items)&&count($items)===2)@rmdir($targetDir);}throw new RuntimeException($errors?implode(' ',$errors):'Choose at least one PDF file to upload.');}
+      if($count>0){$message=$count.' PDF file(s) uploaded successfully.';if($errors)$message.=' Some rows/files were skipped: '.implode(' ',$errors);flash($errors?'error':'success',$message);}
+      else throw new RuntimeException($errors?implode(' ',$errors):'Add a process row and choose at least one PDF file.');
     } catch(Throwable $e){flash('error',$e->getMessage());}
     header('Location:procurement_workflow.php');exit;
   }
@@ -111,7 +111,7 @@ try {$rows=$pdo->query('SELECT id,process_title,original_filename,relative_path,
 pageStart('Procurement Process Workflow');
 ?>
 <style>
-.process-pdf-page{max-width:1600px;margin:auto}.process-pdf-page *{box-sizing:border-box}.process-pdf-panel{background:#fff;border:1px solid #d9e4f0;border-radius:16px;overflow:hidden;box-shadow:0 12px 32px rgba(21,49,80,.07);margin-bottom:18px}.process-pdf-heading{padding:22px 28px;background:linear-gradient(115deg,#102c50,#23578d);color:#fff}.process-pdf-heading h2{margin:0;color:#fff;font-size:clamp(22px,3vw,29px);font-weight:800}.process-pdf-heading p{margin:7px 0 0;color:#d9e8f7;font-size:13px}.process-pdf-body{padding:20px}.process-pdf-page .field label{display:block;margin-bottom:6px;font-size:13px;font-weight:700;color:#334b64}.process-pdf-page .input{width:100%;min-height:40px}.process-pdf-upload-grid{display:grid;grid-template-columns:minmax(220px,1fr) minmax(260px,1.4fr);gap:14px;align-items:end}.process-pdf-upload-grid .field{margin:0}.process-pdf-help{font-size:12px;color:#687e93;line-height:1.5;margin-top:6px}.process-pdf-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}.process-pdf-actions .btn{cursor:pointer}.process-pdf-list-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 20px;border-bottom:1px solid #e2e9f1}.process-pdf-list-top h3{margin:0;font-size:18px;color:#203b57}.process-pdf-list-top p{margin:5px 0 0;font-size:12px;color:#6b7f92}.process-pdf-search{width:min(100%,270px)}.process-pdf-pagination{display:flex;align-items:center;justify-content:flex-end;gap:12px;width:100%;clear:both;position:static;float:none;margin:0;padding:12px 16px 14px;box-sizing:border-box;border-bottom:1px solid #e5ebf2;color:#6b7280;font-size:13px}.process-pdf-page-size{display:flex;align-items:center;gap:6px;font-size:14px;color:#4b5563}.process-pdf-page-size select{width:78px;min-width:78px;height:36px;min-height:36px}.process-pdf-page-buttons{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}.process-pdf-page-buttons button{min-width:38px;height:36px;padding:0 10px;background:#cfe8ff;color:#1f5f85;border:1px solid #b7d9f5;border-radius:4px;cursor:pointer}.process-pdf-page-buttons button:hover:not(:disabled):not(.active){background:#b9dcfa;color:#174a69}.process-pdf-page-buttons button.active{font-weight:700;pointer-events:none;background:#0d6efd;color:#fff;border-color:#0d6efd}.process-pdf-page-buttons button:first-child,.process-pdf-page-buttons button:last-child{background:#495057;color:#fff;border-color:#495057}.process-pdf-page-buttons button:first-child:hover:not(:disabled),.process-pdf-page-buttons button:last-child:hover:not(:disabled){background:#343a40;color:#fff}.process-pdf-page-buttons button:disabled{opacity:.7;cursor:not-allowed}.process-pdf-search{position:relative;width:200px;min-width:200px;margin:0}.process-pdf-search .input{width:200px;box-sizing:border-box}.process-pdf-suggestions{position:absolute;left:0;right:0;top:100%;z-index:1000;background:#fff;border:1px solid #cfd6df;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:240px;overflow-y:auto;display:none}.process-pdf-suggestion{display:block;width:100%;padding:9px 12px;border:0;background:#fff;text-align:left;cursor:pointer;font-size:12px;color:#334155}.process-pdf-suggestion:hover,.process-pdf-suggestion:focus{background:#eef5ff}.process-pdf-search-empty{padding:9px 12px;color:#6b7280;font-size:12px}.process-pdf-table tr.process-pdf-search-selected td{background:#eef5ff}@media(max-width:700px){.process-pdf-pagination{align-items:flex-start;justify-content:flex-end;flex-wrap:wrap}.process-pdf-pagination-info{order:3;flex-basis:100%;text-align:right}.process-pdf-search{width:200px;min-width:160px}.process-pdf-search .input{width:100%}}.process-pdf-table-wrap{overflow-x:auto}.process-pdf-table{width:100%;border-collapse:collapse;min-width:740px}.process-pdf-table th,.process-pdf-table td{padding:12px 14px;text-align:left;border-bottom:1px solid #e8edf3;font-size:13px;vertical-align:middle}.process-pdf-table th{background:#f6f9fc;color:#3e5872;font-size:12px;white-space:nowrap}.process-pdf-table tr:hover td{background:#fbfdff}.process-pdf-check{text-align:center!important;width:46px}.process-pdf-check input{width:15px;height:15px;cursor:pointer}.process-pdf-title{font-weight:700;color:#263f59}.process-pdf-file{display:inline-flex;align-items:center;gap:7px;color:#20588e;text-decoration:none;font-weight:600}.process-pdf-file:hover{text-decoration:underline}.process-pdf-meta{font-size:11px;color:#74869a;margin-top:4px}.process-pdf-bulk{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #e5ebf2}.process-pdf-empty{padding:28px!important;text-align:center!important;color:#6b7f92}.process-pdf-footer{padding:11px 16px;color:#6b7f92;font-size:12px;background:#fbfcfe}.process-pdf-page .btn-danger{background:#c83d4b!important;color:#fff!important;border-color:#b72d3b!important}.process-pdf-page .btn-danger:hover{background:#aa2634!important}@media(max-width:700px){.process-pdf-body{padding:14px}.process-pdf-heading{padding:18px}.process-pdf-upload-grid{grid-template-columns:1fr}.process-pdf-list-top{padding:15px}.process-pdf-pagination{align-items:flex-start}.process-pdf-search{width:100%}}
+.process-pdf-page{max-width:1600px;margin:auto}.process-pdf-page *{box-sizing:border-box}.process-pdf-panel{background:#fff;border:1px solid #d9e4f0;border-radius:16px;overflow:hidden;box-shadow:0 12px 32px rgba(21,49,80,.07);margin-bottom:18px}.process-pdf-heading{padding:22px 28px;background:linear-gradient(115deg,#102c50,#23578d);color:#fff}.process-pdf-heading h2{margin:0;color:#fff;font-size:clamp(22px,3vw,29px);font-weight:800}.process-pdf-heading p{margin:7px 0 0;color:#d9e8f7;font-size:13px}.process-pdf-body{padding:20px}.process-pdf-page .field label{display:block;margin-bottom:6px;font-size:13px;font-weight:700;color:#334b64}.process-pdf-page .input{width:100%;min-height:40px}.process-pdf-upload-grid{display:grid;grid-template-columns:minmax(220px,1fr) minmax(260px,1.4fr) auto;gap:14px;align-items:end}.process-pdf-upload-row{padding:14px;border:1px solid #e1e8f0;border-radius:10px;background:#fbfdff;margin-bottom:12px}.process-pdf-row-remove{display:flex;align-items:flex-end}.process-pdf-remove-row{white-space:nowrap}.process-pdf-upload-grid .field{margin:0}.process-pdf-help{font-size:12px;color:#687e93;line-height:1.5;margin-top:6px}.process-pdf-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}.process-pdf-actions .btn{cursor:pointer}.process-pdf-list-top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 20px;border-bottom:1px solid #e2e9f1}.process-pdf-list-top h3{margin:0;font-size:18px;color:#203b57}.process-pdf-list-top p{margin:5px 0 0;font-size:12px;color:#6b7f92}.process-pdf-search{width:min(100%,270px)}.process-pdf-pagination{display:flex;align-items:center;justify-content:flex-end;gap:12px;width:100%;clear:both;position:static;float:none;margin:0;padding:12px 16px 14px;box-sizing:border-box;border-bottom:1px solid #e5ebf2;color:#6b7280;font-size:13px}.process-pdf-page-size{display:flex;align-items:center;gap:6px;font-size:14px;color:#4b5563}.process-pdf-page-size select{width:78px;min-width:78px;height:36px;min-height:36px}.process-pdf-page-buttons{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}.process-pdf-page-buttons button{min-width:38px;height:36px;padding:0 10px;background:#cfe8ff;color:#1f5f85;border:1px solid #b7d9f5;border-radius:4px;cursor:pointer}.process-pdf-page-buttons button:hover:not(:disabled):not(.active){background:#b9dcfa;color:#174a69}.process-pdf-page-buttons button.active{font-weight:700;pointer-events:none;background:#0d6efd;color:#fff;border-color:#0d6efd}.process-pdf-page-buttons button:first-child,.process-pdf-page-buttons button:last-child{background:#495057;color:#fff;border-color:#495057}.process-pdf-page-buttons button:first-child:hover:not(:disabled),.process-pdf-page-buttons button:last-child:hover:not(:disabled){background:#343a40;color:#fff}.process-pdf-page-buttons button:disabled{opacity:.7;cursor:not-allowed}.process-pdf-search{position:relative;width:200px;min-width:200px;margin:0}.process-pdf-search .input{width:200px;box-sizing:border-box}.process-pdf-suggestions{position:absolute;left:0;right:0;top:100%;z-index:1000;background:#fff;border:1px solid #cfd6df;border-radius:4px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:240px;overflow-y:auto;display:none}.process-pdf-suggestion{display:block;width:100%;padding:9px 12px;border:0;background:#fff;text-align:left;cursor:pointer;font-size:12px;color:#334155}.process-pdf-suggestion:hover,.process-pdf-suggestion:focus{background:#eef5ff}.process-pdf-search-empty{padding:9px 12px;color:#6b7280;font-size:12px}.process-pdf-table tr.process-pdf-search-selected td{background:#eef5ff}@media(max-width:700px){.process-pdf-pagination{align-items:flex-start;justify-content:flex-end;flex-wrap:wrap}.process-pdf-pagination-info{order:3;flex-basis:100%;text-align:right}.process-pdf-search{width:200px;min-width:160px}.process-pdf-search .input{width:100%}}.process-pdf-table-wrap{overflow-x:auto}.process-pdf-table{width:100%;border-collapse:collapse;min-width:740px}.process-pdf-table th,.process-pdf-table td{padding:12px 14px;text-align:left;border-bottom:1px solid #e8edf3;font-size:13px;vertical-align:middle}.process-pdf-table th{background:#f6f9fc;color:#3e5872;font-size:12px;white-space:nowrap}.process-pdf-table tr:hover td{background:#fbfdff}.process-pdf-check{text-align:center!important;width:46px}.process-pdf-check input{width:15px;height:15px;cursor:pointer}.process-pdf-title{font-weight:700;color:#263f59}.process-pdf-file{display:inline-flex;align-items:center;gap:7px;color:#20588e;text-decoration:none;font-weight:600}.process-pdf-file:hover{text-decoration:underline}.process-pdf-meta{font-size:11px;color:#74869a;margin-top:4px}.process-pdf-bulk{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #e5ebf2}.process-pdf-empty{padding:28px!important;text-align:center!important;color:#6b7f92}.process-pdf-footer{padding:11px 16px;color:#6b7f92;font-size:12px;background:#fbfcfe}.process-pdf-page .btn-danger{background:#c83d4b!important;color:#fff!important;border-color:#b72d3b!important}.process-pdf-page .btn-danger:hover{background:#aa2634!important}@media(max-width:700px){.process-pdf-body{padding:14px}.process-pdf-heading{padding:18px}.process-pdf-upload-grid{grid-template-columns:1fr}.process-pdf-row-remove{justify-content:flex-end}.process-pdf-list-top{padding:15px}.process-pdf-pagination{align-items:flex-start}.process-pdf-search{width:100%}}
 </style>
 <div class="process-pdf-page">
 <section class="process-pdf-panel">
@@ -120,10 +120,15 @@ pageStart('Procurement Process Workflow');
 <div class="process-pdf-body">
 <form method="post" enctype="multipart/form-data" id="processPdfUploadForm">
 <input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="upload_process_pdfs">
+<div id="processPdfUploadRows">
+<div class="process-pdf-upload-row">
 <div class="process-pdf-upload-grid">
-<div class="field"><label for="processTitle">Process Title <span aria-hidden="true">*</span></label><input class="input" id="processTitle" name="process_title" type="text" maxlength="255" placeholder="e.g., Procurement Planning Process" required><div class="process-pdf-help">This title names the folder created under public/uploads.</div></div>
-<div class="field"><label for="processPdfs">PDF File(s) <span aria-hidden="true">*</span></label><input class="input" id="processPdfs" name="process_pdfs[]" type="file" accept="application/pdf,.pdf" multiple required><div class="process-pdf-help">Select multiple PDFs for the same process title. Maximum 25 MB per file.</div></div>
-</div><div class="process-pdf-actions"><button type="submit" class="btn" id="processPdfUploadButton">Upload PDF File(s)</button><button type="reset" class="btn secondary">Clear</button></div>
+<div class="field"><label>Process Title <span aria-hidden="true">*</span></label><input class="input" name="process_title[]" type="text" maxlength="255" placeholder="e.g., Procurement Planning Process"><div class="process-pdf-help">Creates a folder under public/uploads using this title.</div></div>
+<div class="field"><label>PDF File(s) <span aria-hidden="true">*</span></label><input class="input" name="process_pdfs[0][]" type="file" accept="application/pdf,.pdf" multiple><div class="process-pdf-help">Select one or multiple PDFs. Maximum 25 MB per file.</div></div>
+<div class="process-pdf-row-remove"><button type="button" class="btn secondary process-pdf-remove-row" aria-label="Remove this upload row">Remove</button></div>
+</div>
+</div>
+</div><div class="process-pdf-actions"><button type="button" class="btn secondary" id="processPdfAddRow">Add Row</button><button type="submit" class="btn" id="processPdfUploadButton">Upload PDF File(s)</button><button type="reset" class="btn secondary" id="processPdfClear">Clear</button></div>
 </form>
 </div>
 <?php endif; ?>
@@ -191,7 +196,12 @@ document.addEventListener('click',function(e){if(searchBox&&!searchBox.contains(
 if(all)all.addEventListener('change',function(){var per=parseInt(size.value,10)||10,start=(page-1)*per;filteredRows.forEach(function(r,i){if(i>=start&&i<start+per){var cb=r.querySelector('.process-pdf-row-check');if(cb)cb.checked=all.checked}})});
 body.addEventListener('change',function(e){if(e.target.classList.contains('process-pdf-row-check')&&!e.target.checked&&all)all.checked=false});
 window.confirmProcessPdfDelete=function(){var n=document.querySelectorAll('.process-pdf-row-check:checked').length;if(!n){alert('Select at least one PDF file first.');return false}return confirm('Delete '+n+' selected PDF file(s) and remove them from their process folders? This cannot be undone.')};
-var form=document.getElementById('processPdfUploadForm');if(form)form.addEventListener('submit',function(){var b=document.getElementById('processPdfUploadButton');if(b){b.disabled=true;b.textContent='Uploading…'}});
+var form=document.getElementById('processPdfUploadForm'),uploadRows=document.getElementById('processPdfUploadRows'),addRow=document.getElementById('processPdfAddRow');
+function renumberUploadRows(){var items=uploadRows.querySelectorAll('.process-pdf-upload-row');items.forEach(function(item,index){var file=item.querySelector('input[type="file"]');if(file)file.name='process_pdfs['+index+'][]';var remove=item.querySelector('.process-pdf-remove-row');if(remove)remove.disabled=items.length===1;});}
+if(addRow)addRow.addEventListener('click',function(){var first=uploadRows.querySelector('.process-pdf-upload-row'),clone=first.cloneNode(true);clone.querySelectorAll('input').forEach(function(input){input.value='';});uploadRows.appendChild(clone);renumberUploadRows();});
+if(uploadRows)uploadRows.addEventListener('click',function(e){var btn=e.target.closest('.process-pdf-remove-row');if(!btn)return;var items=uploadRows.querySelectorAll('.process-pdf-upload-row');if(items.length>1)btn.closest('.process-pdf-upload-row').remove();renumberUploadRows();});
+if(form){form.addEventListener('reset',function(){setTimeout(function(){while(uploadRows.querySelectorAll('.process-pdf-upload-row').length>1)uploadRows.lastElementChild.remove();renumberUploadRows();},0)});form.addEventListener('submit',function(e){var items=uploadRows.querySelectorAll('.process-pdf-upload-row'),valid=false;items.forEach(function(item){var title=item.querySelector('input[name="process_title[]"]'),file=item.querySelector('input[type="file"]');if(title.value.trim()&&file.files.length)valid=true;});if(!valid){e.preventDefault();alert('Enter a process title and select at least one PDF file in a row.');return}var b=document.getElementById('processPdfUploadButton');if(b){b.disabled=true;b.textContent='Uploading…'}})}
+renumberUploadRows();
 renderPagination();
 })();
 </script>
