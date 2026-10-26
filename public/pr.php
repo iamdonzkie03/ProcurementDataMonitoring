@@ -28,7 +28,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
             $ins=$pdo->prepare('INSERT INTO purchase_request_items(pr_id,ppmp_item_id,quantity,unit_price,unit_id) VALUES(?,?,?,?,?)');
             foreach($items as $ppmpId=>$qty){
                 $qty=(float)($itemQuantities[$ppmpId]??0); if($qty<=0) continue;
-                $x=$pdo->prepare('SELECT p.*,COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled" AND r.id<>?),0) used FROM ppmp_items p WHERE p.id=? AND p.fiscal_year=? AND p.area_id=? AND EXISTS (SELECT 1 FROM ppmp_reviews rv WHERE rv.fiscal_year=p.fiscal_year AND rv.area_id=p.area_id AND rv.ppmp_no=p.ppmp_no AND rv.status="Approved")');
+                $x=$pdo->prepare('SELECT p.*,COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled" AND r.id<>?),0) used FROM ppmp_items p WHERE p.id=? AND p.fiscal_year=? AND p.area_id=? AND EXISTS (SELECT 1 FROM ppmp_reviews rv JOIN ppmp_review_items rvi ON rvi.review_id=rv.id WHERE rv.fiscal_year=p.fiscal_year AND rv.area_id=p.area_id AND rv.ppmp_no=p.ppmp_no AND rvi.ppmp_item_id=p.id AND rvi.status IN ("Approved","Budget Approved"))');
                 $x->execute([$prId,(int)$ppmpId,$year,$area]); $p=$x->fetch();
                 if(!$p) throw new RuntimeException('Invalid PPMP item selected.');
                 $remaining=(float)$p['quantity']-(float)$p['used'];
@@ -52,7 +52,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         $prId=(int)$pdo->lastInsertId();
         foreach($items as $ppmpId=>$qty){
             $qty=(float)($itemQuantities[$ppmpId]??0); if($qty<=0) continue;
-            $x=$pdo->prepare('SELECT p.*,COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled"),0) used FROM ppmp_items p WHERE p.id=? AND p.fiscal_year=? AND p.area_id=? AND EXISTS (SELECT 1 FROM ppmp_reviews rv WHERE rv.fiscal_year=p.fiscal_year AND rv.area_id=p.area_id AND rv.ppmp_no=p.ppmp_no AND rv.status="Approved")');
+            $x=$pdo->prepare('SELECT p.*,COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled"),0) used FROM ppmp_items p WHERE p.id=? AND p.fiscal_year=? AND p.area_id=? AND EXISTS (SELECT 1 FROM ppmp_reviews rv JOIN ppmp_review_items rvi ON rvi.review_id=rv.id WHERE rv.fiscal_year=p.fiscal_year AND rv.area_id=p.area_id AND rv.ppmp_no=p.ppmp_no AND rvi.ppmp_item_id=p.id AND rvi.status IN ("Approved","Budget Approved"))');
             $x->execute([(int)$ppmpId,$year,$area]); $p=$x->fetch();
             if(!$p) throw new RuntimeException('Invalid PPMP item selected.');
             $remaining=(float)$p['quantity']-(float)$p['used'];
@@ -77,7 +77,7 @@ if($editId>0){
 
 $year=(int)($_GET['year']??($editPr['fiscal_year']??date('Y')));$q=trim($_GET['q']??'');
 $areas=$pdo->query('SELECT * FROM areas ORDER BY name')->fetchAll();$units=$pdo->query("SELECT id,name FROM units_of_measure WHERE status='Active' ORDER BY name")->fetchAll();
-$items=$pdo->prepare('SELECT p.*,a.name area,c.name category,u.name unit_name,p.quantity-COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled" AND r.id<>?),0) remaining FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id LEFT JOIN units_of_measure u ON LOWER(TRIM(u.name))=LOWER(TRIM(p.unit)) WHERE p.fiscal_year=? AND EXISTS (SELECT 1 FROM ppmp_reviews rv WHERE rv.fiscal_year=p.fiscal_year AND rv.area_id=p.area_id AND rv.ppmp_no=p.ppmp_no AND rv.status="Approved") ORDER BY a.name,p.item_name');
+$items=$pdo->prepare('SELECT p.*,a.name area,c.name category,u.name unit_name,p.quantity-COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled" AND r.id<>?),0) remaining FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id LEFT JOIN units_of_measure u ON LOWER(TRIM(u.name))=LOWER(TRIM(p.unit)) WHERE p.fiscal_year=? AND EXISTS (SELECT 1 FROM ppmp_reviews rv JOIN ppmp_review_items rvi ON rvi.review_id=rv.id WHERE rv.fiscal_year=p.fiscal_year AND rv.area_id=p.area_id AND rv.ppmp_no=p.ppmp_no AND rvi.ppmp_item_id=p.id AND rvi.status IN ("Approved","Budget Approved")) ORDER BY a.name,p.item_name');
 $items->execute([$editId,$year]);$ppmp=$items->fetchAll();
 $supervisors=$pdo->query("SELECT area_id, name AS full_name FROM area_personnel WHERE LOWER(TRIM(role))='head' ORDER BY name")->fetchAll();
 $prs=$pdo->prepare('SELECT r.*,a.name area,(SELECT COUNT(*) FROM purchase_request_items i WHERE i.pr_id=r.id) AS line_count,(SELECT COALESCE(SUM(i.quantity*i.unit_price),0) FROM purchase_request_items i WHERE i.pr_id=r.id) abc FROM purchase_requests r JOIN areas a ON a.id=r.area_id WHERE r.fiscal_year=? AND (r.pr_no LIKE ? OR a.name LIKE ?) ORDER BY r.created_at DESC');
