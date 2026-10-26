@@ -46,7 +46,7 @@ pageStart('Settings');
     <a class="btn <?=$tab==='area-unit'?'':'secondary'?>" href="settings.php?tab=area-unit">Area/Unit Management</a>
     <a class="btn <?=$tab==='uom'?'':'secondary'?>" href="settings.php?tab=uom">UOM</a><?php if(hasRole(['Administrator'])): ?><a class="btn <?=$tab==='login-background'?'':'secondary'?>" href="settings.php?tab=login-background">Login Background</a><?php endif; ?>
   </div>
-  <?php if($tab==='procurement-method' && !isset($_GET['edit'])): ?><div class="settings-card-bottom-actions"><button type="button" class="btn procurement_method-add-button" id="showProcurementMethodForm">Add Method</button></div><?php endif; ?>
+  <?php if($tab==='procurement-method'): ?><div class="settings-card-bottom-actions"><button type="button" class="btn procurement_method-add-button" id="showProcurementMethodForm" onclick="var f=document.getElementById('procurement_methodManagementForm');if(f){f.hidden=!f.hidden;this.textContent=f.hidden?'Add Method':'Cancel';if(!f.hidden){var i=f.querySelector('input[name=\'names[]\']');if(i)i.focus();}}">Add Method</button></div><?php endif; ?>
 </div>
 
 <div class="panel settings-panel">
