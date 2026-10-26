@@ -4,8 +4,8 @@ requireRole(['Administrator','Editor','Viewer','Guest']);
 require_once __DIR__.'/../app/layout.php';
 $pdo=db();
 $canManage=hasRole(['Administrator','Editor']);
-$uploadRoot=__DIR__.'/uploads';
-$uploadWeb='uploads';
+$uploadRoot=__DIR__.'/uploads/procurement_process';
+$uploadWeb='uploads/procurement_process';
 try {
   $pdo->exec("CREATE TABLE IF NOT EXISTS procurement_process_pdfs (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -32,7 +32,7 @@ function processPdfFolderName(string $title): string {
 }
 function processPdfRemove(string $relativePath,string $uploadRoot): bool {
   $relative=str_replace(chr(92),'/',ltrim($relativePath,'/'));
-  if(!preg_match('~^uploads/[^/]+/[^/]+\\.pdf$~i',$relative)) return false;
+  if(!preg_match('~^uploads/procurement_process/[^/]+\\.pdf$~i',$relative)) return false;
   $base=realpath(__DIR__);
   if($base===false) return false;
   $target=$base.DIRECTORY_SEPARATOR.str_replace('/',DIRECTORY_SEPARATOR,$relative);
@@ -63,8 +63,8 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
         if(strlen($title)>255){$errors[]='Row '.($row+1).': process title must not exceed 255 characters.';continue;}
         if(!is_array($rowNames) || !array_filter($rowNames,static fn($v)=>trim((string)$v)!=='')){$errors[]=$title.': choose at least one PDF file.';continue;}
         try{$folder=processPdfFolderName($title);}catch(Throwable $e){$errors[]=$title.': invalid process title.';continue;}
-        $targetDir=$uploadRoot.DIRECTORY_SEPARATOR.$folder;
-        if(!is_dir($targetDir) && !@mkdir($targetDir,0775,true) && !is_dir($targetDir)){$errors[]=$title.': could not create folder under public/uploads. Check folder permissions.';continue;}
+        $targetDir=$uploadRoot;
+        if(!is_dir($targetDir) && !@mkdir($targetDir,0775,true) && !is_dir($targetDir)){$errors[]=$title.': could not create public/uploads/procurement_process. Check folder permissions.';continue;}
         $names=$files['name'][$row]??[];$tmps=$files['tmp_name'][$row]??[];$sizes=$files['size'][$row]??[];$errs=$files['error'][$row]??[];
         for($i=0;$i<count($names);$i++){
           $err=(int)($errs[$i]??UPLOAD_ERR_NO_FILE);
@@ -81,7 +81,7 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
           $baseName=pathinfo($original,PATHINFO_FILENAME);$safeName=preg_replace('~[^a-zA-Z0-9_-]+~','-',$baseName);$safeName=trim((string)$safeName,'-_');if($safeName==='')$safeName='process-document';
           $stored=$safeName.'-'.date('YmdHis').'-'.bin2hex(random_bytes(4)).'.pdf';$target=$targetDir.DIRECTORY_SEPARATOR.$stored;
           if(!move_uploaded_file($tmp,$target)){$errors[]=$original.': could not save file.';continue;}
-          try{$relative=$uploadWeb.'/'.$folder.'/'.$stored;$st=$pdo->prepare('INSERT INTO procurement_process_pdfs(process_title,original_filename,stored_filename,relative_path,file_size,uploaded_by) VALUES(?,?,?,?,?,?)');$st->execute([$title,substr($original,0,255),$stored,$relative,$size,(int)(currentUser()['id']??0) ?: null]);$count++;}
+          try{$relative=$uploadWeb.'/'.$stored;$st=$pdo->prepare('INSERT INTO procurement_process_pdfs(process_title,original_filename,stored_filename,relative_path,file_size,uploaded_by) VALUES(?,?,?,?,?,?)');$st->execute([$title,substr($original,0,255),$stored,$relative,$size,(int)(currentUser()['id']??0) ?: null]);$count++;}
           catch(Throwable $e){@unlink($target);$errors[]=$original.': could not save file details.';}
         }
       }
@@ -123,7 +123,7 @@ pageStart('Procurement Process Workflow');
 <div id="processPdfUploadRows">
 <div class="process-pdf-upload-row">
 <div class="process-pdf-upload-grid">
-<div class="field"><label>Process Title <span aria-hidden="true">*</span></label><input class="input" name="process_title[]" type="text" maxlength="255" placeholder="e.g., Procurement Planning Process"><div class="process-pdf-help">Creates a folder under public/uploads using this title.</div></div>
+<div class="field"><label>Process Title <span aria-hidden="true">*</span></label><input class="input" name="process_title[]" type="text" maxlength="255" placeholder="e.g., Procurement Planning Process"><div class="process-pdf-help">PDF files are saved directly under public/uploads/procurement_process.</div></div>
 <div class="field"><label>PDF File(s) <span aria-hidden="true">*</span></label><input class="input" name="process_pdfs[0][]" type="file" accept="application/pdf,.pdf" multiple><div class="process-pdf-help">Select one or multiple PDFs. Maximum 25 MB per file.</div></div>
 <div class="process-pdf-row-remove"><button type="button" class="btn secondary process-pdf-add-row" id="processPdfAddRow">Add Row</button></div>
 </div>
@@ -143,7 +143,7 @@ pageStart('Procurement Process Workflow');
 <?php foreach($rows as $row): $folder=basename(dirname((string)$row['relative_path']));$url=(string)$row['relative_path']; ?>
 <tr data-title="<?=e(strtolower((string)$row['process_title']))?>" data-file="<?=e(strtolower((string)$row['original_filename']))?>">
 <td class="process-pdf-check"><?php if($canManage): ?><input type="checkbox" class="process-pdf-row-check" name="pdf_ids[]" value="<?=(int)$row['id']?>" aria-label="Select <?=e((string)$row['original_filename'])?>"><?php else: ?><span>—</span><?php endif; ?></td>
-<td><div class="process-pdf-title"><?=e((string)$row['process_title'])?></div><div class="process-pdf-meta">Folder: public/uploads/<?=e($folder)?>/</div></td>
+<td><div class="process-pdf-title"><?=e((string)$row['process_title'])?></div><div class="process-pdf-meta">Folder: public/uploads/procurement_process/</div></td>
 <td><a class="process-pdf-file" href="<?=e($url)?>" target="_blank" rel="noopener"><span aria-hidden="true">📄</span><?=e((string)$row['original_filename'])?></a></td>
 <td><?=number_format(((int)$row['file_size'])/1024,1)?> KB</td><td><?=e(date('M d, Y h:i A',strtotime((string)$row['uploaded_at'])))?></td>
 </tr>
