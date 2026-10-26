@@ -43,7 +43,10 @@ if($_SERVER['REQUEST_METHOD']==='POST'){
 
         $year=(int)$_POST['fiscal_year']; $area=(int)$_POST['area_id']; $items=$_POST['items']??[];
         if(!$items) throw new RuntimeException('Select at least one PPMP item.');
-        $prNo='PR-'.$year.'-'.date('mdHis').'-'.random_int(10,99);
+        $monthPrefix=date('y-m');
+        $seriesStmt=$pdo->prepare("SELECT MAX(CAST(SUBSTRING_INDEX(pr_no,'-',-1) AS UNSIGNED)) FROM purchase_requests WHERE pr_no LIKE CONCAT(?, '-%')");
+        $seriesStmt->execute([$monthPrefix]);
+        $prNo=$monthPrefix.'-'.str_pad((string)(((int)$seriesStmt->fetchColumn())+1),4,'0',STR_PAD_LEFT);
         $st=$pdo->prepare('INSERT INTO purchase_requests(pr_no,fiscal_year,area_id,purpose,status,requested_by,created_by) VALUES(?,?,?,?,?,?,?)');
         $st->execute([$prNo,$year,$area,trim($_POST['purpose']),$_POST['status']??'Draft',trim($_POST['requested_by']),currentUser()['id']]);
         $prId=(int)$pdo->lastInsertId();
@@ -74,8 +77,9 @@ if($editId>0){
 
 $year=(int)($_GET['year']??($editPr['fiscal_year']??date('Y')));$q=trim($_GET['q']??'');
 $areas=$pdo->query('SELECT * FROM areas ORDER BY name')->fetchAll();$units=$pdo->query("SELECT id,name FROM units_of_measure WHERE status='Active' ORDER BY name")->fetchAll();
-$items=$pdo->prepare('SELECT p.*,a.name area,c.name category,p.quantity-COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled" AND r.id<>?),0) remaining FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id WHERE p.fiscal_year=? ORDER BY a.name,p.item_name');
+$items=$pdo->prepare('SELECT p.*,a.name area,c.name category,u.name unit_name,p.quantity-COALESCE((SELECT SUM(i.quantity) FROM purchase_request_items i JOIN purchase_requests r ON r.id=i.pr_id WHERE i.ppmp_item_id=p.id AND r.status<>"Cancelled" AND r.id<>?),0) remaining FROM ppmp_items p JOIN areas a ON a.id=p.area_id JOIN categories c ON c.id=p.category_id LEFT JOIN units_of_measure u ON LOWER(TRIM(u.name))=LOWER(TRIM(p.unit)) WHERE p.fiscal_year=? AND EXISTS (SELECT 1 FROM ppmp_reviews rv WHERE rv.fiscal_year=p.fiscal_year AND rv.area_id=p.area_id AND rv.ppmp_no=p.ppmp_no AND rv.status="Approved") ORDER BY a.name,p.item_name');
 $items->execute([$editId,$year]);$ppmp=$items->fetchAll();
+$supervisors=$pdo->query("SELECT id,full_name,area_id FROM users WHERE status='Active' AND area_id IS NOT NULL ORDER BY full_name")->fetchAll();
 $prs=$pdo->prepare('SELECT r.*,a.name area,(SELECT COUNT(*) FROM purchase_request_items i WHERE i.pr_id=r.id) AS line_count,(SELECT COALESCE(SUM(i.quantity*i.unit_price),0) FROM purchase_request_items i WHERE i.pr_id=r.id) abc FROM purchase_requests r JOIN areas a ON a.id=r.area_id WHERE r.fiscal_year=? AND (r.pr_no LIKE ? OR a.name LIKE ?) ORDER BY r.created_at DESC');
 $prs->execute([$year,"%$q%","%$q%"]);$allRows=$prs->fetchAll();
 $statuses=['Pending','Received','Returned','Cancelled','Completed'];
@@ -106,8 +110,8 @@ pageStart('Purchase Requests');
 
 <?php if(hasRole(['Administrator','Editor'])):?><div class="panel" id="prForm" style="margin-top:18px" <?=$editPr?'':'hidden'?>><h2><?=$editPr?'Edit Draft Purchase Request '.$editPr['pr_no']:'Create Purchase Request from PPMP'?></h2><p class="hint-text">Only Draft Purchase Requests can be reopened and edited. Available quantity is automatically recalculated.</p>
 <form method="post"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="<?=$editPr?'update':'create'?>"><?php if($editPr):?><input type="hidden" name="pr_id" value="<?=$editPr['id']?>"><?php endif;?>
-<div class="form-grid"><div class="field"><label>Fiscal Year</label><input class="input" type="number" name="fiscal_year" value="<?=e((string)$year)?>" required></div><div class="field"><label>Area/Unit</label><select class="select" name="area_id" required><option value="">Select</option><?php foreach($areas as $a):?><option value="<?=$a['id']?>" <?=((int)($editPr['area_id']??0)===(int)$a['id']?'selected':'')?>><?=e($a['name'])?></option><?php endforeach;?></select></div><div class="field full"><label>Purpose</label><textarea class="input" name="purpose" rows="2" required><?=e($editPr['purpose']??'')?></textarea></div><div class="field"><label>Requested By</label><input class="input" name="requested_by" value="<?=e($editPr['requested_by']??'')?>"></div><div class="field"><label>Status</label><select class="select" name="status"><option <?=($editPr['status']??'Draft')==='Draft'?'selected':''?>>Draft</option><option <?=($editPr['status']??'Draft')==='Submitted'?'selected':''?>>Submitted</option></select></div></div>
-<div class="table-wrap" style="margin-top:16px"><table class="table"><tr><th>Select</th><th>PPMP Item</th><th>Area</th><th>Remaining</th><th>Unit</th><th>Unit Price</th><th>PR Qty</th></tr><?php foreach($ppmp as $p):$selected=array_key_exists((int)$p['id'],$editItems);$max=(float)$p['remaining']+($selected?(float)$editItems[(int)$p['id']]:0);?><tr><td><input type="checkbox" <?= $selected?'checked':''?> onclick="this.closest('tr').querySelectorAll('[name^=items],[name^=units]').forEach(function(x){x.disabled=!this.checked}.bind(this))"></td><td><?=e($p['item_name'])?><br><small><?=e($p['category'])?></small></td><td><?=e($p['area'])?></td><td><?=number_format($max,2)?></td><td><select class="select" name="units[<?=$p['id']?>]" required <?= $selected?'':'disabled'?>><option value="">Select unit</option><?php foreach($units as $u):?><option value="<?=$u['id']?>" <?=((int)($editUnits[(int)$p['id']]??0)===(int)$u['id']||(!$editPr && strcasecmp($p['unit'],$u['name'])===0)?'selected':'')?>><?=e($u['name'])?></option><?php endforeach;?></select></td><td>₱<?=number_format($p['unit_price'],2)?></td><td><input class="input" style="min-width:100px" type="number" step="0.0001" min="0" max="<?=$max?>" name="items[<?=$p['id']?>]" value="<?=e((string)($editItems[(int)$p['id']]??0))?>" <?= $selected?'':'disabled'?>></td></tr><?php endforeach;?></table></div><div class="actions"><button class="btn"><?=$editPr?'Save Draft / Submit PR':'Create Purchase Request'?></button><?php if($editPr):?><a class="btn" href="pr.php">Cancel</a><?php else:?><button class="btn secondary" type="button" id="hidePrForm">Cancel</button><?php endif;?></div></form></div><?php endif;?><?php pageEnd(); ?>
+<div class="form-grid"><div class="field"><label>Fiscal Year</label><input class="input" type="number" name="fiscal_year" value="<?=e((string)$year)?>" required></div><div class="field"><label>Select Area/Unit</label><select class="select" name="area_id" id="prArea" required><option value="">Select Area/Unit</option><?php foreach($areas as $a):?><option value="<?=$a['id']?>" <?=((int)($editPr['area_id']??0)===(int)$a['id']?'selected':'')?>><?=e($a['name'])?></option><?php endforeach;?></select></div><div class="field"><label>Supervisor Assigned</label><select class="select" name="requested_by" id="prSupervisor" required><option value="">Select Supervisor</option><?php foreach($supervisors as $sv):?><option value="<?=e($sv['full_name'])?>" data-area="<?=$sv['area_id']?>" <?=($editPr && ($editPr['requested_by']??'')===$sv['full_name']?'selected':'')?>><?=e($sv['full_name'])?></option><?php endforeach;?></select></div><div class="field full"><label>Purpose</label><textarea class="input" name="purpose" rows="2" required><?=e($editPr['purpose']??'')?></textarea></div><div class="field"><label>Requested By</label><input class="input" name="requested_by" value="<?=e($editPr['requested_by']??'')?>"></div><div class="field"><label>Status</label><select class="select" name="status"><option <?=($editPr['status']??'Draft')==='Draft'?'selected':''?>>Draft</option><option <?=($editPr['status']??'Draft')==='Submitted'?'selected':''?>>Submitted</option></select></div></div>
+<div class="table-wrap" style="margin-top:16px"><table class="table" id="prItemsTable"><thead><tr><th>Stock No/Item No.</th><th>Select Approved PPMP Item</th><th>Unit</th><th>Item Description</th><th>Quantity</th><th>Unit Cost</th><th>Total Cost</th></tr></thead><tbody><?php foreach($ppmp as $p):$selected=array_key_exists((int)$p['id'],$editItems);$max=(float)$p['remaining']+($selected?(float)$editItems[(int)$p['id']]:0);?><tr class="pr-item-row" data-area="<?=$p['area_id']?>" data-remaining="<?=$max?>" data-unit="<?=e($p['unit_name']??$p['unit'])?>" data-description="<?=e($p['item_name'])?>" data-cost="<?=$p['unit_price']?>" data-unit-id="<?=(int)($unitsByName[$p['unit']]??0)?>"><td class="pr-stock-no"></td><td><label class="pr-item-select"><input type="checkbox" class="pr-item-check" name="items[<?=$p['id']?>]" value="<?=e((string)($editItems[(int)$p['id']]??$max))?>" <?=$selected?'checked':''?>><span><?=e($p['item_name'])?> <small>(<?=e($p['ppmp_no']??'PPMP')?> · <?=e($p['area'])?>)</small></span></label></td><td class="pr-unit"><?=e($p['unit_name']??$p['unit'])?></td><td><?=e($p['item_name'])?></td><td><input class="input pr-qty" type="number" min="0.0001" max="<?=$max?>" step="0.0001" name="qty_display[<?=$p['id']?>]" value="<?=$selected?e((string)$editItems[(int)$p['id']]):e((string)$max)?>" <?=$selected?'':'disabled'?>></td><td class="pr-cost"><?=number_format((float)$p['unit_price'],2)?></td><td class="pr-total"><?=number_format(($selected?(float)$editItems[(int)$p['id']]:0)*(float)$p['unit_price'],2)?></td><input type="hidden" name="units[<?=$p['id']?>]" value="<?php foreach($units as $u){if(strcasecmp($u['name'],(string)($p['unit_name']??$p['unit']))===0){echo (int)$u['id'];break;}}?>" <?=$selected?'':'disabled'?>></tr><?php endforeach;?><?php if(!$ppmp):?><tr><td colspan="7" class="empty">No approved PPMP items are available for this fiscal year.</td></tr><?php endif;?></tbody></table></div><div class="actions"><button class="btn"><?=$editPr?'Save Draft / Submit PR':'Create Purchase Request'?></button><?php if($editPr):?><a class="btn" href="pr.php">Cancel</a><?php else:?><button class="btn secondary" type="button" id="hidePrForm">Cancel</button><?php endif;?></div></form></div><?php endif;?><?php pageEnd(); ?>
 <style>
 .pr-list-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
 .pr-list-header h2{margin:0}.pr-list-header .hint-text{margin:5px 0 0}
@@ -118,7 +122,14 @@ pageStart('Purchase Requests');
 .pr-status-tab.active{color:#164e80;background:#edf6ff;border-color:#d9e9f8;border-bottom-color:#0d6efd}
 .pr-status-tab.active span{background:#0d6efd;color:#fff}
 .pr-create-actions{display:flex;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid #edf1f5}
-#prForm[hidden]{display:none!important}\n#hidePrForm[hidden]{display:none!important}
+#prForm[hidden]{display:none!important}
+.pr-item-row[hidden]{display:none!important}
+.pr-item-select{display:flex;align-items:flex-start;gap:8px;font-weight:500;min-width:220px}
+.pr-item-select small{display:block;color:#718096;font-size:11px}
+.pr-item-row td{vertical-align:middle}
+.pr-qty{min-width:90px;width:100px}
+#prItemsTable input[type=checkbox]{width:16px;height:16px}
+\n#hidePrForm[hidden]{display:none!important}
 @media(max-width:650px){.pr-list-header{align-items:stretch;flex-direction:column}.pr-search-form{width:100%}.pr-status-tabs{gap:2px}.pr-status-tab{padding:9px 8px;font-size:13px}}
 </style>
 <script>
@@ -126,18 +137,44 @@ document.addEventListener('DOMContentLoaded',function(){
   const button=document.getElementById('showPrForm');
   const cancelButton=document.getElementById('hidePrForm');
   const form=document.getElementById('prForm');
-  if(!button||!form)return;
-  button.addEventListener('click',function(){
-    form.hidden=false;
-    button.hidden=true;
-    form.scrollIntoView({behavior:'smooth',block:'start'});
-  });
-  if(cancelButton){
-    cancelButton.addEventListener('click',function(){
-      form.hidden=true;
-      button.hidden=false;
-    });
+  const area=document.getElementById('prArea');
+  const supervisor=document.getElementById('prSupervisor');
+  if(button&&form){
+    button.addEventListener('click',function(){form.hidden=false;button.hidden=true;form.scrollIntoView({behavior:'smooth',block:'start'});});
+    if(cancelButton)cancelButton.addEventListener('click',function(){form.hidden=true;button.hidden=false;});
+    if(!form.hidden)button.hidden=true;
   }
-  if(!form.hidden)button.hidden=true;
+  function filterRows(){
+    if(!area)return;
+    const selectedArea=area.value;
+    if(supervisor){
+      Array.from(supervisor.options).forEach(function(o){if(o.value)o.hidden=!!selectedArea&&o.dataset.area!==selectedArea;});
+      if(supervisor.selectedOptions[0]&&supervisor.selectedOptions[0].hidden)supervisor.value='';
+    }
+    document.querySelectorAll('.pr-item-row').forEach(function(row){
+      const visible=!!selectedArea&&row.dataset.area===selectedArea;
+      row.hidden=!visible;
+      const check=row.querySelector('.pr-item-check'),qty=row.querySelector('.pr-qty'),unit=row.querySelector('input[type=hidden][name^="units"]');
+      if(!visible){if(check)check.checked=false;if(qty)qty.disabled=true;if(unit)unit.disabled=true;if(check)check.disabled=true;}
+      else {if(check)check.disabled=false;}
+      updateRow(row);
+    });
+    renumber();
+  }
+  function updateRow(row){
+    const check=row.querySelector('.pr-item-check'),qty=row.querySelector('.pr-qty'),total=row.querySelector('.pr-total');
+    if(qty){qty.disabled=!check.checked||row.hidden; if(!check.checked)qty.value='';}
+    const hiddenUnit=row.querySelector('input[type=hidden][name^="units"]');if(hiddenUnit)hiddenUnit.disabled=!check.checked||row.hidden;
+    if(check)check.value=qty&&qty.value?qty.value:'0';
+    if(total){const cost=parseFloat(row.dataset.cost||'0'),quantity=parseFloat(qty&&qty.value||'0');total.textContent=(cost*quantity).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+  }
+  function renumber(){let n=1;document.querySelectorAll('.pr-item-row').forEach(function(row){if(!row.hidden&&row.querySelector('.pr-item-check').checked){row.querySelector('.pr-stock-no').textContent=String(n++).padStart(4,'0');}else row.querySelector('.pr-stock-no').textContent='';});}
+  document.querySelectorAll('.pr-item-row').forEach(function(row){
+    const check=row.querySelector('.pr-item-check'),qty=row.querySelector('.pr-qty');
+    check.addEventListener('change',function(){if(qty){qty.disabled=!check.checked||row.hidden;if(check.checked&&!qty.value)qty.value=row.dataset.remaining||'0';}updateRow(row);renumber();});
+    if(qty)qty.addEventListener('input',function(){updateRow(row);renumber();});
+  });
+  if(area)area.addEventListener('change',filterRows);
+  if(area)filterRows();
 });
 </script>
