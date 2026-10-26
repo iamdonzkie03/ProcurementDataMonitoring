@@ -76,7 +76,7 @@ if(!$embedded) pageStart('Category');
     </div>
   </div>
 
-  <form method="post" id="categoryManagementForm" style="margin-top:18px">
+  <form method="post" id="categoryManagementForm" style="margin-top:18px" <?=$editing?'':'hidden'?>>
     <input type="hidden" name="csrf" value="<?=e(csrf())?>">
     <input type="hidden" name="action" value="<?=$editing?'save':'save_bulk'?>">
     <input type="hidden" name="id" value="<?=e((string)($editing['id']??0))?>">
