@@ -364,16 +364,6 @@ document.addEventListener('DOMContentLoaded',function(){
   .uom-pagination .uom-pagination-info{order:3;flex-basis:100%;text-align:right}
 }
 
-/* Card-style master-data listing to match Procurement Method. */
-#uomTable{border:0;border-collapse:separate;border-spacing:0;width:100%}
-#uomTable thead{display:none}
-#uomTable tbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;align-items:stretch}
-#uomTable tbody tr{display:flex;flex-direction:column;min-width:0;border:1px solid rgba(30,64,100,.14);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 3px 10px rgba(26,54,93,.06)}
-#uomTable tbody tr td{display:block;border:0;padding:14px 16px;overflow-wrap:anywhere}
-#uomTable tbody tr td:first-child{flex:1;background:#e8f2ff;color:#183b5b;font-weight:700;min-height:48px;display:flex;align-items:center}
-#uomTable tbody tr td:last-child{display:flex;align-items:center;justify-content:flex-end;gap:6px;border-top:1px solid #edf1f5}
-#uomTable tbody tr td:last-child form{margin:0}
-#uomTable tbody tr td[colspan]{display:block;text-align:center;background:#fff;min-height:0}
 </style>
 </style>
 <?php if(!$embedded) pageEnd();
