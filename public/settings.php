@@ -64,10 +64,14 @@ pageStart('Settings');
 <?php endif; ?>
 </div>
 <style>
-/* The pastel background belongs to the card that contains the Settings heading and all tabs. */
-.settings-tabs-card{background:#e8f2ff!important;border-color:#c9def5!important;}
-/* Keep the content panel below the tabs using its normal surface color. */
-.settings-panel{background:initial;border-color:initial;}
+/* Match the Settings card containing the heading and all tabs to the Workflow card's navy-blue header treatment. */
+.settings-tabs-card{background:linear-gradient(115deg,#102c50,#23578d)!important;border-color:#23578d!important;color:#fff;}
+.settings-tabs-card h2{color:#fff!important;}
+.settings-tabs-card>.muted{color:#d9e8f7!important;}
+.settings-tabs-card .settings-tabs .btn{background:#fff!important;color:#194a78!important;border-color:#d5e5f5!important;}
+.settings-tabs-card .settings-tabs .btn.secondary{background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;}
+/* Keep the content panel below the tabs on its normal surface. */
+.settings-panel{background:#fff!important;border-color:#d9e4f0!important;}
 .status-toggle{border:0!important;color:#fff!important;border-radius:999px;padding:5px 12px;font:inherit;font-weight:700;cursor:pointer;transition:none!important;box-shadow:none!important;transform:none!important}
 .status-toggle.status-active{background:#198754!important}
 .status-toggle.status-inactive{background:#dc3545!important}
