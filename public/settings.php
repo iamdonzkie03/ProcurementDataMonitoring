@@ -64,8 +64,10 @@ pageStart('Settings');
 <?php endif; ?>
 </div>
 <style>
-/* Match the Settings card surface to the pale-blue workflow card theme. */
-.settings-panel{background:#e8f2ff!important;border-color:#c9def5!important}
+/* Match both the Settings container and its embedded tab panel to the workflow page card background. */
+.settings-panel,
+.settings-panel > .panel,
+.settings-panel .panel{background:#e8f2ff!important;border-color:#c9def5!important;}
 .status-toggle{border:0!important;color:#fff!important;border-radius:999px;padding:5px 12px;font:inherit;font-weight:700;cursor:pointer;transition:none!important;box-shadow:none!important;transform:none!important}
 .status-toggle.status-active{background:#198754!important}
 .status-toggle.status-inactive{background:#dc3545!important}
