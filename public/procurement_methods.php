@@ -122,7 +122,6 @@ if(!$embedded) pageStart('Procurement Method');
     <div class="procurement-method-selection-toolbar" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px">
       <label class="procurement_method-select-all-label"><input type="checkbox" id="selectAllProcurementMethods" aria-label="Select all Procurement Methods"> Select All</label>
       <div class="procurement_method-list-actions" style="display:flex;align-items:center;gap:8px">
-        <?php if(!$editing): ?><button type="button" class="btn procurement_method-add-button" id="showProcurementMethodForm">Add Method</button><?php endif; ?>
         <button class="btn danger" type="submit" id="deleteSelectedProcurementMethods" disabled>Delete Selected</button>
       </div>
     </div>
@@ -138,6 +137,7 @@ if(!$embedded) pageStart('Procurement Method');
     </div>
   </form>
   </div>
+  <?php if(!$editing): ?><div class="procurement_method-bottom-actions"><button type="button" class="btn procurement_method-add-button" id="showProcurementMethodForm">Add Method</button></div><?php endif; ?>
 </div>
 
 <script>
@@ -281,7 +281,7 @@ document.addEventListener('DOMContentLoaded',function(){
 .procurement_method-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-left:auto}.procurement_method-add-button{white-space:nowrap;background:#198754!important;border-color:#198754!important;color:#fff!important;font-weight:700}.procurement_method-add-button:hover{background:#157347!important}.procurement_method-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}.procurement_method-card{min-width:0;border:1px solid rgba(30,64,100,.12);border-radius:12px;padding:0;background:#fff;box-shadow:0 3px 10px rgba(26,54,93,.06);display:flex;flex-direction:column;gap:0;overflow:hidden}.procurement_method-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px;background:var(--method-card-bg,#e8f2ff);min-height:24px}
 .procurement_method-card:nth-child(8n+1) .procurement_method-card-top{--method-card-bg:#e8f2ff}.procurement_method-card:nth-child(8n+2) .procurement_method-card-top{--method-card-bg:#e8f7ef}.procurement_method-card:nth-child(8n+3) .procurement_method-card-top{--method-card-bg:#fff3d9}.procurement_method-card:nth-child(8n+4) .procurement_method-card-top{--method-card-bg:#f5eaff}.procurement_method-card:nth-child(8n+5) .procurement_method-card-top{--method-card-bg:#ffe9e7}.procurement_method-card:nth-child(8n+6) .procurement_method-card-top{--method-card-bg:#e2f7f7}.procurement_method-card:nth-child(8n+7) .procurement_method-card-top{--method-card-bg:#f0f0ff}.procurement_method-card:nth-child(8n) .procurement_method-card-top{--method-card-bg:#f4f1e8}
 .procurement_method-card h3{padding:16px 16px 4px}.procurement_method-card-actions{padding:8px 16px 16px}.procurement_method-card-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;font-weight:800}.procurement_method-card h3{font-size:16px;line-height:1.4;margin:0;overflow-wrap:anywhere;color:#183b5b}.procurement_method-card-actions{margin-top:auto;display:flex;justify-content:flex-end}.procurement_method-select-all-label{display:flex;align-items:center;gap:8px;font-size:13px;color:#475569}.procurement_method-listing .empty{grid-column:1/-1;padding:24px;text-align:center;border:1px dashed #cbd5e1;border-radius:10px;color:#64748b}.procurement_method-cards .procurement_method-card[style*="display: none"]{display:none!important}#procurement_methodManagementForm[hidden]{display:none!important}@media(max-width:700px){.procurement_method-page-header{align-items:stretch;flex-wrap:wrap}.procurement_method-header-actions{width:100%;margin-left:0}.procurement_method-search,.procurement_method-search .input{width:100%;min-width:0}.procurement_method-header-actions .procurement_method-search{flex:1}.procurement_method-cards{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}}
-.procurement_method-page-title{min-width:0}
+.procurement_method-bottom-actions{display:flex;justify-content:flex-end;margin-top:16px}.procurement_method-page-title{min-width:0}
 .procurement_method-page-title h2{margin:0}
 .procurement_method-page-title .muted{margin:4px 0 0}
 .procurement_method-search{position:relative;width:200px;min-width:200px;margin:0 0 0 auto}
