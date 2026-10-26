@@ -47,7 +47,14 @@ pageStart('Settings');
       <a class="btn <?=$tab==='area-unit'?'':'secondary'?>" href="settings.php?tab=area-unit">Area/Unit Management</a>
       <a class="btn <?=$tab==='uom'?'':'secondary'?>" href="settings.php?tab=uom">UOM</a><?php if(hasRole(['Administrator'])): ?><a class="btn <?=$tab==='login-background'?'':'secondary'?>" href="settings.php?tab=login-background">Login Background</a><?php endif; ?>
     </div>
-    <?php if($tab==='procurement-method'): ?><div class="settings-card-bottom-actions"><button type="button" class="btn procurement_method-add-button" id="showProcurementMethodForm">Add Method</button></div><?php endif; ?>
+    <?php if(in_array($tab,['procurement-method','classification','category','uom'],true)): ?>
+      <div class="settings-card-bottom-actions">
+        <?php if($tab==='procurement-method'): ?><button type="button" class="btn procurement_method-add-button" id="showProcurementMethodForm">Add Method</button>
+        <?php elseif($tab==='classification'): ?><button type="button" class="btn procurement_method-add-button" id="showClassificationForm">Add Classification</button>
+        <?php elseif($tab==='category'): ?><button type="button" class="btn procurement_method-add-button" id="showCategoryForm">Add Category</button>
+        <?php elseif($tab==='uom'): ?><button type="button" class="btn procurement_method-add-button" id="showUomForm">Add UOM</button><?php endif; ?>
+      </div>
+    <?php endif; ?>
   </div>
 </div>
 
@@ -86,5 +93,21 @@ pageStart('Settings');
 .status-toggle.status-inactive{background:#dc3545!important}
 .status-toggle:hover,.status-toggle:focus,.status-toggle:active{color:#fff!important;box-shadow:none!important;transform:none!important;outline:none!important}
 </style>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  [
+    {button:'showClassificationForm',form:'classificationManagementForm',label:'Add Classification'},
+    {button:'showCategoryForm',form:'categoryManagementForm',label:'Add Category'},
+    {button:'showUomForm',form:'uomForm',label:'Add UOM'}
+  ].forEach(function(item){
+    const button=document.getElementById(item.button),form=document.getElementById(item.form);
+    if(!button||!form)return;
+    button.addEventListener('click',function(){
+      const opening=form.hidden;form.hidden=!opening;button.textContent=opening?'Cancel':item.label;
+      if(opening){const first=form.querySelector('input[name="names[]"],input[name="name"],input[name="uom"],input[name="unit"]');if(first)first.focus();}
+    });
+  });
+});
+</script>
 
 <?php pageEnd();
