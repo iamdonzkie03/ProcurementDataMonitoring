@@ -71,8 +71,10 @@ pageStart('Settings');
 .settings-tabs-card>.muted{color:#d9e8f7!important;}
 .settings-tabs-card .settings-tabs .btn{background:#fff!important;color:#194a78!important;border-color:#d5e5f5!important;}
 .settings-tabs-card .settings-tabs .btn.secondary{background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.35)!important;}
-.settings-card-bottom-actions{display:flex;justify-content:flex-end;margin-top:16px}
-.settings-card-bottom-actions .procurement_method-add-button{background:#198754!important;border-color:#198754!important;color:#fff!important;font-weight:700}
+.settings-card-bottom-actions{display:inline-flex;align-items:center;justify-content:flex-end;margin:0 0 0 auto;vertical-align:middle}
+.settings-card-bottom-actions .procurement_method-add-button{background:#fff!important;border-color:#d5e5f5!important;color:#194a78!important;font-weight:700}
+.settings-tabs{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.settings-card-bottom-actions .procurement_method-add-button:hover{background:#edf5ff!important;color:#194a78!important}
 /* Keep the content panel below the tabs on its normal surface. */
 .settings-panel{background:#fff!important;border-color:#d9e4f0!important;}
 .status-toggle{border:0!important;color:#fff!important;border-radius:999px;padding:5px 12px;font:inherit;font-weight:700;cursor:pointer;transition:none!important;box-shadow:none!important;transform:none!important}
